@@ -8,13 +8,13 @@ By pursuing development of RAIL, we aim to achieve the broad goals of PZIncomple
 There are four aspects to the RAIL approach, each defined by a minimal version that can be developed further as necessary.
 The purpose of each piece of infrastructure is outlined below.
 
-## generation
-To make mock data sets with which to test redshift estimation codes
+## creation
+To forward-model mock data for testing redshift estimation codes
 
-## adaptation
-To implement physical systematics in the mock data sets
+## degradation
+To introduce physical systematics in the mock data sets
 
-## execution
+## estimation
 To automatically execute arbitrary redshift estimation codes
 
 ## evaluation
