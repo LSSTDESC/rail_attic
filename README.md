@@ -1,21 +1,29 @@
-# RAIL
-Redshift Assessment Infrastructure Layers
+# RAIL: Redshift Assessment Infrastructure Layers
 
 This repo is home to a series of LSST-DESC projects aiming to quantify the impact of imperfect prior information on probabilistic redshift estimation.
 RAIL differs from [PZIncomplete](https://github.com/LSSTDESC/pz_incomplete) in that it is broken into stages, each corresponding to a manageable unit of infrastructure advancement, a specific question, and a potential publication opportunity.
-By pursuing development of RAIL, we aim to achieve the broad goals of PZIncomplete.
+By pursuing the piecemeal development of RAIL, we aim to achieve the broad goals of PZIncomplete.
+
+## Organization
 
 There are four aspects to the RAIL approach, each defined by a minimal version that can be developed further as necessary.
-The purpose of each piece of infrastructure is outlined below.
+The purpose of each piece of infrastructure is outlined below and described in a README in its own directory, where relevant code will ultimately live.
 
-## creation
+### creation
+
 To forward-model mock data for testing redshift estimation codes
 
-## degradation
+### degradation
+
 To introduce physical systematics in the mock data sets
 
-## estimation
+### estimation
+
 To automatically execute arbitrary redshift estimation codes
 
-## evaluation
+### evaluation
+
 To assess the performance of redshift estimation codes
+
+## Immediate Plans
+
