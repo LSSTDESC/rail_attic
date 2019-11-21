@@ -6,8 +6,11 @@ The code here enables the generation of mock photometry scorresponding to a full
 
 We will begin with a mock data set of galaxy redshifts and photometry.
 Because any existing data set is sparse in this space and smaller than the number of galaxies we might want to test redshift estimation codes, we will develop that mock data set into a continuous probability density in the space of redshifts and photometry.
-The high-dimensional probability density can be modified in ways that reflect the realistic mismatches between training and test sets.
+This process may be done using a GAN to augment the data until it fills out the space, followed by a smoothing or interpolation of that space.
+
+The high-dimensional probability density can be modified in ways that reflect the realistic mismatches between training and test sets, a process executed in the `degradation` modules.
 Training and test set data will be drawn from such probability spaces, meaning each galaxy has a true likelihood and a true posterior with which to compare.
+This code may or may not be built off of tools made for the testing suite of [`chippr`](https://github.com/aimalz/chippr).
 
 ## Future extensions
 
