@@ -36,3 +36,8 @@ Once the changes have been approved, you can merge and squash the pull request.
 
 ## Immediate Plans
 
+As indicated in the project name, this work will be completed in multiple stages.
+
+### Phase 1
+
+An outline of the baseline RAIL is illustrated [here](https://docs.google.com/drawings/d/1or8xyBqLkpc_4_Cr-ROSA3F7fBm3RMRnRzytorw_FYM/edit?usp=sharing).
