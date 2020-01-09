@@ -1,0 +1,9 @@
+GenZPipe:
+  chunk_rows: 1000
+  sigma_intrins: 0.02
+  odds_int: 0.99445
+  nz: 301
+  zmax: 3.0
+  metacal_fluxes: False
+  has_redshift: True
+  
