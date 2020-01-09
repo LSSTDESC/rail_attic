@@ -5,7 +5,8 @@ This code enables the automatic execution of arbitrary redshift estimation codes
 ## Base design
 
 For the sake of this challenge, we will run scripts that accept test set photometry, run a particular pre-trained photo-z estimation code, and produce estimated photo-z posteriors.
-Code here will provide a script template for wrapping a pre-trained code that we will run automatically on a variety of test sets blinded from those who submit scripts.
+Where possible, we wil use formats compatible with other LSST-DESC pipelines, including [TXPipe](https://github.com/LSSTDESC/TXPipe/).
+Code here will provide a script template for wrapping a machine learning code that we will run automatically on a variety of test sets blinded from those who submit scripts.
 We will have to make a decision about the acceptable output format(s) of redshift posteriors.
 
 ## Future extensions
