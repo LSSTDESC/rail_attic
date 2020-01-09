@@ -15,6 +15,7 @@ Once the changes have been approved, you can merge and squash the pull request.
 
 ## Immediate Plans
 
+An outline of the baseline RAIL is illustrated [here](https://docs.google.com/drawings/d/1or8xyBqLkpc_4_Cr-ROSA3F7fBm3RMRnRzytorw_FYM/edit?usp=sharing).
 1. _MonoRAIL_: Build the basic infrastructure for controlled experiments of forward-modeled photo-z posteriors
 * a `rail.creation` submodule that can generate true photo-z posteriors and mock photometry
 * an `rail.estimation` submodule with a class for photo-z posterior estimation routines, including a template example implementing the trainZ (experimental control) algorithm
@@ -37,4 +38,3 @@ The next stages (tentative project codenames subject to change) can be executed 
 * _RAIL gauge_: Investigate the impact of measurement errors (PSF, aperture photometry, flux calibration, etc.) on estimated photo-z posteriors
 * _DERAIL_: Propagate the impact of imperfect prior information to 3x2pt cosmological parameter constraints
 * _RAIL line_: Implement a more sophisticated true photo-z posterior model with SEDs and emission lines
-
