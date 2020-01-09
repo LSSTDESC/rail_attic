@@ -20,13 +20,13 @@ An outline of the baseline RAIL is illustrated [here](https://docs.google.com/dr
 * a `rail.creation` submodule that can generate true photo-z posteriors and mock photometry
 * an `rail.estimation` submodule with a class for photo-z posterior estimation routines, including a template example implementing the trainZ (experimental control) algorithm
 * an `rail.evaluation.metric` submodules that calculate the metrics from the [PZ DC1 Paper](https://github.com/LSSTDESC/PZDC1paper) for estimated photo-z posteriors relative to the true photo-z posteriors
-* documented scripts on NERSC that demonstrate the use of RAIL in a DC1-like 
+* documented scripts that demonstrate the use of RAIL in a DC1-like experiment on NERSC
 * an LSST-DESC Note presenting the RAIL infrastructure
 2. _RAILroad_: Quantify the impact of nonrepresentativity (imbalance and incompleteness) of a training set on estimated photo-z posteriors by multiple machine learning methods
 * a `rail.creation.degradation` submodule that introduces an imperfect prior of the form of nonrepresentativity into the observed photometry
 * at least two `rail.estimation.estimator` wrapped machine learning-based codes for estimating photo-z posteriors
 * additional `rail.evaluation.metric` modules implementing the [qp](https://github.com/LSSTDESC/qp) metrics
-* scripts on NERSC that 
+* documented scripts that demonstrate the use of RAIL in a blinded experiment on NERSC
 * an LSST-DESC paper presenting the results of a controlled experiment of non-representativity
 
 ## Future Plans
