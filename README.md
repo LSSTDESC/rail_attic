@@ -11,11 +11,7 @@ The purpose of each piece of infrastructure is outlined below and described in a
 
 ### creation
 
-To forward-model mock data for testing redshift estimation codes
-
-### degradation
-
-To introduce physical systematics in the mock data sets
+To forward-model mock data for testing redshift estimation codes, including physical systematics
 
 ### estimation
 
@@ -35,4 +31,27 @@ When you're ready to merge your branch into the `master` branch, [make a pull re
 Once the changes have been approved, you can merge and squash the pull request.
 
 ## Immediate Plans
+
+1. _MonoRAIL_: Build the basic infrastructure for controlled experiments of forward-modeled photo-z posteriors
+* a `rail.creation` submodule that can generate true photo-z posteriors and mock photometry
+* an `rail.estimation` submodule with a class for photo-z posterior estimation routines, including a template example implementing the trainZ (experimental control) algorithm
+* an `rail.evaluation.metric` submodules that calculate the metrics from the [PZ DC1 Paper](https://github.com/LSSTDESC/PZDC1paper) for estimated photo-z posteriors relative to the true photo-z posteriors
+* documented scripts on NERSC that demonstrate the use of RAIL in a DC1-like 
+* an LSST-DESC Note presenting the RAIL infrastructure
+2. _RAILroad_: Quantify the impact of nonrepresentativity (imbalance and incompleteness) of a training set on estimated photo-z posteriors by multiple machine learning methods
+* a `rail.creation.degradation` submodule that introduces an imperfect prior of the form of nonrepresentativity into the observed photometry
+* at least two `rail.estimation.estimator` wrapped machine learning-based codes for estimating photo-z posteriors
+* additional `rail.evaluation.metric` modules implementing the [qp](https://github.com/LSSTDESC/qp) metrics
+* scripts on NERSC that 
+* an LSST-DESC paper presenting the results of a controlled experiment of non-representativity
+
+## Future Plans
+
+The next stages (tentative project codenames subject to change) can be executed in any order or even simultaneously and may be broken into smaller pieces each corresponding to an LSST-DESC Note.
+* Extend the imperfect prior models and experimental design to accommodate template-fitting codes _(name TBD)_
+* _Off the RAILs_: Investigate the effects of erroneous spectroscopic redshifts in a training set
+* _Third RAIL_: Investigate the effects of imperfect deblending on estimated photo-z posteriors
+* _RAIL gauge_: Investigate the impact of measurement errors (PSF, aperture photometry, flux calibration, etc.) on estimated photo-z posteriors
+* _DERAIL_: Propagate the impact of imperfect prior information to 3x2pt cosmological parameter constraints
+* _RAIL line_: Implement a more sophisticated true photo-z posterior model with SEDs and emission lines
 
