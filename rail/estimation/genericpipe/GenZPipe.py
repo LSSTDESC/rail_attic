@@ -13,7 +13,6 @@ class GenZPipe(PipelineStage):
        fake photo-z PDFs
        The code will be set up to read and write hdf5 files in the
        same formats as BPZPipe as a TXPipe pipeline stage
-                                                                                           
     """
     name = "GenZPipe"
     #                                                                                      
@@ -24,14 +23,17 @@ class GenZPipe(PipelineStage):
     config_options = {
         "chunk_rows": 1000,
         "bands": ["u","g","r","i","z","y"],
-        "has_redshift": True, #does the test file have redshift?
-        #if so, read in and append to output file.
-        "nz": 300, #Number of grid points
-        "zmax": 3.0, #maximum redshift for grid
+        "has_redshift": True, # does the test file have redshift?
+        # if so, read in and append to output file.
+        "nz": 300, # Number of redshift grid points
+        "zmax": 3.0, # maximum redshift for grid
     }
 
     def run(self):
-
+        """The main run function to launch the pipeline stage
+        This reads in the config parameters from either the default config
+        parameters listed in config_options, or from the config.yaml file
+        """
         starttime = time.time()
         os.environ["HDF5_USE_FILE_LOCKING"]="FALSE"
         os.environ["CECI_SETUP"]="/global/projecta/projectdirs/lsst/groups/PZ/FlexZBoost/FlexZPipe/setup-flexz-cori-update"
@@ -39,14 +41,13 @@ class GenZPipe(PipelineStage):
         # Columns we will need from the data                                               
         bands = self.config['bands']
         cols =  [f'mag_{band}_lsst' for band in bands]
-        # We only have one set of errors, though                                           
         cols += [f'mag_err_{band}_lsst' for band in bands]
         cols += ["id"]
         has_sz = self.config['has_redshift']
         if has_sz:
             cols += ["redshift"]
 
-        #set up redshift grid
+        # set up redshift grid
         nz = self.config['nz']
         zmax = self.config['zmax']
         z_grid = np.linspace(0.0,zmax,nz)
@@ -65,9 +66,9 @@ class GenZPipe(PipelineStage):
                                                  chunk_rows):
             print(f"Process {self.rank} running photo-z for rows {start}-{end}")
 
-            # Calculate the pseudo-fluxes that we need                                     
+            # Calculate modifications to raw input data, in this case colors                                     
             new_data = self.preprocess_data(data)
-            # Actually run BPZ                                                             
+            # run the core photo-z pdf estimation                                                              
             point_estimates, pdfs = self.estimate_pdfs(z_grid, new_data,nz)
 
             # Save this chunk of data                                                      
@@ -127,7 +128,8 @@ class GenZPipe(PipelineStage):
         group.create_dataset("zgrid", (nz,), dtype='f4')
         group.create_dataset("pdf", (nobj,nz), dtype='f4')
 
-        # One processor writes the redshift axis to output.                                
+        # One processor writes the redshift axis, ids, and true redshifts
+        # to output.                                
         if self.rank==0:
             groupid['galaxy_id'][:] = ids
             group['zgrid'][:] = z_grid
