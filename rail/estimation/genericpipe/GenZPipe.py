@@ -1,14 +1,13 @@
 from ceci import PipelineStage
 from descformats import TextFile, HDFFile, YamlFile
-#from txpipe.data_types import PhotozPDFFile                                               
+# from txpipe.data_types import PhotozPDFFile                                               
 import os
 import pandas as pd
 import sys
 import numpy as np
 import time
 import scipy.stats
-
-# This class runs the python3 version of BPZ from the command line                         
+                         
 class GenZPipe(PipelineStage):
     """A generic example Pipeline stage to create a random bunch of 
        fake photo-z PDFs
@@ -29,7 +28,6 @@ class GenZPipe(PipelineStage):
         #if so, read in and append to output file.
         "nz": 300, #Number of grid points
         "zmax": 3.0, #maximum redshift for grid
-        "metacal_fluxes": False, #switch for whether or not to run metacal suffices
     }
 
     def run(self):
@@ -39,15 +37,8 @@ class GenZPipe(PipelineStage):
         os.environ["CECI_SETUP"]="/global/projecta/projectdirs/lsst/groups/PZ/FlexZBoost/FlexZPipe/setup-flexz-cori-update"
 
         # Columns we will need from the data                                               
-        # Note that we need all the metacalibrated variants too.                           
-        metacal_fluxes = self.config['metacal_fluxes']
-        if metacal_fluxes == False:
-            suffices = [""]
-        else:
-            suffices = ["", "_1p", "_1m", "_2p", "_2m"]
-        self.suffices = suffices
         bands = self.config['bands']
-        cols =  [f'mag_{band}_lsst{suffix}' for band in bands for suffix in suffices]
+        cols =  [f'mag_{band}_lsst' for band in bands]
         # We only have one set of errors, though                                           
         cols += [f'mag_err_{band}_lsst' for band in bands]
         cols += ["id"]
@@ -152,30 +143,26 @@ class GenZPipe(PipelineStage):
         input:
           data: iterate_hdf data 
         returns:
-          df: pandas dataframe of data (incl multiple suffices if 
-          specified)
+          df: pandas dataframe of data
           
         """
         bands = self.config['bands']
         numfilts = len(bands)
         #read in the i-band magnitude, calculate colors and color
         #errors for the other bands, stick in a dataframe for simplicity
-        #add all suffices to single pandas dataframe, will pull out
-        #specific columns when estimating pdfs
         
-        for ii,suffix in enumerate(self.suffices):
-            i_mag = data[f'mag_i_lsst{suffix}']
-            if ii==0:
-                tmpdict = {f'i_mag{suffix}':i_mag}
-                df = pd.DataFrame(tmpdict)
-            for xx in range(numfilts-1):
-                df[f'color_{bands[xx]}{bands[xx+1]}{suffix}']= \
-	        np.array(data[f'mag_{bands[xx]}_lsst{suffix}']) -\
-                np.array(data[f'mag_{bands[xx+1]}_lsst{suffix}'])
 
-                df[f'color_err_{bands[xx]}{bands[xx+1]}{suffix}'] = np.sqrt(\
-                np.array(data[f'mag_err_{bands[xx]}_lsst{suffix}'])**2.0 +\
-                np.array(data[f'mag_err_{bands[xx+1]}_lsst{suffix}'])**2.0)
+        i_mag = data[f'mag_i_lsst']
+        tmpdict = {f'i_mag':i_mag}
+        df = pd.DataFrame(tmpdict)
+        for xx in range(numfilts-1):
+            df[f'color_{bands[xx]}{bands[xx+1]}']= \
+	    np.array(data[f'mag_{bands[xx]}_lsst']) -\
+            np.array(data[f'mag_{bands[xx+1]}_lsst'])
+
+            df[f'color_err_{bands[xx]}{bands[xx+1]}'] = np.sqrt(\
+            np.array(data[f'mag_err_{bands[xx]}_lsst'])**2.0 +\
+            np.array(data[f'mag_err_{bands[xx+1]}_lsst'])**2.0)
 
         #new_data = df.to_numpy()
         #return new_data
@@ -193,13 +180,12 @@ class GenZPipe(PipelineStage):
           number of redshift grid points to evaluate the model on
         Returns:
         point_estimates: numpy nd-array
-          point estimates for each of the suffices
+          point estimates 
         pdfs:
-          p(z) evaluated on nz grid points for the suffix == '' data
+          p(z) evaluated on nz grid points
        """
-        num_suffices = len(self.suffices)
         ngal = len(new_data['i_mag'])
-        point_estimates = np.zeros((num_suffices, ngal))
+        point_estimates = np.zeros(ngal)
 
         zmax =self.config['zmax']
         medians = np.random.uniform(0.0,zmax,size=ngal)
@@ -208,7 +194,7 @@ class GenZPipe(PipelineStage):
         for i, (mu,sigma) in enumerate(zip(medians,sigmas)):
             pdf = scipy.stats.lognorm.pdf(zgrid, s = sigma, scale = mu)
             pdfs[i] = pdf
-            point_estimates[:,i] = mu
+            point_estimates[i] = mu
 
         return point_estimates, pdfs
 
@@ -232,6 +218,5 @@ class GenZPipe(PipelineStage):
         group = output_file['pdf']
         group['pdf'][start:end] = pdfs
         grouppt = output_file['point_estimates']
-        for s, suffix in enumerate(self.suffices):
-            grouppt[f'z_mode{suffix}'][start:end] = point_estimates[s]
+        grouppt[f'z_mode'][start:end] = point_estimates
 
