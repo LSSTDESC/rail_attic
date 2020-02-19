@@ -1,6 +1,6 @@
 from ceci import PipelineStage
 from descformats import TextFile, HDFFile, YamlFile
-# from txpipe.data_types import PhotozPDFFile                                               
+# from txpipe.data_types import PhotozPDFFile
 import os
 import pandas as pd
 import sys
@@ -15,8 +15,7 @@ class GenZPipe(PipelineStage):
        same formats as BPZPipe as a TXPipe pipeline stage
     """
     name = "GenZPipe"
-    #                                                                                      
-    inputs = [
+    #     inputs = [
         ('photometry_catalog', HDFFile),]
     outputs = [
         ('photoz_pdfs', HDFFile),]
@@ -38,7 +37,7 @@ class GenZPipe(PipelineStage):
         os.environ["HDF5_USE_FILE_LOCKING"]="FALSE"
         os.environ["CECI_SETUP"]="/global/projecta/projectdirs/lsst/groups/PZ/FlexZBoost/FlexZPipe/setup-flexz-cori-update"
 
-        # Columns we will need from the data                                               
+        # Columns we will need from the data
         bands = self.config['bands']
         cols =  [f'mag_{band}_lsst' for band in bands]
         cols += [f'mag_err_{band}_lsst' for band in bands]
@@ -62,7 +61,8 @@ class GenZPipe(PipelineStage):
         # each processor will only be given the sub-set of data it is                      
         # responsible for.  The HDF5 parallel output mode means they can                   
         # all write to the file at once too.                                               
-        for start, end, data in self.iterate_hdf('photometry_catalog', "photometry", cols,\
+        for start, end, data in self.iterate_hdf('photometry_catalog',
+                                                 "photometry", cols,
                                                  chunk_rows):
             print(f"Process {self.rank} running photo-z for rows {start}-{end}")
 
