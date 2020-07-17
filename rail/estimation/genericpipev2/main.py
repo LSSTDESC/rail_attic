@@ -10,7 +10,9 @@ def main(argv):
     input_yaml = argv[1]
 
     with open(input_yaml, 'r') as f:
-            base_dict = yaml.safe_load(f)
+        base_dict = yaml.safe_load(f)
+
+    print(base_dict)
     run_dict = base_dict['run_params']
     name =  run_dict['class_name']
 
@@ -22,7 +24,7 @@ def main(argv):
     code = npipe.Tomographer._find_subclass(name)
     print(f"code name: {code}")
 
-    pz = code(run_dict)
+    pz = code(base_dict)
     
     pz.train()
 

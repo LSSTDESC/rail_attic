@@ -1,3 +1,6 @@
+base_config:
+  base_yaml: base.yaml
+
 run_params:
   class_name: randomPZ
   code_name: randompz

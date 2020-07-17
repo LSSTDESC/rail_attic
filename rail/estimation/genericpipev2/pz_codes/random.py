@@ -13,7 +13,7 @@ from .base import BaseEstimation
 class randomPZ(Tomographer,BaseEstimation):
 #class randomPZ(Tomographer): 
    
-    def __init__(self,inputs):
+    def __init__(self,base_dict):
         """
         Parameters:
         -----------
@@ -21,11 +21,13 @@ class randomPZ(Tomographer,BaseEstimation):
           dictionary of all variables read in from the run_params
           values in the yaml file
         """
+        inputs = base_dict['run_params']
+
         self.width = inputs['rand_width']
         self.zmin = inputs['rand_zmin']
         self.zmax = inputs['rand_zmax']
         self.nzbins = inputs['rand_zbins']
-        super().__init__(inputs)
+        super().__init__(base_dict)
 
     def train(self):
         """

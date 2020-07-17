@@ -47,7 +47,7 @@ class simpleNN(Tomographer,BaseEstimation):
     and then put an error of width*(1+zb).  We'll do a "real" NN
     photo-z later.
     """
-    def __init__(self,inputs):
+    def __init__(self,base_dict):
         """
         Parameters:
         -----------
@@ -55,11 +55,14 @@ class simpleNN(Tomographer,BaseEstimation):
           dictionary of all variables read in from the run_params
           values in the yaml file
         """
+
+        inputs = base_dict['run_params']
+        
         self.width = inputs['width']
         self.zmin = inputs['zmin']
         self.zmax = inputs['zmax']
         self.nzbins = inputs['nzbins']
-        super().__init__(inputs)
+        super().__init__(base_dict)
 
 
     def train(self):

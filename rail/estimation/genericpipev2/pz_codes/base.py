@@ -15,8 +15,14 @@ class BaseEstimation(object):
     the parent class
     """
     
-    def __init__(self, config_dict):
+    def __init__(self, base_dict):
+        code_dict = base_dict['run_params']
+        config_dict = base_dict['base_config']
+        config_yaml = config_dict['base_yaml']
+        with open(config_yaml, 'r') as f:
+            config_dict = yaml.safe_load(f)
 
+        
         self.basepath = config_dict.get('file_path', _PATH_TO_DATA)
         self.trainfile = config_dict.get('trainfile', _TRAIN_FILE)
         self.train_fmt = self.trainfile.split(".")[-1]
@@ -24,8 +30,8 @@ class BaseEstimation(object):
         self.testfile = config_dict.get('testfile',_TEST_FILE)
         self.test_fmt = self.testfile.split(".")[-1]
         self.test_data = load_data(self.testfile,self.test_fmt)
-        self.outfilebase = config_dict.get('outputfile', "generic_output.hdf5")
-        self.code_name = config_dict.get('code_name', 'generic_code_name')
+        self.outfilebase = code_dict.get('outputfile', "generic_output.hdf5")
+        self.code_name = code_dict.get('code_name', 'generic_code_name')
 
         fullpath = os.path.join(self.basepath,self.trainfile)
 
