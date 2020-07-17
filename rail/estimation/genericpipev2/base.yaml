@@ -1,0 +1,3 @@
+base_config:
+  trainfile: mini_training.hdf5
+  testfile: mini_validation.hdf5
