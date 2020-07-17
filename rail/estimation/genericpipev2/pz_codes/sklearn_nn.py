@@ -41,8 +41,12 @@ def regularize_data(data):
 
 
 class simpleNN(Tomographer,BaseEstimation):
-#class randomPZ(Tomographer): 
-   
+    """
+    Subclass to implement a simple point estimate Neural Net photoz
+    rather than actually predict PDF, for now just predict point zb
+    and then put an error of width*(1+zb).  We'll do a "real" NN
+    photo-z later.
+    """
     def __init__(self,inputs):
         """
         Parameters:
@@ -58,27 +62,6 @@ class simpleNN(Tomographer,BaseEstimation):
         super().__init__(inputs)
 
 
-    #def regularize_data(data):
-    #    scaler = StandardScaler()
-    #    scaler.fit(data)
-    #    regularized_data  = scaler.transform(data)
-    #    return regularized_data
-
-    #def make_color_data(data_dict):
-    #    """
-    #      make a dataset consisting of the i-band mag and the five colors
-    #    Returns:
-    #    --------
-    #      input_data: (nd-array)
-    #      array of imag and 5 colors
-    #    """
-    #    input_data = data_dict['i_mag']
-    #    bands = ['u','g','r','i','z','y']
-    #    # make colors and append to input data 
-    #    for i in range(5):
-    #        input_data = np.vstack((input_data, data_dict[f'{bands[i]}_mag'] - data_dict[f'{bands[i+1]}_mag']))
-    #    return input_data
-
     def train(self):
         """
           train the NN model
@@ -91,8 +74,6 @@ class simpleNN(Tomographer,BaseEstimation):
         simplenn.fit(input_data,speczs)
         self.model = simplenn
         
-
-
     def run_photoz(self):
         print("running photoz's...")
         color_data = make_color_data(self.test_data)
