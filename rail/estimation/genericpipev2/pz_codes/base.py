@@ -2,7 +2,8 @@ import numpy as np
 import os
 from ..pipeutils import *
 
-_PATH_TO_DATA = "/Users/sam/WORK/TOMOCHALLENGE"
+#_PATH_TO_DATA = "/Users/sam/WORK/TOMOCHALLENGE"
+_PATH_TO_DATA = "/global/cfs/cdirs/lsst/groups/WL/users/zuntz/tomo_challenge_data/ugrizy"
 _TRAIN_FILE = "mini_training.hdf5"
 _TEST_FILE = "mini_validation.hdf5"
 

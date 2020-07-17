@@ -5,7 +5,8 @@ import pandas as pd
 import numpy as np
 
 
-PATH_TO_DATA = "/Users/sam/WORK/TOMOCHALLENGE"
+#PATH_TO_DATA = "/Users/sam/WORK/TOMOCHALLENGE"
+PATH_TO_DATA = "/global/cfs/cdirs/lsst/groups/WL/users/zuntz/tomo_challenge_data/ugrizy"
 bands = ['u','g','r','i','z','y']
 
 def load_raw_hdf5_data(infile):

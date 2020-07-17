@@ -5,7 +5,7 @@ random_width*(1+zmode).
 """
 
 import numpy as np
-import newgenericpipe
+import genericpipev2
 from scipy.stats import norm
 from .tomo import Tomographer
 from .base import BaseEstimation

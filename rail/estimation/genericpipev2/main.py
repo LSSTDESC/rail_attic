@@ -1,6 +1,6 @@
 import sys
 import yaml
-import newgenericpipe as npipe
+import genericpipev2 as npipe
 
 def main(argv):
     if len(argv) != 2:
