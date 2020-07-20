@@ -18,7 +18,7 @@ class BaseEstimation(object):
     def __init__(self, base_dict):
         code_dict = base_dict['run_params']
         config_dict = base_dict['base_config']
-        config_yaml = config_dict['base_yaml']
+        config_yaml = 'genericpipev2/base.yaml'#config_dict['base_yaml']
         with open(config_yaml, 'r') as f:
             config_dict = yaml.safe_load(f)
 
