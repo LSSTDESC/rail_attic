@@ -1,0 +1,24 @@
+base_config:
+  base_yaml: base.yaml
+
+run_params:
+  class_name: FZBoost
+  code_name: fzboostpz
+  trainfile: mini_training.hdf5
+  testfile: mini_validation.hdf5
+  outputfile: testfzboost.hdf5
+  zmin: 0.0
+  zmax: 3.0
+  nzbins: 301
+  trainfrac: 0.75
+  bumpmin: 0.02
+  bumpmax: 0.35
+  nbump: 20
+  sharpmin: 0.7
+  sharpmax: 2.1
+  nsharp: 15
+  max_basis: 35
+  basis_system: cosine
+  regression_params: {'max_depth': 8,'objective':'reg:squarederror'}
+
+
