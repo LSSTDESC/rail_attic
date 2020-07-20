@@ -9,6 +9,10 @@ Where possible, we wil use formats compatible with other LSST-DESC pipelines, in
 Code here will provide a script template for wrapping a machine learning code that we will run automatically on a variety of test sets blinded from those who submit scripts.
 We will have to make a decision about the acceptable output format(s) of redshift posteriors.
 
+## Usage
+
+`python main.py genericpipev2/examples/random.yaml`
+
 ## Future extensions
 
 It may not be possible to isolate some complex `degradation` effects in a shared training set, so future versions will require an additional script for each machine-learning-based code that executes a training step.
