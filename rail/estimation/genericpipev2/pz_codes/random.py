@@ -6,11 +6,14 @@ random_width*(1+zmode).
 
 import numpy as np
 import genericpipev2
+from genericpipev2 import estimator
+from genericpipev2.estimator import Estimator as BaseEstimation
 from scipy.stats import norm
-from .tomo import Tomographer
-from .base import BaseEstimation
+# from .tomo import Tomographer
+# from .base import BaseEstimation
+# from .estimator import Estimator as BaseEstimation
 
-class randomPZ(Tomographer,BaseEstimation):
+class randomPZ(BaseEstimation):
 #class randomPZ(Tomographer): 
    
     def __init__(self,base_dict):

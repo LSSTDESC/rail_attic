@@ -17,11 +17,13 @@ def main(argv):
     name =  run_dict['class_name']
 
     try:
-        run_dict['class_name'] = npipe.Tomographer._find_subclass(name)
+#         run_dict['class_name'] = npipe.Tomographer._find_subclass(name)
+        run_dict['class_name'] = npipe.BaseEstimation._find_subclass(name)
     except KeyError:
         raise ValueError(f"Class name {name} for PZ code is not defined")
 
-    code = npipe.Tomographer._find_subclass(name)
+#     code = npipe.Tomographer._find_subclass(name)
+    code = npipe.BaseEstimation._find_subclass(name)
     print(f"code name: {code}")
 
     pz = code(base_dict)
