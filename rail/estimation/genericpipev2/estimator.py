@@ -42,14 +42,12 @@ class Estimator(object):
         self.testfile = config_dict.get('testfile',_TEST_FILE)
         self.test_fmt = self.testfile.split(".")[-1]
         self.test_data = load_data(self.testfile,self.test_fmt)
-        self.outfilebase = code_dict.get('outputfile', "generic_output.hdf5")
-        self.code_name = code_dict.get('code_name', 'generic_code_name')
-
         fullpath = os.path.join(self.basepath,self.trainfile)
-
-
         
-        
+        self.saveloc = config_dict.get('outputfile', "generic_output.hdf5")
+
+#                 self.outfilebase = code_dict.get('outputfile', "generic_output.hdf5")
+        self.code_name = code_dict.get('code_name', 'generic_code_name')
 
     def train(self):
         """
@@ -70,7 +68,7 @@ class Estimator(object):
 
     def write_out(self):
         print("write out function")
-        fullname = self.code_name+"_"+self.outfilebase
+        fullname = os.path.join('', self.code_name+'.hdf5')#+"_"+self.outfilebase
         outf = h5py.File(fullname,"w")
         outf['photoz_mode'] = self.zmode
         outf['photoz_pdf']= self.pz_pdf

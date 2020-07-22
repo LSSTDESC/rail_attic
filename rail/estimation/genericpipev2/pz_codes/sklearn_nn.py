@@ -9,8 +9,9 @@ from numpy import inf
 import sklearn.neural_network as sknn
 from sklearn.preprocessing import StandardScaler
 from scipy.stats import norm
-from .tomo import Tomographer
-from .base import BaseEstimation
+import genericpipev2
+from genericpipev2 import estimator
+from genericpipev2.estimator import Estimator as BaseEstimation
 
 def make_color_data(data_dict):
     """                                                                                                                                                   
@@ -40,7 +41,7 @@ def regularize_data(data):
 
 
 
-class simpleNN(Tomographer,BaseEstimation):
+class simpleNN(BaseEstimation):
     """
     Subclass to implement a simple point estimate Neural Net photoz
     rather than actually predict PDF, for now just predict point zb
