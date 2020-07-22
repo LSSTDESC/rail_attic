@@ -16,7 +16,7 @@ from scipy.stats import norm
 class randomPZ(BaseEstimation):
 #class randomPZ(Tomographer): 
    
-    def __init__(self,base_dict):
+    def __init__(self, config_dict):
         """
         Parameters:
         -----------
@@ -24,13 +24,14 @@ class randomPZ(BaseEstimation):
           dictionary of all variables read in from the run_params
           values in the yaml file
         """
-        inputs = base_dict['run_params']
+        super().__init__(config_dict)
+        
+        inputs = self.config_dict#['run_params']
 
         self.width = inputs['rand_width']
         self.zmin = inputs['rand_zmin']
         self.zmax = inputs['rand_zmax']
         self.nzbins = inputs['rand_zbins']
-        super().__init__(base_dict)
 
     def train(self):
         """
@@ -43,9 +44,9 @@ class randomPZ(BaseEstimation):
         print("running photoz's...")
         pdf = []
         numzs = len(self.test_data['i_mag'])
-        self.zmode = np.random.uniform(0.0,self.zmax,numzs)
-        widths = self.width*(1.0+self.zmode)
-        self.zgrid = np.linspace(0.,self.zmax,301)
+        self.zmode = np.random.uniform(0.0, self.zmax, numzs)
+        widths = self.width * (1.0 + self.zmode)
+        self.zgrid = np.linspace(0., self.zmax, 301)
         for i in range(numzs):
-            pdf.append(norm.pdf(self.zgrid,self.zmode[i],widths[i]))
+            pdf.append(norm.pdf(self.zgrid, self.zmode[i], widths[i]))
         self.pz_pdf = pdf

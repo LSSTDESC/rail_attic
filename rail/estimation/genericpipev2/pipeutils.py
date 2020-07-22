@@ -6,15 +6,19 @@ import numpy as np
 
 
 #PATH_TO_DATA = "/Users/sam/WORK/TOMOCHALLENGE"
-PATH_TO_DATA = "/global/cfs/cdirs/lsst/groups/WL/users/zuntz/tomo_challenge_data/ugrizy"
+# PATH_TO_DATA = "/global/cfs/cdirs/lsst/groups/WL/users/zuntz/tomo_challenge_data/ugrizy"
 bands = ['u','g','r','i','z','y']
+
+base_yaml = 'genericpipev2/base.yaml'#config_dict['base_yaml']
+with open(base_yaml, 'r') as f:
+    base_dict = yaml.safe_load(f)['base_config']
 
 def load_raw_hdf5_data(infile):
     """
       read in h5py hdf5 data, return a dictionary of all of the keys
     """
     data = {}
-    f = h5py.File(os.path.join(PATH_TO_DATA,infile),"r")
+    f = h5py.File(infile, "r")
     for key in f.keys():
         data[key] = np.array(f[key])
     f.close()
@@ -31,8 +35,8 @@ def load_raw_pq_data(infile):
     return pd.read_parquet(filename,engine='pyarrow')
     
 
-def load_data(filename,fmt='hdf5'):
-    fmtlist = ['hdf5','parquet','h5']
+def load_data(filename, fmt='hdf5'):
+    fmtlist = ['hdf5', 'parquet', 'h5']
     if fmt not in fmtlist:
         raise ValueError(f"File format {fmt} not implemented")
     if fmt == 'hdf5':

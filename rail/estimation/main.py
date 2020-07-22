@@ -8,13 +8,15 @@ def main(argv):
         print("Usage: main <yaml file>")
         exit()
     input_yaml = argv[1]
+    name = input_yaml.split("/")[-1].split(".")[0]
+#     name = input_yaml[:-5]
 
     with open(input_yaml, 'r') as f:
-        base_dict = yaml.safe_load(f)
+        config_dict = yaml.safe_load(f)
 
-    print(base_dict)
-    run_dict = base_dict['run_params']
-    name =  run_dict['class_name']
+    print(config_dict)
+    run_dict = config_dict['run_params']
+#     name =  run_dict['class_name']
 
     try:
 #         run_dict['class_name'] = npipe.Tomographer._find_subclass(name)
@@ -26,7 +28,7 @@ def main(argv):
     code = npipe.BaseEstimation._find_subclass(name)
     print(f"code name: {code}")
 
-    pz = code(base_dict)
+    pz = code(run_dict)
     
     pz.train()
 

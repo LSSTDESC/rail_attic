@@ -1,3 +1,4 @@
 base_config:
-  trainfile: mini_training.hdf5
-  testfile: mini_validation.hdf5
+  trainfile: /global/cfs/cdirs/lsst/groups/WL/users/zuntz/tomo_challenge_data/ugrizy/mini_training.hdf5
+  testfile: /global/cfs/cdirs/lsst/groups/WL/users/zuntz/tomo_challenge_data/ugrizy/mini_validation.hdf5
+  outpath: ./genericpipev2/examples
