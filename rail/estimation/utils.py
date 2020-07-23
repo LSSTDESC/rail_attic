@@ -1,3 +1,4 @@
+#Note: 'utils.py' is terrible!  These i/o functions don't really belong here, so the bad name is a reminder to deal with this.
 import os
 import yaml
 import h5py
@@ -6,6 +7,7 @@ import numpy as np
 
 bands = ['u','g','r','i','z','y']
 
+#Note: 'base.yaml' shouldn't be hardcoded here!  It belongs in 'main.py'.
 base_yaml = 'base.yaml'
 with open(base_yaml, 'r') as f:
     base_dict = yaml.safe_load(f)['base_config']
