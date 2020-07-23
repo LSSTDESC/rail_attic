@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from .pipeutils import *
+from utils import *
 
 # #_PATH_TO_DATA = "/Users/sam/WORK/TOMOCHALLENGE"
 # _PATH_TO_DATA = "/global/cfs/cdirs/lsst/groups/WL/users/zuntz/tomo_challenge_data/ugrizy"
@@ -17,7 +17,7 @@ class Estimator(object):
     Super/subclass framework stolen shamelessly from https://github.com/LSSTDESC/tomo_challenge
     """
     
-#     base_dict = 'base.yaml'
+    base_dict = 'base.yaml'
     
     _subclasses = {}
 
@@ -29,7 +29,7 @@ class Estimator(object):
     def __init_subclass__(cls, *args, **kwargs):
         print(f"Found classifier {cls.__name__}")
         cls._subclasses[cls.__name__] = cls
-        config_yaml = 'genericpipev2/examples/' + cls.__name__ + '.yaml'#config_dict['base_yaml']
+        config_yaml = '.configs/' + cls.__name__ + '.yaml'#config_dict['base_yaml']
 #         with open(config_yaml, 'r') as f:
 #             cls.config_dict = yaml.safe_load(f)
 #         print('by request, config_dict='+str(cls.config_dict))
@@ -37,7 +37,7 @@ class Estimator(object):
     def __init__(self, config_dict):
 #         code_dict = base_dict['run_params']
 #         base_dict = base_dict['base_config']
-        base_yaml = 'genericpipev2/base.yaml'#config_dict['base_yaml']
+#         base_yaml = 'base.yaml'#config_dict['base_yaml']
         with open(base_yaml, 'r') as f:
             base_dict = yaml.safe_load(f)['base_config']
         print('by request, base_dict='+str(base_dict))
@@ -80,7 +80,7 @@ class Estimator(object):
 
     def write_out(self):
         print("write out function")
-        fullname = os.path.join('', self.code_name+'.hdf5')#+"_"+self.outfilebase
+        fullname = self.saveloc#os.path.join(, self.code_name+'.hdf5')#+"_"+self.outfilebase
         outf = h5py.File(fullname,"w")
         outf['photoz_mode'] = self.zmode
         outf['photoz_pdf'] = self.pz_pdf

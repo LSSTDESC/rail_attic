@@ -1,7 +1,0 @@
-# This is an example configuration file
-GenZPipe:
-  chunk_rows: 1000
-  has_redshift: True
-  nz: 301
-  zmax: 3.005
-  

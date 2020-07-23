@@ -1,6 +1,9 @@
 import sys
 import yaml
-import genericpipev2 as npipe
+# import genericpipev2 as npipe
+from estimator import Estimator as BaseEstimation
+from utils import base_yaml
+import algos
 
 def main(argv):
     if len(argv) != 2:
@@ -15,17 +18,17 @@ def main(argv):
         config_dict = yaml.safe_load(f)
 
     print(config_dict)
-    run_dict = config_dict['run_params']
+    run_dict = config_dict#['run_params']
 #     name =  run_dict['class_name']
 
     try:
 #         run_dict['class_name'] = npipe.Tomographer._find_subclass(name)
-        run_dict['class_name'] = npipe.BaseEstimation._find_subclass(name)
+        run_dict['class_name'] = BaseEstimation._find_subclass(name)
     except KeyError:
         raise ValueError(f"Class name {name} for PZ code is not defined")
 
 #     code = npipe.Tomographer._find_subclass(name)
-    code = npipe.BaseEstimation._find_subclass(name)
+    code = BaseEstimation._find_subclass(name)
     print(f"code name: {code}")
 
     pz = code(run_dict)

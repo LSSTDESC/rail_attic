@@ -6,8 +6,9 @@ def all_python_files():
     root_dir = os.path.dirname(__file__)
     names = []
     for filename in os.listdir(root_dir):
-        if filename.endswith('.py') and filename != '__init__.py':
+        if filename.endswith('.py') and filename != '__init__.py' and filename!='flexzboost.py':
             name = filename[:-3]
+            print(name)
             names.append(name)
     return names
 

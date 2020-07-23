@@ -9,7 +9,7 @@ import numpy as np
 # PATH_TO_DATA = "/global/cfs/cdirs/lsst/groups/WL/users/zuntz/tomo_challenge_data/ugrizy"
 bands = ['u','g','r','i','z','y']
 
-base_yaml = 'genericpipev2/base.yaml'#config_dict['base_yaml']
+base_yaml = 'base.yaml'#config_dict['base_yaml']
 with open(base_yaml, 'r') as f:
     base_dict = yaml.safe_load(f)['base_config']
 
