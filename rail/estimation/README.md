@@ -11,7 +11,7 @@ We will have to make a decision about the acceptable output format(s) of redshif
 
 ## Usage
 
-`python main.py genericpipev2/examples/random.yaml`
+`python main.py configs/randomPZ.yaml`
 
 ## Future extensions
 
