@@ -4,12 +4,9 @@ import h5py
 import pandas as pd
 import numpy as np
 
-
-#PATH_TO_DATA = "/Users/sam/WORK/TOMOCHALLENGE"
-# PATH_TO_DATA = "/global/cfs/cdirs/lsst/groups/WL/users/zuntz/tomo_challenge_data/ugrizy"
 bands = ['u','g','r','i','z','y']
 
-base_yaml = 'base.yaml'#config_dict['base_yaml']
+base_yaml = 'base.yaml'
 with open(base_yaml, 'r') as f:
     base_dict = yaml.safe_load(f)['base_config']
 

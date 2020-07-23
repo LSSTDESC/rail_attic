@@ -5,16 +5,10 @@ random_width*(1+zmode).
 """
 
 import numpy as np
-import genericpipev2
-from genericpipev2 import estimator
-from genericpipev2.estimator import Estimator as BaseEstimation
 from scipy.stats import norm
-# from .tomo import Tomographer
-# from .base import BaseEstimation
-# from .estimator import Estimator as BaseEstimation
+from estimator import Estimator as BaseEstimation
 
 class randomPZ(BaseEstimation):
-#class randomPZ(Tomographer): 
    
     def __init__(self, config_dict):
         """
@@ -26,7 +20,7 @@ class randomPZ(BaseEstimation):
         """
         super().__init__(config_dict)
         
-        inputs = self.config_dict#['run_params']
+        inputs = self.config_dict['run_params']
 
         self.width = inputs['rand_width']
         self.zmin = inputs['rand_zmin']

@@ -9,8 +9,7 @@ from numpy import inf
 import sklearn.neural_network as sknn
 from sklearn.preprocessing import StandardScaler
 from scipy.stats import norm
-# import genericpipev2
-# from genericpipev2 import estimator
+
 from estimator import Estimator as BaseEstimation
 
 def make_color_data(data_dict):
