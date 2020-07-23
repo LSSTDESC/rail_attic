@@ -2,16 +2,30 @@
 
 This code enables the automatic execution of arbitrary redshift estimation codes in a common computing environment.
 
-## Base design
+## Motivation
 
 For the sake of this challenge, we will run scripts that accept test set photometry, run a particular pre-trained photo-z estimation code, and produce estimated photo-z posteriors.
 Where possible, we wil use formats compatible with other LSST-DESC pipelines, including [TXPipe](https://github.com/LSSTDESC/TXPipe/).
 Code here will provide a script template for wrapping a machine learning code that we will run automatically on a variety of test sets blinded from those who submit scripts.
 We will have to make a decision about the acceptable output format(s) of redshift posteriors.
 
+## Structure
+
+Examples of wrapped codes can be found as submodules of `rail.estimation.algos`.
+Each must correspond to a config file in with any parameters the method needs, temporarily located in `rail.estimation.configs` but not actually a code directory.
+. . .
+
 ## Usage
 
 `python main.py configs/randomPZ.yaml`
+
+## Immediate next steps
+
+`base.yaml` should not be hardcoded anywhere and should instead appear only in `main.py`.
+`main.py`, `base.yaml`, `results/`, and `configs/*.yaml` all belong outside of `rail`.
+`utils.py` is a placeholder and should be eliminated, and i/o functions should be migrated elsewhere.
+There should be more examples of categories of nested config parameters in the `.yaml` files.
+The `rail.estimation` module needs documentation and tests ASAP.
 
 ## Future extensions
 
