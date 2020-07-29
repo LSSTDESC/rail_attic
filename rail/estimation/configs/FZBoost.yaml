@@ -1,12 +1,6 @@
-base_config:
-  base_yaml: base.yaml
-
 run_params:
   class_name: FZBoost
-  code_name: fzboostpz
-  trainfile: mini_training.hdf5
-  testfile: mini_validation.hdf5
-  outputfile: testfzboost.hdf5
+  code_name: FZBoost
   zmin: 0.0
   zmax: 3.0
   nzbins: 301

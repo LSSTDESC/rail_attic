@@ -12,8 +12,7 @@ from flexcode.regression_models import XGBoost
 import pickle
 from flexcode.loss_functions import cde_loss
 from numpy import inf
-from .tomo import Tomographer
-from .base import BaseEstimation
+from estimator import Estimator as BaseEstimation
 
 def make_color_data(data_dict):
     """
@@ -37,15 +36,8 @@ def make_color_data(data_dict):
         input_data = np.vstack((input_data,color_err))
     return input_data.T
 
-#def regularize_data(data):
-#    scaler = StandardScaler()
-#    scaler.fit(data)
-#    regularized_data  = scaler.transform(data)
-#    return regularized_data
 
-
-
-class FZBoost(Tomographer,BaseEstimation):
+class FZBoost(BaseEstimation):
     """
     Subclass to implement a simple point estimate Neural Net photoz
     rather than actually predict PDF, for now just predict point zb
