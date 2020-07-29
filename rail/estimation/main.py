@@ -4,6 +4,7 @@ from estimator import Estimator as BaseEstimation
 from utils import base_yaml
 import algos
 
+#Note: This is where 'base.yaml' actually belongs, but how to make it so 
 def main(argv):
     if len(argv) != 2:
         print(len(argv))
