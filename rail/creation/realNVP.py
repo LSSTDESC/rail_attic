@@ -1,3 +1,4 @@
+# From Francois Lanusse
 # Modified version of https://github.com/tensorflow/probability/blob/v0.10.0/tensorflow_probability/python/bijectors/real_nvp.py
 # Includes minor modifications for compatibility with JAX, original license below
 #===============================================================================
