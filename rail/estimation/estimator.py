@@ -24,10 +24,7 @@ class Estimator(object):
     def __init_subclass__(cls, *args, **kwargs):
         print(f"Found classifier {cls.__name__}")
         cls._subclasses[cls.__name__] = cls
-        config_yaml = '.configs/' + cls.__name__ + '.yaml'#config_dict['base_yaml']
-#         with open(config_yaml, 'r') as f:
-#             cls.config_dict = yaml.safe_load(f)
-#         print('by request, config_dict='+str(cls.config_dict))
+        config_yaml = '.configs/' + cls.__name__ + '.yaml'
     
     def __init__(self, config_dict):
 
@@ -37,14 +34,16 @@ class Estimator(object):
         
         self.trainfile = base_dict['trainfile']
         self.train_fmt = self.trainfile.split(".")[-1]
-        self.training_data = load_data(self.trainfile, self.train_fmt)
+        self.training_data = load_training_data(self.trainfile, self.train_fmt)
         self.testfile = base_dict['testfile']
+        self._chunk_size = base_dict['chunk_size']
         self.test_fmt = self.testfile.split(".")[-1]
-        self.test_data = load_data(self.testfile, self.test_fmt)
+        # self.test_data = load_data(self.testfile, self.test_fmt)
+        # move reading of test data to main.py so we can loop more easily
         
         self.code_name = type(self).__name__
         self.saveloc = os.path.join(base_dict['outpath'], self.code_name + '.hdf5')
-    
+        
         self.config_dict = config_dict
 
     def train(self):
@@ -64,11 +63,53 @@ class Estimator(object):
         """
         pass
 
-    def write_out(self):
-        print("write out function")
-        fullname = self.saveloc
-        outf = h5py.File(fullname,"w")
-        outf['photoz_mode'] = self.zmode
-        outf['photoz_pdf'] = self.pz_pdf
+    def initialize_writeout(self):
+        outf = h5py.File(self.saveloc,"w")
+        outf.create_dataset('photoz_mode', (self.num_rows,), dtype='f4')
+        outf.create_dataset('photoz_pdf', (self.num_rows,self.nzbins),
+                            dtype='f4')
+        return outf
+        
+    def write_out_chunk(self, outf, start, end):
+        outf['photoz_mode'][start:end] = self.zmode
+        outf['photoz_pdf'][start:end] = self.pz_pdf
+        
+    def finalize_writeout(self,outf):
         outf['zgrid'] = self.zgrid
         outf.close()
+
+    def load_data(self, filename, fmt='hdf5'):
+        fmtlist = ['hdf5', 'parquet', 'h5']
+        if fmt not in fmtlist:
+            raise ValueError(f"File format {fmt} not implemented")
+        if fmt == 'hdf5':
+            data = iter_chunk_hdf5_data(filename)
+        if fmt == 'parquet':
+            raise ValueError("parllel loading of parquet not yet implemented")
+            # data = load_raw_pq_data(filename)
+        if fmt == 'h5':
+            raise ValueError("parallel loading of pandas h5 not implemented")
+            # data = load_raw_h5_data(filename)
+        return data
+
+    def iter_chunk_hdf5_data(self,infile):
+        """                                        
+        itrator for sending chunks of data in hdf5.
+        input: input filename                                           
+        output: interator chunk consisting of dictionary of all the keys
+        Currently only implemented for hdf5
+        """
+        data = {}
+        f = h5py.File(infile,"r")
+        firstkey = list(f.keys())[0]
+        self.num_rows = len(f[firstkey])
+        for i in range(0,self.num_rows,self._chunk_size):
+            start = i
+            end = i+self._chunk_size
+            if end > self.num_rows:
+                end = self.num_rows
+            for key in f.keys():
+                data[key] = np.array(f[key][start:end])
+            yield start, end, data
+
+        

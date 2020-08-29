@@ -31,10 +31,15 @@ def main(argv):
     
     pz.train()
 
-    pz.run_photoz()
+    for i, (start, end, data) in enumerate(pz.iter_chunk_hdf5_data(pz.testfile)):
+        if i==0:
+            outhandle = pz.initialize_writeout()
+        pz.test_data = data
+        pz.run_photoz()
+        pz.write_out_chunk(outhandle, start, end)
 
-    pz.write_out()
-    
+    pz.finalize_writeout(outhandle)
+        
     print("finished")
 
 if __name__=="__main__":
