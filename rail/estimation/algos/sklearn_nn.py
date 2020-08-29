@@ -78,7 +78,6 @@ class simpleNN(BaseEstimation):
         self.model = simplenn
         
     def run_photoz(self):
-        print("running photoz's...")
         color_data = make_color_data(self.test_data)
         input_data = regularize_data(color_data)
         self.zmode = self.model.predict(input_data)

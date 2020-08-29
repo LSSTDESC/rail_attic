@@ -141,4 +141,4 @@ class FZBoost(BaseEstimation):
         self.zgrid = z_grid
         self.pz_pdf = pdfs
 
-        self.zmode = [self.zgrid[np.argmax(pdf)] for pdf in self.pz_pdf]
+        self.zmode = np.array([self.zgrid[np.argmax(pdf)] for pdf in self.pz_pdf]).flatten()
