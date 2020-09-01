@@ -36,6 +36,7 @@ class Estimator(object):
         self.train_fmt = self.trainfile.split(".")[-1]
         self.training_data = load_training_data(self.trainfile, self.train_fmt)
         self.testfile = base_dict['testfile']
+        self.num_rows = get_input_data_size_hdf5(self.testfile)
         self._chunk_size = base_dict['chunk_size']
         self.test_fmt = self.testfile.split(".")[-1]
         # self.test_data = load_data(self.testfile, self.test_fmt)
@@ -78,38 +79,3 @@ class Estimator(object):
         outf['zgrid'] = self.zgrid
         outf.close()
 
-    def load_data(self, filename, fmt='hdf5'):
-        fmtlist = ['hdf5', 'parquet', 'h5']
-        if fmt not in fmtlist:
-            raise ValueError(f"File format {fmt} not implemented")
-        if fmt == 'hdf5':
-            data = iter_chunk_hdf5_data(filename)
-        if fmt == 'parquet':
-            raise ValueError("parllel loading of parquet not yet implemented")
-            # data = load_raw_pq_data(filename)
-        if fmt == 'h5':
-            raise ValueError("parallel loading of pandas h5 not implemented")
-            # data = load_raw_h5_data(filename)
-        return data
-
-    def iter_chunk_hdf5_data(self,infile):
-        """                                        
-        itrator for sending chunks of data in hdf5.
-        input: input filename                                           
-        output: interator chunk consisting of dictionary of all the keys
-        Currently only implemented for hdf5
-        """
-        data = {}
-        f = h5py.File(infile,"r")
-        firstkey = list(f.keys())[0]
-        self.num_rows = len(f[firstkey])
-        for i in range(0,self.num_rows,self._chunk_size):
-            start = i
-            end = i+self._chunk_size
-            if end > self.num_rows:
-                end = self.num_rows
-            for key in f.keys():
-                data[key] = np.array(f[key][start:end])
-            yield start, end, data
-
-        

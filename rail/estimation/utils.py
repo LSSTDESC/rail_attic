@@ -43,5 +43,34 @@ def load_raw_hdf5_data(infile):
     f.close()
     return data
 
+def get_input_data_size_hdf5(infile):
+    f = h5py.File(infile,"r")
+    firstkey = list(f.keys())[0]
+    return len(f[firstkey])
 
+def iter_chunk_hdf5_data(infile,chunk_size=100_000):
+    """                                                              
+    itrator for sending chunks of data in hdf5.
+    input: 
+    ------
+      infile: input file name (str)
+      chunk_size: size of chunk to iterate over (int)
+    output: interator chunk consisting of dictionary of all the keys
+    Currently only implemented for hdf5 
+      start: start index (int)
+      end: ending index (int)
+      data: dictionary of all data from start:end (dict)
+    """
+    data = {}
+    num_rows = get_input_data_size_hdf5(infile)
+    f = h5py.File(infile,"r")
+    for i in range(0,num_rows,chunk_size):
+        start = i
+        end = i+chunk_size
+        if end > num_rows:
+            end = num_rows
+        for key in f.keys():
+            data[key] = np.array(f[key][start:end])
+        yield start, end, data
+    f.close() #does this work?
 

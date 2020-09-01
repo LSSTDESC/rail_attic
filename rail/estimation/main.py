@@ -1,7 +1,7 @@
 import sys
 import yaml
 from estimator import Estimator as BaseEstimation
-from utils import base_yaml
+from utils import *
 import algos
 
 #Note: This is where 'base.yaml' actually belongs, but how to make it so 
@@ -31,7 +31,8 @@ def main(argv):
     
     pz.train()
 
-    for i, (start, end, data) in enumerate(pz.iter_chunk_hdf5_data(pz.testfile)):
+    for i, (start, end, data) in enumerate(iter_chunk_hdf5_data(pz.testfile,
+                                                                pz._chunk_size)):
         if i==0:
             outhandle = pz.initialize_writeout()
         pz.test_data = data
