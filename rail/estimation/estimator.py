@@ -6,14 +6,14 @@ class Estimator(object):
     """
     The base class from which specific methods should inherit there will be a 
     default loading of data (and write out of data?), but each code should have
-    its own 'train' and 'run_photoz' methods that override the default methods in
-    the parent class
+    its own 'train' and 'run_photoz' methods that override the default methods 
+    in the parent class
     
-    Super/subclass framework stolen shamelessly from https://github.com/LSSTDESC/tomo_challenge
+    Super/subclass framework stolen shamelessly from 
+    https://github.com/LSSTDESC/tomo_challenge
     """
     
     base_dict = 'base.yaml'
-    
     _subclasses = {}
 
     @classmethod
@@ -63,19 +63,3 @@ class Estimator(object):
         for demo will just be `z_mode`
         """
         pass
-
-    def initialize_writeout(self):
-        outf = h5py.File(self.saveloc,"w")
-        outf.create_dataset('photoz_mode', (self.num_rows,), dtype='f4')
-        outf.create_dataset('photoz_pdf', (self.num_rows,self.nzbins),
-                            dtype='f4')
-        return outf
-        
-    def write_out_chunk(self, outf, start, end):
-        outf['photoz_mode'][start:end] = self.zmode
-        outf['photoz_pdf'][start:end] = self.pz_pdf
-        
-    def finalize_writeout(self,outf):
-        outf['zgrid'] = self.zgrid
-        outf.close()
-

@@ -31,15 +31,14 @@ def main(argv):
     
     pz.train()
 
-    for i, (start, end, data) in enumerate(iter_chunk_hdf5_data(pz.testfile,
-                                                                pz._chunk_size)):
-        if i==0:
-            outhandle = pz.initialize_writeout()
+    outf = initialize_writeout(pz.saveloc, pz.num_rows, pz.nzbins)
+    
+    for start, end, data in iter_chunk_hdf5_data(pz.testfile,pz._chunk_size):
         pz.test_data = data
         pz.run_photoz()
-        pz.write_out_chunk(outhandle, start, end)
+        write_out_chunk(outf, pz.pz_dict, start, end)
 
-    pz.finalize_writeout(outhandle)
+    finalize_writeout(outf, pz.zgrid)
         
     print("finished")
 

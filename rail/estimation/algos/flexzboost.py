@@ -1,7 +1,9 @@
 """
-Example code that just spits out random numbers between 0 and 3
-for z_mode, and Gaussian centered at z_mode with width
-random_width*(1+zmode).
+Implementation of the FlexZBoost algorithm, uses training data and XGBoost
+to learn the relation, split training data into train and validation set and
+find best "bump_thresh" (eliminate small peaks in p(z) below threshold) and 
+sharpening parameter (determines peakiness of p(z) shape) via cde-loss over
+a grid.
 """
 
 import numpy as np
@@ -100,9 +102,9 @@ class FZBoost(BaseEstimation):
                                                                 speczs,
                                                                 self.trainfrac)
         print("read in training data")
-        model = flexcode.FlexCodeModel(XGBoost,max_basis=self.max_basis,
+        model = flexcode.FlexCodeModel(XGBoost, max_basis=self.max_basis,
                                        basis_system=self.basis_system,
-                                       z_min=self.zmin,z_max=self.zmax,
+                                       z_min=self.zmin, z_max=self.zmax,
                                        regression_params=self.regression_params)
         print("fit the model...")
         model.fit(train_data,train_sz)
@@ -137,8 +139,6 @@ class FZBoost(BaseEstimation):
         print("running photoz's...")
         color_data = make_color_data(self.test_data)
         pdfs, z_grid = self.model.predict(color_data,n_grid=self.nzbins)
-        
         self.zgrid = z_grid
-        self.pz_pdf = pdfs
-
-        self.zmode = np.array([self.zgrid[np.argmax(pdf)] for pdf in self.pz_pdf]).flatten()
+        zmode = np.array([self.zgrid[np.argmax(pdf)] for pdf in pdfs]).flatten()
+        self.pz_dict = {'zmode':zmode, 'pz_pdf':pdfs}

@@ -1,7 +1,7 @@
 """
-Example code that just spits out random numbers between 0 and 3
-for z_mode, and Gaussian centered at z_mode with width
-random_width*(1+zmode).
+Example code that implements a simple Neural Net predictor
+for z_mode, and Gaussian centered at z_mode with base_width
+read in fromfile and pdf width set to base_width*(1+zmode).
 """
 
 import numpy as np
@@ -13,16 +13,16 @@ from scipy.stats import norm
 from estimator import Estimator as BaseEstimation
 
 def make_color_data(data_dict):
-    """                                                                                                                                                   
-    make a dataset consisting of the i-band mag and the five colors                                                                                     
-    Returns:                                                                                                                                              
-    --------                                                                                                                                              
-    input_data: (nd-array)                                                                                                                              
-    array of imag and 5 colors                                                                                                                          
+    """                                                                     
+    make a dataset consisting of the i-band mag and the five colors       
+    Returns:                                       
+    --------                                                    
+    input_data: (nd-array)                                        
+    array of imag and 5 colors                                        
     """
     input_data = data_dict['i_mag']
     bands = ['u','g','r','i','z','y']
-    # make colors and append to input data                                                                                                                
+    # make colors and append to input data
     for i in range(5):
         # replace the infinities with 28.0 just arbitrarily for now
         band1 = data_dict[f'{bands[i]}_mag']
@@ -73,17 +73,18 @@ class simpleNN(BaseEstimation):
         print("stacking some data...")
         color_data = make_color_data(self.training_data)
         input_data = regularize_data(color_data)
-        simplenn = sknn.MLPRegressor(hidden_layer_sizes=(12,12),activation='tanh',solver='lbfgs')
+        simplenn = sknn.MLPRegressor(hidden_layer_sizes=(12,12),
+                                     activation='tanh',solver='lbfgs')
         simplenn.fit(input_data,speczs)
         self.model = simplenn
         
     def run_photoz(self):
         color_data = make_color_data(self.test_data)
         input_data = regularize_data(color_data)
-        self.zmode = self.model.predict(input_data)
-        pdf = []
-        widths = self.width*(1.0+self.zmode)
+        zmode = self.model.predict(input_data)
+        pdfs = []
+        widths = self.width*(1.0+zmode)
         self.zgrid = np.linspace(self.zmin,self.zmax,self.nzbins)
-        for i,zb in enumerate(self.zmode):
-            pdf.append(norm.pdf(self.zgrid,zb,widths[i]))
-        self.pz_pdf = pdf
+        for i,zb in enumerate(zmode):
+            pdfs.append(norm.pdf(self.zgrid,zb,widths[i]))
+        self.pz_dict = {'zmode':zmode, 'pz_pdf':pdfs}

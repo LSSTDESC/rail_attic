@@ -46,7 +46,9 @@ def load_raw_hdf5_data(infile):
 def get_input_data_size_hdf5(infile):
     f = h5py.File(infile,"r")
     firstkey = list(f.keys())[0]
-    return len(f[firstkey])
+    nrows = len(f[firstkey])
+    f.close()
+    return nrows
 
 def iter_chunk_hdf5_data(infile,chunk_size=100_000):
     """                                                              
@@ -72,5 +74,18 @@ def iter_chunk_hdf5_data(infile,chunk_size=100_000):
         for key in f.keys():
             data[key] = np.array(f[key][start:end])
         yield start, end, data
-    f.close() #does this work?
+    f.close() 
 
+def initialize_writeout(outfile, num_rows, num_zbins):
+    outf = h5py.File(outfile,"w")
+    outf.create_dataset('photoz_mode', (num_rows,), dtype='f4')
+    outf.create_dataset('photoz_pdf', (num_rows,num_zbins), dtype='f4')
+    return outf
+
+def write_out_chunk(outf, data_dict, start, end):
+    outf['photoz_mode'][start:end] = data_dict['zmode']
+    outf['photoz_pdf'][start:end] = data_dict['pz_pdf']
+
+def finalize_writeout(outf,zgrid):
+    outf['zgrid'] = zgrid
+    outf.close()
