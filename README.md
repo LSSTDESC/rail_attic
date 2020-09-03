@@ -33,7 +33,7 @@ An outline of the baseline RAIL is illustrated [here](https://docs.google.com/dr
 
 The next stages (tentative project codenames subject to change) can be executed in any order or even simultaneously and may be broken into smaller pieces each corresponding to an LSST-DESC Note.
 * Extend the imperfect prior models and experimental design to accommodate template-fitting codes _(name TBD)_
-* _Off the RAILs_: Investigate the effects of erroneous spectroscopic redshifts in a training set
+* _Off the RAILs_: Investigate the effects of erroneous spectroscopic redshifts (or uncertain narrow-band photo-zs) in a training set
 * _Third RAIL_: Investigate the effects of imperfect deblending on estimated photo-z posteriors
 * _RAIL gauge_: Investigate the impact of measurement errors (PSF, aperture photometry, flux calibration, etc.) on estimated photo-z posteriors
 * _DERAIL_: Propagate the impact of imperfect prior information to 3x2pt cosmological parameter constraints
