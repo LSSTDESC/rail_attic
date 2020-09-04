@@ -66,14 +66,11 @@ class NormalizingFlow(Generator):
             raise ValueError('User must pass either hyperparams or file during instantiation')
 
         # warn that other arguments are ignored if a file is passed
-        if file is not None and (hyperparams is not None or 
-                                 params is not None or 
-                                 transform_data is not None or 
-                                 inv_transform_data is not None):
+        if file and any((hyperparams, params, transform_data, inv_transform_data)):
             print("Warning: ignoring passed arguments in favor of values stored in file")
 
         # if a file is passed, load all the arguments from there
-        if file is not None:
+        if file:
             with open(file, 'rb') as handle:
                 save_dict = dill.load(handle)
             hyperparams = save_dict['hyperparams']
@@ -113,13 +110,13 @@ class NormalizingFlow(Generator):
     def sample(self, n_samples, seed=None):
         seed = np.random.randint(1e18) if seed is None else seed
         samples = self._sampler(n_samples, jax.random.PRNGKey(seed))
-        if self.inv_transform_data is not None:
+        if self.inv_transform_data:
             samples = self.inv_transform_data(samples)
         return samples
     
     def log_prob(self, x):
         trans_x = x
-        if self.transform_data is not None:
+        if self.transform_data:
             trans_x = self.transform_data(trans_x)
         return self._log_prob(trans_x)
     
@@ -153,7 +150,7 @@ class NormalizingFlow(Generator):
             
             # get a batch of the trainingset and transform it
             batch = trainingset.sample(n=batch_size, replace=False)
-            if self.transform_data is not None:
+            if self.transform_data:
                 batch = self.transform_data(batch)
                 
             # do a step of the training
@@ -166,9 +163,9 @@ class NormalizingFlow(Generator):
                 if verbose:
                     print(loss)
                 # if a testset is provided, evaluate training loss
-                if testset is not None and (verbose or return_losses):
+                if testset and (verbose or return_losses):
                     testbatch = testset.sample(n=batch_size, replace=False)
-                    if self.transform_data is not None:
+                    if self.transform_data:
                         testbatch = self.transform_data(testbatch)
                     testlosses.append(-np.mean(optimizer.target(testbatch)))
         
