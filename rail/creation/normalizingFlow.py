@@ -163,7 +163,7 @@ class NormalizingFlow(Generator):
                 if verbose:
                     print(loss)
                 # if a testset is provided, evaluate training loss
-                if testset and (verbose or return_losses):
+                if testset is not None and (verbose or return_losses):
                     testbatch = testset.sample(n=batch_size, replace=False)
                     if self.transform_data:
                         testbatch = self.transform_data(testbatch)
