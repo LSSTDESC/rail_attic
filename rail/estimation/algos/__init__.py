@@ -11,4 +11,7 @@ def all_python_files():
     return names
 
 for name in all_python_files():
-    __import__(name, globals(), locals(), level=1)
+    try:
+        __import__(name, globals(), locals(), level=1)
+    except ModuleNotFoundError:
+        pass
