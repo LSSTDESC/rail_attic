@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from utils import *
+from .utils import *
 
 class Estimator(object):
     """
@@ -29,21 +29,21 @@ class Estimator(object):
 #             cls.config_dict = yaml.safe_load(f)
 #         print('by request, config_dict='+str(cls.config_dict))
     
-    def __init__(self, config_dict):
+    def __init__(self, config_dict={}):
 
         with open(base_yaml, 'r') as f:
             base_dict = yaml.safe_load(f)['base_config']
         print('by request, base_dict='+str(base_dict))
+        for n,v in base_dict.items():
+            setattr(self, n, v)
         
-        self.trainfile = base_dict['trainfile']
         self.train_fmt = self.trainfile.split(".")[-1]
         self.training_data = load_data(self.trainfile, self.train_fmt)
-        self.testfile = base_dict['testfile']
         self.test_fmt = self.testfile.split(".")[-1]
         self.test_data = load_data(self.testfile, self.test_fmt)
         
         self.code_name = type(self).__name__
-        self.saveloc = os.path.join(base_dict['outpath'], self.code_name + '.hdf5')
+        self.saveloc = os.path.join(self.outpath, self.code_name + '.hdf5')
     
         self.config_dict = config_dict
 
