@@ -34,9 +34,8 @@ def main(argv):
     outf = initialize_writeout(pz.saveloc, pz.num_rows, pz.nzbins)
     
     for start, end, data in iter_chunk_hdf5_data(pz.testfile,pz._chunk_size):
-        pz.test_data = data
-        pz.run_photoz()
-        write_out_chunk(outf, pz.pz_dict, start, end)
+        pz_dict = pz.run_photoz(data)
+        write_out_chunk(outf, pz_dict, start, end)
 
     finalize_writeout(outf, pz.zgrid)
         

@@ -34,13 +34,14 @@ class randomPZ(BaseEstimation):
         print("I don't need to train!!!")
         pass
 
-    def run_photoz(self):
+    def run_photoz(self,test_data):
         print("running photoz's...")
         pdf = []
-        numzs = len(self.test_data['i_mag'])
+        numzs = len(test_data['i_mag'])
         zmode = np.random.uniform(0.0, self.zmax, numzs)
         widths = self.width * (1.0 + zmode)
         self.zgrid = np.linspace(0., self.zmax, 301)
         for i in range(numzs):
             pdf.append(norm.pdf(self.zgrid, zmode[i], widths[i]))
-        self.pz_dict ={'zmode':zmode, 'pz_pdf':pdf}
+        pz_dict ={'zmode':zmode, 'pz_pdf':pdf}
+        return pz_dict

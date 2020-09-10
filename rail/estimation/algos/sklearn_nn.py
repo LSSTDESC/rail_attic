@@ -78,8 +78,8 @@ class simpleNN(BaseEstimation):
         simplenn.fit(input_data,speczs)
         self.model = simplenn
         
-    def run_photoz(self):
-        color_data = make_color_data(self.test_data)
+    def run_photoz(self,test_data):
+        color_data = make_color_data(test_data)
         input_data = regularize_data(color_data)
         zmode = self.model.predict(input_data)
         pdfs = []
@@ -87,4 +87,5 @@ class simpleNN(BaseEstimation):
         self.zgrid = np.linspace(self.zmin,self.zmax,self.nzbins)
         for i,zb in enumerate(zmode):
             pdfs.append(norm.pdf(self.zgrid,zb,widths[i]))
-        self.pz_dict = {'zmode':zmode, 'pz_pdf':pdfs}
+        pz_dict = {'zmode':zmode, 'pz_pdf':pdfs}
+        return pz_dict

@@ -135,10 +135,11 @@ class FZBoost(BaseEstimation):
         self.model = model
 
         
-    def run_photoz(self):
+    def run_photoz(self,test_data):
         print("running photoz's...")
-        color_data = make_color_data(self.test_data)
+        color_data = make_color_data(test_data)
         pdfs, z_grid = self.model.predict(color_data,n_grid=self.nzbins)
         self.zgrid = z_grid
         zmode = np.array([self.zgrid[np.argmax(pdf)] for pdf in pdfs]).flatten()
-        self.pz_dict = {'zmode':zmode, 'pz_pdf':pdfs}
+        pz_dict = {'zmode':zmode, 'pz_pdf':pdfs}
+        return pz_dict
