@@ -9,7 +9,7 @@ def main(argv):
     if len(argv) != 2:
         print(len(argv))
         print("Usage: main <yaml file>")
-        exit()
+        sys.exit()
     input_yaml = argv[1]
     name = input_yaml.split("/")[-1].split(".")[0]
 
