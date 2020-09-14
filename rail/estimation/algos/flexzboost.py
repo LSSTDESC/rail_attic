@@ -24,17 +24,25 @@ def make_color_data(data_dict):
     input_data: (nd-array)
       array of imag and 5 colors
     """
-    input_data = data_dict['i_mag']
+    input_data = data_dict['mag_i_lsst']
     bands = ['u','g','r','i','z','y']
     # make colors and append to input data
     for i in range(5):
-        # replace the infinities with 28.0 just arbitrarily for now
-        band1 = data_dict[f'{bands[i]}_mag']
-        band2 = data_dict[f'{bands[i+1]}_mag']
-        band1[band1 == inf] = 28.0
-        band2[band2 == inf] = 28.0
+        band1 = data_dict[f'mag_{bands[i]}_lsst']
+        band1err = data_dict[f'mag_err_{bands[i]}_lsst']
+        band2 = data_dict[f'mag_{bands[i+1]}_lsst']
+        band2err = data_dict[f'mag_err_{bands[i+1]}_lsst']
+        for j,xx in enumerate(band1):
+            if np.isclose(xx,99.,atol=.01):
+                band1[j] = band1err[j]
+                band1err[j] = 1.0
+        for j,xx in enumerate(band2):
+            if np.isclose(xx,99.,atol=0.01):
+                band2[j] = band2err[j]
+                band2err[j] = 1.0
+
         input_data = np.vstack((input_data, band1-band2))
-        color_err = np.sqrt((data_dict[f'{bands[i]}_mag_err'])**2+ (data_dict[f'{bands[i+1]}_mag_err'])**2)
+        color_err = np.sqrt((band1err)**2+ (band2err)**2)
         input_data = np.vstack((input_data,color_err))
     return input_data.T
 
@@ -95,7 +103,7 @@ class FZBoost(BaseEstimation):
         """
           train flexzboost model model
         """
-        speczs = self.training_data['redshift_true']
+        speczs = self.training_data['redshift']
         print("stacking some data...")
         color_data = make_color_data(self.training_data)
         train_data, val_data, train_sz, val_sz = self.partition_data(color_data,

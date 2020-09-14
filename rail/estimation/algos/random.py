@@ -37,7 +37,7 @@ class randomPZ(BaseEstimation):
     def run_photoz(self,test_data):
         print("running photoz's...")
         pdf = []
-        numzs = len(test_data['i_mag'])
+        numzs = len(test_data['mag_i_lsst'])
         zmode = np.random.uniform(0.0, self.zmax, numzs)
         widths = self.width * (1.0 + zmode)
         self.zgrid = np.linspace(0., self.zmax, 301)

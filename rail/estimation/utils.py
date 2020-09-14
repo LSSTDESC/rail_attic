@@ -10,12 +10,12 @@ base_yaml = 'base.yaml'
 with open(base_yaml, 'r') as f:
     base_dict = yaml.safe_load(f)['base_config']
 
-def load_training_data(filename, fmt='hdf5'):
+def load_training_data(filename, fmt='hdf5',groupname='None'):
     fmtlist = ['hdf5', 'parquet', 'h5']
     if fmt not in fmtlist:
         raise ValueError(f"File format {fmt} not implemented")
     if fmt == 'hdf5':
-        data = load_raw_hdf5_data(filename)
+        data = load_raw_hdf5_data(filename,groupname)
     if fmt == 'parquet':
         data = load_raw_pq_data(filename)                                      
     if fmt == 'h5':
@@ -32,25 +32,33 @@ def load_raw_h5_data(infile):
     """just return the datafram from pandas h5"""
     return pd.read_hdf(filename)
 
-def load_raw_hdf5_data(infile):
+def load_raw_hdf5_data(infile,groupname='None'):
     """                                                                         
     read in h5py hdf5 data, return a dictionary of all of the keys              
     """
     data = {}
-    f = h5py.File(infile, "r")
+    infp = h5py.File(infile, "r")
+    if groupname != 'None':
+        f = infp[groupname]
+    else:
+        f = infp
     for key in f.keys():
         data[key] = np.array(f[key])
-    f.close()
+    infp.close()
     return data
 
-def get_input_data_size_hdf5(infile):
-    f = h5py.File(infile,"r")
+def get_input_data_size_hdf5(infile,groupname='None'):
+    infp = h5py.File(infile,"r")
+    if groupname != 'None':
+        f = infp[groupname]
+    else:
+        f = infp
     firstkey = list(f.keys())[0]
     nrows = len(f[firstkey])
-    f.close()
+    infp.close()
     return nrows
 
-def iter_chunk_hdf5_data(infile,chunk_size=100_000):
+def iter_chunk_hdf5_data(infile,chunk_size=100_000,groupname='None'):
     """                                                              
     itrator for sending chunks of data in hdf5.
     input: 
@@ -64,8 +72,12 @@ def iter_chunk_hdf5_data(infile,chunk_size=100_000):
       data: dictionary of all data from start:end (dict)
     """
     data = {}
-    num_rows = get_input_data_size_hdf5(infile)
-    f = h5py.File(infile,"r")
+    num_rows = get_input_data_size_hdf5(infile,groupname)
+    infp = h5py.File(infile,"r")
+    if groupname != 'None':
+        f = infp[groupname]
+    else:
+        f = infp
     for i in range(0,num_rows,chunk_size):
         start = i
         end = i+chunk_size
@@ -74,7 +86,7 @@ def iter_chunk_hdf5_data(infile,chunk_size=100_000):
         for key in f.keys():
             data[key] = np.array(f[key][start:end])
         yield start, end, data
-    f.close() 
+    infp.close() 
 
 def initialize_writeout(outfile, num_rows, num_zbins):
     outf = h5py.File(outfile,"w")

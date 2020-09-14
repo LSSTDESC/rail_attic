@@ -1,6 +1,7 @@
 base_config:
-  trainfile: /global/cfs/cdirs/lsst/groups/WL/users/zuntz/tomo_challenge_data/ugrizy/mini_training.hdf5
-  testfile: /global/cfs/cdirs/lsst/groups/WL/users/zuntz/tomo_challenge_data/ugrizy/mini_validation.hdf5
+  trainfile: /global/homes/s/schmidt9/TMP/RAILTEST/RAIL/rail/estimation/tests/data/test_dc2_training_9816.hdf5
+  testfile: /global/homes/s/schmidt9/TMP/RAILTEST/RAIL/rail/estimation/tests/data/test_dc2_validation_9816.hdf5
+  hdf5_groupname: photometry
   chunk_size: 1000
   configpath: ./configs
   outpath: ./results

@@ -34,9 +34,11 @@ class Estimator(object):
         
         self.trainfile = base_dict['trainfile']
         self.train_fmt = self.trainfile.split(".")[-1]
-        self.training_data = load_training_data(self.trainfile, self.train_fmt)
+        self.groupname = base_dict['hdf5_groupname']
+        self.training_data = load_training_data(self.trainfile, self.train_fmt,
+                                                self.groupname)
         self.testfile = base_dict['testfile']
-        self.num_rows = get_input_data_size_hdf5(self.testfile)
+        self.num_rows = get_input_data_size_hdf5(self.testfile,self.groupname)
         self._chunk_size = base_dict['chunk_size']
         self.test_fmt = self.testfile.split(".")[-1]
         # self.test_data = load_data(self.testfile, self.test_fmt)
