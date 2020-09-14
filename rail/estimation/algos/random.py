@@ -6,11 +6,11 @@ random_width*(1+zmode).
 
 import numpy as np
 from scipy.stats import norm
-from estimator import Estimator as BaseEstimation
+from ..estimator import Estimator as BaseEstimation
 
 class randomPZ(BaseEstimation):
    
-    def __init__(self, config_dict):
+    def __init__(self, base_config, config_dict):
         """
         Parameters:
         -----------
@@ -18,7 +18,7 @@ class randomPZ(BaseEstimation):
           dictionary of all variables read in from the run_params
           values in the yaml file
         """
-        super().__init__(config_dict)
+        super().__init__(base_config=base_config,config_dict=config_dict)
         
         inputs = self.config_dict['run_params']
 
@@ -40,7 +40,7 @@ class randomPZ(BaseEstimation):
         numzs = len(self.test_data['i_mag'])
         self.zmode = np.random.uniform(0.0, self.zmax, numzs)
         widths = self.width * (1.0 + self.zmode)
-        self.zgrid = np.linspace(0., self.zmax, 301)
+        self.zgrid = np.linspace(0., self.zmax, self.nzbins)
         for i in range(numzs):
             pdf.append(norm.pdf(self.zgrid, self.zmode[i], widths[i]))
         self.pz_pdf = pdf
