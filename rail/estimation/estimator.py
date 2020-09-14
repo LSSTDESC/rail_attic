@@ -1,6 +1,7 @@
 import numpy as np
 import os
-from .utils import *
+from rail.estimation.utils import *
+
 
 class Estimator(object):
     """
@@ -29,13 +30,17 @@ class Estimator(object):
 #             cls.config_dict = yaml.safe_load(f)
 #         print('by request, config_dict='+str(cls.config_dict))
     
-    def __init__(self, config_dict={}):
+    def __init__(self, base_config='base_yaml', config_dict={}):
+        if not os.path.exists(base_config):
+            raise FileNotFoundError("File base_config="+base_config+" not found")
 
-        with open(base_yaml, 'r') as f:
+        with open(base_config, 'r') as f:
             base_dict = yaml.safe_load(f)['base_config']
         print('by request, base_dict='+str(base_dict))
         for n,v in base_dict.items():
             setattr(self, n, v)
+        for attr in ['zmode','zgrid','pz_pdf']:
+            setattr(self,attr,None)
         
         self.train_fmt = self.trainfile.split(".")[-1]
         self.training_data = load_data(self.trainfile, self.train_fmt)
