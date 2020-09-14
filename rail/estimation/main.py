@@ -1,16 +1,22 @@
 import sys
 import yaml
-from estimator import Estimator as BaseEstimation
+from rail.estimation.estimator import Estimator as BaseEstimation
 from utils import base_yaml
-import algos
+from algos import *
 
 #Note: This is where 'base.yaml' actually belongs, but how to make it so 
 def main(argv):
-    if len(argv) != 2:
+    if len(argv) == 2:
+        #this is in case hiding the base yaml is wanted
+        base_yaml =  os.path.join(os.path.dirname(inspect.getfile(rail)),'estimation/base.yaml')
+        input_yaml = argv[1]
+    elif len(argv) == 3:
+        base_config = argv[1]
+        input_yaml = argv[2]
+    else:
         print(len(argv))
         print("Usage: main <yaml file>")
         sys.exit()
-    input_yaml = argv[1]
     name = input_yaml.split("/")[-1].split(".")[0]
 
     with open(input_yaml, 'r') as f:
@@ -27,7 +33,7 @@ def main(argv):
     code = BaseEstimation._find_subclass(name)
     print(f"code name: {code}")
 
-    pz = code(run_dict)
+    pz = code(base_config,run_dict)
     
     pz.train()
 
