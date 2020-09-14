@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from utils import *
+from rail.estimation.utils import *
 
 class Estimator(object):
     """

@@ -14,7 +14,7 @@ from flexcode.regression_models import XGBoost
 import pickle
 from flexcode.loss_functions import cde_loss
 from numpy import inf
-from estimator import Estimator as BaseEstimation
+from rail.estimation.estimator import Estimator as BaseEstimation
 
 def make_color_data(data_dict):
     """

@@ -6,7 +6,7 @@ random_width*(1+zmode).
 
 import numpy as np
 from scipy.stats import norm
-from estimator import Estimator as BaseEstimation
+from rail.estimation.estimator import Estimator as BaseEstimation
 
 class randomPZ(BaseEstimation):
    

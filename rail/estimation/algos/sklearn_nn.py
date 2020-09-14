@@ -10,7 +10,7 @@ import sklearn.neural_network as sknn
 from sklearn.preprocessing import StandardScaler
 from scipy.stats import norm
 
-from estimator import Estimator as BaseEstimation
+from rail.estimation.estimator import Estimator as BaseEstimation
 
 def make_color_data(data_dict):
     """                                                                     
