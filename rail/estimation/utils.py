@@ -101,3 +101,8 @@ def write_out_chunk(outf, data_dict, start, end):
 def finalize_writeout(outf,zgrid):
     outf['zgrid'] = zgrid
     outf.close()
+
+def write_output_file(outfile, num_rows, num_zbins, data_dict, zgrid):
+    outf = initialize_writeout(outfile,num_rows, num_zbins)
+    write_out_chunk(outf,data_dict, 0, num_zbins)
+    finalize_writeout(outf,zgrid)
