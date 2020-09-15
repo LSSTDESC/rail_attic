@@ -22,7 +22,6 @@ Each must correspond to a config file in with any parameters the method needs, t
 ## Immediate next steps
 
 `base.yaml` should not be hardcoded anywhere and should instead appear only in `main.py`.
-`main.py`, `base.yaml`, `results/`, and `configs/*.yaml` all belong outside of `rail`.
 `utils.py` is a placeholder and should be eliminated, and i/o functions should be migrated elsewhere.
 There should be more examples of categories of nested config parameters in the `.yaml` files.
 The `rail.estimation` module needs documentation and tests ASAP.
