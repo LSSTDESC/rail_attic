@@ -54,16 +54,20 @@ class FZBoost(BaseEstimation):
     and then put an error of width*(1+zb).  We'll do a "real" NN
     photo-z later.
     """
-    def __init__(self,base_dict):
+    def __init__(self,base_dict,config_dict):
         """
         Parameters:
         -----------
-        run_dict: dict
+        base_dict: dict
+          dictionary of variables from base.yaml-type file
+        config_dict: dict
           dictionary of all variables read in from the run_params
           values in the yaml file
         """
 
-        inputs = base_dict['run_params']
+        super().__init__(base_dict,config_dict)
+        
+        inputs = config_dict['run_params']
         
         self.zmin = inputs['zmin']
         self.zmax = inputs['zmax']
@@ -78,7 +82,6 @@ class FZBoost(BaseEstimation):
         self.max_basis = inputs['max_basis']
         self.basis_system = inputs['basis_system']
         self.regression_params = inputs['regression_params']
-        super().__init__(base_dict)
 
     @staticmethod
     def partition_data(fz_data,sz_data,trainfrac):
