@@ -25,7 +25,6 @@ class Estimator(object):
     def __init_subclass__(cls, *args, **kwargs):
         print(f"Found classifier {cls.__name__}")
         cls._subclasses[cls.__name__] = cls
-        config_yaml = '.configs/' + cls.__name__ + '.yaml'
     
     def __init__(self, base_config='base_yaml', config_dict={}):
         if not os.path.exists(base_config):
