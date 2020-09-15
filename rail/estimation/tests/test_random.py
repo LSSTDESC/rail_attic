@@ -2,22 +2,25 @@ import yaml
 import rail
 from rail.estimation.estimator import Estimator
 from rail.estimation.utils import *
+# this is temporary until unit test uses a definite test data set and creates the
+# yaml file on the fly
+import inspect
+import rail
+test_base_yaml =  os.path.join(os.path.dirname(inspect.getfile(rail)),
+                               'estimation/base.yaml') 
 
 def test_random():
     """
     A couple of basic tests of the random class
     """
-    base_yaml = "base.yaml"
-    with open(base_yaml, 'r') as f:
-        base_dict = yaml.safe_load(f)['base_config']
-    input_yaml = "../configs/randomPZ.yaml"
-    name = input_yaml.split("/")[-1].split(".")[0]
 
-    with open(input_yaml, 'r') as f:
-        config_dict=yaml.safe_load(f)
+    inputs = {'run_params':{'rand_width':0.025,'rand_zmin':0.0, 'rand_zmax':3.0,
+                            'nzbins':301}}
+    name = 'randomPZ'
+
 
     code = Estimator._find_subclass(name)
-    pz = code(config_dict)
+    pz = code(test_base_yaml, inputs['run_params'])
 
     for start, end, data in iter_chunk_hdf5_data(pz.testfile,pz._chunk_size,
                                                  base_dict['hdf5_groupname']):

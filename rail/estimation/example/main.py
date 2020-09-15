@@ -7,11 +7,17 @@ from rail.estimation.estimator import Estimator
 
 #Note: This is where 'base.yaml' actually belongs, but how to make it so 
 def main(argv):
-    if len(argv) != 2:
+    if len(argv) == 2:
+        #this is in case hiding the base yaml is wanted
+        base_yaml =  os.path.join(os.path.dirname(inspect.getfile(rail)),'estimation/base.yaml')
+        input_yaml = argv[1]
+    elif len(argv) == 3:
+        base_config = argv[1]
+        input_yaml = argv[2]
+    else:
         print(len(argv))
         print("Usage: main <yaml file>")
-        exit()
-    input_yaml = argv[1]
+        sys.exit()
     name = input_yaml.split("/")[-1].split(".")[0]
 
     with open(input_yaml, 'r') as f:
@@ -28,7 +34,7 @@ def main(argv):
     code = Estimator._find_subclass(name)
     print(f"code name: {code}")
 
-    pz = code(run_dict)
+    pz = code(base_config,run_dict)
     
     pz.train()
 
