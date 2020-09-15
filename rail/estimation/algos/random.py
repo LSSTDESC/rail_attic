@@ -25,7 +25,7 @@ class randomPZ(BaseEstimation):
         self.width = inputs['rand_width']
         self.zmin = inputs['rand_zmin']
         self.zmax = inputs['rand_zmax']
-        self.nzbins = inputs['rand_zbins']
+        self.nzbins = inputs['nzbins']
 
     def train(self):
         """
