@@ -5,11 +5,6 @@ import h5py
 import pandas as pd
 import numpy as np
 
-#Note: 'base.yaml' shouldn't be hardcoded here!  It belongs in 'main.py'.
-base_yaml = 'base.yaml'
-with open(base_yaml, 'r') as f:
-    base_dict = yaml.safe_load(f)['base_config']
-
 def load_training_data(filename, fmt='hdf5',groupname='None'):
     fmtlist = ['hdf5', 'parquet', 'h5']
     if fmt not in fmtlist:
@@ -89,6 +84,9 @@ def iter_chunk_hdf5_data(infile,chunk_size=100_000,groupname='None'):
     infp.close() 
 
 def initialize_writeout(outfile, num_rows, num_zbins):
+    outdir=os.path.dirname(outfile)
+    if not os.path.exists(outdir):
+        os.mkdir(outdir)
     outf = h5py.File(outfile,"w")
     outf.create_dataset('photoz_mode', (num_rows,), dtype='f4')
     outf.create_dataset('photoz_pdf', (num_rows,num_zbins), dtype='f4')

@@ -1,7 +1,7 @@
-import sys
+import os, sys, inspect
 import yaml
 import rail
-import rail.estimation as est
+from rail.estimation.utils import *
 from rail.estimation.estimator import Estimator
 
 
@@ -9,7 +9,7 @@ from rail.estimation.estimator import Estimator
 def main(argv):
     if len(argv) == 2:
         #this is in case hiding the base yaml is wanted
-        base_yaml =  os.path.join(os.path.dirname(inspect.getfile(rail)),'estimation/base.yaml')
+        base_config =  os.path.join(os.path.dirname(inspect.getfile(rail)),'estimation/example/base.yaml')
         input_yaml = argv[1]
     elif len(argv) == 3:
         base_config = argv[1]
@@ -22,6 +22,8 @@ def main(argv):
 
     with open(input_yaml, 'r') as f:
         config_dict = yaml.safe_load(f)
+    # with open(input_yaml, 'r') as f:
+    #     base_config = yaml.safe_load(f)
 
     print(config_dict)
     run_dict = config_dict
@@ -38,14 +40,14 @@ def main(argv):
     
     pz.train()
 
-    outf = est.initialize_writeout(pz.saveloc, pz.num_rows, pz.nzbins)
+    outf = initialize_writeout(pz.saveloc, pz.num_rows, pz.nzbins)
     
-    for start, end, data in est.iter_chunk_hdf5_data(pz.testfile,pz._chunk_size,
+    for start, end, data in iter_chunk_hdf5_data(pz.testfile,pz._chunk_size,
                                                  'photometry'):
         pz_dict = pz.run_photoz(data)
-        est.write_out_chunk(outf, pz_dict, start, end)
+        write_out_chunk(outf, pz_dict, start, end)
 
-    est.finalize_writeout(outf, pz.zgrid)
+    finalize_writeout(outf, pz.zgrid)
         
     print("finished")
 
