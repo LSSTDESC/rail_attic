@@ -21,11 +21,11 @@ def load_raw_pq_data(infile):
     """                       
     just return the dataframe from pandas for now
     """
-    return pd.read_parquet(filename,engine='pyarrow')
+    return pd.read_parquet(infile,engine='pyarrow')
 
 def load_raw_h5_data(infile):
     """just return the datafram from pandas h5"""
-    return pd.read_hdf(filename)
+    return pd.read_hdf(infile)
 
 def load_raw_hdf5_data(infile,groupname='None'):
     """                                                                         
