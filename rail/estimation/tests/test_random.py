@@ -6,6 +6,7 @@ from rail.estimation.utils import *
 # yaml file on the fly
 import inspect
 import rail
+from rail.estimation.algos import randomPZ
 
 os.chdir(os.path.join(os.path.dirname(inspect.getfile(rail)),'estimation/tests/data') )
 test_base_yaml =  './base.yaml'
@@ -20,8 +21,9 @@ def test_random():
     name = 'randomPZ'
 
 
-    code = Estimator._find_subclass(name)
-    pz = code(test_base_yaml, inputs)
+    #code = Estimator._find_subclass(name)
+    pz = randomPZ.randomPZ(test_base_yaml, inputs)
+    #pz = code(test_base_yaml, inputs)
     for start, end, data in iter_chunk_hdf5_data(pz.testfile,pz._chunk_size, pz.hdf5_groupname):
         pz_dict = pz.run_photoz(data)
     assert end == pz.num_rows
