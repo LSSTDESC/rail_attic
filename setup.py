@@ -1,8 +1,9 @@
 #from distutils.core import setup
-from setuptools import setup, find_namespace_packages
+from setuptools import setup, find_packages, find_namespace_packages
 
-packages = find_namespace_packages(include=["rail.*"])
-#packages.append('rail.estimation.tests')
+packages = find_namespace_packages()
+#packages = find_packages()
+#packages.append('rail.estimation.tests.data')
 setup(
     name='rail',
     version='0.1.dev0',
