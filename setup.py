@@ -2,6 +2,7 @@
 from setuptools import setup, find_packages
 
 packages = find_packages()
+packages.append('rail.estimation.tests.data')
 setup(
     name='rail',
     version='0.1.dev0',
@@ -9,7 +10,7 @@ setup(
     author_email='aimalz@nyu.edu',
     packages=packages,
     package_data={"": ["*.hdf5","*.yaml"],"tests":["*.hdf5","*.yaml"],},
-    include_package_data=True,
+    #include_package_data=True,
     license='BSD 3-Clause License',
     description="Redshift Assessment Infrastructure Layers",
     url="https://github.com/LSSTDESC/RAIL",
