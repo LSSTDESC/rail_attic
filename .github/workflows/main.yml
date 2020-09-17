@@ -38,7 +38,7 @@ jobs:
     - name: Lint with pylint
       run: |
         pip install pylint
-	pylint
+	pylint --extension-pkg-whitelist=numpy estimation
     - name: Test with pytest
       run: |
         pytest
