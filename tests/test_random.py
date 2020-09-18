@@ -2,12 +2,10 @@ import yaml
 import rail
 from rail.estimation.estimator import Estimator
 from rail.estimation.utils import *
-# this is temporary until unit test uses a definite test data set and creates the
-# yaml file on the fly
-# import inspect
+# this is temporary until unit test uses a definite test data set and creates
+# the yaml file on the fly
 from rail.estimation.algos import randomPZ
 
-# os.chdir(os.path.join(os.path.dirname(inspect.getfile(rail)),'estimation/tests/data') )
 test_base_yaml =  './tests/base.yaml'
 
 def test_random():
@@ -23,7 +21,8 @@ def test_random():
     #code = Estimator._find_subclass(name)
     pz = randomPZ.randomPZ(test_base_yaml, inputs)
     #pz = code(test_base_yaml, inputs)
-    for start, end, data in iter_chunk_hdf5_data(pz.testfile,pz._chunk_size, pz.hdf5_groupname):
+    for start, end, data in iter_chunk_hdf5_data(pz.testfile,pz._chunk_size,
+                                                 pz.hdf5_groupname):
         pz_dict = pz.estimate(data)
     assert end == pz.num_rows
     xinputs = inputs['run_params']
