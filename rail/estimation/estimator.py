@@ -37,7 +37,8 @@ class Estimator(object):
             setattr(self, n, v)
         for attr in ['zmode','zgrid','pz_pdf']:
             setattr(self,attr,None)
-        
+        self.trainfile = base_dict['trainfile']
+        self.outpath = base_dict['outpath']
         self.train_fmt = self.trainfile.split(".")[-1]
 
         self.groupname = base_dict['hdf5_groupname']
