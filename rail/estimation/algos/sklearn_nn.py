@@ -55,7 +55,7 @@ class simpleNN(BaseEstimation):
     and then put an error of width*(1+zb).  We'll do a "real" NN
     photo-z later.
     """
-    def __init__(self,base_config, config_dict):
+    def __init__(self, base_config, config_dict):
         """
         Parameters:
         -----------
@@ -86,7 +86,7 @@ class simpleNN(BaseEstimation):
         simplenn.fit(input_data,speczs)
         self.model = simplenn
         
-    def run_photoz(self,test_data):
+    def estimate(self, test_data):
         color_data = make_color_data(test_data)
         input_data = regularize_data(color_data)
         zmode = self.model.predict(input_data)

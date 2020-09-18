@@ -34,7 +34,7 @@ class randomPZ(BaseEstimation):
         print("I don't need to train!!!")
         pass
 
-    def run_photoz(self,test_data):
+    def estimate(self, test_data):
         print("running photoz's...")
         pdf = []
 

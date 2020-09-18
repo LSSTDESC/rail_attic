@@ -54,7 +54,7 @@ class FZBoost(BaseEstimation):
     and then put an error of width*(1+zb).  We'll do a "real" NN
     photo-z later.
     """
-    def __init__(self,base_dict,config_dict):
+    def __init__(self, base_dict, config_dict):
         """
         Parameters:
         -----------
@@ -84,7 +84,7 @@ class FZBoost(BaseEstimation):
         self.regression_params = inputs['regression_params']
 
     @staticmethod
-    def partition_data(fz_data,sz_data,trainfrac):
+    def partition_data(fz_data, sz_data, trainfrac):
         """
         make a random partition of the training data into training and 
         validation, validation data will be used to determine bump
@@ -146,7 +146,7 @@ class FZBoost(BaseEstimation):
         self.model = model
 
         
-    def run_photoz(self,test_data):
+    def estimate(self, test_data):
         print("running photoz's...")
         color_data = make_color_data(test_data)
         pdfs, z_grid = self.model.predict(color_data,n_grid=self.nzbins)

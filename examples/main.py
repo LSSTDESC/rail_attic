@@ -9,7 +9,7 @@ from rail.estimation.estimator import Estimator
 def main(argv):
     if len(argv) == 2:
         #this is in case hiding the base yaml is wanted
-        base_config =  os.path.join(os.path.dirname(inspect.getfile(rail)),'../examples/base.yaml')
+        base_config =  os.path.join(os.path.dirname(inspect.getfile(rail)), '../examples/base.yaml')
         input_yaml = argv[1]
     elif len(argv) == 3:
         base_config = argv[1]
@@ -36,16 +36,17 @@ def main(argv):
     code = Estimator._find_subclass(name)
     print(f"code name: {code}")
 
-    pz = code(base_config,run_dict)
+    pz = code(base_config, run_dict)
     
     pz.train()
 
     outf = initialize_writeout(pz.saveloc, pz.num_rows, pz.nzbins)
     
-    for start, end, data in iter_chunk_hdf5_data(pz.testfile,pz._chunk_size,
+    for start, end, data in iter_chunk_hdf5_data(pz.testfile, pz._chunk_size,
                                                  'photometry'):
-        pz_dict = pz.run_photoz(data)
+        pz_dict = pz.estimate(data)
         write_out_chunk(outf, pz_dict, start, end)
+        print("finished " + name)
 
     finalize_writeout(outf, pz.zgrid)
         

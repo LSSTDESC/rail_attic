@@ -5,7 +5,7 @@ from rail.estimation.utils import *
 
 class Estimator(object):
     """
-    The base class from which specific methods should inherit there will be a 
+    The base class for photo-z posterior estimates. inherit there will be a 
     default loading of data (and write out of data?), but each code should have
     its own 'train' and 'run_photoz' methods that override the default methods 
     in the parent class
@@ -64,7 +64,7 @@ class Estimator(object):
         """
         pass
 
-    def run_photoz(self,input_data):
+    def estimate(self, input_data):
         """
         The main run method for the photo-z, should be implemented in the specific
         subclass
