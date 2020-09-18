@@ -25,7 +25,7 @@ def test_random():
     pz = randomPZ.randomPZ(test_base_yaml, inputs)
     #pz = code(test_base_yaml, inputs)
     for start, end, data in iter_chunk_hdf5_data(pz.testfile,pz._chunk_size, pz.hdf5_groupname):
-        pz_dict = pz.run_photoz(data)
+        pz_dict = pz.estimate(data)
     assert end == pz.num_rows
     xinputs = inputs['run_params']
     assert len(pz.zgrid) == np.int32(xinputs['nzbins'])
