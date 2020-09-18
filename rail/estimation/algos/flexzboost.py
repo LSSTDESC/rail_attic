@@ -25,7 +25,7 @@ def make_color_data(data_dict):
       array of imag and 5 colors
     """
     input_data = data_dict['mag_i_lsst']
-    bands = ['u','g','r','i','z','y']
+    bands = ['u', 'g', 'r', 'i', 'z', 'y']
     # make colors and append to input data
     for i in range(5):
         band1 = data_dict[f'mag_{bands[i]}_lsst']
@@ -33,17 +33,17 @@ def make_color_data(data_dict):
         band2 = data_dict[f'mag_{bands[i+1]}_lsst']
         band2err = data_dict[f'mag_err_{bands[i+1]}_lsst']
         for j,xx in enumerate(band1):
-            if np.isclose(xx,99.,atol=.01):
+            if np.isclose(xx, 99., atol=.01):
                 band1[j] = band1err[j]
                 band1err[j] = 1.0
         for j,xx in enumerate(band2):
-            if np.isclose(xx,99.,atol=0.01):
+            if np.isclose(xx, 99., atol=0.01):
                 band2[j] = band2err[j]
                 band2err[j] = 1.0
 
         input_data = np.vstack((input_data, band1-band2))
-        color_err = np.sqrt((band1err)**2+ (band2err)**2)
-        input_data = np.vstack((input_data,color_err))
+        color_err = np.sqrt((band1err)**2 + (band2err)**2)
+        input_data = np.vstack((input_data, color_err))
     return input_data.T
 
 
@@ -91,18 +91,18 @@ class FZBoost(BaseEstimation):
         thresh and sharpen parameters.
         """
         nobs = fz_data.shape[0]
-        ntrain = round(nobs*trainfrac)
+        ntrain = round(nobs * trainfrac)
         nvalidate = nobs - ntrain
         np.random.seed(1138) #set a specific seed for reproducibility
         perm = np.random.permutation(nobs)
-        x_train = fz_data[perm[:ntrain],:]
+        x_train = fz_data[perm[:ntrain], :]
         z_train = sz_data[perm[:ntrain]]
         x_val = fz_data[perm[ntrain:]]
         z_val = sz_data[perm[ntrain:]]
-        return x_train,x_val,z_train,z_val
+        return x_train, x_val, z_train, z_val
 
 
-    def train(self):
+    def inform(self):
         """
           train flexzboost model model
         """
@@ -118,27 +118,27 @@ class FZBoost(BaseEstimation):
                                        z_min=self.zmin, z_max=self.zmax,
                                        regression_params=self.regression_params)
         print("fit the model...")
-        model.fit(train_data,train_sz)
-        bump_grid = np.linspace(self.bumpmin,self.bumpmax,self.nbump)
+        model.fit(train_data, train_sz)
+        bump_grid = np.linspace(self.bumpmin, self.bumpmax, self.nbump)
         print("finding best bump thresh...")
         bestloss = 9999
         for bumpt in bump_grid:
-            model.bump_threshold=bumpt
-            model.tune(val_data,val_sz)
-            tmpcdes,z_grid = model.predict(val_data,n_grid=self.nzbins)
-            tmploss = cde_loss(tmpcdes,z_grid,val_sz)
+            model.bump_threshold = bumpt
+            model.tune(val_data, val_sz)
+            tmpcdes,z_grid = model.predict(val_data, n_grid=self.nzbins)
+            tmploss = cde_loss(tmpcdes, z_grid, val_sz)
             if tmploss < bestloss:
                 bestloss = tmploss
                 bestbump = bumpt
         model.bump_threshold=bestbump
         print("finding best sharpen parameter...")
-        sharpen_grid = np.linspace(self.sharpmin,self.sharpmax,self.nsharp)
+        sharpen_grid = np.linspace(self.sharpmin, self.sharpmax, self.nsharp)
         bestloss = 9999
         bestsharp = 9999
         for sharp in sharpen_grid:
             model.sharpen_alpha = sharp
-            tmpcdes,z_grid = model.predict(val_data,n_grid=301)
-            tmploss = cde_loss(tmpcdes,z_grid,val_sz)
+            tmpcdes, z_grid = model.predict(val_data, n_grid=301)
+            tmploss = cde_loss(tmpcdes, z_grid, val_sz)
             if tmploss < bestloss:
                 bestloss = tmploss
                 bestsharp = sharp
@@ -149,7 +149,7 @@ class FZBoost(BaseEstimation):
     def estimate(self, test_data):
         print("running photoz's...")
         color_data = make_color_data(test_data)
-        pdfs, z_grid = self.model.predict(color_data,n_grid=self.nzbins)
+        pdfs, z_grid = self.model.predict(color_data, n_grid=self.nzbins)
         self.zgrid = z_grid
         zmode = np.array([self.zgrid[np.argmax(pdf)] for pdf in pdfs]).flatten()
         pz_dict = {'zmode':zmode, 'pz_pdf':pdfs}

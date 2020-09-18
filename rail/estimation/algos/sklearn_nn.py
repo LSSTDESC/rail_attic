@@ -73,7 +73,7 @@ class simpleNN(BaseEstimation):
         self.nzbins = inputs['nzbins']
 
 
-    def train(self):
+    def inform(self):
         """
           train the NN model
         """
@@ -82,7 +82,7 @@ class simpleNN(BaseEstimation):
         color_data = make_color_data(self.training_data)
         input_data = regularize_data(color_data)
         simplenn = sknn.MLPRegressor(hidden_layer_sizes=(12,12),
-                                     activation='tanh',solver='lbfgs')
+                                     activation='tanh', solver='lbfgs')
         simplenn.fit(input_data,speczs)
         self.model = simplenn
         
@@ -92,8 +92,8 @@ class simpleNN(BaseEstimation):
         zmode = self.model.predict(input_data)
         pdfs = []
         widths = self.width*(1.0+zmode)
-        self.zgrid = np.linspace(self.zmin,self.zmax,self.nzbins)
-        for i,zb in enumerate(zmode):
-            pdfs.append(norm.pdf(self.zgrid,zb,widths[i]))
+        self.zgrid = np.linspace(self.zmin, self.zmax, self.nzbins)
+        for i, zb in enumerate(zmode):
+            pdfs.append(norm.pdf(self.zgrid, zb,widths[i]))
         pz_dict = {'zmode':zmode, 'pz_pdf':pdfs}
         return pz_dict

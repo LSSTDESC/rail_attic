@@ -38,7 +38,7 @@ def main(argv):
 
     pz = code(base_config, run_dict)
     
-    pz.train()
+    pz.inform()
 
     outf = initialize_writeout(pz.saveloc, pz.num_rows, pz.nzbins)
     

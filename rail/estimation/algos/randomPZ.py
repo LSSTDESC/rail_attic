@@ -27,7 +27,7 @@ class randomPZ(BaseEstimation):
         self.zmax = inputs['rand_zmax']
         self.nzbins = inputs['nzbins']
 
-    def train(self):
+    def inform(self):
         """
           this is random, so does nothing
         """

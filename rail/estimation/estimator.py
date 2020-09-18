@@ -57,7 +57,7 @@ class Estimator(object):
     
         self.config_dict = config_dict
 
-    def train(self):
+    def inform(self):
         """
         A training algorithm for the individual photo-z method, should be
         implemented in the subclass
