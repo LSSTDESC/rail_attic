@@ -1,6 +1,6 @@
 base_config:
-  trainfile: ../rail/estimation/tests/data/test_dc2_training_9816.hdf5
-  testfile: ../rail/estimation/tests/data/test_dc2_validation_9816.hdf5
+  trainfile: ../tests/data/test_dc2_training_9816.hdf5
+  testfile: ../tests/data/test_dc2_validation_9816.hdf5
   hdf5_groupname: photometry
   chunk_size: 1000
   configpath: ./configs
