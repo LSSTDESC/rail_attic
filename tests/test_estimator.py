@@ -28,12 +28,12 @@ def test_writing(tmpdir):
     instance.zmode = 0
     instance.zgrid = np.arange(0,1,0.2)
     instance.pz_pdf = np.ones(5)
-    instance.saveloc=tmpdir.join("test.hdf5")
+    instance.saveloc = tmpdir.join("test.hdf5")
 
     instance.nzbins = len(instance.zgrid)
-    test_dict = {'zmode':instance.zmode,'pz_pdf':instance.pz_pdf}
-    outf = write_output_file(instance.saveloc,instance.num_rows,
-                             instance.nzbins,test_dict, instance.zgrid)
+    test_dict = {'zmode':instance.zmode, 'pz_pdf':instance.pz_pdf}
+    outf = write_output_file(instance.saveloc, instance.num_rows,
+                             instance.nzbins, test_dict, instance.zgrid)
 
     assert os.path.exists(instance.saveloc)
 

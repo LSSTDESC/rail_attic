@@ -13,7 +13,7 @@ def test_random():
     A couple of basic tests of the random class
     """
 
-    inputs = {'run_params':{'rand_width':0.025,'rand_zmin':0.0, 'rand_zmax':3.0,
+    inputs = {'run_params':{'rand_width':0.025, 'rand_zmin':0.0, 'rand_zmax':3.0,
                             'nzbins':301}}
     name = 'randomPZ'
 
@@ -21,7 +21,7 @@ def test_random():
     #code = Estimator._find_subclass(name)
     pz = randomPZ.randomPZ(test_base_yaml, inputs)
     #pz = code(test_base_yaml, inputs)
-    for start, end, data in iter_chunk_hdf5_data(pz.testfile,pz._chunk_size,
+    for start, end, data in iter_chunk_hdf5_data(pz.testfile, pz._chunk_size,
                                                  pz.hdf5_groupname):
         pz_dict = pz.estimate(data)
     assert end == pz.num_rows
