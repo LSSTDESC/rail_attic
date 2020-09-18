@@ -4,12 +4,11 @@ import numpy as np
 from rail.estimation.estimator import Estimator
 from rail.estimation.utils import write_output_file
 
-#this is temporary until unit test uses a definite test data set and creates the yaml file on the fly
-import inspect
+#this is temporary until unit test uses a definite test data set and creates
+# the yaml file on the fly
 import rail
 
-os.chdir(os.path.join(os.path.dirname(inspect.getfile(rail)),'estimation/tests/data') )
-test_base_yaml =  './base.yaml'
+test_base_yaml =  'tests/base.yaml'
 
 def test_initialization():
     

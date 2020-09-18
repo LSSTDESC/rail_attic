@@ -7,7 +7,7 @@ class Estimator(object):
     """
     The base class for photo-z posterior estimates. inherit there will be a 
     default loading of data (and write out of data?), but each code should have
-    its own 'train' and 'run_photoz' methods that override the default methods 
+    its own 'train' and 'estimate' methods that override the default methods 
     in the parent class
     
     Super/subclass framework stolen shamelessly from 
