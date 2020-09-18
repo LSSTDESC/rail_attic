@@ -9,7 +9,7 @@ from rail.estimation.estimator import Estimator
 def main(argv):
     if len(argv) == 2:
         #this is in case hiding the base yaml is wanted
-        base_config =  os.path.join(os.path.dirname(inspect.getfile(rail)), '../examples/base.yaml')
+        base_config =  'base.yaml'#os.path.join(os.path.dirname(inspect.getfile(rail)), 'base.yaml')
         input_yaml = argv[1]
     elif len(argv) == 3:
         base_config = argv[1]
