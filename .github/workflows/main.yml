@@ -36,7 +36,7 @@ jobs:
       run: |
         pip install pylint
         # stop the build if there are Pylint errors
-        pylint --extension-pkg-whitelist=numpy --init-hook='import sys; sys.setrecursionlimit(8 * sys.getrecursionlimit())' rail
+        pylint --disable=all --extension-pkg-whitelist=numpy --init-hook='import sys; sys.setrecursionlimit(8 * sys.getrecursionlimit())' rail
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
