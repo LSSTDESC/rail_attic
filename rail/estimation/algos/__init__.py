@@ -1,5 +1,6 @@
 import os
 
+
 def _all_python_files():
     root_dir = os.path.dirname(__file__)
     names = []
@@ -8,6 +9,7 @@ def _all_python_files():
             name = filename[:-3]
             names.append(name)
     return names
+
 
 for name in _all_python_files():
     try:

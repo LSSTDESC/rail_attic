@@ -1,16 +1,16 @@
-#from distutils.core import setup
-from setuptools import setup, find_packages, find_namespace_packages
+# from distutils.core import setup
+from setuptools import setup, find_namespace_packages
 
 packages = find_namespace_packages()
-#packages = find_packages()
-#packages.append('rail.estimation.tests.data')
+# packages = find_packages()
+# packages.append('rail.estimation.tests.data')
 setup(
     name='rail',
     version='0.1.dev0',
     author='The LSST DESC PZWG',
     author_email='aimalz@nyu.edu',
     packages=packages,
-    package_data={"": ["*.hdf5","*.yaml"],"tests":["*.hdf5","*.yaml"],},
+    package_data={"": ["*.hdf5", "*.yaml"], "tests":["*.hdf5", "*.yaml"], },
     include_package_data=True,
     license='BSD 3-Clause License',
     description="Redshift Assessment Infrastructure Layers",

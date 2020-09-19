@@ -1,15 +1,15 @@
-import os, sys, inspect
+import sys
 import yaml
 import rail
 from rail.estimation.utils import *
 from rail.estimation.estimator import Estimator
 
 
-#Note: This is where 'base.yaml' actually belongs, but how to make it so 
+# Note: This is where 'base.yaml' actually belongs, but how to make it so
 def main(argv):
     if len(argv) == 2:
-        #this is in case hiding the base yaml is wanted
-        base_config =  'base.yaml'#os.path.join(os.path.dirname(inspect.getfile(rail)), 'base.yaml')
+        # this is in case hiding the base yaml is wanted
+        base_config = 'base.yaml'
         input_yaml = argv[1]
     elif len(argv) == 3:
         base_config = argv[1]
@@ -22,8 +22,6 @@ def main(argv):
 
     with open(input_yaml, 'r') as f:
         config_dict = yaml.safe_load(f)
-    # with open(input_yaml, 'r') as f:
-    #     base_config = yaml.safe_load(f)
 
     print(config_dict)
     run_dict = config_dict
@@ -37,11 +35,10 @@ def main(argv):
     print(f"code name: {code}")
 
     pz = code(base_config, run_dict)
-    
     pz.inform()
 
     outf = initialize_writeout(pz.saveloc, pz.num_rows, pz.nzbins)
-    
+
     for start, end, data in iter_chunk_hdf5_data(pz.testfile, pz._chunk_size,
                                                  'photometry'):
         pz_dict = pz.estimate(data)
@@ -49,8 +46,9 @@ def main(argv):
         print("finished " + name)
 
     finalize_writeout(outf, pz.zgrid)
-        
+
     print("finished")
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     main(sys.argv)
