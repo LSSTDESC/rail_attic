@@ -29,14 +29,14 @@ jobs:
         pip install numpy scipy pyyaml h5py pandas .
         pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Test with pytest (trial)
+    - name: Test with pytest
       run: |
         pytest
     - name: Lint with pylint
       run: |
         pip install pylint
         # stop the build if there are Pylint errors
-        pylint --disable=all --extension-pkg-whitelist=numpy --init-hook='import sys; sys.setrecursionlimit(8 * sys.getrecursionlimit())' rail
+        pylint --extension-pkg-whitelist=numpy --init-hook='import sys; sys.setrecursionlimit(8 * sys.getrecursionlimit())' rail
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
