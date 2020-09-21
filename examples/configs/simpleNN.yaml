@@ -1,0 +1,11 @@
+run_params:
+  class_name: simpleNN
+  code_name: simplennpz
+  outputfile: testrandom.hdf5
+  width: 0.025
+  zmin: 0.0
+  zmax: 3.0
+  nzbins: 301
+
+
+
