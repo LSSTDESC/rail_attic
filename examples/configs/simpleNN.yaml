@@ -1,11 +1,6 @@
-base_config:
-  base_yaml: base.yaml
-
 run_params:
   class_name: simpleNN
   code_name: simplennpz
-  trainfile: mini_training.hdf5
-  testfile: mini_validation.hdf5
   outputfile: testrandom.hdf5
   width: 0.025
   zmin: 0.0
