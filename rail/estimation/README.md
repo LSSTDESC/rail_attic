@@ -16,7 +16,7 @@ Each must correspond to a config file in with any parameters the method needs, t
 . . .
 
 ## Usage
-
+In the `example` directory, run the following
 `python main.py configs/randomPZ.yaml`
 
 ## Immediate next steps
