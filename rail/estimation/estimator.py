@@ -59,10 +59,10 @@ class Estimator(object):
 
     def inform(self):
         """
-        A training algorithm for the individual photo-z method, should be
-        implemented in the subclass
+        Prior settings and/or training algorithm for the individual 
+        photo-z method, should be implemented in the subclass
         """
-        pass
+        raise NotImplementedError
 
     def estimate(self, input_data):
         """
