@@ -11,8 +11,8 @@ We will have to make a decision about the acceptable output format(s) of redshif
 
 ## Structure
 
-Examples of wrapped codes can be found as submodules of `rail.estimation.algos`.
-Each must correspond to a config file in with any parameters the method needs, temporarily located in `rail.estimation.configs` but not actually a code directory.
+Wrapped codes can be found as submodules of `rail.estimation.algos`.
+Each must correspond to a config file in with any parameters the method needs, examples of which can be found in the `examples/configs` directory.
 . . .
 
 ## Usage
