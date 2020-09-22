@@ -1,3 +1,4 @@
+![tests](https://github.com/LSSTDESC/BlendingToolKit/workflows/tests/badge.svg)
 [![codecov](https://codecov.io/gh/LSSTDESC/RAIL/branch/master/graph/badge.svg)](https://codecov.io/gh/LSSTDESC/RAIL)
 
 # RAIL: Redshift Assessment Infrastructure Layers
