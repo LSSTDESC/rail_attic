@@ -5,9 +5,9 @@ name: rail
 
 on:
   push:
-    branches: [issue/3/estimation-template, issue/2/ci, $default-branch ]
+    branches: [ $default-branch ]
   pull_request:
-    branches: [issue/3/estimation-template, $default-branch ]
+    branches: [ $default-branch ]
 
 jobs:
   build:
