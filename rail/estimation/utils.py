@@ -1,6 +1,5 @@
 # Note: 'utils.py' is terrible!  These i/o functions don't really belong here, so the bad name is a reminder to deal with this.
 import os
-import yaml
 import h5py
 import pandas as pd
 import numpy as np
@@ -112,5 +111,5 @@ def finalize_writeout(outf, zgrid):
 
 def write_output_file(outfile, num_rows, num_zbins, data_dict, zgrid):
     outf = initialize_writeout(outfile, num_rows, num_zbins)
-    write_out_chunk(outf,data_dict, 0, num_zbins)
+    write_out_chunk(outf, data_dict, 0, num_zbins)
     finalize_writeout(outf, zgrid)
