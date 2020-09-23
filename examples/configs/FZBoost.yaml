@@ -1,6 +1,5 @@
 run_params:
   class_name: FZBoost
-  code_name: FZBoost
   zmin: 0.0
   zmax: 3.0
   nzbins: 301

@@ -18,16 +18,15 @@ def main(argv):
         print(len(argv))
         print("Usage: main <yaml file>")
         sys.exit()
-    name = input_yaml.split("/")[-1].split(".")[0]
 
     with open(input_yaml, 'r') as f:
-        config_dict = yaml.safe_load(f)
+        run_dict = yaml.safe_load(f)
 
-    print(config_dict)
-    run_dict = config_dict
-
+    print(run_dict)
+    name = run_dict['run_params']['class_name']
+    
     try:
-        run_dict['class_name'] = Estimator._find_subclass(name)
+        Estimator._find_subclass(name)
     except KeyError:
         raise ValueError(f"Class name {name} for PZ code is not defined")
 
