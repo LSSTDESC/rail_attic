@@ -5,9 +5,9 @@ name: rail
 
 on:
   push:
-    branches: [issue/3/estimation-template, $default-branch ]
+    branches: [ $default-branch ]
   pull_request:
-    branches: [issue/3/estimation-template, $default-branch ]
+    branches: [ $default-branch ]
 
 jobs:
   build:
@@ -31,7 +31,7 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Test with pytest
       run: |
-        pytest --cov=./ --cov-report=xml
+        python -m pytest --cov=./rail --cov-report=xml
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
