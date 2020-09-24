@@ -20,31 +20,40 @@ def main(argv):
         sys.exit()
 
     with open(input_yaml, 'r') as f:
-        run_dict = yaml.safe_load(f)
+        overall_dict = yaml.safe_load(f)
 
-    print(run_dict)
-    name = run_dict['run_params']['class_name']
-    
-    try:
-        Estimator._find_subclass(name)
-    except KeyError:
-        raise ValueError(f"Class name {name} for PZ code is not defined")
+    for single_run_dict in overall_dict['runs'].values():
 
-    code = Estimator._find_subclass(name)
-    print(f"code name: {code}")
+        print(single_run_dict)
+        name = single_run_dict['run_params']['class_name']
+        
+        try:
+            Estimator._find_subclass(name)
+        except KeyError:
+            raise ValueError(f"Class name {name} for PZ code is not defined")
 
-    pz = code(base_config, run_dict)
-    pz.inform()
+        code = Estimator._find_subclass(name)
+        print(f"code name: {code}")
 
-    outf = initialize_writeout(pz.saveloc, pz.num_rows, pz.nzbins)
+        pz = code(base_config, single_run_dict)
+        pz.inform()
 
-    for start, end, data in iter_chunk_hdf5_data(pz.testfile, pz._chunk_size,
-                                                 'photometry'):
-        pz_dict = pz.estimate(data)
-        write_out_chunk(outf, pz_dict, start, end)
-        print("finished " + name)
+        if 'outfile_tag' in single_run_dict['run_params']:
+            outfile = f"{name}_{single_run_dict['run_params']['outfile_tag']}.hdf5"
+        else:
+            outfile = f"{name}.hdf5"
+        print(outfile)
+        saveloc = os.path.join(pz.outpath,outfile)
+        outf = initialize_writeout(saveloc, pz.num_rows, pz.nzbins)
 
-    finalize_writeout(outf, pz.zgrid)
+        for start, end, data in iter_chunk_hdf5_data(pz.testfile,
+                                                     pz._chunk_size,
+                                                    'photometry'):
+            pz_dict = pz.estimate(data)
+            write_out_chunk(outf, pz_dict, start, end)
+            print("writing " + name + f"[{start}:{end}]")
+
+        finalize_writeout(outf, pz.zgrid)
 
     print("finished")
 

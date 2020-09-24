@@ -53,7 +53,6 @@ class Estimator(object):
         # move reading of test data to main.py so we can loop more easily
 
         self.code_name = type(self).__name__
-        self.saveloc = os.path.join(self.outpath, self.code_name + '.hdf5')
 
         self.config_dict = config_dict
 

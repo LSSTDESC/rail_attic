@@ -1,9 +1,11 @@
-run_params:
-  class_name: randomPZ
-  rand_width: 0.025
-  rand_zmin: 0.0
-  rand_zmax: 3.0
-  nzbins: 301
+runs:
+  run1:
+    run_params:
+      class_name: randomPZ
+      rand_width: 0.025
+      rand_zmin: 0.0
+      rand_zmax: 3.0
+      nzbins: 301
   
 
 
