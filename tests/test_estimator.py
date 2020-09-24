@@ -22,7 +22,17 @@ def test_initialization():
 def test_loading():
     assert True
 
+def test_train_not_implemented():
+    with pytest.raises(NotImplementedError):
+        instance = Estimator(base_config=test_base_yaml)
+        instance.inform()
 
+def test_estimate_not_implemented():
+    fake_data = {'u': 99., 'g': 99., 'r': 99.}
+    with pytest.raises(NotImplementedError):
+        instance = Estimator(base_config=test_base_yaml)
+        instance.estimate(fake_data)
+        
 def test_writing(tmpdir):
     instance = Estimator(test_base_yaml)
     instance.zmode = 0

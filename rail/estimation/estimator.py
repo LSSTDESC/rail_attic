@@ -82,4 +82,4 @@ class Estimator(object):
         should create photo-z estimates with set names, TBD
         for demo will just be `z_mode`
         """
-        pass
+        raise NotImplementedError
