@@ -1,6 +1,6 @@
 run_params:
   class_name: simpleNN
-  output_dir: simpleNN
+  run_name: test_simpleNN
   width: 0.025
   zmin: 0.0
   zmax: 3.0

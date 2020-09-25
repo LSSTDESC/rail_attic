@@ -35,13 +35,13 @@ def main(argv):
 
     pz = code(base_config, run_dict)
     pz.inform()
-    outfile = f"{name}.hdf5"
-
-    if 'output_dir' in run_dict['run_params']:
-        saveloc = os.path.join(pz.outpath,
-        run_dict['run_params']['output_dir'], outfile)
+    if 'run_name' in run_dict['run_params']:
+        outfile = run_dict['run_params']['run_name'] + '.hdf5'
     else:
-        saveloc = os.path.join(pz.outpath, outfile)
+        outfile = 'output.hdf5'
+
+    saveloc = os.path.join(pz.outpath, name, outfile)
+
     outf = initialize_writeout(saveloc, pz.num_rows, pz.nzbins)
 
     for start, end, data in iter_chunk_hdf5_data(pz.testfile,

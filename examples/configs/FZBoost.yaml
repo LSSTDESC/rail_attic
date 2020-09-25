@@ -1,6 +1,6 @@
 run_params:
   class_name: FZBoost
-  output_dir: FZBoost
+  run_name: test_FZBoost
   zmin: 0.0
   zmax: 3.0
   nzbins: 301
