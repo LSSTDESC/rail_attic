@@ -143,7 +143,6 @@ class FZBoost(BaseEstimation):
         self.model = model
 
     def estimate(self, test_data):
-        print("running photoz's...")
         color_data = make_color_data(test_data)
         pdfs, z_grid = self.model.predict(color_data, n_grid=self.nzbins)
         self.zgrid = z_grid

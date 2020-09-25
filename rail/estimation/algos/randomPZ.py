@@ -36,7 +36,6 @@ class randomPZ(BaseEstimation):
         pass
 
     def estimate(self, test_data):
-        print("running photoz's...")
         pdf = []
 
         # allow for either format for now

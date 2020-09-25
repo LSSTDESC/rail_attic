@@ -1,5 +1,6 @@
 run_params:
   class_name: nonexistentPZ
+  output_dir: nonexistentPZ
   rand_width: 0.025
   rand_zmin: 0.0
   rand_zmax: 3.0

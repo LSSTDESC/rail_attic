@@ -1,4 +1,5 @@
 import sys
+import os
 import yaml
 import rail
 from rail.estimation.utils import *
@@ -20,40 +21,37 @@ def main(argv):
         sys.exit()
 
     with open(input_yaml, 'r') as f:
-        overall_dict = yaml.safe_load(f)
+        run_dict = yaml.safe_load(f)
 
-    for single_run_dict in overall_dict['runs'].values():
+    name = run_dict['run_params']['class_name']
 
-        print(single_run_dict)
-        name = single_run_dict['run_params']['class_name']
-        
-        try:
-            Estimator._find_subclass(name)
-        except KeyError:
-            raise ValueError(f"Class name {name} for PZ code is not defined")
+    try:
+        Estimator._find_subclass(name)
+    except KeyError:
+        raise ValueError(f"Class name {name} for PZ code is not defined")
 
-        code = Estimator._find_subclass(name)
-        print(f"code name: {code}")
+    code = Estimator._find_subclass(name)
+    print(f"code name: {name}")
 
-        pz = code(base_config, single_run_dict)
-        pz.inform()
+    pz = code(base_config, run_dict)
+    pz.inform()
+    outfile = f"{name}.hdf5"
 
-        if 'outfile_tag' in single_run_dict['run_params']:
-            outfile = f"{name}_{single_run_dict['run_params']['outfile_tag']}.hdf5"
-        else:
-            outfile = f"{name}.hdf5"
-        print(outfile)
-        saveloc = os.path.join(pz.outpath,outfile)
-        outf = initialize_writeout(saveloc, pz.num_rows, pz.nzbins)
+    if 'output_dir' in run_dict['run_params']:
+        saveloc = os.path.join(pz.outpath,
+        run_dict['run_params']['output_dir'], outfile)
+    else:
+        saveloc = os.path.join(pz.outpath, outfile)
+    outf = initialize_writeout(saveloc, pz.num_rows, pz.nzbins)
 
-        for start, end, data in iter_chunk_hdf5_data(pz.testfile,
-                                                     pz._chunk_size,
-                                                    'photometry'):
-            pz_dict = pz.estimate(data)
-            write_out_chunk(outf, pz_dict, start, end)
-            print("writing " + name + f"[{start}:{end}]")
+    for start, end, data in iter_chunk_hdf5_data(pz.testfile,
+                                                 pz._chunk_size,
+                                                 'photometry'):
+        pz_dict = pz.estimate(data)
+        write_out_chunk(outf, pz_dict, start, end)
+        print("writing " + name + f"[{start}:{end}]")
 
-        finalize_writeout(outf, pz.zgrid)
+    finalize_writeout(outf, pz.zgrid)
 
     print("finished")
 
