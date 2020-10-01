@@ -1,6 +1,6 @@
 run_params:
-  class_name: randomPZ
-  run_name: test_randomPZ
+  class_name: nonexistentPZ
+  run_name: nonexistentPZ
   rand_width: 0.025
   rand_zmin: 0.0
   rand_zmax: 3.0

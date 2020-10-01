@@ -1,4 +1,5 @@
 import sys
+import os
 import yaml
 import rail
 from rail.estimation.utils import *
@@ -18,32 +19,37 @@ def main(argv):
         print(len(argv))
         print("Usage: main <yaml file>")
         sys.exit()
-    name = input_yaml.split("/")[-1].split(".")[0]
 
     with open(input_yaml, 'r') as f:
-        config_dict = yaml.safe_load(f)
+        run_dict = yaml.safe_load(f)
 
-    print(config_dict)
-    run_dict = config_dict
+    name = run_dict['run_params']['class_name']
 
     try:
-        run_dict['class_name'] = Estimator._find_subclass(name)
+        Estimator._find_subclass(name)
     except KeyError:
         raise ValueError(f"Class name {name} for PZ code is not defined")
 
     code = Estimator._find_subclass(name)
-    print(f"code name: {code}")
+    print(f"code name: {name}")
 
     pz = code(base_config, run_dict)
     pz.inform()
+    if 'run_name' in run_dict['run_params']:
+        outfile = run_dict['run_params']['run_name'] + '.hdf5'
+    else:
+        outfile = 'output.hdf5'
 
-    outf = initialize_writeout(pz.saveloc, pz.num_rows, pz.nzbins)
+    saveloc = os.path.join(pz.outpath, name, outfile)
 
-    for start, end, data in iter_chunk_hdf5_data(pz.testfile, pz._chunk_size,
+    outf = initialize_writeout(saveloc, pz.num_rows, pz.nzbins)
+
+    for start, end, data in iter_chunk_hdf5_data(pz.testfile,
+                                                 pz._chunk_size,
                                                  'photometry'):
         pz_dict = pz.estimate(data)
         write_out_chunk(outf, pz_dict, start, end)
-        print("finished " + name)
+        print("writing " + name + f"[{start}:{end}]")
 
     finalize_writeout(outf, pz.zgrid)
 

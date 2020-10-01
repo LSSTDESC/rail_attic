@@ -1,6 +1,6 @@
 run_params:
   class_name: FZBoost
-  code_name: FZBoost
+  run_name: test_FZBoost
   zmin: 0.0
   zmax: 3.0
   nzbins: 301
@@ -14,5 +14,3 @@ run_params:
   max_basis: 35
   basis_system: cosine
   regression_params: {'max_depth': 8,'objective':'reg:squarederror'}
-
-

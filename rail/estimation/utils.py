@@ -92,7 +92,7 @@ def iter_chunk_hdf5_data(infile, chunk_size=100_000, groupname='None'):
 def initialize_writeout(outfile, num_rows, num_zbins):
     outdir = os.path.dirname(outfile)
     if not os.path.exists(outdir):
-        os.mkdir(outdir)
+        os.makedirs(outdir, exist_ok=True)
     outf = h5py.File(outfile, "w")
     outf.create_dataset('photoz_mode', (num_rows,), dtype='f4')
     outf.create_dataset('photoz_pdf', (num_rows, num_zbins), dtype='f4')
