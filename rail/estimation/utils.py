@@ -23,12 +23,20 @@ def load_raw_pq_data(infile):
     """
     just return the dataframe from pandas for now
     """
-    return pd.read_parquet(infile, engine='pyarrow')
+    df = pd.read_parquet(infile, engine='pyarrow')
+    data = {}
+    for key in df.keys():
+        data[key] = np.array(df[key])
+    return data
 
 
 def load_raw_h5_data(infile):
     """just return the datafram from pandas h5"""
-    return pd.read_hdf(infile)
+    df = pd.read_hdf(infile)
+    data = {}
+    for key in df.keys():
+        data[key] = np.array(df[key])
+    return data
 
 
 def load_raw_hdf5_data(infile, groupname='None'):
