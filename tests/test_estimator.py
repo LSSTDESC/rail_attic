@@ -19,6 +19,7 @@ def test_initialization():
     instance = Estimator(base_config=test_base_yaml)
 
 def test_factory():
+    Estimator._subclasses = {}
     for name in ['randomPZ', 'simpleNN']:
         code = Estimator._find_subclass(name)
     assert len(Estimator._subclasses)==2
