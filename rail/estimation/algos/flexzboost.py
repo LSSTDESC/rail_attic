@@ -1,9 +1,9 @@
 """
-Implementation of the FlexZBoost algorithm, uses training data and XGBoost
-to learn the relation, split training data into train and validation set and
-find best "bump_thresh" (eliminate small peaks in p(z) below threshold) and
-sharpening parameter (determines peakiness of p(z) shape) via cde-loss over
-a grid.
+Implementation of the FlexZBoost algorithm, uses training data and
+XGBoost to learn the relation, split training data into train and
+validation set and find best "bump_thresh" (eliminate small peaks in
+p(z) below threshold) and sharpening parameter (determines peakiness of
+p(z) shape) via cde-loss over a grid.
 """
 
 import numpy as np
@@ -79,10 +79,10 @@ class FZBoost(BaseEstimation):
         self.nsharp = inputs['nsharp']
         self.max_basis = inputs['max_basis']
         self.basis_system = inputs['basis_system']
-        self.regression_params = inputs['regression_params']
+        self.regress_params = inputs['regression_params']
 
     @staticmethod
-    def partition_data(fz_data, sz_data, trainfrac):
+    def split_data(fz_data, sz_data, trainfrac):
         """
         make a random partition of the training data into training and
         validation, validation data will be used to determine bump
@@ -106,23 +106,23 @@ class FZBoost(BaseEstimation):
         speczs = self.training_data['redshift']
         print("stacking some data...")
         color_data = make_color_data(self.training_data)
-        train_data, val_data, train_sz, val_sz = self.partition_data(color_data,
-                                                                     speczs,
-                                                                     self.trainfrac)
+        train_dat, val_dat, train_sz, val_sz = self.split_data(color_data,
+                                                               speczs,
+                                                               self.trainfrac)
         print("read in training data")
         model = flexcode.FlexCodeModel(XGBoost, max_basis=self.max_basis,
                                        basis_system=self.basis_system,
                                        z_min=self.zmin, z_max=self.zmax,
-                                       regression_params=self.regression_params)
+                                       regression_params=self.regress_params)
         print("fit the model...")
-        model.fit(train_data, train_sz)
+        model.fit(train_dat, train_sz)
         bump_grid = np.linspace(self.bumpmin, self.bumpmax, self.nbump)
         print("finding best bump thresh...")
         bestloss = 9999
         for bumpt in bump_grid:
             model.bump_threshold = bumpt
-            model.tune(val_data, val_sz)
-            tmpcdes, z_grid = model.predict(val_data, n_grid=self.nzbins)
+            model.tune(val_dat, val_sz)
+            tmpcdes, z_grid = model.predict(val_dat, n_grid=self.nzbins)
             tmploss = cde_loss(tmpcdes, z_grid, val_sz)
             if tmploss < bestloss:
                 bestloss = tmploss
@@ -134,7 +134,7 @@ class FZBoost(BaseEstimation):
         bestsharp = 9999
         for sharp in sharpen_grid:
             model.sharpen_alpha = sharp
-            tmpcdes, z_grid = model.predict(val_data, n_grid=301)
+            tmpcdes, z_grid = model.predict(val_dat, n_grid=301)
             tmploss = cde_loss(tmpcdes, z_grid, val_sz)
             if tmploss < bestloss:
                 bestloss = tmploss
@@ -146,6 +146,7 @@ class FZBoost(BaseEstimation):
         color_data = make_color_data(test_data)
         pdfs, z_grid = self.model.predict(color_data, n_grid=self.nzbins)
         self.zgrid = z_grid
-        zmode = np.array([self.zgrid[np.argmax(pdf)] for pdf in pdfs]).flatten()
+        zmode = \
+            np.array([self.zgrid[np.argmax(pdf)] for pdf in pdfs]).flatten()
         pz_dict = {'zmode': zmode, 'pz_pdf': pdfs}
         return pz_dict

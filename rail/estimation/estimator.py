@@ -1,14 +1,14 @@
 import os
-from rail.estimation.utils import *
+from rail.estimation.utils import load_training_data, get_input_data_size_hdf5
 import yaml
 
 
 class Estimator(object):
     """
-    The base class for photo-z posterior estimates. inherit there will be a
-    default loading of data (and write out of data?), but each code should have
-    its own 'train' and 'estimate' methods that override the default methods
-    in the parent class
+    The base class for photo-z posterior estimates. inherit there will
+    be a default loading of data (and write out of data?), but each code
+    should have its own 'train' and 'estimate' methods that override the
+    default methods in the parent class
 
     Super/subclass framework stolen shamelessly from
     https://github.com/LSSTDESC/tomo_challenge
@@ -28,7 +28,8 @@ class Estimator(object):
 
     def __init__(self, base_config='base_yaml', config_dict={}):
         if not os.path.exists(base_config):
-            raise FileNotFoundError("File base_config="+base_config+" not found")
+            raise FileNotFoundError("File base_config=" + base_config
+                                    + " not found")
 
         with open(base_config, 'r') as f:
             base_dict = yaml.safe_load(f)['base_config']
@@ -58,15 +59,15 @@ class Estimator(object):
 
     def inform(self):
         """
-        Prior settings and/or training algorithm for the individual 
+        Prior settings and/or training algorithm for the individual
         photo-z method, should be implemented in the subclass
         """
         raise NotImplementedError
 
     def estimate(self, input_data):
         """
-        The main run method for the photo-z, should be implemented in the specific
-        subclass
+        The main run method for the photo-z, should be implemented in
+        the specific subclass
 
         Input:
         ------
@@ -76,8 +77,8 @@ class Estimator(object):
         Returns:
         --------
         pz_dict:
-          dictionary of output photo-z params, must include zmode and pdf
-          note: zgrid will still be a class variable for now
+          dictionary of output photo-z params, must include zmode and
+          pdf note: zgrid will still be a class variable for now
 
         should create photo-z estimates with set names, TBD
         for demo will just be `z_mode`

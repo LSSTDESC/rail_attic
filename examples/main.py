@@ -1,8 +1,8 @@
 import sys
 import os
 import yaml
-import rail
-from rail.estimation.utils import *
+from rail.estimation.utils import initialize_writeout, iter_chunk_hdf5_data
+from rail.estimation.utils import write_out_chunk, finalize_writeout
 from rail.estimation.estimator import Estimator
 
 
