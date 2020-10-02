@@ -27,6 +27,7 @@ class randomPZ(BaseEstimation):
         self.zmin = inputs['rand_zmin']
         self.zmax = inputs['rand_zmax']
         self.nzbins = inputs['nzbins']
+        np.random.seed(87)
 
     def inform(self):
         """
@@ -37,14 +38,13 @@ class randomPZ(BaseEstimation):
 
     def estimate(self, test_data):
         pdf = []
-
         # allow for either format for now
         try:
             d = test_data['i_mag']
         except Exception:
             d = test_data['mag_i_lsst']
         numzs = len(d)
-        zmode = np.random.uniform(0.0, self.zmax, numzs)
+        zmode = np.round(np.random.uniform(0.0, self.zmax, numzs), 3)
         widths = self.width * (1.0 + zmode)
         self.zgrid = np.linspace(0., self.zmax, self.nzbins)
         for i in range(numzs):
