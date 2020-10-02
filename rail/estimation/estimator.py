@@ -2,6 +2,7 @@ import os
 from rail.estimation.utils import *
 import yaml
 import importlib
+import ast
 
 class Estimator(object):
     """
@@ -19,16 +20,16 @@ class Estimator(object):
 
     @classmethod
     def _find_subclass(cls, name):
-
         if name not in cls._subclasses.keys():
-            root_dir = os.path.dirname(__file__)
-            names = []
-            for filename in os.listdir(root_dir+'/algos'):
+            root_dir = os.path.dirname(__file__)+'/algos'
+            for filename in os.listdir(root_dir):
                 if filename.endswith('.py') and filename != '__init__.py':
-                    name = filename[:-3]
-                    print(name)
-                    importlib.import_module('.'+name,'rail.estimation.algos')
-
+                    with open(os.path.join(root_dir,filename)) as f:
+                        tree=ast.parse(f.read())
+                        for node in tree.body:
+                            if isinstance(node,ast.ClassDef) and node.name==name:
+                                importlib.import_module('.'+filename[:-3],'rail.estimation.algos')
+        
         return cls._subclasses[name]
 
     @classmethod
