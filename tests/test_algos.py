@@ -1,4 +1,5 @@
-# import numpy as np
+import pytest
+import numpy as np
 from rail.estimation.estimator import Estimator
 from rail.estimation.utils import *
 
@@ -8,6 +9,8 @@ def test_factory():
     for name in ['randomPZ', 'simpleNN']:
         code = Estimator._find_subclass(name)
     assert len(Estimator._subclasses)==2
+    with pytest.raises(KeyError) as e:
+        non_existant = Estimator._find_subclass('non_existant')
     
 def one_algo(single_estimator, single_input):
     """
