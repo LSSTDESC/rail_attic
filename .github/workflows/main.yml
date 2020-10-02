@@ -5,7 +5,7 @@ name: rail
 
 on:
   push:
-    branches: [ issue/27/linting, $default-branch ]
+    branches: [ $default-branch ]
   pull_request:
     branches: [ master ]
 
