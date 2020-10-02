@@ -20,18 +20,23 @@ class Estimator(object):
 
     @classmethod
     def _find_subclass(cls, name):
-        if name not in cls._subclasses.keys():
+        if name in cls._subclasses.keys():
+            return cls._subclasses[name]
+        else:
             root_dir = os.path.dirname(__file__)+'/algos'
             for filename in os.listdir(root_dir):
                 if filename.endswith('.py') and filename != '__init__.py':
                     with open(os.path.join(root_dir,filename)) as f:
                         tree=ast.parse(f.read())
                         for node in tree.body:
-                            if isinstance(node,ast.ClassDef) and node.name==name:
+                            if isinstance(node,ast.ClassDef) and name==node.name:
                                 importlib.import_module('.'+filename[:-3],'rail.estimation.algos')
+                                try:
+                                    return cls._subclasses[name]
+                                except KeyError:
+                                    raise KeyError('{} has not been properly imported'.format(name))
+        raise KeyError('{} algorithm not found in rail.estimation.algos'.format(name))
         
-        return cls._subclasses[name]
-
     @classmethod
     def __init_subclass__(cls, *args, **kwargs):
         print(f"Found classifier {cls.__name__}")

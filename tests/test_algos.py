@@ -1,12 +1,14 @@
-import numpy as np
+# import numpy as np
 from rail.estimation.estimator import Estimator
 from rail.estimation.utils import *
-from rail.estimation.algos import randomPZ, sklearn_nn, flexzboost
-
 
 test_base_yaml = './tests/base.yaml'
 
-
+def test_factory():
+    for name in ['randomPZ', 'simpleNN']:
+        code = Estimator._find_subclass(name)
+    assert len(Estimator._subclasses)==2
+    
 def one_algo(single_estimator, single_input):
     """
     A basic test of simpleNN subclass
@@ -24,13 +26,13 @@ def one_algo(single_estimator, single_input):
 def test_random_pz():
     pz_dict = {'run_params': {'rand_width': 0.025, 'rand_zmin': 0.0, 
                               'rand_zmax': 3.0, 'nzbins': 301}}
-    pz_algo = randomPZ.randomPZ
+    pz_algo = Estimator._find_subclass('randomPZ')
     one_algo(pz_algo,pz_dict)
 
 def test_simple_nn():
     pz_dict = {'run_params': {'width': 0.025, 'zmin': 0.0, 'zmax': 3.0,
                     'nzbins': 301}}
-    pz_algo = sklearn_nn.simpleNN
+    pz_algo = Estimator._find_subclass('simpleNN')
     one_algo(pz_algo,pz_dict)
 
 def test_flexzboost():
@@ -42,5 +44,5 @@ def test_flexzboost():
                               'regression_params': {'max_depth': 8,
                                                     'objective':'reg:squarederror'}
                               }}
-    pz_algo = flexzboost.FZBoost
+    pz_algo = Estimator._find_subclass('FZBoost')
     one_algo(pz_algo,pz_dict)
