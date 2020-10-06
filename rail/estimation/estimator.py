@@ -20,6 +20,19 @@ class Estimator(object):
 
     @classmethod
     def _find_subclass(cls, name):
+        """
+        Factory class method to return a concrete estimator class object based 
+        on its name, and register it in class dictionary _subclasses for faster 
+        subsequent call. The code loops over the modules in the algos subdirectory, 
+        and inspect their content using the ast library. When ast finds a class
+        definition matching the input name, it uses the import library to load the 
+        module where it is found in order to bring the class object to the namespace, 
+        and updates _subclasses.
+        Input : name of a concrete estimator algorithm, to be found in a module under 
+        the algos RAIL subpackage
+        Output : the corresponding concrete estimator object if found, else raises an
+        exception.
+        """
         if name in cls._subclasses.keys():
             return cls._subclasses[name]
         else:
