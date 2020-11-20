@@ -1,5 +1,3 @@
-
-
 class Creator():
     """
     An object that supplies mock data for redshift estimation experiments.
@@ -22,4 +20,3 @@ class Creator():
         sample = self.selection_fn(sample) if self.selection_fn is not None else sample
         return sample
 
-        
