@@ -71,6 +71,7 @@ class simpleNN(BaseEstimation):
         self.zmin = inputs['zmin']
         self.zmax = inputs['zmax']
         self.nzbins = inputs['nzbins']
+        np.random.seed(71)
 
     def inform(self):
         """
@@ -88,7 +89,7 @@ class simpleNN(BaseEstimation):
     def estimate(self, test_data):
         color_data = make_color_data(test_data)
         input_data = regularize_data(color_data)
-        zmode = self.model.predict(input_data)
+        zmode = np.round(self.model.predict(input_data), 3)
         pdfs = []
         widths = self.width * (1.0+zmode)
         self.zgrid = np.linspace(self.zmin, self.zmax, self.nzbins)

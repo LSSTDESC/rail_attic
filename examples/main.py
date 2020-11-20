@@ -1,8 +1,8 @@
 import sys
 import os
 import yaml
-import rail
-from rail.estimation.utils import *
+from rail.estimation.utils import initialize_writeout, iter_chunk_hdf5_data
+from rail.estimation.utils import write_out_chunk, finalize_writeout
 from rail.estimation.estimator import Estimator
 
 
@@ -13,11 +13,11 @@ def main(argv):
         base_config = 'base.yaml'
         input_yaml = argv[1]
     elif len(argv) == 3:
-        base_config = argv[1]
-        input_yaml = argv[2]
+        input_yaml = argv[1]
+        base_config = argv[2]
     else:
         print(len(argv))
-        print("Usage: main <yaml file>")
+        print("Usage: main <config yaml file> [base config yaml]")
         sys.exit()
 
     with open(input_yaml, 'r') as f:

@@ -1,0 +1,7 @@
+base_config:
+  trainfile: tests/data/training_100gal.hdf5
+  testfile: tests/data/validation_10gal.hdf5
+  hdf5_groupname: photometry
+  chunk_size: 1000
+  configpath: ./configs
+  outpath: ./results
