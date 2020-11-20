@@ -1,3 +1,6 @@
+![tests](https://github.com/LSSTDESC/BlendingToolKit/workflows/tests/badge.svg)
+[![codecov](https://codecov.io/gh/LSSTDESC/RAIL/branch/master/graph/badge.svg)](https://codecov.io/gh/LSSTDESC/RAIL)
+
 # RAIL: Redshift Assessment Infrastructure Layers
 
 This repo is home to a series of LSST-DESC projects aiming to quantify the impact of imperfect prior information on probabilistic redshift estimation.
