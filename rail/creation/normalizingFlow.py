@@ -137,10 +137,10 @@ class NormalizingFlow(Generator):
             samples = self.inv_transform_data(samples)
         return samples
     
-    def log_prob(self, x, convolve_err=True):
+    def log_prob(self, x, convolve_err=False):
         trans_x = x
         if self.transform_data:
-            trans_x = self.transform_data(trans_x)
+            trans_x = self.transform_data(trans_x, transform_errs=convolve_err)
         if convolve_err:
             return self._log_prob_convolved(trans_x, self._inverse)
         else:
@@ -159,7 +159,7 @@ class NormalizingFlow(Generator):
 
         return jax.vmap(log_prob_convolved)(data, errs)
     
-    def pz_estimate(self, data, convolve_err=True, zmin=0, zmax=4, dz=0.01):
+    def pz_estimate(self, data, convolve_err=False, zmin=0, zmax=4, dz=0.01):
         
         # generate the redshift grid
         zs = np.arange(zmin, zmax+dz, dz)
