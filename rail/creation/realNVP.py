@@ -220,7 +220,7 @@ class RealNVP(bijector_lib.Bijector):
   def _masked_size(self):
     masked_size = (
         self._num_masked if self._num_masked is not None else int(
-            np.round(self._input_depth * self._fraction_masked)))
+            jnp.round(self._input_depth * self._fraction_masked)))
     return masked_size
 
   def _cache_input_depth(self, x):
