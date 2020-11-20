@@ -179,10 +179,10 @@ class RealNVP(bijector_lib.Bijector):
         self._fraction_masked = None
         self._reverse_mask = self._num_masked < 0
       else:
-        if not np.issubdtype(type(fraction_masked), np.floating):
+        if not jnp.issubdtype(type(fraction_masked), jnp.floating):
           raise TypeError('`fraction_masked` must be a float. Got: {} of type '
                           '{}'.format(fraction_masked, type(fraction_masked)))
-        if np.abs(fraction_masked) >= 1.:
+        if jnp.abs(fraction_masked) >= 1.:
           raise ValueError(
               '`fraction_masked` must be in (-1, 1), but is {}.'.format(
                   fraction_masked))
