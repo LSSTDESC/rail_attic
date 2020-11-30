@@ -21,3 +21,10 @@ class Generator(ABC):
         Return the log probability that the data is drawn from the distribution
         """
         pass
+    
+    @abstractmethod
+    def pz_estimate(self, data, zmin, zmax, dz, **kwargs):
+        """
+        Return redshift posteriors for the data
+        """
+        pass

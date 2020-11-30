@@ -20,6 +20,7 @@ import jax.numpy as jnp
 import flax
 from flax import nn
 import dill
+import pandas as pd
 from generator import Generator
 
 
@@ -66,14 +67,11 @@ class NormalizingFlow(Generator):
             raise ValueError('User must pass either hyperparams or file during instantiation')
 
         # warn that other arguments are ignored if a file is passed
-        if file is not None and (hyperparams is not None or 
-                                 params is not None or 
-                                 transform_data is not None or 
-                                 inv_transform_data is not None):
+        if file and any((hyperparams, params, transform_data, inv_transform_data)):
             print("Warning: ignoring passed arguments in favor of values stored in file")
 
         # if a file is passed, load all the arguments from there
-        if file is not None:
+        if file:
             with open(file, 'rb') as handle:
                 save_dict = dill.load(handle)
             hyperparams = save_dict['hyperparams']
@@ -88,43 +86,110 @@ class NormalizingFlow(Generator):
         # save the hyperparameters
         self.hyperparams = hyperparams.copy()
         
-        # create modules that calculate log_prob for and sample the flow
+        # create flax modules
         @nn.module
-        def log_prob_module(x):
-            return module(hyperparams).log_prob(x)
+        def forward_module(x):
+            return module(hyperparams).bijector.forward(x)
+        @nn.module
+        def inverse_module(x):
+            return module(hyperparams).bijector.inverse(x)
         @nn.module
         def sampler_module(n_samples, seed):
             return module(hyperparams).sample(n_samples, seed)
-        
+        @nn.module
+        def log_prob_module(x):
+            return module(hyperparams).log_prob(x)
+
+        # Normalizing flow parameters:
         # if no params provided, create some random ones
         if params is None:
             dummy_input = jnp.zeros((1,hyperparams['nfeatures']))
             _, params = log_prob_module.init(jax.random.PRNGKey(0), dummy_input)
         self.params = params
-            
-        # create log_prob and sampler models
-        self._log_prob = nn.Model(log_prob_module, params)
+
+        # instantiate the flax models, based on the above modules, with these params
+        self._forward = nn.Model(forward_module, params)
+        self._inverse = nn.Model(inverse_module, params)
         self._sampler = nn.Model(sampler_module, params)
-        
+        self._log_prob = nn.Model(log_prob_module, params)
+
         # save the functions for data transformation
         self.transform_data = transform_data
         self.inv_transform_data = inv_transform_data
         
+        
+    def forward(self, y):
+        x = self._forward(y)
+        if self.inv_transform_data:
+            x = self.inv_transform_data(x)
+        return x
+
+    def inverse(self, x):
+        trans_x = x
+        if self.transform_data:
+            trans_x = self.transform_data(trans_x)
+        return self._inverse(trans_x.iloc[:,:self.hyperparams['nfeatures']])
+        
     def sample(self, n_samples, seed=None):
         seed = np.random.randint(1e18) if seed is None else seed
         samples = self._sampler(n_samples, jax.random.PRNGKey(seed))
-        if self.inv_transform_data is not None:
+        if self.inv_transform_data:
             samples = self.inv_transform_data(samples)
         return samples
     
-    def log_prob(self, x):
+    def log_prob(self, x, convolve_err=False):
         trans_x = x
-        if self.transform_data is not None:
-            trans_x = self.transform_data(trans_x)
-        return self._log_prob(trans_x)
+        if self.transform_data:
+            trans_x = self.transform_data(trans_x, transform_errs=convolve_err)
+        if convolve_err:
+            return self._log_prob_convolved(trans_x, self._inverse)
+        else:
+            return self._log_prob(trans_x.iloc[:,:self.hyperparams['nfeatures']])
+
+    def _log_prob_convolved(self, x, f_inverse):
+
+        nfeatures = self.hyperparams['nfeatures']
+        data, errs = jnp.array(x)[:,:nfeatures], jnp.array(x)[:,nfeatures:]
+        
+        def log_prob_convolved(data, errs):
+            Jinv = jax.jacfwd(f_inverse)(data[None,:]).squeeze()
+            IsigmaY = jnp.identity(nfeatures) + Jinv @ jnp.diag(errs) @ Jinv.T
+            Y = f_inverse(data[None,:]).squeeze()
+            return jnp.linalg.slogdet(Jinv)[1] - 1/2 * jnp.linalg.slogdet(2*jnp.pi*IsigmaY)[1] - 1/2 * Y.T @ jnp.linalg.solve(IsigmaY,Y)
+
+        return jax.vmap(log_prob_convolved)(data, errs)
+    
+    def pz_estimate(self, data, convolve_err=False, zmin=0, zmax=4, dz=0.01):
+        
+        # generate the redshift grid
+        zs = np.arange(zmin, zmax+dz, dz)
+        
+        cols = self.hyperparams['data_cols']
+        if convolve_err:
+            for col in cols:
+                if col != 'redshift':
+                    cols = np.append(cols, f'{col}err')
+
+        # log_prob for each galaxy in the sample
+        log_prob = self.log_prob(pd.DataFrame({col: np.repeat(data[col], len(zs)) if col not in ('redshift','redshift_err')
+                                                else np.tile(zs, len(data)) if col == 'redshift'
+                                                else np.zeros(len(data)*len(zs)) for col in cols}),
+                                convolve_err=convolve_err)
+
+        # reshape so each row is a galaxy
+        log_prob = log_prob.reshape((len(data), -1))
+        # exponentiate 
+        pdfs = np.exp(log_prob)
+        # normalize
+        pdfs = pdfs / (pdfs * dz).sum(axis=1).reshape(-1,1)
+        
+        return pdfs
     
     def train(self, trainingset, testset=None, niter=2000, batch_size=1024, seed=None, 
               return_losses=False, verbose=False):
+        
+        # save the titles of the data columns
+        self.hyperparams['data_cols'] = trainingset.columns.values
 
         # the optimizer used for training
         if 'learning_rate' in self.hyperparams:
@@ -153,8 +218,8 @@ class NormalizingFlow(Generator):
             
             # get a batch of the trainingset and transform it
             batch = trainingset.sample(n=batch_size, replace=False)
-            if self.transform_data is not None:
-                batch = self.transform_data(batch)
+            if self.transform_data:
+                batch = self.transform_data(batch, transform_errs=False)
                 
             # do a step of the training
             loss, optimizer = train_step(optimizer, jnp.array(batch))
@@ -168,8 +233,8 @@ class NormalizingFlow(Generator):
                 # if a testset is provided, evaluate training loss
                 if testset is not None and (verbose or return_losses):
                     testbatch = testset.sample(n=batch_size, replace=False)
-                    if self.transform_data is not None:
-                        testbatch = self.transform_data(testbatch)
+                    if self.transform_data:
+                        testbatch = self.transform_data(testbatch, transform_errs=False)
                     testlosses.append(-np.mean(optimizer.target(testbatch)))
         
         # update the parameters
