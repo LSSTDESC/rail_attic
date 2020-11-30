@@ -118,7 +118,6 @@ class RealNVP(bijector_lib.Bijector):
   def __init__(self,
                num_masked=None,
                fraction_masked=None,
-               shift_and_log_scale_fn=None,
                bijector_fn=None,
                is_constant_jacobian=False,
                validate_args=False,
@@ -189,24 +188,11 @@ class RealNVP(bijector_lib.Bijector):
         self._num_masked = None
         self._fraction_masked = float(fraction_masked)
         self._reverse_mask = self._fraction_masked < 0
-
-      if shift_and_log_scale_fn is not None and bijector_fn is not None:
-        raise ValueError('Exactly one of `shift_and_log_scale_fn` and '
-                         '`bijector_fn` should be specified.')
-
-      if shift_and_log_scale_fn:
-        def _bijector_fn(x0, input_depth, **condition_kwargs):
-          shift, log_scale = shift_and_log_scale_fn(x0, input_depth,
-                                                    **condition_kwargs)
-          return affine_scalar.AffineScalar(shift=shift, log_scale=log_scale)
-
-        bijector_fn = _bijector_fn
       #
       # if validate_args:
       #   bijector_fn = _validate_bijector_fn(bijector_fn)
 
       # Still do this assignment for variable tracking.
-      self._shift_and_log_scale_fn = shift_and_log_scale_fn
       self._bijector_fn = bijector_fn
 
       super(RealNVP, self).__init__(
