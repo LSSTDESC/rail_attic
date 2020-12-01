@@ -70,12 +70,12 @@ class Creator():
                 sample[f'{band}err'] = np.sqrt((0.04 - gamma) * x + gamma * x**2)
                 sample[band] = np.random.normal(sample[band],
                                                 sample[f'{band}err'])
-
+       
         # calculate conditional pdfs
         if include_pdf:
-            posteriors = self.generator.pz_estimate(
-                sample, zmin=zmin, zmax=zmax, dz=dz, convolve_err=include_err
-            )
+            nfeatures = len(self.params['bands']) + 1
+            posteriors = self.generator.pz_estimate(sample.iloc[:,:nfeatures], zmin=zmin, zmax=zmax, dz=dz)
+            sample.attrs['pz_grid'] = np.arange(zmin, zmax+dz, dz)
             sample['pz_pdf'] = list(posteriors)
 
         return sample
