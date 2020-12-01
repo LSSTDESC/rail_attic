@@ -30,6 +30,12 @@ jobs:
         pip install FlexCode[all]
         pip install .
         pip install flake8 pytest pytest-cov
+	pip install tensorflow==2.2.0
+	pip install tensorflow-probability==0.10.1
+	pip install jax==0.1.75
+	pip install jaxlib==0.1.52
+	pip install flax==0.2.0
+	pip install dill
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Test with pytest
       run: |
