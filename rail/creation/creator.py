@@ -35,6 +35,7 @@ class Creator():
                                         'm5_i': 28.8,
                                         'm5_z': 28.1,
                                         'm5_y': 26.9}
+        print(param_defaults)
 
         if params is None:
             self.params = {}
@@ -47,7 +48,13 @@ class Creator():
                 if key_name not in param_keys:
                     self.params[key_name] = param_defaults[key_name]
 
-    def sample(self, n_samples, seed=None, include_err=False,
+        # Basic sanity check on params values
+        err_str = "Number of err_params is not equal to 2x the number of bands"
+        num_bands = len(self.params['bands'])
+        num_err_params = len(self.params['err_params'])
+        assert (2*num_bands == num_err_params), err_str
+
+    def sample(self, n_samples, seed=None, include_err=False, err_seed=None,
                include_pdf=False, zmin=0, zmax=2, dz=0.02):
         """
         Draw n_samples from the generator.
@@ -62,14 +69,15 @@ class Creator():
         if include_err:
             # add errors to the sample
             # using Eq 5 from https://arxiv.org/pdf/0805.2366.pdf
+            rand_state = np.random.RandomState(seed=err_seed)
 
             for band in self.params['bands']:
                 gamma = self.params['err_params'][f'gamma_{band}']
                 m5 = self.params['err_params'][f'm5_{band}']
                 x = 10**(0.4*(sample[band]-m5))
                 sample[f'{band}err'] = np.sqrt((0.04 - gamma) * x + gamma * x**2)
-                sample[band] = np.random.normal(sample[band],
-                                                sample[f'{band}err'])
+                sample[band] = rand_state.normal(sample[band],
+                                                 sample[f'{band}err'])
 
         # calculate conditional pdfs
         if include_pdf:
