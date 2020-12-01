@@ -119,67 +119,39 @@ class NormalizingFlow(Generator):
         self._log_prob = nn.Model(log_prob_module, params)
 
         # save the functions for data transformation
-        self.transform_data = transform_data
-        self.inv_transform_data = inv_transform_data
+        # if not provided, an identity function is used
+        self.transform_data = (lambda x: x) if transform_data is None else transform_data
+        self.inv_transform_data = (lambda x: x) if inv_transform_data is None else inv_transform_data
         
         
     def forward(self, y):
-        x = self._forward(y)
-        if self.inv_transform_data:
-            x = self.inv_transform_data(x)
+        trans_x = self._forward(y)
+        x = self.inv_transform_data(trans_x)
         return x
 
     def inverse(self, x):
-        trans_x = x
-        if self.transform_data:
-            trans_x = self.transform_data(trans_x)
-        return self._inverse(trans_x.iloc[:,:self.hyperparams['nfeatures']])
+        trans_x = self.transform_data(x)
+        y = self._inverse(trans_x)
+        return y
         
     def sample(self, n_samples, seed=None):
         seed = np.random.randint(1e18) if seed is None else seed
-        samples = self._sampler(n_samples, jax.random.PRNGKey(seed))
-        if self.inv_transform_data:
-            samples = self.inv_transform_data(samples)
+        trans_samples = self._sampler(n_samples, jax.random.PRNGKey(seed))
+        samples = self.inv_transform_data(trans_samples)
         return samples
     
-    def log_prob(self, x, convolve_err=False):
-        trans_x = x
-        if self.transform_data:
-            trans_x = self.transform_data(trans_x, transform_errs=convolve_err)
-        if convolve_err:
-            return self._log_prob_convolved(trans_x, self._inverse)
-        else:
-            return self._log_prob(trans_x.iloc[:,:self.hyperparams['nfeatures']])
-
-    def _log_prob_convolved(self, x, f_inverse):
-
-        nfeatures = self.hyperparams['nfeatures']
-        data, errs = jnp.array(x)[:,:nfeatures], jnp.array(x)[:,nfeatures:]
-        
-        def log_prob_convolved(data, errs):
-            Jinv = jax.jacfwd(f_inverse)(data[None,:]).squeeze()
-            IsigmaY = jnp.identity(nfeatures) + Jinv @ jnp.diag(errs) @ Jinv.T
-            Y = f_inverse(data[None,:]).squeeze()
-            return jnp.linalg.slogdet(Jinv)[1] - 1/2 * jnp.linalg.slogdet(2*jnp.pi*IsigmaY)[1] - 1/2 * Y.T @ jnp.linalg.solve(IsigmaY,Y)
-
-        return jax.vmap(log_prob_convolved)(data, errs)
+    def log_prob(self, x):
+        trans_x = self.transform_data(x)
+        return self._log_prob(trans_x)
     
-    def pz_estimate(self, data, convolve_err=False, zmin=0, zmax=4, dz=0.01):
+    def pz_estimate(self, data, zmin=0, zmax=4, dz=0.01):
         
         # generate the redshift grid
         zs = np.arange(zmin, zmax+dz, dz)
-        
-        cols = self.hyperparams['data_cols']
-        if convolve_err:
-            for col in cols:
-                if col != 'redshift':
-                    cols = np.append(cols, f'{col}err')
 
         # log_prob for each galaxy in the sample
-        log_prob = self.log_prob(pd.DataFrame({col: np.repeat(data[col], len(zs)) if col not in ('redshift','redshift_err')
-                                                else np.tile(zs, len(data)) if col == 'redshift'
-                                                else np.zeros(len(data)*len(zs)) for col in cols}),
-                                convolve_err=convolve_err)
+        log_prob = self.log_prob(pd.DataFrame({col: np.repeat(data[col], len(zs)) if col != 'redshift'
+                                               else np.tile(zs, len(data)) for col in self.hyperparams['data_cols']}))
 
         # reshape so each row is a galaxy
         log_prob = log_prob.reshape((len(data), -1))
@@ -197,10 +169,7 @@ class NormalizingFlow(Generator):
         self.hyperparams['data_cols'] = trainingset.columns.values
 
         # the optimizer used for training
-        if 'learning_rate' in self.hyperparams:
-            learning_rate = self.hyperparams['learning_rate']
-        else:
-            learning_rate = 0.001
+        learning_rate = 0.001 if 'learning_rate' not in self.hyperparams else self.hyperparams['learning_rate']
         optimizer = flax.optim.Adam(learning_rate=learning_rate).create(self._log_prob)
         
         # compile a function that does a single training step
@@ -223,8 +192,7 @@ class NormalizingFlow(Generator):
             
             # get a batch of the trainingset and transform it
             batch = trainingset.sample(n=batch_size, replace=False)
-            if self.transform_data:
-                batch = self.transform_data(batch, transform_errs=False)
+            batch = self.transform_data(batch)
                 
             # do a step of the training
             loss, optimizer = train_step(optimizer, jnp.array(batch))
@@ -235,16 +203,17 @@ class NormalizingFlow(Generator):
                 # print the training loss
                 if verbose:
                     print(loss)
-                # if a testset is provided, evaluate training loss
+                # if a testset is provided, evaluate validation loss
                 if testset is not None and (verbose or return_losses):
                     testbatch = testset.sample(n=batch_size, replace=False)
-                    if self.transform_data:
-                        testbatch = self.transform_data(testbatch, transform_errs=False)
+                    testbatch = self.transform_data(testbatch)
                     testlosses.append(-np.mean(optimizer.target(testbatch)))
         
         # update the parameters
-        self._log_prob = self._log_prob.replace(params=optimizer.target.params)
+        self._forward = self._forward.replace(params=optimizer.target.params)
+        self._inverse = self._inverse.replace(params=optimizer.target.params)
         self._sampler = self._sampler.replace(params=optimizer.target.params)
+        self._log_prob = self._log_prob.replace(params=optimizer.target.params)
         self.params = optimizer.target.params
         
         # return list of training losses if true
@@ -256,9 +225,9 @@ class NormalizingFlow(Generator):
     def save(self, file):
 
         save_dict = {'hyperparams' : self.hyperparams,
-            'params' : self.params,
-            'transform_data' : self.transform_data,
-            'inv_transform_data' : self.inv_transform_data}
+                     'params' : self.params,
+                     'transform_data' : self.transform_data,
+                     'inv_transform_data' : self.inv_transform_data}
 
         with open(file, 'wb') as handle:
             dill.dump(save_dict, handle, recurse=True)
