@@ -21,7 +21,7 @@ import flax
 from flax import nn
 import dill
 import pandas as pd
-from generator import Generator
+from rail.creation.generator import Generator
 
 
 class NormalizingFlow(Generator):
@@ -62,6 +62,10 @@ class NormalizingFlow(Generator):
     
     def __init__(self, module, hyperparams=None, params=None, transform_data=None, inv_transform_data=None, file=None):
 
+        # make sure module is a flax module metafunction
+        if not isinstance(module,flax.nn.base._ModuleMeta):
+            raise ValueError('First argument must inherit from flax module meta function')
+        
         # make sure we either get the list of hyperparameters or a file to load from
         if hyperparams is None and file is None:
             raise ValueError('User must pass either hyperparams or file during instantiation')
@@ -84,8 +88,8 @@ class NormalizingFlow(Generator):
             raise KeyError('nfeatures must be in the hyperparameter dictionary')
         
         # save the hyperparameters
-        self.hyperparams = hyperparams.copy()
-        
+        self.hyperparams = hyperparams
+
         # create flax modules
         @nn.module
         def forward_module(x):
@@ -106,6 +110,7 @@ class NormalizingFlow(Generator):
             dummy_input = jnp.zeros((1,hyperparams['nfeatures']))
             _, params = log_prob_module.init(jax.random.PRNGKey(0), dummy_input)
         self.params = params
+
 
         # instantiate the flax models, based on the above modules, with these params
         self._forward = nn.Model(forward_module, params)
