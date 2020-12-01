@@ -24,7 +24,7 @@ import tensorflow_probability as tfp; tfp = tfp.experimental.substrates.jax
 tfb = tfp.bijectors
 tfd = tfp.distributions
 
-from realNVP import RealNVP
+from .realNVP import RealNVP
 
 
 @nn.module
