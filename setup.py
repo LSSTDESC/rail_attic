@@ -21,9 +21,15 @@ setup(
         "Operating System :: OS Independent",
         "Programming Language :: Python"
         ],
-    install_requires=['numpy',
+    install_requires=['dill',
+                      'flax',
                       'h5py',
+                      'jax',
+                      'numpy',
                       'scipy',
+                      'sklearn',
+                      'tensorflow',
+                      'tensorflow-probability'
                       ],
     python_requires='>=3.5',
     setup_requires=['pytest-runner'],
