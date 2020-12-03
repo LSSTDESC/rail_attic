@@ -50,6 +50,6 @@ def test_sample_with_all_options_false(sampleCreator):
 def test_sample_with_pdf_true(sampleCreator):
     "Test that sample returns pdfs correctly when wanted"
     pdf_sample = sampleCreator.sample(1000, seed=42, include_pdf=True,
-                                      zmin=0, zmax=2, dz=0.5)
+                                      zinfo={'zmin'=0., 'zmax'=2., 'dz'=0.5})
     np.testing.assert_array_equal(np.stack(pdf_sample['pz_pdf'].values),
                                   np.ones((1000, 5))*0.2)
