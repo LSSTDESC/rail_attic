@@ -34,11 +34,11 @@ class Creator():
         rng = np.random.default_rng(seed)
 
         # get samples
-        sample = self.generator.sample(n_samples, seed=rng.integers(1e18))
+        sample = self.generator.sample(n_samples, seed=seed)
         
         if self.selection_fn:
             # apply selection function
-            sample = self.selection_fn(sample, seed=rng.integers(1e18))
+            sample = self.selection_fn(sample, seed=seed)
             # calculate fraction that survives the cut
             selected_frac = len(sample)/n_samples
             # draw more samples and cut until we have enough samples
