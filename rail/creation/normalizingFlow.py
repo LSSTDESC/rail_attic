@@ -14,50 +14,39 @@ Good intro sources in the literature:
      Representations_, 2017. https://arxiv.org/abs/1605.08803
 """
 
-import numpy as np
-import jax
-import jax.numpy as jnp
+import dill
 import flax
 from flax import nn
-import dill
+import jax
+import jax.numpy as jnp
+import numpy as np
 import pandas as pd
-from rail.creation.generator import Generator
 
+from rail.creation.generator import Generator
 
 class NormalizingFlow(Generator):
     """
     Wrapper class for flax normalizing flows.
-    
-    Input:
-    module - a flax module that returns a tfd.TransformedDistribution object
-    hyperparams - a dictionary containing the hyperparameters for whatever module
-                    you're using. The only mandatory hyperparameter is 'nfeatures'.
-    params - the model parameters. If not provided, random parameters are generated
-    transform_data - the transformation that maps from the data space to the flow input.
-                    If none provided, transform_data is just the identity.
-    inv_transform_data - the transformation that maps from flow output to the data space.
-                    If none provided, inv_transform_data is just the identity.
-    file - a file to load the other arguments from (except module, which must be provided).
-                    If file is provided, those other arguments are ignored.
-                    
-    Methods:
+
+    Methods
+    -------
     sample(n_samples, seed=0) - draws n_samples random samples from the distribution
                     seed sets the random seed.
     log_prob(x) - calculates the log probability that x is drawn from the
                     transformed probability distribution
-    pz_estimate(data, zmin=0, zmax=4, dz=0.01) - evaluates photo-z posteriors for the 
+    pz_estimate(data, zmin=0, zmax=4, dz=0.01) - evaluates photo-z posteriors for the
                     galaxies in data on the redshift grid np.arange(zmin, zmax+dz, dz)
     forward(y) - uses the normalizing flow forward bijection to map a point from the
                     base multivariate Gaussian to the space of galaxy redshift and magnitudes
-    inverse(x) - uses the normalizing flow forward bijection to map a point from the 
-                    space of galaxy redshift and magnitudes to the base multivariate Gaussian 
-    train(trainingset, testset=None, niter=2000, batch_size=1024, seed=None, 
-                    return_losses=False, verbose) - 
-                    trains the normalizing flow on the given training set (which must be 
+    inverse(x) - uses the normalizing flow forward bijection to map a point from the
+                    space of galaxy redshift and magnitudes to the base multivariate Gaussian
+    train(trainingset, testset=None, niter=2000, batch_size=1024, seed=None,
+                    return_losses=False, verbose) -
+                    trains the normalizing flow on the given training set (which must be
                     in the form of a pandas dataframe) and updates the model parameters.
                     testset is an optional separate data set to evaluate a validation loss.
                     niter is the number of training iterations.
-                    batch_size is the size of batches to train on. 
+                    batch_size is the size of batches to train on.
                     seed is a random seed for drawing batches.
                     If return_losses is True, returns a list of the training losses.
                     If verbose is True, training loss will be printed everytime 5% of the
@@ -65,13 +54,34 @@ class NormalizingFlow(Generator):
     save(file) - saves the hyperparams, params, and data tranformations to a file such that
                     the flow can be reloaded by instantiating with the file argument.
     """
-    
+
     def __init__(self, module, hyperparams=None, params=None, transform_data=None, inv_transform_data=None, file=None):
+        """
+        Parameters
+        ----------
+        module: flax module
+            must return a tfd.TransformedDistribution object
+        hyperparams: dictionary, optional
+            containing the hyperparameters for whatever module you're using.
+            The only mandatory hyperparameter is 'nfeatures'.
+        params: dictionary, optional
+            the model parameters.
+            If not provided, random parameters are generated
+        transform_data: function, optional
+            the transformation that maps from the data space to the flow input.
+            If none provided, transform_data is just the identity.
+        inv_transform_data: function, optional
+            the transformation that maps from flow output to the data space.
+            If none provided, inv_transform_data is just the identity.
+        file: string, optional
+            path to file with kwargs
+            If file is provided, those other arguments are ignored.
+        """
 
         # make sure module is a flax module metafunction
         if not isinstance(module,flax.nn.base._ModuleMeta):
             raise ValueError('First argument must inherit from flax module meta function')
-        
+
         # make sure we either get the list of hyperparameters or a file to load from
         if hyperparams is None and file is None:
             raise ValueError('User must pass either hyperparams or file during instantiation')
@@ -88,11 +98,11 @@ class NormalizingFlow(Generator):
             params = save_dict['params']
             transform_data = save_dict['transform_data']
             inv_transform_data = save_dict['inv_transform_data']
-        
+
         # make sure the hyperparameter dict contains nfeatures
         if 'nfeatures' not in hyperparams:
             raise KeyError('nfeatures must be in the hyperparameter dictionary')
-        
+
         # save the hyperparameters
         self.hyperparams = hyperparams
 
@@ -128,30 +138,55 @@ class NormalizingFlow(Generator):
         # if not provided, an identity function is used
         self.transform_data = (lambda x: x) if transform_data is None else transform_data
         self.inv_transform_data = (lambda x: x) if inv_transform_data is None else inv_transform_data
-        
-        
+
+
     def forward(self, y):
+        """
+        Notes
+        -----
+        Fill in some documentation here.
+        """
         trans_x = self._forward(y)
         x = self.inv_transform_data(trans_x)
         return x
 
     def inverse(self, x):
+        """
+        Notes
+        -----
+        Fill in some documentation here.
+        """
         trans_x = self.transform_data(x)
         y = self._inverse(trans_x)
         return y
-        
+
     def sample(self, n_samples, seed=None):
+        """
+        Notes
+        -----
+        Fill in some documentation here.
+        """
         seed = np.random.randint(1e18) if seed is None else seed
         trans_samples = self._sampler(n_samples, jax.random.PRNGKey(seed))
         samples = self.inv_transform_data(trans_samples)
         return samples
-    
+
     def log_prob(self, x):
+        """
+        Notes
+        -----
+        Fill in some documentation here.
+        """
         trans_x = self.transform_data(x)
         return self._log_prob(trans_x)
-    
+
     def pz_estimate(self, data, zmin=0, zmax=4, dz=0.01):
-        
+        """
+        Notes
+        -----
+        Fill in some documentation here.
+        """
+
         # generate the redshift grid
         zs = np.arange(zmin, zmax+dz, dz)
 
@@ -161,23 +196,28 @@ class NormalizingFlow(Generator):
 
         # reshape so each row is a galaxy
         log_prob = log_prob.reshape((len(data), -1))
-        # exponentiate 
+        # exponentiate
         pdfs = np.exp(log_prob)
         # normalize
         pdfs = pdfs / (pdfs * dz).sum(axis=1).reshape(-1,1)
-        
+
         return pdfs
-    
-    def train(self, trainingset, testset=None, niter=2000, batch_size=1024, seed=None, 
+
+    def train(self, trainingset, testset=None, niter=2000, batch_size=1024, seed=None,
               return_losses=False, verbose=False):
-        
+        """
+        Notes
+        -----
+        Fill in some documentation here.
+        """
+
         # save the titles of the data columns
         self.hyperparams['data_cols'] = trainingset.columns.values
 
         # the optimizer used for training
         learning_rate = 0.001 if 'learning_rate' not in self.hyperparams else self.hyperparams['learning_rate']
         optimizer = flax.optim.Adam(learning_rate=learning_rate).create(self._log_prob)
-        
+
         # compile a function that does a single training step
         @jax.jit
         def train_step(optimizer, batch):
@@ -189,21 +229,21 @@ class NormalizingFlow(Generator):
             loss, grad = jax.value_and_grad(loss_fn)(optimizer.target)
             optimizer = optimizer.apply_gradient(grad)
             return loss, optimizer
-        
+
         # loop through the training
         losses = []
         testlosses = []
         rng = np.random.RandomState(seed)
         for i in range(niter):
-            
+
             # get a batch of the trainingset and transform it
             batch = trainingset.sample(n=batch_size, replace=False, random_state=rng)
             batch = self.transform_data(batch)
-                
+
             # do a step of the training
             loss, optimizer = train_step(optimizer, jnp.array(batch))
             losses.append(loss)
-            
+
             # every 5% of iterations
             if i % int(0.05*niter) == 0 or i == niter-1:
                 # print the training loss
@@ -214,14 +254,14 @@ class NormalizingFlow(Generator):
                     testbatch = testset.sample(n=batch_size, replace=False, random_state=rng)
                     testbatch = self.transform_data(testbatch)
                     testlosses.append(-np.mean(optimizer.target(testbatch)))
-        
+
         # update the parameters
         self._forward = self._forward.replace(params=optimizer.target.params)
         self._inverse = self._inverse.replace(params=optimizer.target.params)
         self._sampler = self._sampler.replace(params=optimizer.target.params)
         self._log_prob = self._log_prob.replace(params=optimizer.target.params)
         self.params = optimizer.target.params
-        
+
         # return list of training losses if true
         if return_losses and testset is None:
             return losses
