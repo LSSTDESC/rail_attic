@@ -1,4 +1,5 @@
 # Abstract base class defining a generator, which represents a probability distribution
+# Note: this could tie in to zeppole's probability distribution object
 
 from abc import ABC, abstractmethod
 
@@ -21,7 +22,7 @@ class Generator(ABC):
         Return the log probability that the data is drawn from the distribution
         """
         pass
-    
+
     @abstractmethod
     def pz_estimate(self, data, zmin, zmax, dz, **kwargs):
         """
