@@ -1,9 +1,12 @@
+corner
 dill
-flax
+flax==0.2.0
 h5py
-jax
+jax==0.1.75
+jaxlib==0.1.52
 numpy
+pandas
 scipy
-sklearn
-tensorflow
-tensorflow-probability
+scikit-learn
+tensorflow==2.2.0
+tensorflow-probability==0.10.1
