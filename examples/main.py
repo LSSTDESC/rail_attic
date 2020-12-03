@@ -13,8 +13,8 @@ def main(argv):
         base_config = 'base.yaml'
         input_yaml = argv[1]
     elif len(argv) == 3:
-        input_yaml = argv[1]
-        base_config = argv[2]
+        input_yaml = argv[2]
+        base_config = argv[1]
     else:
         print(len(argv))
         print("Usage: main <config yaml file> [base config yaml]")
