@@ -120,7 +120,7 @@ class Creator():
         if include_pdf:
             nfeatures = len(self.params['bands']) + 1
             posteriors = self.generator.pz_estimate(sample.iloc[:,:nfeatures], zinfo=zinfo)
-            sample.attrs['pz_grid'] = np.arange(zinfo['zmin'], zinfo['zmax']+zinfo['dz'], zinfo['dz'])
+            sample.attrs['pz_grid'] = np.arange(zinfo['zmin'], zinfo['zmax'] + zinfo['dz'], zinfo['dz'])
             sample['pz_pdf'] = list(posteriors)
 
         return sample
