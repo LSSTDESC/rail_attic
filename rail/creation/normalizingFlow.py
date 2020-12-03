@@ -41,10 +41,16 @@ class NormalizingFlow(Generator):
                     If file is provided, those other arguments are ignored.
                     
     Methods:
-    log_prob(x) - calculates the log probability that x is drawn from the
-                    transformed probability distribution
     sample(n_samples, seed=0) - draws n_samples random samples from the distribution
                     seed sets the random seed.
+    log_prob(x) - calculates the log probability that x is drawn from the
+                    transformed probability distribution
+    pz_estimate(data, zmin=0, zmax=4, dz=0.01) - evaluates photo-z posteriors for the 
+                    galaxies in data on the redshift grid np.arange(zmin, zmax+dz, dz)
+    forward(y) - uses the normalizing flow forward bijection to map a point from the
+                    base multivariate Gaussian to the space of galaxy redshift and magnitudes
+    inverse(x) - uses the normalizing flow forward bijection to map a point from the 
+                    space of galaxy redshift and magnitudes to the base multivariate Gaussian 
     train(trainingset, testset=None, niter=2000, batch_size=1024, seed=None, 
                     return_losses=False, verbose) - 
                     trains the normalizing flow on the given training set (which must be 
@@ -187,11 +193,11 @@ class NormalizingFlow(Generator):
         # loop through the training
         losses = []
         testlosses = []
-        np.random.seed(seed)
+        rng = np.random.RandomState(seed)
         for i in range(niter):
             
             # get a batch of the trainingset and transform it
-            batch = trainingset.sample(n=batch_size, replace=False)
+            batch = trainingset.sample(n=batch_size, replace=False, random_state=rng)
             batch = self.transform_data(batch)
                 
             # do a step of the training
@@ -205,7 +211,7 @@ class NormalizingFlow(Generator):
                     print(loss)
                 # if a testset is provided, evaluate validation loss
                 if testset is not None and (verbose or return_losses):
-                    testbatch = testset.sample(n=batch_size, replace=False)
+                    testbatch = testset.sample(n=batch_size, replace=False, random_state=rng)
                     testbatch = self.transform_data(testbatch)
                     testlosses.append(-np.mean(optimizer.target(testbatch)))
         
