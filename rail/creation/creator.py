@@ -9,7 +9,7 @@ class Creator():
     The mock data is drawn from a probability distribution defined by the generator, with an optional selection function applied.
     """
 
-    def __init__(self, generator, selection_fn=None, params=None):
+    def __init__(self, generator, selection_fn=None, params=rcu.param_defaults):
         """
         Parameters
         ----------
@@ -25,28 +25,11 @@ class Creator():
         """
         self.generator = generator
         self.selection_fn = selection_fn
+        self.params = params
 
-        # if no params provided, use defaults
-        if params is None:
-            self.params = {}
-            self.params['bands'] = rcu.param_defaults['bands']
-            self.params['err_params'] = rcu.param_defaults['err_params']
-        # if params are provided, fill in defaults if bands and err_params not included
-        else:
-            self.params = params
-            param_keys = self.params.keys()
-            for key_name in ['bands', 'err_params']:
-                if key_name not in param_keys:
-                    self.params[key_name] = rcu.param_defaults[key_name]
-
-        # Basic sanity check on params values
-        err_str = "Number of err_params is not equal to 2x the number of bands"
-        num_bands = len(self.params['bands'])
-        num_err_params = len(self.params['err_params'])
-        assert (2*num_bands == num_err_params), err_str
 
     def sample(self, n_samples, seed=None, include_err=False, err_seed=None,
-               include_pdf=False, zinfo=None):
+               include_pdf=False, zinfo=rcu.zinfo):
         """
         Draws n_samples from the generator
 
@@ -82,11 +65,11 @@ class Creator():
         rng = np.random.default_rng(seed)
 
         # get samples
-        sample = self.generator.sample(n_samples, seed=rng.integers(1e18))
+        sample = self.generator.sample(n_samples, seed=seed)
 
         if self.selection_fn:
             # apply selection function
-            sample = self.selection_fn(sample, seed=rng.integers(1e18))
+            sample = self.selection_fn(sample, seed=seed)
             # calculate fraction that survives the cut
             selected_frac = len(sample)/n_samples
             # draw more samples and cut until we have enough samples
@@ -101,25 +84,9 @@ class Creator():
             # cut out the extras
             sample = sample.iloc[:n_samples]
 
-        if include_err:
-            # add errors to the sample
-            # using Eq 5 from https://arxiv.org/pdf/0805.2366.pdf
-            rng = np.random.default_rng(err_seed)
-
-            # calculate error in each band, then add Gaussian errors
-            for band in self.params['bands']:
-                gamma = self.params['err_params'][f'gamma_{band}']
-                m5 = self.params['err_params'][f'm5_{band}']
-                x = 10**(0.4 * (sample[band] - m5))
-                sample[f'{band}err'] = np.sqrt((0.04 - gamma) * x + gamma * x**2)
-                sample[band] = rng.normal(sample[band], sample[f'{band}err'])
-        if not zinfo:
-            zinfo = rcu.zinfo
-
         # calculate posteriors
         if include_pdf:
-            nfeatures = len(self.params['bands']) + 1
-            posteriors = self.generator.pz_estimate(sample.iloc[:,:nfeatures], zinfo=zinfo)
+            posteriors = self.generator.pz_estimate(sample, zinfo=zinfo)
             sample.attrs['pz_grid'] = np.arange(zinfo['zmin'], zinfo['zmax'] + zinfo['dz'], zinfo['dz'])
             sample['pz_pdf'] = list(posteriors)
 
