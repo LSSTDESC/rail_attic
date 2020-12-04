@@ -1,6 +1,6 @@
 import numpy as np
 from rail.estimation.utils import iter_chunk_hdf5_data
-from rail.estimation.algos import randomPZ, sklearn_nn, flexzboost
+from rail.estimation.algos import randomPZ, sklearn_nn, flexzboost, trainZ
 
 
 test_base_yaml = './tests/test.yaml'
@@ -57,5 +57,15 @@ def test_flexzboost():
     zb_expected = np.array([0.13, 0.13, 0.13, 0.12, 0.12, 0.13, 0.12, 0.13,
                             0.12, 0.12])
     pz_algo = flexzboost.FZBoost
+    pz_dict = one_algo(pz_algo, config_dict)
+    assert np.isclose(pz_dict['zmode'], zb_expected).all()
+
+def test_train_pz():
+    config_dict = {'run_params': {'zmin': 0.0,
+                                  'zmax': 3.0, 'nzbins': 301}}
+    zb_expected = np.array([0.145,0.155,0.155,0.115,0.115,0.145,0.135,0.145,0.155,0.145])
+    pdf_expected=np.zeros(shape=(301,))
+    pdf_expected[10:16]=[7,23,8,23,26,13]
+    pz_algo = trainZ.trainZ
     pz_dict = one_algo(pz_algo, config_dict)
     assert np.isclose(pz_dict['zmode'], zb_expected).all()

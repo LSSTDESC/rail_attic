@@ -1,0 +1,9 @@
+run_params:
+  class_name: trainZ
+  run_name: test_trainZ
+  zmin: 0.0
+  zmax: 3.0
+  nzbins: 301
+  
+
+
