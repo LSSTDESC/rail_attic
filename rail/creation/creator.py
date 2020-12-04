@@ -66,7 +66,7 @@ class Creator():
         # get samples
         sample = self.generator.sample(n_samples, seed=seed)
 
-        if self.selection_fn:
+        if self.selection_fn is not None:
             # apply selection function
             sample = self.selection_fn(sample, seed=seed)
             # calculate fraction that survives the cut
