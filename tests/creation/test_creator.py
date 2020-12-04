@@ -8,7 +8,7 @@ class sampleGenerator(object):
     "Create a test generator that is just a normal distribution."
 
     def sample(self, n_samples, seed=None):
-        "Use numpy Random Generator to create reproducible sampler for testing."
+        "Use numpy Random Generator to create reproducible sampler for tests."
 
         rng = np.random.default_rng(seed)
 
@@ -23,7 +23,6 @@ class sampleGenerator(object):
         test_posterior = output_array*(1./len(z_steps))
 
         return test_posterior
-
 
 @pytest.fixture
 def sampleCreator():
@@ -50,6 +49,41 @@ def test_sample_with_all_options_false(sampleCreator):
 def test_sample_with_pdf_true(sampleCreator):
     "Test that sample returns pdfs correctly when wanted"
     pdf_sample = sampleCreator.sample(1000, seed=42, include_pdf=True,
-                                      zinfo={'zmin':0., 'zmax':2., 'dz':0.5})
+                                      zinfo={'zmin': 0.,
+                                             'zmax': 2.,
+                                             'dz': 0.5})
     np.testing.assert_array_equal(np.stack(pdf_sample['pz_pdf'].values),
                                   np.ones((1000, 5))*0.2)
+
+
+def test_sample_with_selection_fn(sampleCreator):
+    "Test that sample is correct after applying selection function."
+
+    rng = np.random.default_rng(42)
+
+    def selection_fn(data, seed=None):
+        "Test selection function that just cuts on redshift"
+
+        return data.query('redshift < 2.')
+
+    sampleCreator.selection_fn = selection_fn
+
+    creator_sample = sampleCreator.sample(1000, seed=42)
+
+    # Create copy of sampler from sampleGenerator
+    verify_sampler = np.random.default_rng(seed=42)
+    verify_sampler_df = pd.DataFrame(verify_sampler.normal(size=(1000, 7)))
+    verify_sampler_df.columns = ['redshift', 'u', 'g', 'r', 'i', 'z', 'y']
+    verify_sampler_keep = verify_sampler_df.query('redshift < 2.')
+
+    verify_sampler_add = np.random.default_rng(seed=rng.integers(1e18))
+    verify_sampler_add_df = pd.DataFrame(
+        verify_sampler_add.normal(size=(100,  7)),
+        columns=['redshift', 'u', 'g', 'r', 'i', 'z', 'y']
+    )
+    verify_sample_add_keep = verify_sampler_add_df.query('redshift < 2.')
+
+    verify_concat = pd.concat([verify_sampler_keep, verify_sample_add_keep])
+    verify_final = verify_concat.iloc[:1000]
+
+    np.testing.assert_array_equal(creator_sample, verify_final)
