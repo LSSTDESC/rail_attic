@@ -25,6 +25,9 @@ setup(
                       'h5py',
                       'scipy',
                       'pyyaml',
+                      'pandas',
+                      'pyarrow',
+                      'tables',
                       ],
     extras_require={
         'Full': ['sklearn', 'FlexCode[all]'],
