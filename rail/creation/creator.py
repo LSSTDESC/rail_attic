@@ -11,7 +11,7 @@ class Creator():
     """
 
     def __init__(self, generator, selection_fn=None,
-                 params=rcu.param_defaults):
+                 params=None):
         """
         Parameters
         ----------
