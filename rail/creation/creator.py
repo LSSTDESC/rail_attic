@@ -86,7 +86,7 @@ class Creator():
 
         # calculate posteriors
         if include_pdf:
-            posteriors = self.generator.pz_estimate(sample, zinfo=zinfo)
+            posteriors = self.generator.pz_estimate(sample, zmin=zinfo['zmin'], zmax=zinfo['zmax'], dz=zinfo['dz'])
             sample.attrs['pz_grid'] = np.arange(zinfo['zmin'], zinfo['zmax'] + zinfo['dz'], zinfo['dz'])
             sample['pz_pdf'] = list(posteriors)
 
