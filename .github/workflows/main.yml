@@ -5,7 +5,7 @@ name: rail
 
 on:
   push:
-    branches: [ $default-branch ]
+    branches: [ issue/42/setupextras ]
   pull_request:
     branches: [ master ]
 
