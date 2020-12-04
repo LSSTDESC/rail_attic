@@ -24,7 +24,13 @@ setup(
     install_requires=['numpy',
                       'h5py',
                       'scipy',
+                      'pyyaml',
                       ],
+    extras_require={
+        'Full': ['sklearn', 'FlexCode[all]'],
+        'flex': ['FlexCode[all]'],
+        'NN' : ['sklearn'],
+        }
     python_requires='>=3.5',
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
