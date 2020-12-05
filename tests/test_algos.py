@@ -60,12 +60,14 @@ def test_flexzboost():
     pz_dict = one_algo(pz_algo, config_dict)
     assert np.isclose(pz_dict['zmode'], zb_expected).all()
 
+
 def test_train_pz():
     config_dict = {'run_params': {'zmin': 0.0,
                                   'zmax': 3.0, 'nzbins': 301}}
-    zb_expected = np.array([0.145,0.155,0.155,0.115,0.115,0.145,0.135,0.145,0.155,0.145])
-    pdf_expected=np.zeros(shape=(301,))
-    pdf_expected[10:16]=[7,23,8,23,26,13]
+    zb_expected = np.repeat(0.1445183, 10)
+    pdf_expected = np.zeros(shape=(301, ))
+    pdf_expected[10:16] = [7, 23, 8, 23, 26, 13]
     pz_algo = trainZ.trainZ
     pz_dict = one_algo(pz_algo, config_dict)
+    print(pz_dict['zmode'])
     assert np.isclose(pz_dict['zmode'], zb_expected).all()
