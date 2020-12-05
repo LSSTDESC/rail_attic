@@ -19,13 +19,14 @@ class trainZ(BaseEstimation):
         self.zmax = inputs['zmax']
         self.nzbins = inputs['nzbins']
 
-        zbins = np.linspace(self.zmin,self.zmax,self.nzbins)
+        zbins = np.linspace(self.zmin,self.zmax,self.nzbins+1)
         speczs = np.sort(self.training_data['redshift'])
         self.train_pdf,_ = np.histogram(speczs,zbins)
         self.midpoints = zbins[:-1] + np.diff(zbins)/2
+        self.zmode = self.midpoints[np.argmax(self.train_pdf)]
         cdf = np.cumsum(self.train_pdf)
         self.cdf = cdf / cdf[-1]
-        self.zgrid = zbins
+        self.zgrid = self.midpoints
         np.random.seed(87)
         
     def inform(self):
@@ -33,11 +34,6 @@ class trainZ(BaseEstimation):
     
     def estimate(self,test_data):
         test_size = len(test_data['id'])
-        random_u = np.random.rand(test_size)
-        value_bins = np.searchsorted(self.cdf, random_u)
-        random_z = self.midpoints[value_bins]
-        print(random_z)
-        print(self.train_pdf)
-        pz_dict = {'zmode': random_z, 'pz_pdf': np.tile(self.train_pdf,(test_size,1))}
-        print(pz_dict)
+        zmode = np.repeat(self.zmode, test_size)
+        pz_dict = {'zmode': zmode, 'pz_pdf': np.tile(self.train_pdf,(test_size,1))}
         return pz_dict
