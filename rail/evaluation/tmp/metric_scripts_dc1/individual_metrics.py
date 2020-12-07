@@ -3,7 +3,7 @@ import numpy as np
 import qp
 import matplotlib.pyplot as plt
 from scipy import stats
-import skgof
+#import skgof
 
 class EvaluateMetric(object):
     def __init__(self,ensemble_obj,truths):
@@ -20,7 +20,7 @@ class EvaluateMetric(object):
         """
 
 #        if ensemble_obj==None or truths==None:
-#            print 'Warning: inputs not complete'
+#            print('Warning: inputs not complete')
         self.ensemble_obj = ensemble_obj
         self.truths = truths
         self.pitarray = None #will store once computed as used often
@@ -42,7 +42,7 @@ class EvaluateMetric(object):
              Also stores PIT array in self.pitarray
         """
         if len(self.truths) != self.ensemble_obj.n_pdfs:
-            print 'Warning: number of zref values not equal to number of ensemble objects'
+            print('Warning: number of zref values not equal to number of ensemble objects')
             return
         n = self.ensemble_obj.n_pdfs
         pitlimits = np.zeros([n,2])
@@ -183,7 +183,7 @@ class EvaluateMetric(object):
             pits = np.array(self.PIT(using=using,dx=dx))
             self.pitarray = pits
         mask = (pits>vmin) & (pits<vmax)
-        print "now with proper uniform range"
+        print("now with proper uniform range")
         delv = vmax-vmin
         ad_result = skgof.ad_test(pits[mask], stats.uniform(loc=vmin,scale=delv))
         return ad_result.statistic, ad_result.pvalue
@@ -226,12 +226,12 @@ class NzSumEvaluateMetric(object):
         """
 
 #        if stackpz_obj==None or truth_vals==None:
-#            print 'Warning: inputs not complete'
+#            print('Warning: inputs not complete')
         self.ensemble_obj = ensemble_obj
         self.truth = truth_vals
         if eval_grid is None:
             self.eval_grid = np.arange(0.005,2.12,0.01)
-            print "using default evaluation grid of numpy.arange(0.005,2.12,0.01)\n"
+            print("using default evaluation grid of numpy.arange(0.005,2.12,0.01)\n")
         else: 
             self.eval_grid = eval_grid
         self.using=using
@@ -330,7 +330,7 @@ class NzSumEvaluateMetric(object):
       #copy the form of Rongpu's use of skgof functions
       #will have to use QPPDFCDF class, as those expect objects
       #that have a .cdf method for a vector of values
-      print "using %f and %f for vmin and vmax\n"%(vmin,vmax)
+      print("using %f and %f for vmin and vmax\n"%(vmin,vmax))
       szs = self.truth
       mask = (szs > vmin) & (szs < vmax)
       vgrid = np.arange(vmin,vmax+delv,delv)
