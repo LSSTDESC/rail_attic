@@ -35,14 +35,14 @@ def main(argv):
         trueobj = qp.PDF(gridded=(trueqqvec,trueqqvec))
      
         stackqqvec = data[:,1]
-        print "read in data for %s"%xfile
+        print("read in data for %s"%xfile)
         
         stackobj = qp.PDF(gridded=(trueqqvec,stackqqvec))      
         xrmse = qp.utils.calculate_rmse(trueobj,stackobj,limits=(0.0,1.0),
                                         dx=0.001)
         outfp.write("%sQQRMSE: %5.5f\n"%(xfile,xrmse))
     outfp.close()
-    print "finished"
+    print("finished")
 
 if __name__=="__main__":
     main(sys.argv)

@@ -15,7 +15,7 @@ def test_moments():
     truth=np.array([3.0,10.0,36.0,138.0,558.0]) #values for what first five moments should be for this Normal
     for j in range(5):
         tmpmom = qp.utils.calculate_moment(testobj,j+1,using="gridded",dx=0.0001)
-        print "%d %5.5f %.1f"%(j,tmpmom,truth[j])
+        print("%d %5.5f %.1f"%(j,tmpmom,truth[j]))
     return
     
 
@@ -40,7 +40,7 @@ def main(argv):
     for i,xfile in enumerate(codes):
         direcpath = "%s%s"%(basepathpart,xfile)
         fullpath = os.path.join(direcpath,nzvectorfile)
-        #print fullpath
+        #print(fullpath)
         data = np.loadtxt(fullpath,skiprows=1)
         if i == 0:
             z_array = data[:,0]
@@ -53,7 +53,7 @@ def main(argv):
             outfp.write("\n")
 
         stacknzvec = data[:,2]
-        print "read in data for %s"%xfile
+        print("read in data for %s"%xfile)
         
         stackobj = qp.PDF(gridded=(z_array,stacknzvec))
         outfp.write("####%s N(z) moments for N=1-5\n"%(xfile))
@@ -62,7 +62,7 @@ def main(argv):
             outfp.write("%3.3f "%(tmpmoment))
         outfp.write("\n")
     outfp.close()
-    print "finished"
+    print("finished")
 
 if __name__=="__main__":
     main(sys.argv)

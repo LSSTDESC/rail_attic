@@ -77,7 +77,7 @@ class EvaluatePointStats(object):
         threesig_cut = 3.0*self.sigma_iqr_magcut
         cutcriterion_all = np.maximum(0.06,threesig_all)
         cutcriterion_magcut = np.maximum(0.06,threesig_cut)
-        print "using %.3g for cut for whole sample and %.3g for magcut sample\n"%(cutcriterion_all,cutcriterion_magcut)
+        print("using %.3g for cut for whole sample and %.3g for magcut sample\n"%(cutcriterion_all,cutcriterion_magcut))
         mask_all = (self.ez_all>np.fabs(cutcriterion_all))
         mask_magcut = (self.ez_magcut>np.fabs(cutcriterion_magcut))
         outlier_all = np.sum(mask_all)
