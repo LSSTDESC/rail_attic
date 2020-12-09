@@ -19,24 +19,24 @@ def main(argv):
 
 
 
-    print "making Ensemble..."
+    print("making Ensemble...")
     approx_pdf = qp.Ensemble(pzs.shape[0],gridded=(z_array,pzs),procs=3)
     oldtime = currenttime
     currenttime = time.time()
-    print "took %g seconds"%(currenttime-oldtime)
-    print "making EvaluateMetric Object"
+    print("took %g seconds"%(currenttime-oldtime))
+    print("making EvaluateMetric Object")
     bpzobj = inmet.EvaluateMetric(approx_pdf,szs)
     oldtime = currenttime
     currenttime = time.time()
-    print "took %g seconds"%(currenttime-oldtime)
-    print "calculating PIT vals..."
+    print("took %g seconds"%(currenttime-oldtime))
+    print("calculating PIT vals...")
     bpzPIT = bpzobj.PIT()
     oldtime = currenttime
     currenttime = time.time()
-    print "took %g seconds"%(currenttime-oldtime)
+    print("took %g seconds"%(currenttime-oldtime))
 
-    #print "PIT!"
-    #print bpzPIT
+    #print("PIT!")
+    #print(bpzPIT)
     #write to file
     outfp = open("TESTPITVALS.out","w")
     outfp.write("#ID PIT\n")
@@ -44,7 +44,7 @@ def main(argv):
         outfp.write("%d %0.5f\n"%(ID[i],bpzobj.pitarray[i]))
     outfp.close()
 #QQplot
-    print "making QQ plot..."
+    print("making QQ plot...")
     qq_qtheory,qq_qdata = bpzobj.QQvectors(using='gridded',dx=0.0001,Nquants=1001)
     outfp = open("TESTQQvectors.out","w")
     outfp.write("#qtheory qdata\n")
@@ -84,6 +84,6 @@ def main(argv):
     outfp.write("ADpval: %.6g\n"%(adpval))
 
 
-    print "finished\n"
+    print("finished\n")
 if __name__ == "__main__":
     main(sys.argv)

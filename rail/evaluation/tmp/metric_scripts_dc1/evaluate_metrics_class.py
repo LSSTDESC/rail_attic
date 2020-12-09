@@ -32,7 +32,7 @@ class EvaluateMetric(object):
         # return exception if not
 
         if pdf_obs == None or pdf_truth == None:
-             print 'Warning: initializing with insufficient data'
+             print('Warning: initializing with insufficient data')
 
         if self.pdf_obs is not None:
              self.pdf_obs = pdf_obs

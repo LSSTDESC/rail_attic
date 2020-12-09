@@ -17,7 +17,7 @@ def speczCDF(szvec,zgrid):
         num = len(szvec[mask])
         frac = float(num)/float(tot)
         fracvec[i] = frac
-        #print ("z=%f: %d out of %d <%f for frac %.5f"%(val,num,tot,val,frac))
+        #print("z=%f: %d out of %d <%f for frac %.5f"%(val,num,tot,val,frac))
     return fracvec
                
 
@@ -51,17 +51,17 @@ def main(argv):
     szvec = szdata[:,1]
 
     for i,xfile in enumerate(codes):
-        print ("working on code %s\n"%(xfile))
+        print("working on code %s\n"%(xfile))
         direcpath = "%s%s"%(basepathpart,xfile)
         fullpath = os.path.join(direcpath,nzvectorfile)
-        #print fullpath
+        #print(fullpath)
         data = np.loadtxt(fullpath,skiprows=1)
         z_array = data[:,0]
         truezcdf = speczCDF(szvec,z_array)
         trueobj = qp.PDF(gridded=(z_array,truezcdf))
 
         stacknzvec = data[:,2]
-        print "read in data for %s"%xfile
+        print("read in data for %s"%xfile)
         cumstack = np.cumsum(stacknzvec)
 
         stackobj = qp.PDF(gridded=(z_array,cumstack))
@@ -69,7 +69,7 @@ def main(argv):
                                         dx=0.001)
         outfp.write("%sN(z)RMSE: %6.6f\n"%(xfile,xrmse))
     outfp.close()
-    print "finished"
+    print("finished")
 
 if __name__=="__main__":
     main(sys.argv)

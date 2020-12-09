@@ -19,19 +19,19 @@ def main(argv):
 #
     z_array,ID,szs,mags,pzs = ingdata.ingestflexzdata()
 
-    print "making Ensemble..."
+    print("making Ensemble...")
     approx_pdf = qp.Ensemble(pzs.shape[0],gridded=(z_array,pzs),procs=3)
     oldtime = currenttime
     currenttime = time.time()
-    print "took %g seconds"%(currenttime-oldtime)
-    print "making NzSumEvaluateMetric Object, with stacking..."
+    print("took %g seconds"%(currenttime-oldtime))
+    print("making NzSumEvaluateMetric Object, with stacking...")
     
     nzobj = inmet.NzSumEvaluateMetric(approx_pdf,szs, eval_grid=z_array,
                                       using='gridded',dx=0.0001)
     oldtime = currenttime
     currenttime = time.time()
-    print "took %g seconds"%(currenttime-oldtime)
-    print "calculating Nz sum vectors..."
+    print("took %g seconds"%(currenttime-oldtime))
+    print("calculating Nz sum vectors...")
     newgrid = np.arange(0.0,2.0001,0.001)
     #create qp object of samples from the spec-z sample
     szsamplepdf = qp.PDF(samples=szs)
@@ -46,37 +46,37 @@ def main(argv):
     outfp.close()
     oldtime = currenttime
     currenttime = time.time()
-    print "took %g seconds"%(currenttime-oldtime)
-    print "calculating KS stat..."
+    print("took %g seconds"%(currenttime-oldtime))
+    print("calculating KS stat...")
 
     ks_stat,ks_pval = nzobj.NZKS()
-    print "ks_stat: %g\nks_pval: %g\n"%(ks_stat,ks_pval)
+    print("ks_stat: %g\nks_pval: %g\n"%(ks_stat,ks_pval))
     oldtime = currenttime
     currenttime = time.time()
-    print "took %g seconds"%(currenttime-oldtime)
+    print("took %g seconds"%(currenttime-oldtime))
 
     cvm_stat,cvm_pval = nzobj.NZCVM()
-    print "cvm_stat: %g\cvm_pval: %g\n"%(cvm_stat,cvm_pval)
+    print("cvm_stat: %g\cvm_pval: %g\n"%(cvm_stat,cvm_pval))
     oldtime = currenttime
     currenttime = time.time()
-    print "took %g seconds"%(currenttime-oldtime)
+    print("took %g seconds"%(currenttime-oldtime))
 
     zmin = min(szs)
     zmax = max(szs)
     delv = (zmax - zmin)/200.
 
     ad_stat,ad_pval = nzobj.NZAD(vmin=zmin,vmax=zmax,delv=delv)
-    print "ad_stat: %g\ad_pval: %g\n"%(ad_stat,ad_pval)
+    print("ad_stat: %g\ad_pval: %g\n"%(ad_stat,ad_pval))
     oldtime = currenttime
     currenttime = time.time()
-    print "took %g seconds"%(currenttime-oldtime)
+    print("took %g seconds"%(currenttime-oldtime))
 
 
     ad_statx,ad_pvalx = nzobj.NZAD(vmin=0.0,vmax=2.0,delv=0.01)
-    print "ad_stat full range: %g\ad_pval: %g\n"%(ad_statx,ad_pvalx)
+    print("ad_stat full range: %g\ad_pval: %g\n"%(ad_statx,ad_pvalx))
     oldtime = currenttime
     currenttime = time.time()
-    print "took %g seconds"%(currenttime-oldtime)
+    print("took %g seconds"%(currenttime-oldtime))
 
 
 ###all stats
@@ -99,6 +99,6 @@ def main(argv):
 
     outfp.close()
 
-    print "finished\n"
+    print("finished\n")
 if __name__ == "__main__":
     main(sys.argv)
