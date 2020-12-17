@@ -49,6 +49,8 @@ class Estimator(object):
         self.num_rows = get_input_data_size_hdf5(self.testfile, self.groupname)
         self._chunk_size = base_dict['chunk_size']
 
+        self.output_format = base_dict['output_format']
+
         self.test_fmt = self.testfile.split(".")[-1]
         # self.test_data = load_data(self.testfile, self.test_fmt)
         # move reading of test data to main.py so we can loop more easily

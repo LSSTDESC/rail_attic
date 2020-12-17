@@ -7,6 +7,7 @@ random_width*(1+zmode).
 import numpy as np
 from scipy.stats import norm
 from rail.estimation.estimator import Estimator as BaseEstimation
+import qp
 
 
 class randomPZ(BaseEstimation):
@@ -49,5 +50,10 @@ class randomPZ(BaseEstimation):
         self.zgrid = np.linspace(0., self.zmax, self.nzbins)
         for i in range(numzs):
             pdf.append(norm.pdf(self.zgrid, zmode[i], widths[i]))
-        pz_dict = {'zmode': zmode, 'pz_pdf': pdf}
-        return pz_dict
+        if self.output_format == 'qp':
+            qp_d = qp.Ensemble(qp.stats.norm, data=dict(loc=zmode,
+                                                        scale=widths))
+            return qp_d
+        else:
+            pz_dict = {'zmode': zmode, 'pz_pdf': pdf}
+            return pz_dict

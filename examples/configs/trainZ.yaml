@@ -4,6 +4,3 @@ run_params:
   zmin: 0.0
   zmax: 3.0
   nzbins: 301
-  
-
-

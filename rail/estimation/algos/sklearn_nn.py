@@ -10,6 +10,7 @@ import sklearn.neural_network as sknn
 from sklearn.preprocessing import StandardScaler
 from scipy.stats import norm
 from rail.estimation.estimator import Estimator as BaseEstimation
+import qp
 
 
 def make_color_data(data_dict):
@@ -92,8 +93,14 @@ class simpleNN(BaseEstimation):
         zmode = np.round(self.model.predict(input_data), 3)
         pdfs = []
         widths = self.width * (1.0+zmode)
-        self.zgrid = np.linspace(self.zmin, self.zmax, self.nzbins)
-        for i, zb in enumerate(zmode):
-            pdfs.append(norm.pdf(self.zgrid, zb, widths[i]))
-        pz_dict = {'zmode': zmode, 'pz_pdf': pdfs}
-        return pz_dict
+
+        if self.output_format == 'qp':
+            qp_dstn = qp.Ensemble(qp.stats.norm, data=dict(loc=zmode,
+                                                           scale=widths))
+            return qp_dstn
+        else:
+            self.zgrid = np.linspace(self.zmin, self.zmax, self.nzbins)
+            for i, zb in enumerate(zmode):
+                pdfs.append(norm.pdf(self.zgrid, zb, widths[i]))
+            pz_dict = {'zmode': zmode, 'pz_pdf': pdfs}
+            return pz_dict

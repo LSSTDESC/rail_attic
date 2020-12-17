@@ -8,6 +8,7 @@ p(z) shape) via cde-loss over a grid.
 
 import numpy as np
 import flexcode
+import qp
 from flexcode.regression_models import XGBoost
 from flexcode.loss_functions import cde_loss
 # from numpy import inf
@@ -145,8 +146,13 @@ class FZBoost(BaseEstimation):
     def estimate(self, test_data):
         color_data = make_color_data(test_data)
         pdfs, z_grid = self.model.predict(color_data, n_grid=self.nzbins)
-        self.zgrid = z_grid
-        zmode = \
-            np.array([self.zgrid[np.argmax(pdf)] for pdf in pdfs]).flatten()
-        pz_dict = {'zmode': zmode, 'pz_pdf': pdfs}
-        return pz_dict
+        self.zgrid = np.array(z_grid).flatten()
+        if self.output_format == 'qp':
+            qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid,
+                                                       yvals=pdfs))
+            return qp_dstn
+        else:
+            zmode = np.array([self.zgrid[np.argmax(pdf)]
+                              for pdf in pdfs]).flatten()
+            pz_dict = {'zmode': zmode, 'pz_pdf': pdfs}
+            return pz_dict

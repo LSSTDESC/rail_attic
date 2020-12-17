@@ -8,6 +8,7 @@ N (z) of the training set.
 
 import numpy as np
 from rail.estimation.estimator import Estimator as BaseEstimation
+import qp
 
 
 class trainZ(BaseEstimation):
@@ -22,11 +23,12 @@ class trainZ(BaseEstimation):
 
         zbins = np.linspace(self.zmin, self.zmax, self.nzbins+1)
         speczs = np.sort(self.training_data['redshift'])
-        self.train_pdf, _ = np.histogram(speczs, zbins)
+        train_pdf, _ = np.histogram(speczs, zbins)
         self.midpoints = zbins[:-1] + np.diff(zbins)/2
-        self.zmode = self.midpoints[np.argmax(self.train_pdf)]
-        cdf = np.cumsum(self.train_pdf)
+        self.zmode = self.midpoints[np.argmax(train_pdf)]
+        cdf = np.cumsum(train_pdf)
         self.cdf = cdf / cdf[-1]
+        self.train_pdf = train_pdf/self.cdf
         self.zgrid = self.midpoints
         np.random.seed(87)
 
@@ -36,6 +38,13 @@ class trainZ(BaseEstimation):
     def estimate(self, test_data):
         test_size = len(test_data['id'])
         zmode = np.repeat(self.zmode, test_size)
-        pz_dict = {'zmode': zmode, 'pz_pdf': np.tile(self.train_pdf,
-                                                     (test_size, 1))}
-        return pz_dict
+        if self.output_format == 'qp':
+            qp_d = qp.Ensemble(qp.interp,
+                               data=dict(xvals=self.zgrid,
+                                         yvals=np.tile(self.train_pdf,
+                                                       (test_size, 1))))
+            return qp_d
+        else:
+            pz_dict = {'zmode': zmode, 'pz_pdf': np.tile(self.train_pdf,
+                                                         (test_size, 1))}
+            return pz_dict
