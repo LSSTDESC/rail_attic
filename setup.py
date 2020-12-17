@@ -28,6 +28,7 @@ setup(
                       'pandas',
                       'pyarrow',
                       'tables',
+                      'astropy',
                       ],
     extras_require={
         'Full': ['sklearn', 'FlexCode[all]', 'corner', 'dill', 'flax==0.2.0',
