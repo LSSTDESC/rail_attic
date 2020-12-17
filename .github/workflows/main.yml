@@ -5,7 +5,7 @@ name: rail
 
 on:
   push:
-    branches: [ master ]
+    branches: [ issue/33/qp-output ]
   pull_request:
     branches: [ master ]
 
