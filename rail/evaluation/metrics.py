@@ -8,39 +8,25 @@ import seaborn as sns
 
 class Metrics():
     pass
-#    """ The base class for photo-z PDF quality metrics evaluation.
-#        First implementation based on the refactoring of DC1 paper codes:
-#        https://github.com/LSSTDESC/PZDC1paper
-#        https://arxiv.org/pdf/2001.03621.pdf """
-#    def __init__(self):
-#        super.__init__()
+
 
 class Data():
-
-    def __init__(self, pdfs_file, ztrue_file, **kwargs):
         """
-        Class to handle input data (pdfs + ztrue)
-
-        Inputs
-        ------
-        pdfs_file: str
-            full path to RAIL's estimation output file (format HDF5)
-        ztrue_file: str
-            full path to the file containing true redshifts,
-            e.g., RAIL's estimation input file (format HDF5)
+        Handle input data (pdfs + ztrue)
 
         Parameters
         ----------
-        **kwargs: dict (optional)
+        pdfs_file: `str`
+            full path to RAIL's estimation output file (format HDF5)
+        ztrue_file: `str`
+            full path to the file containing true redshifts,
+            e.g., RAIL's estimation input file (format HDF5)
+        **kwargs: `dict`, (optional)
             key parameters to read the HDF5 input files, in case
             they are different from RAIL's default output
-
-        Returns
-        ------
-        object Data
-            A Python object to represent a sample of PDFs (format qp.Ensemble)
-            and their respective true redshifts.
         """
+
+        def __init__(self, pdfs_file, ztrue_file, **kwargs):
 
         self._pdfs_file = pdfs_file
         self._ztrue_file = ztrue_file
@@ -67,14 +53,17 @@ class Data():
 
     @property
     def ztrue(self):
+        """True redshifts array"""
         return self._ztrue
 
     @property
     def photoz_mode(self):
+        """Photo-z (mode) array"""
         return self._photoz_mode
 
     @property
     def pdfs(self):
+        """qp.Ensemble object containing the PDFs ('interp' representation)"""
         return self._pdfs
 
     def __len__(self):
@@ -89,6 +78,18 @@ class Data():
         return text
 
     def plot_pdfs(self, gals):
+        """Plot a list of individual PDFs for illustration
+
+        Parameters
+        ----------
+        gals: `list`
+            list of galaxies' indexes
+
+        Returns
+        -------
+        colors: `list`
+            list of HTML codes for colors used in the plot lines
+        """
         colors = []
         for i, gal in enumerate(gals):
             if i == 0:
@@ -102,6 +103,14 @@ class Data():
         return colors
 
     def old_valid_plots(self, gals, colors=None):
+        """Plot traditional Zphot X Zspec and N(z) plots for illustration
+
+        Parameters
+        ----------
+        gals: `list`
+            list of galaxies' indexes
+        """
+
         if not colors:
             colors = ['r']*len(gals)
         plt.figure(figsize=(10, 4))
