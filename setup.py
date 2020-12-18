@@ -34,7 +34,7 @@ setup(
         'Full': ['sklearn', 'FlexCode[all]', 'corner', 'dill', 'flax==0.2.0',
                  'jax==0.1.75', 'jaxlib==0.1.52', 'tensorflow==2.2.0',
                  'tensorflow-probability==0.10.1',
-                 'qp @ git+https://github.com/LSSTDESC/qp'],
+                 ],
         'estimation': ['sklearn', 'FlexCode[all]'],
         'creation': ['corner', 'dill', 'flax==0.2.0', 'jax==0.1.75',
                      'jaxlib==0.1.52', 'tensorflow==2.2.0',
