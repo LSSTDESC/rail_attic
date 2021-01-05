@@ -12,7 +12,7 @@ test_base_yaml = 'tests/base.yaml'
 
 def test_init_with_dict():
     # test we can init with a dict we have already loaded
-    d = yaml.safe_load(test_base_yaml)['base_config']
+    d = yaml.safe_load(open(test_base_yaml))['base_config']
     _ = Estimator(d)
 
 def test_initialization():
