@@ -7,7 +7,8 @@ import seaborn as sns
 
 class Sample:
     """
-    Handle photo-z output data (pdfs + ztrue) of a given sample.
+    Handle photo-z output data (pdfs + ztrue) of
+    a given sample. Inherits from qp.Ensemble.
 
     Parameters
     ----------
@@ -79,7 +80,7 @@ class Sample:
         name_str = f'Sample: {self._name}'
         text = str(name_str +'\n' +
           '='*len(name_str)+ '\n' +
-          f'{len(self._ztrue)} PDFs \n' +
+          f'{len(self)} PDFs \n' +
           f'qp representation: {self._pdfs.gen_class.name} \n' +
           f'{len(self._zgrid)} z bins edges from {np.min(self._zgrid)} to {np.max(self._zgrid)}')
         return text
