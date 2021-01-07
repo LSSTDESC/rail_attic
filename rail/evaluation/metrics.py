@@ -45,7 +45,13 @@ class Metrics:
         if bins is None:
             bins = self._Nquants
         ax = plt.subplot(sp)
+        if label is None:
+            label = self._sample._name
+        label += "\n PIT$_{out}$="+f"{self._pit_out_rate:.4f}"
         ax.hist(self.pit, bins=bins, alpha=0.7, label=label)
+        leg = ax.legend(handlelength=0, handletextpad=0, fancybox=True)
+        for item in leg.legendHandles:
+            item.set_visible(False)
         try:
             y_uni = float(len(self.pit))/float(bins)
         except:
@@ -56,10 +62,8 @@ class Metrics:
         i, j = int(str(sp)[2]), int(str(sp)[1])
         if j == 1 or (i % j) == 1:
             plt.ylabel("Number", fontsize=18)
-        if label is not None:
-            leg = ax.legend(handlelength=0, handletextpad=0, fancybox=True)
-            for item in leg.legendHandles:
-                item.set_visible(False)
+
+
 
 
     def plot_qq(self, bins=None, sp=111, label=None, show_pit=False):
