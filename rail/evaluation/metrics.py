@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
+import skgof
+from scipy import stats
 
 
 
@@ -104,7 +106,7 @@ class Metrics:
 
 
 
-    def KS(self, using, dx=0.0001):
+    def KS(self):  #, using=None, dx=0.0001):
         """
         Compute the Kolmogorov-Smirnov statistic and p-value for the PIT
         values by comparing with a uniform distribution between 0 and 1.
@@ -119,15 +121,17 @@ class Metrics:
         KS statistic and pvalue
 
         """
-        if self.pitarray is not None:
-            pits = np.array(self.pitarray)
-        else:
-            pits = np.array(self.PIT(using=using, dx=dx))
-            self.pitarray = pits
-        ks_result = skgof.ks_test(pits, stats.uniform())
+
+        #if self.pitarray is not None:
+        #    pits = np.array(self.pitarray)
+        #else:
+        #    pits = np.array(self.PIT(using=using, dx=dx))
+        #    self.pitarray = pits
+        #ks_result = skgof.ks_test(pits, stats.uniform())
+        ks_result = skgof.ks_test(self._pit, stats.uniform())
         return ks_result.statistic, ks_result.pvalue
 
-    def CvM(self, using, dx=0.0001):
+    def CvM(self):  #, using, dx=0.0001):
         """
         Compute the Cramer-von Mises statistic and p-value for the PIT values
         by comparing with a uniform distribution between 0 and 1.
@@ -142,15 +146,18 @@ class Metrics:
         CvM statistic and pvalue
 
         """
-        if self.pitarray is not None:
-            pits = np.array(self.pitarray)
-        else:
-            pits = np.array(self.PIT(using=using, dx=dx))
-            self.pitarray = pits
-        cvm_result = skgof.cvm_test(pits, stats.uniform())
+        #if self.pitarray is not None:
+        #    pits = np.array(self.pitarray)
+        #else:
+        #    pits = np.array(self.PIT(using=using, dx=dx))
+        #    self.pitarray = pits
+        #cvm_result = skgof.cvm_test(pits, stats.uniform())
+
+        cvm_result = skgof.cvm_test(self._pit, stats.uniform())
         return cvm_result.statistic, cvm_result.pvalue
 
-    def AD(self, using, dx=0.0001, vmin=0.005, vmax=0.995):
+    #def AD(self, using, dx=0.0001, vmin=0.005, vmax=0.995):
+    def AD(self, vmin=0.005, vmax=0.995):
         """
         Compute the Anderson-Darling statistic and p-value for the PIT
         values by comparing with a uniform distribution between 0 and 1.
@@ -171,15 +178,17 @@ class Metrics:
         AD statistic and pvalue
 
         """
-        if self.pitarray is not None:
-            pits = np.array(self.pitarray)
-        else:
-            pits = np.array(self.PIT(using=using, dx=dx))
-            self.pitarray = pits
-        mask = (pits > vmin) & (pits < vmax)
-        print("now with proper uniform range")
+        #if self.pitarray is not None:
+        #    pits = np.array(self.pitarray)
+        #else:
+        #    pits = np.array(self.PIT(using=using, dx=dx))
+        #    self.pitarray = pits
+        mask = (self._pit > vmin) & (self._pit < vmax)
+        #print("now with proper uniform range")
         delv = vmax - vmin
-        ad_result = skgof.ad_test(pits[mask], stats.uniform(loc=vmin, scale=delv))
+        #ad_result = skgof.ad_test(pits[mask], stats.uniform(loc=vmin, scale=delv))
+        ad_result = skgof.ad_test(self._pit[mask], stats.uniform(loc=vmin, scale=delv))
+
         return ad_result.statistic, ad_result.pvalue
 
     @property
@@ -212,6 +221,17 @@ class Metrics:
 
 
 
+    def all(self):
+        metrics_table = str(f"### {self._sample._name}\n" +
+        "|Metric|Value|\n" +
+        "|---|---|\n" +
+        f"PIT out  | {self._pit_out_rate:8.4f}\n" +
+        f"CDE loss | {self._cde_loss:8.4f}\n" +
+        f"KS       | {self.KS()[0]:8.4f}\n" +
+        f"CvM      | {self.CvM()[0]:8.4f}\n" +
+        f"AD       | {self.AD()[0]:8.4f}" )
+
+        return metrics_table
 
 
 """ 
