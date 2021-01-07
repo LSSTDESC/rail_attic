@@ -118,9 +118,12 @@ class Sample:
         gals: `list`
             list of galaxies' indexes
         """
-        plt.figure(figsize=(9, 4))
-        plt.subplot(121)
-        plt.plot(self.ztrue, self.photoz_mode, 'k,')
+        plt.figure(figsize=(10, 4))
+        ax = plt.subplot(121)
+        plt.plot(self.ztrue, self.photoz_mode, 'k,', label=self._name)
+        leg = ax.legend(handlelength=0, handletextpad=0, fancybox=True)
+        for item in leg.legendHandles:
+            item.set_visible(False)
         if gals:
             if not colors:
                 colors = ['r'] * len(gals)
@@ -128,11 +131,15 @@ class Sample:
                 plt.plot(self.ztrue[gal], self.photoz_mode[gal], 'o', color=colors[i], label=f'Galaxy {gal}')
         plt.xlim(0, 3)
         plt.ylim(0, 3)
-        plt.ylabel('$z_{true}$')
-        plt.xlabel('$z_{phot}$ ' + f'{self._name} (mode)')
+        plt.ylabel('z$_{true}$')
+        plt.xlabel('z$_{phot}$ (mode)')
+
+
+
+
         plt.subplot(122)
-        sns.kdeplot(self.ztrue, shade=True, label='$z_{true}$')
-        sns.kdeplot(self.photoz_mode, shade=True, label='$z_{phot}$ (mode)')
+        sns.kdeplot(self.ztrue, shade=True, label='z$_{true}$')
+        sns.kdeplot(self.photoz_mode, shade=True, label='z$_{phot}$ (mode)')
         plt.xlabel('z')
         plt.legend()
         plt.tight_layout()
