@@ -5,7 +5,7 @@ name: rail
 
 on:
   push:
-    branches: [ master ]
+    branches: [ issue/45/inform_option ]
   pull_request:
     branches: [ master ]
 

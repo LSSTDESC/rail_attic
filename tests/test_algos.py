@@ -25,7 +25,10 @@ def one_algo(single_estimator, single_input):
 
 def test_random_pz():
     config_dict = {'run_params': {'rand_width': 0.025, 'rand_zmin': 0.0,
-                                  'rand_zmax': 3.0, 'nzbins': 301}}
+                                  'rand_zmax': 3.0, 'nzbins': 301,
+                                  'inform_options': {'save_train': False,
+                                                     'load_model': False}
+                                  }}
     zb_expected = np.array([1.969, 2.865, 2.913, 0.293, 0.722, 2.606, 1.642,
                             2.157, 2.777, 1.851])
     pz_algo = randomPZ.randomPZ
@@ -35,7 +38,10 @@ def test_random_pz():
 
 def test_simple_nn():
     config_dict = {'run_params': {'width': 0.025, 'zmin': 0.0, 'zmax': 3.0,
-                                  'nzbins': 301}}
+                                  'nzbins': 301,
+                                  'inform_options': {'save_train': False,
+                                                     'load_model': False}
+                                  }}
     zb_expected = np.array([0.133, 0.123, 0.085, 0.145, 0.123, 0.155, 0.136,
                             0.157, 0.128, 0.13])
     pz_algo = sklearn_nn.simpleNN
@@ -52,7 +58,9 @@ def test_flexzboost():
                                   'basis_system': 'cosine',
                                   'regression_params': {'max_depth': 8,
                                                         'objective':
-                                                        'reg:squarederror'}
+                                                        'reg:squarederror'},
+                                  'inform_options': {'save_train': False,
+                                                     'load_model': False}
                                   }}
     zb_expected = np.array([0.13, 0.13, 0.13, 0.12, 0.12, 0.13, 0.12, 0.13,
                             0.12, 0.12])
@@ -63,7 +71,10 @@ def test_flexzboost():
 
 def test_train_pz():
     config_dict = {'run_params': {'zmin': 0.0,
-                                  'zmax': 3.0, 'nzbins': 301}}
+                                  'zmax': 3.0, 'nzbins': 301,
+                                  'inform_options': {'save_train': False,
+                                                     'load_model': False}
+                                  }}
     zb_expected = np.repeat(0.1445183, 10)
     pdf_expected = np.zeros(shape=(301, ))
     pdf_expected[10:16] = [7, 23, 8, 23, 26, 13]

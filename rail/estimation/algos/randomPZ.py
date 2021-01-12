@@ -36,6 +36,9 @@ class randomPZ(BaseEstimation):
         print("I don't need to train!!!")
         pass
 
+    def load_pretrained_model(self):
+        pass
+
     def estimate(self, test_data):
         pdf = []
         # allow for either format for now

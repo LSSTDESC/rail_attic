@@ -34,7 +34,14 @@ def main(argv):
     print(f"code name: {name}")
 
     pz = code(base_config, run_dict)
-    pz.inform()
+
+    pz.inform_dict = run_dict['run_params']['inform_options']
+    if pz.inform_dict['load_model']:
+        # note: specific options set in subclasss func def
+        pz.load_pretrained_model()
+    else:
+        pz.inform()
+
     if 'run_name' in run_dict['run_params']:
         outfile = run_dict['run_params']['run_name'] + '.hdf5'
     else:
