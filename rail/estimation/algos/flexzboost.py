@@ -144,8 +144,9 @@ class FZBoost(BaseEstimation):
         model.sharpen_alpha = bestsharp
         self.model = model
         if self.inform_options['save_train']:
-            pickle.dump(file=open(self.inform_options['modelfile'], 'wb'),
-                        obj=model, protocol=pickle.HIGHEST_PROTOCOL)
+            with open(self.inform_options['modelfile'], 'wb') as f:
+                pickle.dump(file=f, obj=model,
+                            protocol=pickle.HIGHEST_PROTOCOL)
 
     def load_pretrained_model(self):
         modelfile = self.inform_options['modelfile']

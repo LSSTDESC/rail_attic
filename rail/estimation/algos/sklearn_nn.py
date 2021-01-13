@@ -88,8 +88,9 @@ class simpleNN(BaseEstimation):
         simplenn.fit(input_data, speczs)
         self.model = simplenn
         if self.inform_options['save_train']:
-            pickle.dump(file=open(self.inform_options['modelfile'], 'wb'),
-                        obj=self.model, protocol=pickle.HIGHEST_PROTOCOL)
+            with open(self.inform_options['modelfile'], 'wb') as f:
+                pickle.dump(file=f, obj=self.model,
+                            protocol=pickle.HIGHEST_PROTOCOL)
 
     def load_pretrained_model(self):
         modelfile = self.inform_options['modelfile']
