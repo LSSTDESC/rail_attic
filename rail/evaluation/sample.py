@@ -24,10 +24,11 @@ class Sample:
         they are different from RAIL's default output
     """
 
-    def __init__(self, pdfs_file, ztrue_file, name="", **kwargs):
+    def __init__(self, pdfs_file, ztrue_file, code="", name="", **kwargs):
 
         self._pdfs_file = pdfs_file
         self._ztrue_file = ztrue_file
+        self._code = code
         self._name = name
 
         self._pdfs_key = kwargs.get('pdfs_key', "photoz_pdf")
@@ -51,6 +52,11 @@ class Sample:
             self._photoz_mode = np.array(pf[self._photoz_mode_key])
             self._pdfs = qp.Ensemble(qp.interp, data=dict(xvals=self._zgrid, yvals=self._pdfs_array))
 
+    @property
+    def code(self):
+        """Photo-z code/algorithm name"""
+        return self._code
+    
     @property
     def name(self):
         """Sample name"""
@@ -77,12 +83,17 @@ class Sample:
         return len(self._ztrue)
 
     def __str__(self):
+        code_str = f'Algorithm: {self._code}'
         name_str = f'Sample: {self._name}'
-        text = str(name_str +'\n' +
-          '='*len(name_str)+ '\n' +
+        line_str = '-' * (max(len(code_str), len(name_str)))
+        text = str(line_str + '\n' +
+          name_str +'\n' +
+          code_str + '\n' +
+          line_str + '\n' +
           f'{len(self)} PDFs \n' +
           f'qp representation: {self._pdfs.gen_class.name} \n' +
           f'{len(self._zgrid)} z bins edges from {np.min(self._zgrid)} to {np.max(self._zgrid)}')
+          
         return text
 
     def plot_pdfs(self, gals):
