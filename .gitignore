@@ -104,8 +104,12 @@ venv.bak/
 .mypy_cache/
 
 
-# MAC OS Desktop Services 
+# MAC OS 
 .DS_Store
 
 # PyCharm 
 .idea
+
+# VSCode
+.vscode
+
