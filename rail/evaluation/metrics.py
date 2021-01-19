@@ -128,8 +128,12 @@ class Metrics:
         #    pits = np.array(self.PIT(using=using, dx=dx))
         #    self.pitarray = pits
         #ks_result = skgof.ks_test(pits, stats.uniform())
-        ks_result = skgof.ks_test(self._pit, stats.uniform())
-        return ks_result.statistic, ks_result.pvalue
+        #ks_result = skgof.ks_test(self._pit, stats.uniform())
+        
+        ks_stat, ks_pvalue = stats.kstest(self._pit, "uniform")
+        
+        #return ks_result.statistic, ks_result.pvalue
+        return ks_stat, ks_pvalue
 
     def CvM(self):  #, using, dx=0.0001):
         """
@@ -153,9 +157,14 @@ class Metrics:
         #    self.pitarray = pits
         #cvm_result = skgof.cvm_test(pits, stats.uniform())
 
-        cvm_result = skgof.cvm_test(self._pit, stats.uniform())
+        #cvm_result = skgof.cvm_test(self._pit, stats.uniform())
+
+        cvm_result = stats.cramervonmises(self._pit, "uniform")
+                
         return cvm_result.statistic, cvm_result.pvalue
 
+    
+    
     #def AD(self, using, dx=0.0001, vmin=0.005, vmax=0.995):
     def AD(self, vmin=0.005, vmax=0.995):
         """
@@ -187,9 +196,11 @@ class Metrics:
         #print("now with proper uniform range")
         delv = vmax - vmin
         #ad_result = skgof.ad_test(pits[mask], stats.uniform(loc=vmin, scale=delv))
-        ad_result = skgof.ad_test(self._pit[mask], stats.uniform(loc=vmin, scale=delv))
+        #ad_result = skgof.ad_test(self._pit[mask], stats.uniform(loc=vmin, scale=delv))
+        ad_stat, ad_critical_values, ad_sign_level = stats.anderson(self._pit, "norm")
+        #return ad_result.statistic, ad_result.pvalue
+        return ad_stat, ad_critical_values, ad_sign_level 
 
-        return ad_result.statistic, ad_result.pvalue
 
     @property
     def cde_loss(self, zgrid=None):
