@@ -1,12 +1,6 @@
-corner
-dill
-flax==0.2.0
 h5py
-jax==0.1.75
-jaxlib==0.1.52
 numpy
 pandas
+pzflow
 scipy
 scikit-learn
-tensorflow==2.2.0
-tensorflow-probability==0.10.1

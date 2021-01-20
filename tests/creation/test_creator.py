@@ -1,10 +1,10 @@
 import pytest
 import numpy as np
 import pandas as pd
-from rail.creation import Creator
+from rail.creation import Creator, Generator
 
 
-class sampleGenerator(object):
+class sampleGenerator(Generator):
     "Create a test generator that is just a normal distribution."
 
     def sample(self, n_samples, seed=None):
@@ -12,17 +12,19 @@ class sampleGenerator(object):
 
         rng = np.random.default_rng(seed)
 
-        return pd.DataFrame(rng.normal(size=(n_samples, 7)),
-                            columns=['redshift', 'u', 'g', 'r', 'i', 'z', 'y'])
+        return pd.DataFrame(
+            rng.normal(size=(n_samples, 7)),
+            columns=["redshift", "u", "g", "r", "i", "z", "y"],
+        )
 
-    def pz_estimate(self, data, zmin, zmax, dz):
+    def pz_estimate(self, data, grid):
         "Return defined set of posteriors for testing"
 
-        z_steps = np.arange(zmin, zmax+dz, dz)
-        output_array = np.ones((len(data), len(z_steps)))
-        test_posterior = output_array*(1./len(z_steps))
+        output_array = np.ones((len(data), len(grid)))
+        test_posterior = output_array * (1.0 / len(grid))
 
         return test_posterior
+
 
 @pytest.fixture
 def sampleCreator():
@@ -43,17 +45,20 @@ def test_sample_with_all_options_false(sampleCreator):
     verify_sampler_df = pd.DataFrame(verify_sampler.normal(size=(1000, 7)))
 
     # Verify samples with same seed and size are the same
-    np.testing.assert_array_equal(creator_sample, verify_sampler_df)
+    assert np.allclose(creator_sample.values, verify_sampler_df.values)
 
 
 def test_sample_with_pdf_true(sampleCreator):
     "Test that sample returns pdfs correctly when wanted"
-    pdf_sample = sampleCreator.sample(1000, seed=42, include_pdf=True,
-                                      zinfo={'zmin': 0.,
-                                             'zmax': 2.,
-                                             'dz': 0.5})
-    np.testing.assert_array_equal(np.stack(pdf_sample['pz_pdf'].values),
-                                  np.ones((1000, 5))*0.2)
+
+    pdf_sample = sampleCreator.sample(1000, seed=42, include_pdf=True)
+    assert np.allclose(
+        np.stack(pdf_sample["pz_pdf"].values), np.ones((1000, 101)) * 0.00990099
+    )
+
+    grid = np.arange(0, 2.5, 0.5)
+    pdf_sample = sampleCreator.sample(1000, seed=42, include_pdf=True, pz_grid=grid)
+    assert np.allclose(np.stack(pdf_sample["pz_pdf"].values), np.ones((1000, 5)) * 0.2)
 
 
 def test_sample_with_selection_fn(sampleCreator):
@@ -64,26 +69,26 @@ def test_sample_with_selection_fn(sampleCreator):
     def selection_fn(data, seed=None):
         "Test selection function that just cuts on redshift"
 
-        return data.query('redshift < 2.')
+        return data.query("redshift < 2.")
 
-    sampleCreator.selection_fn = selection_fn
+    sampleCreator.degrader = selection_fn
 
     creator_sample = sampleCreator.sample(1000, seed=42)
 
     # Create copy of sampler from sampleGenerator
     verify_sampler = np.random.default_rng(seed=42)
     verify_sampler_df = pd.DataFrame(verify_sampler.normal(size=(1000, 7)))
-    verify_sampler_df.columns = ['redshift', 'u', 'g', 'r', 'i', 'z', 'y']
-    verify_sampler_keep = verify_sampler_df.query('redshift < 2.')
+    verify_sampler_df.columns = ["redshift", "u", "g", "r", "i", "z", "y"]
+    verify_sampler_keep = verify_sampler_df.query("redshift < 2.")
 
     verify_sampler_add = np.random.default_rng(seed=rng.integers(1e18))
     verify_sampler_add_df = pd.DataFrame(
-        verify_sampler_add.normal(size=(100,  7)),
-        columns=['redshift', 'u', 'g', 'r', 'i', 'z', 'y']
+        verify_sampler_add.normal(size=(100, 7)),
+        columns=["redshift", "u", "g", "r", "i", "z", "y"],
     )
-    verify_sample_add_keep = verify_sampler_add_df.query('redshift < 2.')
+    verify_sample_add_keep = verify_sampler_add_df.query("redshift < 2.")
 
     verify_concat = pd.concat([verify_sampler_keep, verify_sample_add_keep])
     verify_final = verify_concat.iloc[:1000]
 
-    np.testing.assert_array_equal(creator_sample, verify_final)
+    assert np.allclose(creator_sample.values, verify_final.values)

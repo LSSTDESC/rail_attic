@@ -1,98 +1,102 @@
 import numpy as np
 import pandas as pd
+from rail.creation.generator import Generator
+from typing import Callable
 
-import rail.creation.utils as rcu
 
+class Creator:
+    """Object that supplies mock data for redshift estimation experiments.
 
-class Creator():
+    The mock data is drawn from a probability distribution defined by the
+    generator, with an optional degrader applied.
     """
-    An object that supplies mock data for redshift estimation experiments.
-    The mock data is drawn from a probability distribution defined by the generator, with an optional selection function applied.
-    """
 
-    def __init__(self, generator, selection_fn=None,
-                 params=None):
+    def __init__(
+        self, generator: Generator, degrader: Callable = None, info: dict = None
+    ):
         """
         Parameters
         ----------
         generator: rail.Generator object
-            object defining a redshift probability distribution.
+            Object defining a redshift probability distribution.
             Must have sample, log_prob and pz_estimate methods (see generator.py)
-        selection_fn: function, optional
-            a selection function to apply to the generated sample
-            Must take a pandas dataframe and a seed number, and return
-            a pandas dataframe with the selection function applied.
-        params: dictionary, optional
-            additional information desired to be stored with the instance as a dictionary.
-            By default, includes error params for Eq 5 from https://arxiv.org/pdf/0805.2366.pdf
+        degrader: callable, optional
+            A function or other callable that degrades the generated sample.
+            Must take a pandas DataFrame and a seed number, and return a
+            pandas DataFrame representing the degraded sample.
+        info: any, optional
+            Additional information desired to be stored with the instance
+            as a dictionary.
         """
         self.generator = generator
-        self.selection_fn = selection_fn
-        self.params = params
+        self.degrader = degrader
+        self.info = info
 
-    def sample(self, n_samples, seed=None, include_pdf=False, zinfo=rcu.zinfo):
-        """
-        Draws n_samples from the generator
+    def sample(
+        self,
+        n_samples: int,
+        seed: int = None,
+        include_pdf: bool = False,
+        pz_grid: np.ndarray = None,
+    ):
+        """Draws n_samples from the generator
 
         Parameters
         ----------
-        n_samples: int
-            number of samples to draw
-        include_pdf: boolean, optional
-            if True, then posteriors are returned for each galaxy.
-            The posteriors are saved in the column pz_pdf, and the redshift grid saved as df.attrs['pz_grid'].
-            The grid is defined by np.arange(zmin, zmax+dz, dz)
-        seed: int, optional
+        n_samples : int
+            Number of samples to draw
+        seed : int, optional
             sets the random seed for drawing samples
-        err_seed: int, optional
-            sets the seed for the Gaussian errors
-        zinfo: dictionary, optional
-            must contain `zmin`, `zmax`, `dz` floats
+        include_pdf : boolean, optional
+            If True, posteriors are returned for each galaxy.
+            The posteriors are saved in the column pz_pdf, and the
+            redshift grid saved as df.attrs['pz_grid'].
+        pz_grid : np.array, default=np.arange(0, 2.02, 0.02)
+            The grid over which to calculate the redshift posteriors.
 
         Returns
         -------
-        sample: pandas DataFrame
-            samples from model, containing photometry, true redshift, and posterior PDF if requested
+        outputs : pandas DataFrame
+            samples from model, containing photometry, true redshift, and
+            redshift posterior PDF's if requested.
 
         Notes
         -----
-        We should rename `sample` output to not be the same as the name of the method `sample()`.
         Output posterior format is currently hardcoded to grid evaluations but could be integrated with qp.
         We will probably change the output format to dovetail with the evaluation module when ready.
         """
 
+        if include_pdf is True and pz_grid is None:
+            pz_grid = np.arange(0, 2.02, 0.02)
+
         rng = np.random.default_rng(seed)
 
         # get samples
-        sample = self.generator.sample(n_samples, seed=seed)
+        outputs = self.generator.sample(n_samples, seed=seed)
 
-        if self.selection_fn is not None:
-            # apply selection function
-            sample = self.selection_fn(sample, seed=seed)
+        if self.degrader is not None:
+            # degrade sample
+            outputs = self.degrader(outputs, seed=seed)
             # calculate fraction that survives the cut
-            selected_frac = len(sample)/n_samples
-            # draw more samples and cut until we have enough samples
-            while len(sample) < n_samples:
+            selected_frac = len(outputs) / n_samples
+            # draw more samples and degrade until we have enough samples
+            while len(outputs) < n_samples:
                 # estimate how many extras to draw
-                n_supplement = int(1.1/selected_frac*(n_samples - len(sample)))
+                n_supplement = int(1.1 / selected_frac * (n_samples - len(outputs)))
                 # draw new samples and apply cut
-                new_sample = self.generator.sample(n_supplement,
-                                                   seed=rng.integers(1e18))
-                new_sample = self.selection_fn(new_sample,
-                                               seed=rng.integers(1e18))
+                new_sample = self.generator.sample(
+                    n_supplement, seed=rng.integers(1e18)
+                )
+                new_sample = self.degrader(new_sample, seed=rng.integers(1e18))
                 # add these to the larger set
-                sample = pd.concat((sample, new_sample), ignore_index=True)
+                outputs = pd.concat((outputs, new_sample), ignore_index=True)
             # cut out the extras
-            sample = sample.iloc[:n_samples]
+            outputs = outputs[:n_samples]
 
         # calculate posteriors
         if include_pdf:
-            posteriors = self.generator.pz_estimate(
-                sample, zmin=zinfo['zmin'], zmax=zinfo['zmax'], dz=zinfo['dz']
-            )
-            sample.attrs['pz_grid'] = np.arange(
-                zinfo['zmin'], zinfo['zmax'] + zinfo['dz'], zinfo['dz']
-            )
-            sample['pz_pdf'] = list(posteriors)
+            posteriors = self.generator.pz_estimate(outputs, grid=pz_grid)
+            outputs.attrs["pz_grid"] = pz_grid
+            outputs["pz_pdf"] = list(posteriors)
 
-        return sample
+        return outputs
