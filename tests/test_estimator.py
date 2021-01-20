@@ -13,26 +13,29 @@ test_base_yaml = 'tests/base.yaml'
 def test_initialization():
     # test handling of an inexistent config input file
     with pytest.raises(FileNotFoundError):
-        instance = Estimator(base_config='non_existent.yaml')
+        _ = Estimator(base_config='non_existent.yaml')
 
     # assert correct instantiation based on a yaml file
-    instance = Estimator(base_config=test_base_yaml)
+    _ = Estimator(base_config=test_base_yaml)
 
 
 def test_loading():
     assert True
+
 
 def test_train_not_implemented():
     with pytest.raises(NotImplementedError):
         instance = Estimator(base_config=test_base_yaml)
         instance.inform()
 
+
 def test_estimate_not_implemented():
     fake_data = {'u': 99., 'g': 99., 'r': 99.}
     with pytest.raises(NotImplementedError):
         instance = Estimator(base_config=test_base_yaml)
         instance.estimate(fake_data)
-        
+
+
 def test_writing(tmpdir):
     instance = Estimator(test_base_yaml)
     instance.zmode = 0
@@ -45,3 +48,7 @@ def test_writing(tmpdir):
                       instance.nzbins, test_dict, instance.zgrid)
 
     assert os.path.exists(instance.saveloc)
+
+
+def test_find_subclass():
+    _ = Estimator._find_subclass('randomPZ')

@@ -1,4 +1,5 @@
-# Note: 'utils.py' is terrible!  These i/o functions don't really belong here, so the bad name is a reminder to deal with this.
+# Note: 'utils.py' is terrible!  These i/o functions don't really belong
+# here, so the bad name is a reminder to deal with this.
 import os
 import h5py
 import pandas as pd
@@ -8,7 +9,7 @@ import numpy as np
 def load_training_data(filename, fmt='hdf5', groupname='None'):
     fmtlist = ['hdf5', 'parquet', 'h5']
     if fmt not in fmtlist:
-        raise ValueError(f"File format {fmt} not implemented")
+        raise NotImplementedError(f"File format {fmt} not implemented")
     if fmt == 'hdf5':
         data = load_raw_hdf5_data(filename, groupname)
     if fmt == 'parquet':
@@ -22,12 +23,20 @@ def load_raw_pq_data(infile):
     """
     just return the dataframe from pandas for now
     """
-    return pd.read_parquet(infile, engine='pyarrow')
+    df = pd.read_parquet(infile, engine='pyarrow')
+    data = {}
+    for key in df.keys():
+        data[key] = np.array(df[key])
+    return data
 
 
 def load_raw_h5_data(infile):
     """just return the datafram from pandas h5"""
-    return pd.read_hdf(infile)
+    df = pd.read_hdf(infile)
+    data = {}
+    for key in df.keys():
+        data[key] = np.array(df[key])
+    return data
 
 
 def load_raw_hdf5_data(infile, groupname='None'):
