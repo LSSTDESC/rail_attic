@@ -1,77 +1,92 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
-import skgof
+#import skgof
 from scipy import stats
 
 
 
 
 class Metrics:
-    """ Metrics object """
+    """
+       ***   Metrics parent class   ***
+    Receives a Sample object as input.
+    Computes PIT and QQ vectors on the initialization.
+    It's the basis for the other metrics.
 
-    def __init__(self, sample, Nquants=100):
+    Parameters
+    ----------
+    sample: `Sample`
+        sample object defined in ./sample.py
+    n_quant: `int`, (optional)
+        number of quantiles for the QQ plot
+    """
+
+    def __init__(self, sample, n_quant=100, pit_min=0.0001, pit_max=0.9999):
         self._sample = sample
-        self._Nquants = Nquants
+        self._n_quant = n_quant
+        self._pit = np.array([self._sample._pdfs[i].cdf(self._sample._ztrue[i])[0][0]
+                          for i in range(len(self._sample))])
+        Qtheory = np.linspace(0., 1., self.n_quant)
+        Qdata = np.quantile(self._pit, Qtheory)
+        self._qq_vectors = (Qtheory, Qdata)
+        pit_n_outliers = len(self._pit[(self._pit < pit_min) | (self._pit > pit_max)])
+        self._pit_out_rate = float(pit_n_outliers)/float(len(self._pit))
+
 
     @property
-    def Nquants(self):
-        return self._Nquants
+    def sample(self):
+        return self._sample
+
+    @property
+    def n_quant(self):
+        return self._n_quant
 
     @property
     def pit(self):
-        self._pit = np.array([self._sample._pdfs[i].cdf(self._sample._ztrue[i])[0][0]
-                              for i in range(len(self._sample))])
         return self._pit
 
     @property
     def qq_vectors(self):
-        """Quantile-quantile vectors: Qdata is the quantile of the PIT
-        values, Qtheory is the interval [0-1] sliced in Nquants. """
-        self.pit
-        Qtheory = np.linspace(0., 1., self._Nquants)
-        Qdata = np.quantile(self._pit, Qtheory)
-        return (Qtheory, Qdata)
-
+        return self._qq_vectors
 
     @property
     def pit_out_rate(self):
-        pit_min, pit_max = 0.0001, 0.9999
-        self._pit_out_rate = float(len(self._pit[(self._pit<pit_min)|(self._pit>pit_max)]))/float(len(self._pit))
         return self._pit_out_rate
 
 
-    def plot_pit(self, bins=None, sp=111, label=None):
-        """PIT histogram. It can be called repeated
-        times as subplot to make plot panels. """
-        if bins is None:
-            bins = self._Nquants
-        ax = plt.subplot(sp)
-        if label is None:
-            label = self._sample._name
-        label += "\n PIT$_{out}$="+f"{self._pit_out_rate:.4f}"
-        ax.hist(self.pit, bins=bins, alpha=0.7, label=label)
-        leg = ax.legend(handlelength=0, handletextpad=0, fancybox=True)
-        for item in leg.legendHandles:
-            item.set_visible(False)
-        try:
-            y_uni = float(len(self.pit))/float(bins)
-        except:
-            y_uni = float(len(self.pit))/float(len(bins))
-        ax.hlines(y_uni, xmin=0, xmax=1, color='k')
-        plt.xlabel("PIT", fontsize=18)
-        plt.xlim(0, 1)
-        i, j = int(str(sp)[2]), int(str(sp)[1])
-        if j == 1 or (i % j) == 1:
-            plt.ylabel("Number", fontsize=18)
+
+    # def plot_pit(self, bins=None, sp=111, label=None):
+    #     """PIT histogram. It can be called repeated
+    #     times as subplot to make plot panels. """
+    #     if bins is None:
+    #         bins = self._Nquants
+    #     ax = plt.subplot(sp)
+    #     if label is None:
+    #         label = self._sample._name
+    #     label += "\n PIT$_{out}$="+f"{self._pit_out_rate:.4f}"
+    #     ax.hist(self.pit, bins=bins, alpha=0.7, label=label)
+    #     leg = ax.legend(handlelength=0, handletextpad=0, fancybox=True)
+    #     for item in leg.legendHandles:
+    #         item.set_visible(False)
+    #     try:
+    #         y_uni = float(len(self.pit))/float(bins)
+    #     except:
+    #         y_uni = float(len(self.pit))/float(len(bins))
+    #     ax.hlines(y_uni, xmin=0, xmax=1, color='k')
+    #     plt.xlabel("PIT", fontsize=18)
+    #     plt.xlim(0, 1)
+    #     i, j = int(str(sp)[2]), int(str(sp)[1])
+    #     if j == 1 or (i % j) == 1:
+    #         plt.ylabel("Number", fontsize=18)
 
 
 
 
-    def plot_qq(self, bins=None, sp=111, label=None, show_pit=False):
+    def plot_pit_qq(self, bins=None, sp=111, label=None, show_pit=True):
         """Quantile-quantile plot """
         if bins is None:
-            bins = self._Nquants
+            bins = self._n_quant
         if label is None:
             label = self._sample._name
         #plt.subplot(sp)
@@ -103,6 +118,9 @@ class Metrics:
         ax2.plot([0, 1], [0, 0], color='k', linestyle='--', linewidth=2)
         plt.xlim(-0.001, 1.001)
         plt.ylim(-0.1, 0.1)
+
+
+
 
 
 
