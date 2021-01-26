@@ -96,7 +96,7 @@ class Sample:
           
         return text
 
-    def plot_pdfs(self, gals):
+    def plot_pdfs(self, gals, show_ztrue=True, show_photoz_mode=False):
         """Plot a list of individual PDFs using qp plotting function for illustration.
 
         Parameters
@@ -116,7 +116,10 @@ class Sample:
             else:
                 _ = self.pdfs.plot(key=gal, axes=axes, label=f"Galaxy {gal}")
             colors.append(axes.get_lines()[-1].get_color())
-            axes.vlines(self.ztrue[gal], ymin=0, ymax=20, colors=colors[-1], ls='--')
+            if show_ztrue:
+                axes.vlines(self.ztrue[gal], ymin=0, ymax=20, colors=colors[-1], ls='--')
+            if show_photoz_mode:
+                axes.vlines(self.photoz_mode[gal], ymin=0, ymax=20, colors=colors[-1], ls=':')
         plt.ylim(0, 15)
         axes.figure.legend()
         return colors
