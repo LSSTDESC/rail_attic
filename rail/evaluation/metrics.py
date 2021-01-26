@@ -36,7 +36,11 @@ class Metrics:
         self._pit_out_rate = float(pit_n_outliers) / float(len(self._pit))
 
         self._ks_stat = None
-        self._ks_pvalue
+        self._ks_pvalue = None
+        self._cvm_stat = None
+        self._cvm_pvalue = None
+
+
 
 
     @property
@@ -118,45 +122,6 @@ class Metrics:
 
 
 
-
-    def KS(self):
-        """
-        Compute the Kolmogorov-Smirnov statistic and p-value for the PIT
-        values by comparing with a uniform distribution between 0 and 1.
-        """
-
-        ks_stat, ks_pvalue = stats.kstest(self._pit, "uniform")
-        return  ks_stat, ks_pvalue
-
-
-    def CvM(self):  # , using, dx=0.0001):
-        """
-        Compute the Cramer-von Mises statistic and p-value for the PIT values
-        by comparing with a uniform distribution between 0 and 1.
-        Parameters:
-        -----------
-        using: string
-            which parameterization to evaluate
-        dx: float
-            step size for integral
-        Returns:
-        --------
-        CvM statistic and pvalue
-
-        """
-        # if self.pitarray is not None:
-        #    pits = np.array(self.pitarray)
-        # else:
-        #    pits = np.array(self.PIT(using=using, dx=dx))
-        #    self.pitarray = pits
-        # cvm_result = skgof.cvm_test(pits, stats.uniform())
-
-        # cvm_result = skgof.cvm_test(self._pit, stats.uniform())
-
-        cvm_result = stats.cramervonmises(self._pit, "uniform")
-
-        return cvm_result.statistic, cvm_result.pvalue
-
     # def AD(self, using, dx=0.0001, vmin=0.005, vmax=0.995):
     def AD(self, vmin=0.005, vmax=0.995):
         """
@@ -210,58 +175,52 @@ class Metrics:
 
 
 class KS:
-        """
-        Compute the Kolmogorov-Smirnov statistic and p-value for the PIT
-        values by comparing with a uniform distribution between 0 and 1.
-        """
-        def __init__(self, pit):
-            self._pit = pit
-            self._stat, self._pvalue = stats.kstest(self._pit, "uniform")
+    """
+    Compute the Kolmogorov-Smirnov statistic and p-value for the PIT
+    values by comparing with a uniform distribution between 0 and 1.
+    Parameters
+    ----------
+    pit: `numpy.ndarray`
+    array with PIT values for all galaxies in the sample
+    """
+    def __init__(self, pit):
+        self._pit = pit
+        self._stat, self._pvalue = stats.kstest(self._pit, "uniform")
 
-        @property
-        def stat(self):
-            return  self._stat
-        @property
-        def pvalue(self):
-            return self._pvalue
+    @property
+    def stat(self):
+        return  self._stat
+    @property
+    def pvalue(self):
+        return self._pvalue
 
 
 
 class CvM:
-    pass
+    """
+    Compute the Cramer-von Mises statistic and p-value for the PIT values
+    by comparing with a uniform distribution between 0 and 1.
+    Parameters
+    ----------
+    pit: `numpy.ndarray`
+        array with PIT values for all galaxies in the sample
+    """
+    def __init__(self, pit):
+        self._pit = pit
+        cvm_result = stats.cramervonmises(self._pit, "uniform")
+        self._stat, self._pvalue = cvm_result.statistic, cvm_result.pvalue
+
+    @property
+    def stat(self):
+        return self._stat
+    @property
+    def pvalue(self):
+        return self._pvalue
 
 
 
-""" 
-class PIT(Metrics):
-    def __init__(self):
-        super().__init__()
-        raise NotImplementedError
-
-
-class KS(Metrics):
-    def __init__(self):
-        super().__init__()
-        raise NotImplementedError
-
-
-class CvM(Metrics):
-    def __init__(self):
-        super().__init__()
-        raise NotImplementedError
-
-
-class AD(Metrics):
-    def __init__(self):
-        super().__init__()
-        raise NotImplementedError
-
-
-class CRPS(Metrics):
+class CRPS():
     ''' = continuous rank probability score (Gneiting et al., 2006)'''
-
     def __init__(self):
-        super().__init__()
         raise NotImplementedError
 
-"""
