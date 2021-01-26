@@ -1,17 +1,14 @@
 import numpy as np
-
-# import skgof
 from scipy import stats
-
 import plots
 
 
 class Metrics:
     """
-       ***   Metrics parent class   ***
+       ***   Metrics class   ***
     Receives a Sample object as input.
     Computes PIT and QQ vectors on the initialization.
-    It's the basis for the other metrics.
+    It's the basis for the other metrics, such as KS, AD, and CvM.
 
     Parameters
     ----------
@@ -65,34 +62,28 @@ class Metrics:
                                  show_pit_out_rate=show_pit_out_rate,
                                  savefig=savefig)
 
-    def KS(self):  # , using=None, dx=0.0001):
+
+
+
+class KS:
         """
         Compute the Kolmogorov-Smirnov statistic and p-value for the PIT
         values by comparing with a uniform distribution between 0 and 1.
-        Parameters:
-        -----------
-        using: string
-            which parameterization to evaluate
-        dx: float
-            step size for integral
-        Returns:
-        --------
-        KS statistic and pvalue
-
         """
+        def __init__(self, pit):
+            self._pit = pit
+            self._ks_stat, self._ks_pvalue = stats.kstest(self._pit, "uniform")
 
-        # if self.pitarray is not None:
-        #    pits = np.array(self.pitarray)
-        # else:
-        #    pits = np.array(self.PIT(using=using, dx=dx))
-        #    self.pitarray = pits
-        # ks_result = skgof.ks_test(pits, stats.uniform())
-        # ks_result = skgof.ks_test(self._pit, stats.uniform())
+        @property
+        def ks_stat(self):
+            return  self._ks_stat
+        @property
+        def ks_pvalue(self):
+            return self._ks_pvalue
 
-        ks_stat, ks_pvalue = stats.kstest(self._pit, "uniform")
 
-        # return ks_result.statistic, ks_result.pvalue
-        return ks_stat, ks_pvalue
+
+class CvM:
 
     def CvM(self):  # , using, dx=0.0001):
         """
