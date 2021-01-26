@@ -69,7 +69,7 @@ class Estimator(object):
         If inform step has been run separately, this funciton will
         load the information required to run estimate
         """
-        raise NotImplementedError
+        raise NotImplementedError # pragma: no cover
 
     def estimate(self, input_data):
         """
