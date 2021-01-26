@@ -35,6 +35,10 @@ class Metrics:
         pit_n_outliers = len(self._pit[(self._pit < pit_min) | (self._pit > pit_max)])
         self._pit_out_rate = float(pit_n_outliers) / float(len(self._pit))
 
+        self._ks_stat = None
+        self._ks_pvalue
+
+
     @property
     def sample(self):
         return self._sample
@@ -62,28 +66,68 @@ class Metrics:
                                  show_pit_out_rate=show_pit_out_rate,
                                  savefig=savefig)
 
+    @property
+    def ks_stat(self):
+        return self._ks_stat
+
+    @ks_stat.setter
+    def ks_stat(self, value):
+        self._ks_stat = value #KS(self._pit).ks_stat
+
+    @property
+    def ks_pvalue(self):
+        return self._ks_pvalue
+
+    @ks_pvalue.setter
+    def ks_pvalue(self, value):
+        self._ks_pvalue = value
 
 
 
-class KS:
+
+
+    @property
+    def cde_loss(self, zgrid=None):
+        """Computes the estimated conditional density loss described in
+        Izbicki & Lee 2017 (arXiv:1704.08095).
+
+        Parameters:
+        grid: np array of values at which to evaluate the pdf.
+        Returns:
+        an estimate of the cde loss.
+        """
+        if zgrid is None:
+            zgrid = self._sample._zgrid
+
+        # grid, pdfs = self.ensemble_obj.evaluate(zgrid, norm=True)
+        pdfs = self._sample._pdfs.pdf([zgrid])  # , norm=True)
+
+        n_obs, n_grid = pdfs.shape
+
+        # Calculate first term E[\int f*(z | X)^2 dz]
+        term1 = np.mean(np.trapz(pdfs ** 2, zgrid))
+
+        # Calculate second term E[f*(Z | X)]
+        nns = [np.argmin(np.abs(zgrid - true_z)) for true_z in self._sample._ztrue]
+        term2 = np.mean(pdfs[range(n_obs), nns])
+
+        self._cde_loss = term1 - 2 * term2
+        return self._cde_loss
+
+
+
+
+
+
+    def KS(self):
         """
         Compute the Kolmogorov-Smirnov statistic and p-value for the PIT
         values by comparing with a uniform distribution between 0 and 1.
         """
-        def __init__(self, pit):
-            self._pit = pit
-            self._ks_stat, self._ks_pvalue = stats.kstest(self._pit, "uniform")
 
-        @property
-        def ks_stat(self):
-            return  self._ks_stat
-        @property
-        def ks_pvalue(self):
-            return self._ks_pvalue
+        ks_stat, ks_pvalue = stats.kstest(self._pit, "uniform")
+        return  ks_stat, ks_pvalue
 
-
-
-class CvM:
 
     def CvM(self):  # , using, dx=0.0001):
         """
@@ -149,45 +193,43 @@ class CvM:
         # return ad_result.statistic, ad_result.pvalue
         return ad_stat, ad_critical_values, ad_sign_level
 
-    @property
-    def cde_loss(self, zgrid=None):
-        """Computes the estimated conditional density loss described in
-        Izbicki & Lee 2017 (arXiv:1704.08095).
 
-        Parameters:
-        grid: np array of values at which to evaluate the pdf.
-        Returns:
-        an estimate of the cde loss.
-        """
-        if zgrid is None:
-            zgrid = self._sample._zgrid
-
-        # grid, pdfs = self.ensemble_obj.evaluate(zgrid, norm=True)
-        pdfs = self._sample._pdfs.pdf([zgrid])  # , norm=True)
-
-        n_obs, n_grid = pdfs.shape
-
-        # Calculate first term E[\int f*(z | X)^2 dz]
-        term1 = np.mean(np.trapz(pdfs ** 2, zgrid))
-
-        # Calculate second term E[f*(Z | X)]
-        nns = [np.argmin(np.abs(zgrid - true_z)) for true_z in self._sample._ztrue]
-        term2 = np.mean(pdfs[range(n_obs), nns])
-
-        self._cde_loss = term1 - 2 * term2
-        return self._cde_loss
 
     def all(self):
-        metrics_table = str(f"### {self._sample._name}\n" +
+        metrics_table = str( #f"### {self._sample._name}\n" +
                             "|Metric|Value|\n" +
                             "|---|---|\n" +
-                            f"PIT out  | {self._pit_out_rate:8.4f}\n" +
-                            f"CDE loss | {self._cde_loss:8.4f}\n" +
-                            f"KS       | {self.KS()[0]:8.4f}\n" +
-                            f"CvM      | {self.CvM()[0]:8.4f}\n" +
-                            f"AD       | {self.AD()[0]:8.4f}")
+                            f"PIT out rate | {self._pit_out_rate:8.4f}\n" +
+                            f"CDE loss     | {self._cde_loss:8.4f}\n" +
+                            f"KS           | {self.KS()[0]:8.4f}\n" +
+                            f"CvM          | {self.CvM()[0]:8.4f}\n" +
+                            f"AD           | {self.AD()[0]:8.4f}")
 
         return metrics_table
+
+
+
+class KS:
+        """
+        Compute the Kolmogorov-Smirnov statistic and p-value for the PIT
+        values by comparing with a uniform distribution between 0 and 1.
+        """
+        def __init__(self, pit):
+            self._pit = pit
+            self._stat, self._pvalue = stats.kstest(self._pit, "uniform")
+
+        @property
+        def stat(self):
+            return  self._stat
+        @property
+        def pvalue(self):
+            return self._pvalue
+
+
+
+class CvM:
+    pass
+
 
 
 """ 
