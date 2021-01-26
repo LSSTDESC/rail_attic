@@ -35,10 +35,16 @@ class Metrics:
         pit_n_outliers = len(self._pit[(self._pit < pit_min) | (self._pit > pit_max)])
         self._pit_out_rate = float(pit_n_outliers) / float(len(self._pit))
 
+        # placeholders for metrics to be calculated
         self._ks_stat = None
         self._ks_pvalue = None
         self._cvm_stat = None
         self._cvm_pvalue = None
+        self._ad_stat = None
+        self._ad_critical_values = None
+        self._ad_significance_levels = None
+
+
 
 
 
@@ -76,7 +82,7 @@ class Metrics:
 
     @ks_stat.setter
     def ks_stat(self, value):
-        self._ks_stat = value #KS(self._pit).ks_stat
+        self._ks_stat = value
 
     @property
     def ks_pvalue(self):
@@ -85,6 +91,51 @@ class Metrics:
     @ks_pvalue.setter
     def ks_pvalue(self, value):
         self._ks_pvalue = value
+
+
+    @property
+    def cvm_stat(self):
+        return self._cvm_stat
+
+    @cvm_stat.setter
+    def cvm_stat(self, value):
+        self._cvm_stat = value
+
+    @property
+    def cvm_pvalue(self):
+        return self._cvm_pvalue
+
+    @ks_pvalue.setter
+    def cvm_pvalue(self, value):
+        self._cvm_pvalue = value
+
+
+
+    @property
+    def ad_stat(self):
+        return self._ad_stat
+
+    @ad_stat.setter
+    def ad_stat(self, value):
+        self._ad_stat = value
+
+    @property
+    def ad_critical_values(self):
+        return self._ad_critical_values
+
+    @ad_critical_values.setter
+    def ad_critical_values(self, value):
+        self._ad_critical_values = value
+
+    @property
+    def ad_significance_levels(self):
+        return self._ad_significance_levels
+
+    @ad_significance_levels.setter
+    def ad_significance_levels(self, value):
+        self._ad_significance_levels = value
+
+
 
 
 
@@ -120,43 +171,6 @@ class Metrics:
 
 
 
-
-
-    # def AD(self, using, dx=0.0001, vmin=0.005, vmax=0.995):
-    def AD(self, vmin=0.005, vmax=0.995):
-        """
-        Compute the Anderson-Darling statistic and p-value for the PIT
-        values by comparing with a uniform distribution between 0 and 1.
-
-        Since the statistic diverges at 0 and 1, PIT values too close to
-        0 or 1 are discarded.
-
-        Parameters:
-        -----------
-        using: string
-            which parameterization to evaluate
-        dx: float
-            step size for integral
-        vmin, vmax: floats
-            PIT values outside this range are discarded
-        Returns:
-        --------
-        AD statistic and pvalue
-
-        """
-        # if self.pitarray is not None:
-        #    pits = np.array(self.pitarray)
-        # else:
-        #    pits = np.array(self.PIT(using=using, dx=dx))
-        #    self.pitarray = pits
-        mask = (self._pit > vmin) & (self._pit < vmax)
-        # print("now with proper uniform range")
-        delv = vmax - vmin
-        # ad_result = skgof.ad_test(pits[mask], stats.uniform(loc=vmin, scale=delv))
-        # ad_result = skgof.ad_test(self._pit[mask], stats.uniform(loc=vmin, scale=delv))
-        ad_stat, ad_critical_values, ad_sign_level = stats.anderson(self._pit, "norm")
-        # return ad_result.statistic, ad_result.pvalue
-        return ad_stat, ad_critical_values, ad_sign_level
 
 
 
@@ -216,6 +230,39 @@ class CvM:
     @property
     def pvalue(self):
         return self._pvalue
+
+
+class AD:
+    """
+    Compute the Anderson-Darling statistic and p-value for the PIT
+    values by comparing with a uniform distribution between 0 and 1.
+    Since the statistic diverges at 0 and 1, PIT values too close to
+    0 or 1 are discarded.
+    Parameters
+    ----------
+    pit: `numpy.ndarray`
+        array with PIT values for all galaxies in the sample
+    ad_pit_min, ad_pit_max: floats
+        PIT values outside this range are discarded
+    """
+    def __init__(self, pit, ad_pit_min=0.001, ad_pit_max=0.999):
+        mask = (pit > ad_pit_min) & (pit < ad_pit_max)
+        self._stat, self._critical_values, self._significance_levels = stats.anderson(pit[mask])
+
+    @property
+    def stat(self):
+        return self._stat
+    @property
+    def critical_values(self):
+        return self._critical_values
+    @property
+    def significance_levels(self):
+        return self._significance_levels
+
+
+
+
+
 
 
 
