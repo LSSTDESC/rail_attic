@@ -8,9 +8,10 @@ def plot_pit_qq(self, bins=None, label=None, title=None,
     if bins is None:
         bins = self._n_quant
     if title is None:
-        title = self._sample._name
+        title = (self._sample._name).replace("_", " ")
     if label is None:
-        label = self._sample._code
+        label = (self._sample._code).replace("_", " ")
+
         if show_pit_out_rate:
             label += "\n PIT$_{out}$: "
             label += f"{self._pit_out_rate:.4f}"
@@ -66,5 +67,7 @@ def plot_pit_qq(self, bins=None, label=None, title=None,
 
     #plt.tight_layout()
     if savefig:
-        plt.savefig(f"plot_pit_qq_{self._sample._code}_{self._sample._name}.png")
+        plt.savefig("plot_pit_qq_" +
+                    f"{(self._sample._code).replace(' ','_')}" +
+                    f"_{(self._sample._name).replace(' ','_')}.png")
 
