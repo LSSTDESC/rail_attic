@@ -25,10 +25,8 @@ def plot_pit_qq(self, bins=None, label=None, title=None,
         ax0.plot([0, 1], [0, 1], color='k', linestyle='--', linewidth=2)
         ax0.set_ylabel("Qdata", fontsize=18)
         plt.ylim(-0.001, 1.001)
-
     plt.xlim(-0.001, 1.001)
     plt.title(title)
-
     if show_pit:
         try:
             y_uni = float(len(self._pit)) / float(bins)
@@ -40,6 +38,10 @@ def plot_pit_qq(self, bins=None, label=None, title=None,
             ax0.hlines(y_uni, xmin=0, xmax=1, color='k')
             plt.ylim(0, )  # -0.001, 1.001)
 
+        if show_qq: # repeat plot to
+            ax0.plot(self.qq_vectors[0], self.qq_vectors[1], c='r', linestyle='-',
+                     linewidth=3, label=label)
+            ax0.plot([0, 1], [0, 1], color='k', linestyle='--', linewidth=2)
         else:
             ax1 = ax0.twinx()
             ax1.hist(self._pit, bins=bins, alpha=0.7)
