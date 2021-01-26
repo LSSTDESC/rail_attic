@@ -19,6 +19,12 @@ class Metrics:
         sample object defined in ./sample.py
     n_quant: `int`, (optional)
         number of quantiles for the QQ plot
+    pit_min: `float`
+        lower limit to define PIT outliers
+        default is 0.0001
+    pit_max:
+        upper limit to define PIT outliers
+        default is 0.9999
     """
 
     def __init__(self, sample, n_quant=100, pit_min=0.0001, pit_max=0.9999):
