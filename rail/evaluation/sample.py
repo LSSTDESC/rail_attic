@@ -126,12 +126,14 @@ class Sample:
 
         Parameters
         ----------
-        gals: `list`
+        gals: `list`, (optional)
             list of galaxies' indexes
+        colors: `list`, (optional)
+            list of HTML codes for colors used in the plot highlighted points
         """
         plt.figure(figsize=(10, 4))
         ax = plt.subplot(121)
-        plt.plot(self.ztrue, self.photoz_mode, 'k,', label=self._name)
+        plt.plot(self.ztrue, self.photoz_mode, 'k,', label=(self._name).replace("_", " "))
         leg = ax.legend(handlelength=0, handletextpad=0, fancybox=True)
         for item in leg.legendHandles:
             item.set_visible(False)
@@ -144,9 +146,6 @@ class Sample:
         plt.ylim(0, 3)
         plt.ylabel('z$_{true}$')
         plt.xlabel('z$_{phot}$ (mode)')
-
-
-
 
         plt.subplot(122)
         sns.kdeplot(self.ztrue, shade=True, label='z$_{true}$')
