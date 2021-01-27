@@ -68,6 +68,12 @@ class Sample:
         return self._ztrue
 
     @property
+    def zgrid(self):
+        """Redshift grid (binning)"""
+        return self._zgrid
+
+
+    @property
     def photoz_mode(self):
         """Photo-z (mode) array"""
         return self._photoz_mode
