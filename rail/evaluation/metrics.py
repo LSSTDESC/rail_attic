@@ -45,10 +45,6 @@ class Metrics:
         self._ad_significance_levels = None
 
 
-
-
-
-
     @property
     def sample(self):
         return self._sample
@@ -76,70 +72,35 @@ class Metrics:
                                  show_pit_out_rate=show_pit_out_rate,
                                  savefig=savefig)
 
+
+
     @property
     def ks_stat(self):
-        return self._ks_stat
-
-    @ks_stat.setter
-    def ks_stat(self, value):
-        self._ks_stat = value
+       return self._ks_stat
 
     @property
     def ks_pvalue(self):
         return self._ks_pvalue
 
-    @ks_pvalue.setter
-    def ks_pvalue(self, value):
-        self._ks_pvalue = value
-
-
     @property
     def cvm_stat(self):
         return self._cvm_stat
-
-    @cvm_stat.setter
-    def cvm_stat(self, value):
-        self._cvm_stat = value
 
     @property
     def cvm_pvalue(self):
         return self._cvm_pvalue
 
-    @ks_pvalue.setter
-    def cvm_pvalue(self, value):
-        self._cvm_pvalue = value
-
-
-
     @property
     def ad_stat(self):
         return self._ad_stat
-
-    @ad_stat.setter
-    def ad_stat(self, value):
-        self._ad_stat = value
 
     @property
     def ad_critical_values(self):
         return self._ad_critical_values
 
-    @ad_critical_values.setter
-    def ad_critical_values(self, value):
-        self._ad_critical_values = value
-
     @property
     def ad_significance_levels(self):
         return self._ad_significance_levels
-
-    @ad_significance_levels.setter
-    def ad_significance_levels(self, value):
-        self._ad_significance_levels = value
-
-
-
-
-
-
 
     @property
     def cde_loss(self, zgrid=None):
@@ -156,36 +117,44 @@ class Metrics:
 
         # grid, pdfs = self.ensemble_obj.evaluate(zgrid, norm=True)
         pdfs = self._sample._pdfs.pdf([zgrid])  # , norm=True)
-
         n_obs, n_grid = pdfs.shape
-
         # Calculate first term E[\int f*(z | X)^2 dz]
         term1 = np.mean(np.trapz(pdfs ** 2, zgrid))
-
         # Calculate second term E[f*(Z | X)]
         nns = [np.argmin(np.abs(zgrid - true_z)) for true_z in self._sample._ztrue]
         term2 = np.mean(pdfs[range(n_obs), nns])
-
         self._cde_loss = term1 - 2 * term2
         return self._cde_loss
 
+    def compute_stats(self):
+        self._ks_stat = KS(self._pit).stat
+        self._cvm_stat = CvM(self._pit).stat
+        self._ad_stat = AD(self._pit).stat
 
-
-
-
-
-    def all(self):
-        metrics_table = str( #f"### {self._sample._name}\n" +
-                            "|Metric|Value|\n" +
+    def markdown_summary(self):
+        self.compute_stats()
+        metrics_table = str("|Metric|Value|\n" +
                             "|---|---|\n" +
                             f"PIT out rate | {self._pit_out_rate:8.4f}\n" +
                             f"CDE loss     | {self._cde_loss:8.4f}\n" +
-                            f"KS           | {self.KS()[0]:8.4f}\n" +
-                            f"CvM          | {self.CvM()[0]:8.4f}\n" +
-                            f"AD           | {self.AD()[0]:8.4f}")
-
+                            f"KS           | {self._ks_stat:8.4f}\n" +
+                            f"CvM          | {self._cvm_stat:8.4f}\n" +
+                            f"AD           | {self._ad_stat:8.4f}")
         return metrics_table
 
+
+    def print_summary(self):
+        self.compute_stats()
+        metrics_table = str(  # f"### {self._sample._name}\n" +
+            "   Metric    |   Value \n" +
+            "-------------|----------\n" +
+            f"PIT out rate | {self._pit_out_rate:8.4f}\n" +
+            f"CDE loss     | {self._cde_loss:8.4f}\n" +
+            f"KS           | {self._ks_stat:8.4f}\n" +
+            f"CvM          | {self._cvm_stat:8.4f}\n" +
+            f"AD           | {self._ad_stat:8.4f}")
+
+        return metrics_table
 
 
 class KS:
