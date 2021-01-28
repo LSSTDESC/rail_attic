@@ -1,36 +1,21 @@
-.. toctree::
-   :maxdepth: 1
-   :caption: Examples
+.. rail documentation master file, created by
+   sphinx-quickstart on Thu Jan 28 03:33:35 2021.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+Welcome to rail's documentation!
+================================
 
 .. toctree::
-   :maxdepth: 1
-   :caption: Usage Demos
+   :maxdepth: 2
+   :caption: Contents:
 
-.. toctree::
-   :maxdepth: 1
-   :caption: Reference
-   api
-.. toctree::
-   :maxdepth: 1
-   :caption: Examples
+   modules
 
-.. toctree::
-   :maxdepth: 1
-   :caption: Usage Demos
+Indices and tables
+==================
 
-.. toctree::
-   :maxdepth: 1
-   :caption: Reference
-   api
-.. toctree::
-   :maxdepth: 1
-   :caption: Examples
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
 
-.. toctree::
-   :maxdepth: 1
-   :caption: Usage Demos
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Reference
-   api
