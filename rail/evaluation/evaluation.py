@@ -58,6 +58,9 @@ def main(argv):
 
     print("Computing metrics...")
     print()
+    metrics = Metrics(sample)
+    metrics_table = metrics.print_summary()
+    COLOCAR CDE LOSS COMO SUBCLASSE
     print()
 
 
