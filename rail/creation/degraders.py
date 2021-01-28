@@ -33,18 +33,18 @@ class LineConfusion:
             The fraction of galaxies with confused emission lines.
         """
 
+        # convert to floats
+        true_wavelen = float(true_wavelen)
+        wrong_wavelen = float(wrong_wavelen)
+        frac_wrong = float(frac_wrong)
+
         # validate parameters
-        for key, value in {
-            "true_wavelen": true_wavelen,
-            "wrong_wavelen": wrong_wavelen,
-            "frac_wrong": frac_wrong,
-        }.items():
-            if not isinstance(value, float):
-                raise ValueError(f"{key} must be a float")
-            elif value < 0 and key != "frac_wrong":
-                raise ValueError(f"{key} must be positive")
-            elif (value < 0 or value > 1) and key == "frac_wrong":
-                raise ValueError(f"{key} must be between 0 and 1.")
+        if true_wavelen < 0:
+            raise ValueError("true_wavelen must be positive")
+        if wrong_wavelen < 0:
+            raise ValueError("wrong_wavelen must be positive")
+        if frac_wrong < 0 or frac_wrong > 1:
+            raise ValueError("frac_wrong must be between 0 and 1.")
 
         self.true_wavelen = true_wavelen
         self.wrong_wavelen = wrong_wavelen
@@ -84,7 +84,7 @@ class LineConfusion:
         return pd.DataFrame(data, columns=columns)
 
 
-class InverseRedshiftIncompleteness:
+class InvRedshiftIncompleteness:
     """Degrader that simulates incompleteness with a selection function
     inversely proportional to redshift.
 
@@ -100,9 +100,8 @@ class InverseRedshiftIncompleteness:
         pivot_redshift : positive float
             The redshift at which the incompleteness begins.
         """
-        if not isinstance(pivot_redshift, float):
-            raise ValueError("pivot redshift must be a float.")
-        elif pivot_redshift < 0:
+        pivot_redshift = float(pivot_redshift)
+        if pivot_redshift < 0:
             raise ValueError("pivot redshift must be positive.")
 
         self.pivot_redshift = pivot_redshift
