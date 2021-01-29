@@ -64,7 +64,12 @@ def plot_pit_qq(self, bins=None, label=None, title=None,
 
     #plt.tight_layout()
     if savefig:
-        plt.savefig("plot_pit_qq_" +
-                    f"{(self._sample._code).replace(' ','_')}" +
-                    f"_{(self._sample._name).replace(' ','_')}.png")
+        fig_filename = str("plot_pit_qq_" +
+                           f"{(self._sample._code).replace(' ','_')}" +
+                           f"_{(self._sample._name).replace(' ','_')}.png")
+        plt.savefig(fig_filename)
+    else:
+        fig_filename = None
+
+    return fig_filename
 
