@@ -1,5 +1,5 @@
 # Script to load photometry and redshift from an
-# extragalactic catalog accesible through GCRCatalogs.
+# extragalactic catalog accessible through GCRCatalogs.
 
 import argparse
 import GCRCatalogs
@@ -8,6 +8,20 @@ import pandas as pd
 
 
 def read_config_yaml(filename):
+    """
+    Read in the configuration file.
+    For an example file see examples/configs/buzzardCatLoader.yaml
+
+    Parameters
+    ----------
+    filename : str
+        Filepath of configuration file.
+
+    Returns
+    -------
+    dict
+        Dictionary with parameters to pass to GCRCatalogs.
+    """
 
     with open(filename, 'r') as stream:
         config_data_dict = yaml.safe_load(stream)
@@ -16,6 +30,24 @@ def read_config_yaml(filename):
 
 
 def get_catalog_mags_and_redshift(gcr_catalog, config_data_dict):
+    """
+    Use the gcrCatalog object for a given catalog and the
+    dictionary with the configuration data to return the
+    catalog data as a pandas dataframe.
+
+    Parameters
+    ----------
+    gcr_catalog : GCRCatalog object
+        GCRCatalog object set up for the desired catalog.
+
+    config_data_dict : dict
+        Configuration data dictionary from `read_config_yaml`.
+
+    Returns
+    -------
+    pandas dataframe
+        Magnitude and redshift information from the catalog.
+    """
 
     cat_columns = [x for x in config_data_dict['mag_columns']]
     cat_columns.append(config_data_dict['redshift_column'])
@@ -42,4 +74,4 @@ if __name__ == "__main__":
     gcr_catalog = GCRCatalogs.load_catalog(config_data_dict['catalog_name'])
 
     catalog_df = get_catalog_mags_and_redshift(gcr_catalog, config_data_dict)
-    catalog_df.to_csv(args.catalog_out)
+    catalog_df.to_csv(args.catalog_out, index=False)

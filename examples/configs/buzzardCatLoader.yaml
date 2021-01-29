@@ -1,5 +1,5 @@
 # Example catalog_loader config file.
-catalog_name: buzzard_test
+catalog_name: buzzard
 mag_columns:
     - mag_true_u_lsst
     - mag_true_g_lsst
