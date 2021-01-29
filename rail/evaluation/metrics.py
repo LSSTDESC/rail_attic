@@ -36,6 +36,7 @@ class Metrics:
         self._pit_out_rate = float(pit_n_outliers) / float(len(self._pit))
 
         # placeholders for metrics to be calculated
+        self._cde_loss = None
         self._ks_stat = None
         self._ks_pvalue = None
         self._cvm_stat = None
@@ -67,12 +68,16 @@ class Metrics:
 
     def plot_pit_qq(self, bins=None, label=None, title=None, show_pit=True,
                     show_qq=True, show_pit_out_rate=True, savefig=False):
-        return plots.plot_pit_qq(self, bins=bins, label=label, title=title,
+        fig_filename = plots.plot_pit_qq(self, bins=bins, label=label, title=title,
                                  show_pit=show_pit, show_qq=show_qq,
                                  show_pit_out_rate=show_pit_out_rate,
                                  savefig=savefig)
+        return fig_filename
 
 
+    @property
+    def cde_loss(self):
+        return self._cde_loss
 
     @property
     def ks_stat(self):
@@ -102,31 +107,8 @@ class Metrics:
     def ad_significance_levels(self):
         return self._ad_significance_levels
 
-    @property
-    def cde_loss(self, zgrid=None):
-        """Computes the estimated conditional density loss described in
-        Izbicki & Lee 2017 (arXiv:1704.08095).
-
-        Parameters:
-        grid: np array of values at which to evaluate the pdf.
-        Returns:
-        an estimate of the cde loss.
-        """
-        if zgrid is None:
-            zgrid = self._sample._zgrid
-
-        # grid, pdfs = self.ensemble_obj.evaluate(zgrid, norm=True)
-        pdfs = self._sample._pdfs.pdf([zgrid])  # , norm=True)
-        n_obs, n_grid = pdfs.shape
-        # Calculate first term E[\int f*(z | X)^2 dz]
-        term1 = np.mean(np.trapz(pdfs ** 2, zgrid))
-        # Calculate second term E[f*(Z | X)]
-        nns = [np.argmin(np.abs(zgrid - true_z)) for true_z in self._sample._ztrue]
-        term2 = np.mean(pdfs[range(n_obs), nns])
-        self._cde_loss = term1 - 2 * term2
-        return self._cde_loss
-
     def compute_stats(self):
+        self._cde_loss = CDE(self._sample)._cde_loss
         self._ks_stat = KS(self._pit).stat
         self._cvm_stat = CvM(self._pit).stat
         self._ad_stat = AD(self._pit).stat
@@ -153,8 +135,37 @@ class Metrics:
             f"KS           | {self._ks_stat:8.4f}\n" +
             f"CvM          | {self._cvm_stat:8.4f}\n" +
             f"AD           | {self._ad_stat:8.4f}")
-
+        print(metrics_table)
         return metrics_table
+
+
+
+class CDE:
+    """Computes the estimated conditional density loss described in
+    Izbicki & Lee 2017 (arXiv:1704.08095).
+    Parameters
+    ----------
+    sample: `Sample`
+        sample object defined in ./sample.py
+    """
+    def __init__(self, sample):
+        zgrid = sample._zgrid
+        ztrue = sample._ztrue
+        pdf = sample._pdfs.pdf([sample._zgrid])
+        n_obs, n_grid = (pdf).shape
+        # Calculate first term E[\int f*(z | X)^2 dz]
+        term1 = np.mean(np.trapz(np.array(pdf) ** 2, zgrid))
+        # z bin closest to ztrue
+        nns = [np.argmin(np.abs(zgrid - z)) for z in ztrue]
+        # Calculate second term E[f*(Z | X)]
+        term2 = np.mean(pdf[range(n_obs), nns])
+        self._cde_loss = term1 - 2 * term2
+
+    @property
+    def cde_loss(self):
+        return self._cde_loss
+
+
 
 
 class KS:
@@ -164,7 +175,7 @@ class KS:
     Parameters
     ----------
     pit: `numpy.ndarray`
-    array with PIT values for all galaxies in the sample
+        array with PIT values for all galaxies in the sample
     """
     def __init__(self, pit):
         self._pit = pit
