@@ -1,7 +1,7 @@
 import sys
 from rail.evaluation.sample import Sample
-from rail.evaluation.metrics import *
-#Metrics  # import metrics subclasses explicitly?
+from rail.evaluation.metrics import Metrics
+
 
 def main(argv):
     """ RAIL Evaluation module - command line mode:
@@ -15,10 +15,10 @@ def main(argv):
 
     Usage:
     ------
-        python eval.py <code name> <PDFs file> <sample name> <z-spec file>
+        python evaluator.py <code name> <PDFs file> <sample name> <z-spec file>
 
     Example:
-        python eval.py FZBoost ./results/FZBoost/test_FZBoost.hdf5 toy_data ../tests/data/test_dc2_validation_9816.hdf5
+        python evaluator.py FZBoost ./results/FZBoost/test_FZBoost.hdf5 toy_data ../tests/data/test_dc2_validation_9816.hdf5
 
     """
     print()
@@ -27,13 +27,12 @@ def main(argv):
     print()
     if len(argv) != 5:
         print()
-        print("ERROR: invalid entry")
         print()
         print("Usage:")
-        print("    python eval.py <code name> <PDFs file> <sample name> <z-spec file>")
+        print("    python evaluator.py <code name> <PDFs file> <sample name> <z-spec file>")
         print()
         print("Example:")
-        print("    python eval.py FZBoost ./results/FZBoost/test_FZBoost.hdf5 toy_data ../tests/data/test_dc2_validation_9816.hdf5")
+        print("    python evaluator.py FZBoost ./results/FZBoost/test_FZBoost.hdf5 toy_data ../tests/data/test_dc2_validation_9816.hdf5")
         print()
         print()
         sys.exit()
@@ -58,9 +57,9 @@ def main(argv):
 
     print("Computing metrics...")
     print()
+    print()
     metrics = Metrics(sample)
-    metrics_table = metrics.print_summary()
-    COLOCAR CDE LOSS COMO SUBCLASSE
+    metrics.print_summary()
     print()
 
 
@@ -68,8 +67,20 @@ def main(argv):
     print("Making plots...")
     print()
     print()
+    fig_filename = metrics.plot_pit_qq(savefig=True)
+    # TO DO: ADD METRICS PLOT HERE
+    print("Plots saved in:")
+    print ()
+    print (fig_filename)
+    print ()
 
-    #raise NotImplementedError("Module under construction.")
+
+
+    print()
+    print("Done!")
+    print()
+    print()
+
 
 if __name__ == "__main__":
     main(sys.argv)
