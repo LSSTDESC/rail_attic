@@ -1,6 +1,5 @@
-from rail.creation.degraders import LineConfusion
 import pytest
-from rail.creation.degraders import *
+from rail.creation.degradation import *
 import numpy as np
 import pandas as pd
 
