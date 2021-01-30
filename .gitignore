@@ -65,7 +65,8 @@ instance/
 
 # Sphinx documentation
 docs/_build/
-docs/*.rst
+docs/rail.*.rst
+docs/modules.rst
 public/
 
 # PyBuilder
