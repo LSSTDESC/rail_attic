@@ -69,16 +69,20 @@ def get_input_data_size_hdf5(infile, groupname='None'):
 
 def iter_chunk_hdf5_data(infile, chunk_size=100_000, groupname='None'):
     """
-    itrator for sending chunks of data in hdf5.
-    input:
-    ------
-      infile: input file name (str)
-      chunk_size: size of chunk to iterate over (int)
-    output: interator chunk consisting of dictionary of all the keys
-    Currently only implemented for hdf5
-      start: start index (int)
-      end: ending index (int)
-      data: dictionary of all data from start:end (dict)
+    generator function to send chunks of data in hdf5.
+
+    Parameters
+    ----------
+      infile: `str` input file name
+      chunk_size: `int` size of chunk to iterate over
+      groupname: `str`
+
+    Returns
+    -------
+      start: `int` start index
+      end: `int` ending index
+      data: `dict` dictionary of all data from start to end
+      Currently only implemented for hdf5
     """
     data = {}
     num_rows = get_input_data_size_hdf5(infile, groupname)
