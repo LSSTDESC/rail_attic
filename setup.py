@@ -7,7 +7,7 @@ setup(
     author='The LSST DESC PZWG',
     author_email='aimalz@nyu.edu',
     packages=packages,
-    package_data={"": ["*.hdf5", "*.yaml"], "tests": ["*.hdf5", "*.yaml"], },
+    package_data={"": ["*.hdf5", "*.yml"], "tests": ["*.hdf5", "*.yml"], },
     include_package_data=True,
     license='BSD 3-Clause License',
     description="Redshift Assessment Infrastructure Layers",
