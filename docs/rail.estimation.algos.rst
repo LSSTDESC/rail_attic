@@ -5,6 +5,7 @@ Submodules
 ----------
 
 .. toctree::
+   :maxdepth: 4
 
    rail.estimation.algos.flexzboost
    rail.estimation.algos.randomPZ
@@ -15,6 +16,6 @@ Module contents
 ---------------
 
 .. automodule:: rail.estimation.algos
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
