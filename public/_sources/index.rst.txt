@@ -11,7 +11,6 @@ Welcome to RAIL's documentation!
    :caption: Contents:
 
    modules
-   rail
 
 Indices and tables
 ==================
