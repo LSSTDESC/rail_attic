@@ -65,8 +65,8 @@ instance/
 
 # Sphinx documentation
 docs/_build/
-docs/rail.*.rst
-docs/modules.rst
+docs/_static/
+docs/_template/
 public/
 public/.*
 
