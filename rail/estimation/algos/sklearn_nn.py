@@ -15,10 +15,10 @@ from rail.estimation.estimator import Estimator as BaseEstimation
 def make_color_data(data_dict):
     """
     make a dataset consisting of the i-band mag and the five colors
-    Returns:
+
+    Returns
     --------
-    input_data: (nd-array)
-    array of imag and 5 colors
+    input_data: `ndarray` array of imag and 5 colors
     """
     input_data = data_dict['mag_i_lsst']
     bands = ['u', 'g', 'r', 'i', 'z', 'y']
@@ -57,7 +57,7 @@ class simpleNN(BaseEstimation):
     """
     def __init__(self, base_config, config_dict):
         """
-        Parameters:
+        Parameters
         -----------
         run_dict: dict
           dictionary of all variables read in from the run_params

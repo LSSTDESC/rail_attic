@@ -16,10 +16,17 @@ from rail.estimation.estimator import Estimator as BaseEstimation
 
 def make_color_data(data_dict):
     """
-    make a dataset consisting of the i-band mag and the five colors
-    Returns:
+    make a dataset consisting of the i-band mag and the five colors.
+
+    Parameters
+    -----------
+    data_dict : `ndarray`
+      array of magnitudes and errors, with names mag_{bands[i]}_lsst 
+      and mag_err_{bands[i]}_lsst respectively.
+
+    Returns
     --------
-    input_data: (nd-array)
+    input_data : `ndarray`
       array of imag and 5 colors
     """
     input_data = data_dict['mag_i_lsst']
@@ -54,7 +61,7 @@ class FZBoost(BaseEstimation):
     """
     def __init__(self, base_dict, config_dict):
         """
-        Parameters:
+        Parameters
         -----------
         base_dict: dict
           dictionary of variables from base.yaml-type file

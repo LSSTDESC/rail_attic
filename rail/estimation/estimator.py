@@ -76,21 +76,21 @@ class Estimator(object):
 
     def estimate(self, input_data):
         """
-        The main run method for the photo-z, should be implemented in
-        the specific subclass
+        The main run method for the photo-z, should be implemented 
+        in the specific subclass.
 
-        Input:
-        ------
-        data:
+        Parameters
+        ----------
+        data : `dict`
           dictionary of all input data
 
-        Returns:
-        --------
-        pz_dict:
+        Returns
+        -------
+        pz_dict : `dict`
           dictionary of output photo-z params, must include zmode and
-          pdf note: zgrid will still be a class variable for now
-
-        should create photo-z estimates with set names, TBD
-        for demo will just be `z_mode`
+          pdf 
         """
+        # note: zgrid will still be a class variable for now
+        # should create photo-z estimates with set names, TBD
+        # for demo will just be `z_mode`
         raise NotImplementedError

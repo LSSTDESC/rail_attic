@@ -13,8 +13,8 @@ class randomPZ(BaseEstimation):
 
     def __init__(self, base_config, config_dict):
         """
-        Parameters:
-        -----------
+        Parameters
+        ----------
         run_dict: dict
           dictionary of all variables read in from the run_params
           values in the yaml file
