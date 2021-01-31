@@ -8,6 +8,7 @@ scipy
 scikit-learn
 dill
 yml
+pyyaml
 pip
 corner
 tensorflow==2.2.0
