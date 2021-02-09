@@ -3,6 +3,8 @@ import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from astropy.io import fits
+from astropy.table import Table
 
 
 class Sample:
@@ -36,21 +38,45 @@ class Sample:
         self._photoz_mode_key = kwargs.get('photoz_mode', "photoz_mode")
         self._ztrue_key = kwargs.get('ztrue_key', "redshift")
 
-        with h5py.File(self._ztrue_file, 'r') as zf:
-            try:
-                self._ztrue = np.array(zf['photometry'][self._ztrue_key])
-            except:
+
+        ztrue_file_format = (self._ztrue_file.split(".")[-1]).lower()
+        if ztrue_file_format == "out":
+            print("Validation file from DC1 paper!")
+            self._ztrue = np.loadtxt(self._ztrue_file, unpack=True, usecols=[2])
+        elif ztrue_file_format == "hdf5":
+            with h5py.File(self._ztrue_file, 'r') as zf:
                 try:
-                    self._ztrue = np.array(zf[self._ztrue_key])
+                    self._ztrue = np.array(zf['photometry'][self._ztrue_key])
                 except:
-                    raise ValueError('Invalid key for true redshift column in ztrue file.')
+                    try:
+                        self._ztrue = np.array(zf[self._ztrue_key])
+                    except:
+                        raise ValueError('Invalid key for true redshift column in ztrue file.')
+        elif ztrue_file_format == "fits" or ztrue_file_format == "fit":
+            hdu_list = fits.open(self._ztrue_file, memmap=True)
+            print(hdu_list[1].columns)
+            #self._ztrue = np.array((hdu_list[1].data)[self._ztrue_key])
+            print("FITS format not supported yet")
+        else:
+            raise ValueError(f"ztrue input file format {ztrue_file_format} is not supported.")
 
+        pdfs_file_format = (self._pdfs_file.split(".")[-1]).lower()
+        if pdfs_file_format == "out":
+            self._pdfs_array = np.loadtxt(self._pdfs_file)
+            path = "/".join(self._pdfs_file.split("/")[:-1])
+            #print(path)
+            self._zgrid  = np.loadtxt(path + "/zarrayfile.out")
+            self._photoz_mode = np.array([self._zgrid[np.argmax(pdf)] for pdf in self._pdfs_array])
 
-        with h5py.File(self._pdfs_file, 'r') as pf:
-            self._pdfs_array = np.array(pf[self._pdfs_key])
-            self._zgrid = np.array(pf[self._zgrid_key]).flatten()
-            self._photoz_mode = np.array(pf[self._photoz_mode_key])
-            self._pdfs = qp.Ensemble(qp.interp, data=dict(xvals=self._zgrid, yvals=self._pdfs_array))
+        elif pdfs_file_format == "hdf5":
+            with h5py.File(self._pdfs_file, 'r') as pf:
+                self._pdfs_array = np.array(pf[self._pdfs_key])
+                self._zgrid = np.array(pf[self._zgrid_key]).flatten()
+                self._photoz_mode = np.array(pf[self._photoz_mode_key])
+        else:
+            raise ValueError(f"PDFs input file format {pdfs_file_format} is not supported.")
+
+        self._pdfs = qp.Ensemble(qp.interp, data=dict(xvals=self._zgrid, yvals=self._pdfs_array))
 
     @property
     def code(self):
@@ -116,17 +142,19 @@ class Sample:
             list of HTML codes for colors used in the plot lines
         """
         colors = []
+        peaks = []
         for i, gal in enumerate(gals):
+            peaks.append(self._pdfs[gal].pdf(self._photoz_mode[gal]))
             if i == 0:
                 axes = self.pdfs.plot(key=gal, xlim=(0., 2.2), label=f"Galaxy {gal}")
             else:
                 _ = self.pdfs.plot(key=gal, axes=axes, label=f"Galaxy {gal}")
             colors.append(axes.get_lines()[-1].get_color())
             if show_ztrue:
-                axes.vlines(self.ztrue[gal], ymin=0, ymax=20, colors=colors[-1], ls='--')
+                axes.vlines(self.ztrue[gal], ymin=0, ymax=100, colors=colors[-1], ls='--')
             if show_photoz_mode:
-                axes.vlines(self.photoz_mode[gal], ymin=0, ymax=20, colors=colors[-1], ls=':')
-        plt.ylim(0, 15)
+                axes.vlines(self.photoz_mode[gal], ymin=0, ymax=100, colors=colors[-1], ls=':')
+        plt.ylim(0, np.max(peaks)*1.05)
         axes.figure.legend()
         return colors
 
@@ -151,8 +179,9 @@ class Sample:
                 colors = ['r'] * len(gals)
             for i, gal in enumerate(gals):
                 plt.plot(self.ztrue[gal], self.photoz_mode[gal], 'o', color=colors[i], label=f'Galaxy {gal}')
-        plt.xlim(0, 3)
-        plt.ylim(0, 3)
+        zmax = np.max(self.ztrue)*1.05
+        plt.xlim(0, zmax)
+        plt.ylim(0, zmax)
         plt.ylabel('z$_{true}$')
         plt.xlabel('z$_{phot}$ (mode)')
 
