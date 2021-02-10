@@ -1,6 +1,8 @@
 import numpy as np
 from scipy import stats
 import plots
+from IPython.display import Markdown
+
 
 
 class Metrics:
@@ -113,19 +115,29 @@ class Metrics:
         self._cvm_stat = CvM(self._pit).stat
         self._ad_stat = AD(self._pit).stat
 
-    def markdown_summary(self):
+    def markdown_summary_metrics(self, show_dc1=False):
         self.compute_stats()
-        metrics_table = str("|Metric|Value|\n" +
-                            "|---|---|\n" +
-                            f"PIT out rate | {self._pit_out_rate:8.4f}\n" +
-                            f"CDE loss     | {self._cde_loss:8.4f}\n" +
-                            f"KS           | {self._ks_stat:8.4f}\n" +
-                            f"CvM          | {self._cvm_stat:8.4f}\n" +
-                            f"AD           | {self._ad_stat:8.4f}")
-        return metrics_table
+        if show_dc1:
+            metrics_table = str("|Metric|Value| DC1 ref. value|\n" +
+                                "|---|---|---|\n" +
+                                f"PIT out rate | {self._pit_out_rate:8.4f} | 0.0202 \n" +
+                                f"CDE loss     | {self._cde_loss:8.4f} |  -10.60 \n" +
+                                f"KS           | {self._ks_stat:8.4f} | ??? \n" +
+                                f"CvM          | {self._cvm_stat:8.4f} | ??? \n" +
+                                f"AD           | {self._ad_stat:8.4f} | ??? ")
+        else:
+            metrics_table = str("|Metric|Value|\n" +
+                                "|---|---|\n" +
+                                f"PIT out rate | {self._pit_out_rate:8.4f}\n" +
+                                f"CDE loss     | {self._cde_loss:8.4f}\n" +
+                                f"KS           | {self._ks_stat:8.4f}\n" +
+                                f"CvM          | {self._cvm_stat:8.4f}\n" +
+                                f"AD           | {self._ad_stat:8.4f}")
+
+        return Markdown(metrics_table)
 
 
-    def print_summary(self):
+    def print_summary_metrics(self):
         self.compute_stats()
         metrics_table = str(  # f"### {self._sample._name}\n" +
             "   Metric    |   Value \n" +
@@ -137,6 +149,11 @@ class Metrics:
             f"AD           | {self._ad_stat:8.4f}")
         print(metrics_table)
         return metrics_table
+
+    @classmethod
+    def dc1_metrics(cls):
+        metrics_table = '|Metric|Value|\n|---|---|\n PIT out rate | 0.0202\n CDE loss | -10.60\n KS | ???\n CvM | ???\n AD | ???'
+        return Markdown(metrics_table)
 
 
 
