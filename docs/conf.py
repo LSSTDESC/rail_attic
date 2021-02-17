@@ -160,3 +160,27 @@ texinfo_documents = [
 
 
 # -- Extension configuration -------------------------------------------------
+
+apidoc_module_dir = '../rail'
+# -- Load from the config file -------------------------------------------
+config = open('doc-config.ini').read().strip().split('\n')
+apilist, demofiles, examplefiles = [], [], []
+apion, demoon, exon = False, False, False
+for entry in config:
+    if not entry or entry[0] == '#':
+        continue
+    if entry == 'APIDOC':
+        apion, demoon, exon = True, False, False
+        continue
+    elif entry == 'DEMO':
+        apion, demoon, exon = False, True, False
+        continue
+    elif entry == 'EXAMPLE':
+        apion, demoon, exon = False, False, True
+        continue
+    if apion:
+        apilist+= [entry]
+    elif demoon:
+        demofiles+= [entry]
+    elif exon:
+        examplefiles+= [entry]
