@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- Project information -----------------------------------------------------
 
 project = 'RAIL'
-copyright = '2020-2021, LSST DESC RAIL Contributorz'
+copyright = '2020-2021, LSST DESC RAIL Contributors'
 author = 'LSST DESC RAIL Contributors'
 
 # The short X.Y version
