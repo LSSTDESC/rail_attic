@@ -172,15 +172,31 @@ for entry in config:
     if entry == 'APIDOC':
         apion, demoon, exon = True, False, False
         continue
-    elif entry == 'DEMO':
-        apion, demoon, exon = False, True, False
-        continue
-    elif entry == 'EXAMPLE':
-        apion, demoon, exon = False, False, True
-        continue
     if apion:
         apilist+= [entry]
-    elif demoon:
-        demofiles+= [entry]
-    elif exon:
-        examplefiles+= [entry]
+
+# -- Build index.html ----------------------------------------------------
+# This is automatic
+index_api_toc = \
+"""
+.. toctree::
+   :maxdepth: 1
+   :caption: Reference
+   api
+"""
+
+with open('index.rst', 'a') as indexfile:
+    indexfile.write(index_api_toc)
+
+# -- Set up the API table of contents ------------------------------------
+apitoc = \
+"""API Documentation
+-----------------
+Information on specific functions, classes, and methods.
+.. toctree::
+   :glob:
+"""
+for onemodule in apilist:
+    apitoc+= f"   api/rail.{onemodule}.rst\n"
+with open('api.rst', 'w') as apitocfile:
+    apitocfile.write(apitoc)
