@@ -160,5 +160,3 @@ texinfo_documents = [
 
 
 # -- Extension configuration -------------------------------------------------
-
-# -- Automatically run sphinx-apidoc --------------------------------------
