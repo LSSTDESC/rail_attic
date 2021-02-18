@@ -161,31 +161,24 @@ texinfo_documents = [
 
 # -- Extension configuration -------------------------------------------------
 
-# -- Automatically generate API documentation --------------------------------
+# -- Automatically run sphinx-apidoc --------------------------------------
 
 def run_apidoc(_):
-    ignore_paths = [
-        os.path.join('..', project.lower(), 'rail'),
-    ]
+    from sphinx.ext import apidoc
 
-    argv = [
-        "-f",
-        "-l",
-        "-e",
-        "-M",
-        "-o", "source/packages",
-        os.path.join("..", project.lower()),
-    ] + ignore_paths
+    docs_path = os.path.dirname(__file__)
+    apidoc_path = os.path.join(docs_path, '.')
+    module_path = os.path.join(docs_path, '..', 'rail')
 
-    try:
-        # Sphinx 1.7+
-        from sphinx.ext import apidoc
-        apidoc.main(argv)
-    except ImportError:
-        # Sphinx 1.6 (and earlier)
-        from sphinx import apidoc
-        argv.insert(0, apidoc.__file__)
-        apidoc.main(argv)
+    apidoc.main([
+        '--force',
+        '--module-first',
+        '--separate',
+        '-d', '3',
+        '-o', apidoc_path,
+        module_path
+    ])
+
 
 def setup(app):
     app.connect('builder-inited', run_apidoc)
