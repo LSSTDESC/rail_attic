@@ -17,16 +17,3 @@ Indices and tables
 
 * :ref:`genindex`
 * :ref:`modindex`
-
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Usage Demos
-.. toctree::
-   :maxdepth: 1
-   :caption: Mass Fitting Examples
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Reference
-   api
