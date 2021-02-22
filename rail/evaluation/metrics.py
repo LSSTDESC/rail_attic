@@ -1,7 +1,8 @@
 import numpy as np
 from scipy import stats
-import plots
+import qp
 from IPython.display import Markdown
+import plots
 
 
 
@@ -11,29 +12,49 @@ class Metrics:
     Receives a Sample object as input.
     Computes PIT and QQ vectors on the initialization.
     It's the basis for the other metrics, such as KS, AD, and CvM.
-
-    Parameters
-    ----------
-    sample: `Sample`
-        sample object defined in ./sample.py
-    n_quant: `int`, (optional)
-        number of quantiles for the QQ plot
-    pit_min: `float`
-        lower limit to define PIT outliers
-        default is 0.0001
-    pit_max:
-        upper limit to define PIT outliers
-        default is 0.9999
     """
 
-    def __init__(self, sample, n_quant=100, pit_min=0.0001, pit_max=0.9999):
+    def __init__(self, sample, n_quant=100, pit_min=0.0001, pit_max=0.9999, debug=False):
+        """Class constructor
+        Parameters
+        ----------
+        sample: `Sample`
+            sample object defined in ./sample.py
+        n_quant: `int`, (optional)
+            number of quantiles for the QQ plot
+        pit_min: `float`
+            lower limit to define PIT outliers
+            default is 0.0001
+        pit_max:
+            upper limit to define PIT outliers
+            default is 0.9999
+        """
         self._sample = sample
         self._n_quant = n_quant
+        self._pit_min = pit_min
+        self._pit_max = pit_max
+        if debug:
+            n = 1000
+        else:
+            n = len(self._sample)
         self._pit = np.array([self._sample._pdfs[i].cdf(self._sample._ztrue[i])[0][0]
-                              for i in range(len(self._sample))])
+                              for i in range(n)])
         Qtheory = np.linspace(0., 1., self.n_quant)
         Qdata = np.quantile(self._pit, Qtheory)
         self._qq_vectors = (Qtheory, Qdata)
+        # Uniform distribution amplitude
+        self._yscale_uniform = 1. / float(n_quant)
+        # Distribution of PIT values as it was a PDF
+        self._pit_dist, self._pit_bins_edges = np.histogram(self._pit, bins=n_quant, density=True)
+        self._uniform_dist = np.ones_like(self._pit_dist)*self._yscale_uniform
+        # Define qp Ensemble to use CDF functionallity (an ensemble with only 1 PDF)
+        self._pit_ensamble = qp.Ensemble(qp.hist, data=dict(bins=self._pit_bins_edges,
+                                                              pdfs=np.array([self._pit_dist])))
+        self._uniform_ensamble = qp.Ensemble(qp.interp, data=dict(xvals=Qtheory,
+                                                                  yvals=np.array([self._uniform_dist])))
+        self._pit_cdf = self._pit_ensamble.cdf(self._xvals)
+        self._uniform_cdf = self._uniform_ensamble.cdf(self._xvals)
+        # Fraction of outliers
         pit_n_outliers = len(self._pit[(self._pit < pit_min) | (self._pit > pit_max)])
         self._pit_out_rate = float(pit_n_outliers) / float(len(self._pit))
 
@@ -63,6 +84,10 @@ class Metrics:
     @property
     def qq_vectors(self):
         return self._qq_vectors
+
+    @property
+    def _yscale_uniform(self):
+        return self._yscale_uniform
 
     @property
     def pit_out_rate(self):
@@ -111,9 +136,9 @@ class Metrics:
 
     def compute_stats(self):
         self._cde_loss = CDE(self._sample)._cde_loss
-        self._ks_stat = KS(self._pit).stat
-        self._cvm_stat = CvM(self._pit).stat
-        self._ad_stat = AD(self._pit).stat
+        self._ks_stat = KS(self._sample).stat
+        self._cvm_stat = CvM(self._sample).stat
+        self._ad_stat = AD(self._sample).stat
 
     def markdown_summary_metrics(self, show_dc1=False):
         self.compute_stats()
@@ -194,9 +219,25 @@ class KS:
     pit: `numpy.ndarray`
         array with PIT values for all galaxies in the sample
     """
-    def __init__(self, pit):
-        self._pit = pit
-        self._stat, self._pvalue = stats.kstest(self._pit, "uniform")
+    def __init__(self, metrics):
+        self._metrics = metrics
+        #print(len(metrics._pit_cdf[0]), len(metrics._uniform_cdf[0]))
+
+        self._stat = np.max(np.abs(metrics._pit_cdf - metrics._uniform_cdf))
+        self._bin_stat = np.argmax(np.abs(metrics._pit_cdf - metrics._uniform_cdf))
+        self._pvalue = None
+        #print(self._stat)
+        #print()
+        #print(stats.kstest(metrics._pit, "uniform"))
+        #print(stats.ks_2samp(metrics._qq_vectors[0], metrics._qq_vectors[1]))
+        #print(np.max(np.abs(metrics._qq_vectors[1] - metrics._qq_vectors[0])))
+        #if scipy:
+            #self._stat, self._pvalue = stats.kstest(metrics._pit, "uniform")
+            #self._stat, self._pvalue = stats.ks_2samp(metrics._qq_vectors[0], metrics._qq_vectors[1])
+        #self._stat = np.max(np.abs(metrics._qq_vectors[1] - metrics._qq_vectors[0]))
+
+    def plot(self):
+        plots.ks_plot(self)
 
     @property
     def stat(self):
