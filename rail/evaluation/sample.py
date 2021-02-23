@@ -1,7 +1,6 @@
 import qp
 import h5py
 import numpy as np
-from astropy.io import fits
 import plots
 
 class Sample:
@@ -25,7 +24,6 @@ class Sample:
             key parameters to read the HDF5 input files, in case
             they are different from RAIL's default output
         """
-
         self._pdfs_file = pdfs_file
         self._ztrue_file = ztrue_file
         self._code = code
@@ -36,12 +34,16 @@ class Sample:
         self._photoz_mode_key = kwargs.get('photoz_mode', "photoz_mode")
         self._ztrue_key = kwargs.get('ztrue_key', "redshift")
 
+        pdfs_file_format = (self._pdfs_file.split(".")[-1]).lower()
 
-        ztrue_file_format = (self._ztrue_file.split(".")[-1]).lower()
-        if ztrue_file_format == "out":
+        if pdfs_file_format == "out":
             print("Validation file from DC1 paper!")
             self._ztrue = np.loadtxt(self._ztrue_file, unpack=True, usecols=[2])
-        elif ztrue_file_format == "hdf5":
+            self._pdfs_array = np.loadtxt(self._pdfs_file)
+            path = "/".join(self._pdfs_file.split("/")[:-1])
+            self._zgrid  = np.loadtxt(path + "/zarrayfile.out")
+            self._photoz_mode = np.array([self._zgrid[np.argmax(pdf)] for pdf in self._pdfs_array])
+        elif pdfs_file_format == "hdf5":
             with h5py.File(self._ztrue_file, 'r') as zf:
                 try:
                     self._ztrue = np.array(zf['photometry'][self._ztrue_key])
@@ -50,31 +52,21 @@ class Sample:
                         self._ztrue = np.array(zf[self._ztrue_key])
                     except:
                         raise ValueError('Invalid key for true redshift column in ztrue file.')
-        elif ztrue_file_format == "fits" or ztrue_file_format == "fit":
-            hdu_list = fits.open(self._ztrue_file, memmap=True)
-            print(hdu_list[1].columns)
-            #self._ztrue = np.array((hdu_list[1].data)[self._ztrue_key])
-            print("FITS format not supported yet")
-        else:
-            raise ValueError(f"ztrue input file format {ztrue_file_format} is not supported.")
-
-        pdfs_file_format = (self._pdfs_file.split(".")[-1]).lower()
-        if pdfs_file_format == "out":
-            self._pdfs_array = np.loadtxt(self._pdfs_file)
-            path = "/".join(self._pdfs_file.split("/")[:-1])
-            #print(path)
-            self._zgrid  = np.loadtxt(path + "/zarrayfile.out")
-            self._photoz_mode = np.array([self._zgrid[np.argmax(pdf)] for pdf in self._pdfs_array])
-
-        elif pdfs_file_format == "hdf5":
             with h5py.File(self._pdfs_file, 'r') as pf:
                 self._pdfs_array = np.array(pf[self._pdfs_key])
                 self._zgrid = np.array(pf[self._zgrid_key]).flatten()
                 self._photoz_mode = np.array(pf[self._photoz_mode_key])
+        elif pdfs_file_format == "pz":
+            print("DNF format")
+            self._photoz_mode, self._ztrue = np.loadtxt(self._ztrue_file, unpack=True, usecols=[0,2])
+            pdfs_file_array = np.loadtxt(self._pdfs_file)
+            self._pdfs_array = pdfs_file_array[1:, 3:]
+            self._zgrid = pdfs_file_array[0, 3:]
         else:
             raise ValueError(f"PDFs input file format {pdfs_file_format} is not supported.")
 
-        self._pdfs = qp.Ensemble(qp.interp, data=dict(xvals=self._zgrid, yvals=self._pdfs_array))
+        self._pdfs = qp.Ensemble(qp.interp, data=dict(xvals=self._zgrid,
+                                                      yvals=self._pdfs_array))
 
     @property
     def code(self):
@@ -123,7 +115,7 @@ class Sample:
           f'{len(self)} PDFs with {len(self._pdfs_array[0])} probabilities each \n' +
           f'qp representation: {self._pdfs.gen_class.name} \n' +
           f'z grid: {len(self._zgrid)} z values from {np.min(self._zgrid)} to {np.max(self._zgrid)} inclusive')
-          
+
         return text
 
     def plot_pdfs(self, gals, show_ztrue=True, show_photoz_mode=False):
