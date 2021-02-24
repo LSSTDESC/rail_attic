@@ -30,8 +30,23 @@ class Creator:
         self.degrader = degrader
         self.info = info
 
-    def get_posterior(self, data, column, grid):
-        """Calculate the posterior of the given column over the values in grid."""
+    def get_posterior(self, data: pd.DataFrame, column: str, grid: np.ndarray):
+        """Calculate the posterior of the given column over the values in grid.
+
+        Parameters
+        ----------
+        data : pd.DataFrame
+            Pandas dataframe of the data on which the posteriors are conditioned.
+        column : str
+            Name of the column for which the posterior is calculated.
+        grid : np.ndarray
+            Grid over which the posterior is calculated.
+
+        Returns
+        -------
+        np.ndarray
+            Array of posteriors, of shape (data.shape[0], grid.size).
+        """
         return self.engine.get_posterior(data, column, grid)
 
     def sample(
@@ -41,7 +56,7 @@ class Creator:
         include_pdf: bool = False,
         pz_grid: np.ndarray = None,
     ):
-        """Draws n_samples from the generator
+        """Draws n_samples from the engine
 
         Parameters
         ----------
@@ -58,7 +73,7 @@ class Creator:
 
         Returns
         -------
-        outputs : pandas DataFrame
+        outputs : pd.DataFrame
             samples from model, containing photometry, true redshift, and
             redshift posterior PDF's if requested.
 
