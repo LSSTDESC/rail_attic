@@ -8,6 +8,8 @@ import numpy as np
 from scipy.stats import norm
 from rail.estimation.estimator import Estimator as BaseEstimation
 
+from interfaces.rail.processFilters import processFilters  # interface added into delight in branch rail
+
 
 class delightPZ(BaseEstimation):
 
@@ -27,14 +29,15 @@ class delightPZ(BaseEstimation):
         self.zmin = inputs['rand_zmin']
         self.zmax = inputs['rand_zmax']
         self.nzbins = inputs['nzbins']
+        self.configfilename= inputs["configfilepath"]
         np.random.seed(87)
 
     def inform(self):
         """
           this is random, so does nothing
         """
-        print("I don't need to train!!!")
-        pass
+        print("Try to workout filters")
+        processFilters(self.configfilename)
 
     def estimate(self, test_data):
         pdf = []
