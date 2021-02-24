@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from rail.creation.generator import Generator
+from rail.creation.engine import Engine
 from typing import Callable
 
 
@@ -11,15 +11,13 @@ class Creator:
     generator, with an optional degrader applied.
     """
 
-    def __init__(
-        self, generator: Generator, degrader: Callable = None, info: dict = None
-    ):
+    def __init__(self, engine: Engine, degrader: Callable = None, info: dict = None):
         """
         Parameters
         ----------
-        generator: rail.Generator object
+        engine: rail.Engine object
             Object defining a redshift probability distribution.
-            Must have sample, log_prob and pz_estimate methods (see generator.py)
+            Must have sample, log_prob and get_posterior methods (see engine.py)
         degrader: callable, optional
             A function or other callable that degrades the generated sample.
             Must take a pandas DataFrame and a seed number, and return a
@@ -28,9 +26,13 @@ class Creator:
             Additional information desired to be stored with the instance
             as a dictionary.
         """
-        self.generator = generator
+        self.engine = engine
         self.degrader = degrader
         self.info = info
+
+    def get_posterior(self, data, column, grid):
+        """Calculate the posterior of the given column over the values in grid."""
+        return self.engine.get_posterior(data, column, grid)
 
     def sample(
         self,
@@ -48,7 +50,7 @@ class Creator:
         seed : int, optional
             sets the random seed for drawing samples
         include_pdf : boolean, optional
-            If True, posteriors are returned for each galaxy.
+            If True, redshift posteriors are returned for each galaxy.
             The posteriors are saved in the column pz_pdf, and the
             redshift grid saved as df.attrs['pz_grid'].
         pz_grid : np.array, default=np.arange(0, 2.02, 0.02)
@@ -72,7 +74,7 @@ class Creator:
         rng = np.random.default_rng(seed)
 
         # get samples
-        outputs = self.generator.sample(n_samples, seed=seed)
+        outputs = self.engine.sample(n_samples, seed=seed)
 
         if self.degrader is not None:
             # degrade sample
@@ -84,9 +86,7 @@ class Creator:
                 # estimate how many extras to draw
                 n_supplement = int(1.1 / selected_frac * (n_samples - len(outputs)))
                 # draw new samples and apply cut
-                new_sample = self.generator.sample(
-                    n_supplement, seed=rng.integers(1e18)
-                )
+                new_sample = self.engine.sample(n_supplement, seed=rng.integers(1e18))
                 new_sample = self.degrader(new_sample, seed=rng.integers(1e18))
                 # add these to the larger set
                 outputs = pd.concat((outputs, new_sample), ignore_index=True)
@@ -95,7 +95,7 @@ class Creator:
 
         # calculate posteriors
         if include_pdf:
-            posteriors = self.generator.pz_estimate(outputs, grid=pz_grid)
+            posteriors = self.get_posterior(outputs, column="redshift", grid=pz_grid)
             outputs.attrs["pz_grid"] = pz_grid
             outputs["pz_pdf"] = list(posteriors)
 

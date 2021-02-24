@@ -1,11 +1,11 @@
 import pytest
 import numpy as np
 import pandas as pd
-from rail.creation import Creator, Generator
+from rail.creation import Creator, Engine
 
 
-class sampleGenerator(Generator):
-    "Create a test generator that is just a normal distribution."
+class sampleEngine(Engine):
+    "Create a test engine that is just a normal distribution."
 
     def sample(self, n_samples, seed=None):
         "Use numpy Random Generator to create reproducible sampler for tests."
@@ -17,7 +17,7 @@ class sampleGenerator(Generator):
             columns=["redshift", "u", "g", "r", "i", "z", "y"],
         )
 
-    def pz_estimate(self, data, grid):
+    def get_posterior(self, data, column, grid):
         "Return defined set of posteriors for testing"
 
         output_array = np.ones((len(data), len(grid)))
@@ -29,8 +29,8 @@ class sampleGenerator(Generator):
 @pytest.fixture
 def sampleCreator():
     # Instantiate Creator
-    sample_gen = sampleGenerator()
-    test_creator_obj = Creator(sample_gen)
+    sample_eng = sampleEngine()
+    test_creator_obj = Creator(sample_eng)
     return test_creator_obj
 
 
@@ -92,3 +92,12 @@ def test_sample_with_selection_fn(sampleCreator):
     verify_final = verify_concat.iloc[:1000]
 
     assert np.allclose(creator_sample.values, verify_final.values)
+
+
+def test_get_posterior(sampleCreator):
+
+    samples = sampleCreator.sample(1000, seed=42)
+
+    grid = np.arange(20, 30, 0.5)
+    pdfs = sampleCreator.get_posterior(samples, column="g", grid=grid)
+    assert pdfs.shape == (samples.shape[0], grid.size)
