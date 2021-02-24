@@ -12,6 +12,10 @@ def plot_pdfs(self, gals, show_ztrue=True, show_photoz_mode=False):
     ----------
     gals: `list`
         list of galaxies' indexes
+    show_ztrue: `bool`, optional
+        if True (default=True), show ztrue as dashed vertical line
+    show_photoz_mode: `bool`, optional
+        if True (default=False), show photoz_mode as dotted vertical line
 
     Returns
     -------
@@ -72,11 +76,30 @@ def plot_old_valid(self, gals=None, colors=None):
     plt.tight_layout()
 
 
-def plot_pit_qq(self, bins=None, label=None, title=None,
+def plot_pit_qq(self, bins=None, title=None, label=None,
                 show_pit=True, show_qq=True,
                 show_pit_out_rate=True, savefig=False):
     """Quantile-quantile plot
-    Ancillary function to be used by class Metrics.  """
+    Ancillary function to be used by class Metrics.
+
+    Parameters
+    ----------
+    bins: `int`, optional
+        number of PIT bins
+        if None, use the same number of quantiles (self._n_quant)
+    title: `str`, optional
+        if None, use formatted sample's name (self._sample._name)
+    label: `str`, optional
+        if None, use formatted code's name (self._sample._code)
+    show_pit: `bool`, optional
+        include PIT histogram (default=True)
+    show_qq: `bool`, optional
+        include QQ plot (default=True)
+    show_pit_out_rate: `bool`, optional
+        print metric value on the plot panel (default=True)
+    savefig: `bool`, optional
+        save plot in .png file (default=False)
+    """
 
     if bins is None:
         bins = self._n_quant
@@ -125,7 +148,8 @@ def plot_pit_qq(self, bins=None, label=None, title=None,
         plt.ylabel("$\Delta$Q", fontsize=18)
         ax2.plot([0, 1], [0, 0], color='k', linestyle='--', linewidth=2)
         plt.xlim(-0.001, 1.001)
-        plt.ylim(-0.1, 0.1)
+        plt.ylim(np.min([-0.1, np.min(self.qq_vectors[1] - self.qq_vectors[0])*1.05]),
+                 np.max([0.1, np.max(self.qq_vectors[1] - self.qq_vectors[0])*1.05]))
     if show_pit:
         if show_qq:
             plt.xlabel("Qtheory / PIT Value", fontsize=18)
