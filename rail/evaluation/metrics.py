@@ -5,7 +5,6 @@ from IPython.display import Markdown
 import plots
 
 
-
 class Metrics:
     """
        ***   Metrics class   ***
@@ -13,7 +12,6 @@ class Metrics:
     Computes PIT and QQ vectors on the initialization.
     It's the basis for the other metrics, such as KS, AD, and CvM.
     """
-
     def __init__(self, sample, n_quant=100, pit_min=0.0001, pit_max=0.9999, debug=False):
         """Class constructor
         Parameters
@@ -45,12 +43,13 @@ class Metrics:
         # Uniform distribution amplitude
         self._yscale_uniform = 1. / float(n_quant)
         # Distribution of PIT values as it was a PDF
+        self._xvals = Qtheory
         self._pit_dist, self._pit_bins_edges = np.histogram(self._pit, bins=n_quant, density=True)
-        self._uniform_dist = np.ones_like(self._pit_dist)*self._yscale_uniform
+        self._uniform_dist = np.ones_like(self._pit_dist) * self._yscale_uniform
         # Define qp Ensemble to use CDF functionallity (an ensemble with only 1 PDF)
         self._pit_ensamble = qp.Ensemble(qp.hist, data=dict(bins=self._pit_bins_edges,
-                                                              pdfs=np.array([self._pit_dist])))
-        self._uniform_ensamble = qp.Ensemble(qp.interp, data=dict(xvals=Qtheory,
+                                                            pdfs=np.array([self._pit_dist])))
+        self._uniform_ensamble = qp.Ensemble(qp.interp, data=dict(xvals=self._xvals,
                                                                   yvals=np.array([self._uniform_dist])))
         self._pit_cdf = self._pit_ensamble.cdf(self._xvals)
         self._uniform_cdf = self._uniform_ensamble.cdf(self._xvals)
@@ -67,7 +66,6 @@ class Metrics:
         self._ad_stat = None
         self._ad_critical_values = None
         self._ad_significance_levels = None
-
 
     @property
     def sample(self):
@@ -86,7 +84,7 @@ class Metrics:
         return self._qq_vectors
 
     @property
-    def _yscale_uniform(self):
+    def yscale_uniform(self):
         return self._yscale_uniform
 
     @property
@@ -96,11 +94,10 @@ class Metrics:
     def plot_pit_qq(self, bins=None, label=None, title=None, show_pit=True,
                     show_qq=True, show_pit_out_rate=True, savefig=False):
         fig_filename = plots.plot_pit_qq(self, bins=bins, label=label, title=title,
-                                 show_pit=show_pit, show_qq=show_qq,
-                                 show_pit_out_rate=show_pit_out_rate,
-                                 savefig=savefig)
+                                         show_pit=show_pit, show_qq=show_qq,
+                                         show_pit_out_rate=show_pit_out_rate,
+                                         savefig=savefig)
         return fig_filename
-
 
     @property
     def cde_loss(self):
@@ -108,7 +105,7 @@ class Metrics:
 
     @property
     def ks_stat(self):
-       return self._ks_stat
+        return self._ks_stat
 
     @property
     def ks_pvalue(self):
@@ -147,9 +144,9 @@ class Metrics:
                                 "|---|---|---|\n" +
                                 f"PIT out rate | {self._pit_out_rate:8.4f} | 0.0202 \n" +
                                 f"CDE loss     | {self._cde_loss:8.4f} |  -10.60 \n" +
-                                f"KS           | {self._ks_stat:8.4f} | ??? \n" +
-                                f"CvM          | {self._cvm_stat:8.4f} | ??? \n" +
-                                f"AD           | {self._ad_stat:8.4f} | ??? ")
+                                f"KS           | {self._ks_stat:8.4f} | 0.01294 \n" +
+                                f"CvM          | {self._cvm_stat:8.4f} | 19.7154 \n" +
+                                f"AD           | {self._ad_stat:8.4f} | 303.6519 ")
         else:
             metrics_table = str("|Metric|Value|\n" +
                                 "|---|---|\n" +
@@ -160,7 +157,6 @@ class Metrics:
                                 f"AD           | {self._ad_stat:8.4f}")
 
         return Markdown(metrics_table)
-
 
     def print_summary_metrics(self):
         self.compute_stats()
@@ -175,10 +171,48 @@ class Metrics:
         print(metrics_table)
         return metrics_table
 
-    @classmethod
-    def dc1_metrics(cls):
-        metrics_table = '|Metric|Value|\n|---|---|\n PIT out rate | 0.0202\n CDE loss | -10.60\n KS | ???\n CvM | ???\n AD | ???'
-        return Markdown(metrics_table)
+    #@classmethod
+    #def dc1(cls): #, metric=None, code=None):
+    #    cls.dc1 = DC1().results
+    #    return cls.dc1
+    @property
+    def dc1(self):
+        return DC1().results
+
+    # def dc1_metrics_table(cls, dc1, code):
+    #     metrics_table = str("|Metric|Value|\n|---|---|\n " +
+    #                         f"PIT out rate | {dc1["PIT out rate"][f"{code}"]}\n CDE loss | -10.60\n KS | ???\n CvM | ???\n AD | ???")
+    #     return Markdown(metrics_table)
+
+
+class DC1:
+
+    def __init__(self):
+        # Reference values:
+        self.codes = ("ANNz2", "BPZ", "CMNN", "Delight", "EAZY", "FlexZBoost",
+                 "GPz", "LePhare", "METAPhoR", "SkyNet", "TPZ")
+        self.metrics = ("PIT out rate", "CDE loss", "KS", "CvM", "AD")
+        self.pit_out_rate = [0.0265, 0.0192, 0.0034, 0.0006, 0.0154, 0.0202,
+                             0.0058, 0.0486, 0.0229, 0.0001, 0.0130]
+        self.cde_loss = [-6.88, -7.82, -10.43, -8.33, -7.07, -10.60,
+                         -9.93, -1.66, -6.28, -7.89, -9.55]
+        self.ks = [0.01740478, 0.01118018, 0.00502691, 0.02396731, 0.04302462, 0.01294894,
+                   0.01452443, 0.02449423, 0.02965564, 0.04911712, 0.00954685]
+        self.cvm = [60.33973412, 37.09194799, 2.9165108, 105.65338329, 440.07007555, 19.71544373,
+                    61.60230833, 141.08468956, 153.05291971, 961.53956815, 24.30815299]
+        self.ad = [564.01888766, 358.09533373, 30.64646869, 624.17799304, 2000.11675363, 303.65198293,
+                   618.63599149, 1212.07245582, 1445.53118933, 5689.32253132, 282.36983696]
+    @property
+    def results(self):
+        results = {"PIT out rate": dict([(code, value) for code, value in zip(self.codes, self.pit_out_rate)]),
+               "CDE loss": dict([(code, value) for code, value in zip(self.codes, self.cde_loss)]),
+               "KS": dict([(code, value) for code, value in zip(self.codes, self.ks)]),
+               "CvM": dict([(code, value) for code, value in zip(self.codes, self.cvm)]),
+               "AD": dict([(code, value) for code, value in zip(self.codes, self.ad)])}
+        return results
+
+
+
 
 
 
@@ -190,6 +224,7 @@ class CDE:
     sample: `Sample`
         sample object defined in ./sample.py
     """
+
     def __init__(self, sample):
         zgrid = sample._zgrid
         ztrue = sample._ztrue
@@ -208,8 +243,6 @@ class CDE:
         return self._cde_loss
 
 
-
-
 class KS:
     """
     Compute the Kolmogorov-Smirnov statistic and p-value for the PIT
@@ -221,31 +254,23 @@ class KS:
     """
     def __init__(self, metrics):
         self._metrics = metrics
-        #print(len(metrics._pit_cdf[0]), len(metrics._uniform_cdf[0]))
-
         self._stat = np.max(np.abs(metrics._pit_cdf - metrics._uniform_cdf))
         self._bin_stat = np.argmax(np.abs(metrics._pit_cdf - metrics._uniform_cdf))
         self._pvalue = None
-        #print(self._stat)
-        #print()
-        #print(stats.kstest(metrics._pit, "uniform"))
-        #print(stats.ks_2samp(metrics._qq_vectors[0], metrics._qq_vectors[1]))
-        #print(np.max(np.abs(metrics._qq_vectors[1] - metrics._qq_vectors[0])))
-        #if scipy:
-            #self._stat, self._pvalue = stats.kstest(metrics._pit, "uniform")
-            #self._stat, self._pvalue = stats.ks_2samp(metrics._qq_vectors[0], metrics._qq_vectors[1])
-        #self._stat = np.max(np.abs(metrics._qq_vectors[1] - metrics._qq_vectors[0]))
+        # update Metrics object
+        if self._metrics._ks_stat == None:
+            self._metrics._ks_stat = float(self._stat)
 
     def plot(self):
         plots.ks_plot(self)
 
     @property
     def stat(self):
-        return  self._stat
+        return self._stat
+
     @property
     def pvalue(self):
         return self._pvalue
-
 
 
 class CvM:
@@ -257,6 +282,7 @@ class CvM:
     pit: `numpy.ndarray`
         array with PIT values for all galaxies in the sample
     """
+
     def __init__(self, pit):
         self._pit = pit
         cvm_result = stats.cramervonmises(self._pit, "uniform")
@@ -265,6 +291,7 @@ class CvM:
     @property
     def stat(self):
         return self._stat
+
     @property
     def pvalue(self):
         return self._pvalue
@@ -283,6 +310,7 @@ class AD:
     ad_pit_min, ad_pit_max: floats
         PIT values outside this range are discarded
     """
+
     def __init__(self, pit, ad_pit_min=0.001, ad_pit_max=0.999):
         mask = (pit > ad_pit_min) & (pit < ad_pit_max)
         self._stat, self._critical_values, self._significance_levels = stats.anderson(pit[mask])
@@ -290,22 +318,18 @@ class AD:
     @property
     def stat(self):
         return self._stat
+
     @property
     def critical_values(self):
         return self._critical_values
+
     @property
     def significance_levels(self):
         return self._significance_levels
 
 
-
-
-
-
-
-
-class CRPS():
+class CRPS:
     ''' = continuous rank probability score (Gneiting et al., 2006)'''
+
     def __init__(self):
         raise NotImplementedError
-
