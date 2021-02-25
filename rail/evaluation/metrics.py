@@ -245,21 +245,22 @@ class CDE:
 
 class KS:
     """
-    Compute the Kolmogorov-Smirnov statistic and p-value for the PIT
+    Compute the Kolmogorov-Smirnov statistic and p-value (TBD) for the PIT
     values by comparing with a uniform distribution between 0 and 1.
+
     Parameters
     ----------
-    pit: `numpy.ndarray`
-        array with PIT values for all galaxies in the sample
+    metrics: `metrics` object
+        instance of metrics base class which is connected to a given sample
     """
-    def __init__(self, metrics):
+    def __init__(self, metrics, scipy=False):
         self._metrics = metrics
-        self._stat = np.max(np.abs(metrics._pit_cdf - metrics._uniform_cdf))
-        self._bin_stat = np.argmax(np.abs(metrics._pit_cdf - metrics._uniform_cdf))
-        self._pvalue = None
+        if scipy:
+            self._stat, self._pvalue = stats.kstest(metrics._pit, "uniform")
+        else:
+            self._stat, self._pvalue = np.max(np.abs(metrics._pit_cdf - metrics._uniform_cdf)), None # p=value TBD
         # update Metrics object
-        if self._metrics._ks_stat == None:
-            self._metrics._ks_stat = float(self._stat)
+        self._metrics._ks_stat = self._stat
 
     def plot(self):
         plots.ks_plot(self)
@@ -275,18 +276,23 @@ class KS:
 
 class CvM:
     """
-    Compute the Cramer-von Mises statistic and p-value for the PIT values
-    by comparing with a uniform distribution between 0 and 1.
+    Compute the Cramer-von Mises statistic and p-value (TBD) for the PIT
+    values by comparing with a uniform distribution between 0 and 1.
+
     Parameters
     ----------
-    pit: `numpy.ndarray`
-        array with PIT values for all galaxies in the sample
+    metrics: `metrics` object
+        instance of metrics base class which is connected to a given sample
     """
 
-    def __init__(self, pit):
-        self._pit = pit
-        cvm_result = stats.cramervonmises(self._pit, "uniform")
-        self._stat, self._pvalue = cvm_result.statistic, cvm_result.pvalue
+    def __init__(self, metrics, scipy=False):
+        if scipy:
+            cvm_result = stats.cramervonmises(self._pit, "uniform")
+            self._stat, self._pvalue = cvm_result.statistic, cvm_result.pvalue
+        else:
+            self._stat, self._pvalue = np.trapz((metrics._pit_cdf - metrics._uniform_cdf)**2, metrics._xvals)[0], None
+        # update Metrics object
+        metrics._cvm_stat = self._stat
 
     @property
     def stat(self):
@@ -311,9 +317,33 @@ class AD:
         PIT values outside this range are discarded
     """
 
-    def __init__(self, pit, ad_pit_min=0.001, ad_pit_max=0.999):
-        mask = (pit > ad_pit_min) & (pit < ad_pit_max)
-        self._stat, self._critical_values, self._significance_levels = stats.anderson(pit[mask])
+    def __init__(self, metrics, ad_pit_min=0.001, ad_pit_max=0.999, scipy=False):
+        mask_pit = (metrics._pit > ad_pit_min) & (metrics._pit  < ad_pit_max)
+        n_out = len(metrics._pit) - len(metrics._pit[mask_pit])
+        perc_out = (float(n_out)/float(len(metrics._pit)))*100.
+        print(f"{n_out} outliers (PIT<{ad_pit_min} or PIT>{ad_pit_max}) removed from the calculation ({perc_out:.1f}%)")
+        if scipy:
+            self._stat, self._critical_values, self._significance_levels = stats.anderson(metrics._pit[mask_pit])
+        else:
+            ad_xvals = np.linspace(ad_pit_min, ad_pit_max, metrics._n_quant)
+            ad_yscale_uniform = (ad_pit_max-ad_pit_min)/float(metrics._n_quant)
+            ad_pit_dist, ad_pit_bins_edges = np.histogram(metrics._pit[mask_pit], bins=metrics._n_quant, density=True)
+            ad_uniform_dist = np.ones_like(ad_pit_dist) * ad_yscale_uniform
+            # Redo CDFs to consider outliers mask
+            ad_pit_ensamble = qp.Ensemble(qp.hist, data=dict(bins=ad_pit_bins_edges, pdfs=np.array([ad_pit_dist])))
+            ad_pit_cdf = ad_pit_ensamble.cdf(ad_xvals)[0]
+            ad_uniform_ensamble = qp.Ensemble(qp.hist,
+                                              data=dict(bins=ad_pit_bins_edges, pdfs=np.array([ad_uniform_dist])))
+            ad_uniform_cdf = ad_uniform_ensamble.cdf(ad_xvals)[0]
+            numerator = ((ad_pit_cdf - ad_uniform_cdf)**2)
+            denominator = (ad_uniform_cdf*(1.-ad_uniform_cdf))
+            with np.errstate(divide='ignore', invalid='ignore'):
+                self._stat = np.trapz(np.nan_to_num(numerator/denominator), ad_xvals)
+            self._critical_values = None
+            self._significance_levels = None
+
+        # update Metrics object
+        metrics._ad_stat = self._stat
 
     @property
     def stat(self):
