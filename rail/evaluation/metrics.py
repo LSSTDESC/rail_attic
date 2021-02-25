@@ -51,14 +51,14 @@ class Metrics:
                                                             pdfs=np.array([self._pit_dist])))
         self._uniform_ensamble = qp.Ensemble(qp.interp, data=dict(xvals=self._xvals,
                                                                   yvals=np.array([self._uniform_dist])))
-        self._pit_cdf = self._pit_ensamble.cdf(self._xvals)
-        self._uniform_cdf = self._uniform_ensamble.cdf(self._xvals)
+        self._pit_cdf = self._pit_ensamble.cdf(self._xvals)[0]
+        self._uniform_cdf = self._uniform_ensamble.cdf(self._xvals)[0]
         # Fraction of outliers
         pit_n_outliers = len(self._pit[(self._pit < pit_min) | (self._pit > pit_max)])
         self._pit_out_rate = float(pit_n_outliers) / float(len(self._pit))
 
         # placeholders for metrics to be calculated
-        self._cde_loss = None
+        self._cde_loss_stat = None
         self._ks_stat = None
         self._ks_pvalue = None
         self._cvm_stat = None
@@ -100,8 +100,8 @@ class Metrics:
         return fig_filename
 
     @property
-    def cde_loss(self):
-        return self._cde_loss
+    def cde_loss_stat(self):
+        return self._cde_loss_stat
 
     @property
     def ks_stat(self):
@@ -132,10 +132,26 @@ class Metrics:
         return self._ad_significance_levels
 
     def compute_stats(self):
-        self._cde_loss = CDE(self._sample)._cde_loss
-        self._ks_stat = KS(self._sample).stat
-        self._cvm_stat = CvM(self._sample).stat
-        self._ad_stat = AD(self._sample).stat
+        if self._ks_stat is None:
+            print("Computing KS...")
+            self._ks_stat = KS(self).stat
+        else:
+            print("KS already computed.")
+        if self._cvm_stat is None:
+            print("Computing CvM...")
+            self._cvm_stat = CvM(self).stat
+        else:
+            print("CvM already computed.")
+        if self._ad_stat is None:
+            print("Computing AD...")
+            self._ad_stat = AD(self).stat
+        else:
+            print("AD already computed.")
+        if self._cde_loss_stat is None:
+            print("Computing CDE loss...")
+            self._cde_loss_stat = CDE(self)._cde_loss_stat
+        else:
+            print("CDE loss already computed.")
 
     def markdown_summary_metrics(self, show_dc1=False):
         self.compute_stats()
@@ -225,22 +241,22 @@ class CDE:
         sample object defined in ./sample.py
     """
 
-    def __init__(self, sample):
-        zgrid = sample._zgrid
-        ztrue = sample._ztrue
+    def __init__(self, metrics):
+        sample = metrics._sample
         pdf = sample._pdfs.pdf([sample._zgrid])
         n_obs, n_grid = (pdf).shape
         # Calculate first term E[\int f*(z | X)^2 dz]
-        term1 = np.mean(np.trapz(np.array(pdf) ** 2, zgrid))
+        term1 = np.mean(np.trapz(np.array(pdf) ** 2, sample._zgrid))
         # z bin closest to ztrue
-        nns = [np.argmin(np.abs(zgrid - z)) for z in ztrue]
+        nns = [np.argmin(np.abs(sample._zgrid - z)) for z in sample._ztrue]
         # Calculate second term E[f*(Z | X)]
         term2 = np.mean(pdf[range(n_obs), nns])
-        self._cde_loss = term1 - 2 * term2
-
+        self._stat = term1 - 2 * term2
+        # update Metrics object
+        self._cde_loss_stat = self._stat
     @property
-    def cde_loss(self):
-        return self._cde_loss
+    def stat(self):
+        return self._stat
 
 
 class KS:
@@ -290,7 +306,7 @@ class CvM:
             cvm_result = stats.cramervonmises(self._pit, "uniform")
             self._stat, self._pvalue = cvm_result.statistic, cvm_result.pvalue
         else:
-            self._stat, self._pvalue = np.trapz((metrics._pit_cdf - metrics._uniform_cdf)**2, metrics._xvals)[0], None
+            self._stat, self._pvalue = np.trapz((metrics._pit_cdf - metrics._uniform_cdf)**2, metrics._xvals), None
         # update Metrics object
         metrics._cvm_stat = self._stat
 
@@ -318,7 +334,7 @@ class AD:
     """
 
     def __init__(self, metrics, ad_pit_min=0.001, ad_pit_max=0.999, scipy=False):
-        mask_pit = (metrics._pit > ad_pit_min) & (metrics._pit  < ad_pit_max)
+        mask_pit = (metrics._pit >= ad_pit_min) & (metrics._pit  <= ad_pit_max)
         n_out = len(metrics._pit) - len(metrics._pit[mask_pit])
         perc_out = (float(n_out)/float(len(metrics._pit)))*100.
         print(f"{n_out} outliers (PIT<{ad_pit_min} or PIT>{ad_pit_max}) removed from the calculation ({perc_out:.1f}%)")
