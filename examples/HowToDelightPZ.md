@@ -1,10 +1,12 @@
 # DelightPZ README.md
 
-- sylvielsstfr, Freeb 24th 2021
+- sylvielsstfr, 
+  - creation date : Feb 24th 2021
+  - update : Feb 25th 2021
 
 ## Delight reference package
 
-To work temporaryly with the DelightPZ package,
+To work temporily with the DelightPZ package,
 you have to have installed the Delight
 from github here:
 
@@ -13,7 +15,7 @@ from github here:
 
 and you must select the branch **desc_rail**
 
-Then install delight according the instructions here
+Then install Delight according the instructions here
 
 - **https://delight.readthedocs.io/en/latest/install.html**
 
@@ -24,18 +26,22 @@ Then install delight according the instructions here
 then
 
 - python setup.py build_ext --inplace
-- python setup.py install
+- python setup.py install --user
 
 
-To works, delight needs a bunch of datasets in :
-  - Delight/data>
 
-To ease the interface with RAIL, an interface package is being
-added in 
+It is important to note that the Delight **setup.py** make that its own data files 
+(FILTERS and SED) are installed somewhere by setuptools.
 
-- Delight/interfaces/rail
+The user use the setuptools to guess where these data are installed.
 
+The *scripts* in Delight are translated in python modules that can be used by RAIL.
 
+Thus a new module has been created in :
+
+- **Delight/interfaces/rail**
+
+(To avoid too much code inside RAIL)
 
 ## LSSTDESC/RAIL
 
@@ -45,19 +51,16 @@ Installation from here
 
 For the moment, the following files are under developpment in the branch **issue/49/delight**
 
-- RAIL/examples/configs/delightPZ.yaml
-- RAIL/rail/estimation/algos/delightPZ.py
+- **RAIL/examples/configs/delightPZ.yaml**
+- **RAIL/rail/estimation/algos/delightPZ.py**
 
 
-For the moment Delight needs temporarily the configuration file
-put here
 
-- **RAIL/tests/data/parametersTest.cfg**
+delightPZ as Delight to generate the Delight 
+configuration file **parametersTest.cfg**
+in a temporary directory (see elightPZ.yaml) .
 
-Note **parametersTest.cfg** contains some absolute path
-to Delight data. It must be adapted for each installation.
 
-It will change later.
 
 
 

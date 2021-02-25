@@ -9,6 +9,7 @@ from scipy.stats import norm
 from rail.estimation.estimator import Estimator as BaseEstimation
 
 import os
+import errno
 
 import coloredlogs
 import logging
@@ -62,15 +63,21 @@ class delightPZ(BaseEstimation):
 
         # create usefull tempory directory
         try:
-            os.makedirs(self.tempdir)
+            if not os.path.exists(self.tempdir):
+                os.makedirs(self.tempdir)
         except OSError as e:
             if e.errno != errno.EEXIST:
+                msg = "error creating file "+self.tempdir
+                logger.error(msg)
                 raise
 
         try:
-            os.makedirs(self.tempdatadir)
+            if not os.path.exists(self.tempdatadir):
+                os.makedirs(self.tempdatadir)
         except OSError as e:
             if e.errno != errno.EEXIST:
+                msg = "error creating file " + self.tempdatadir
+                logger.error(msg)
                 raise
 
 
