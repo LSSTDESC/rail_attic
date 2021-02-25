@@ -18,6 +18,8 @@ class Sample:
         ztrue_file: `str`
             full path to the file containing true redshifts,
             e.g., RAIL's estimation input file (format HDF5)
+        code: `str`, (optional)
+            algorithm name (for plot legends)
         name: `str`, (optional)
             sample name (for plot legends)
         **kwargs: `dict`, (optional)

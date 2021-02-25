@@ -53,8 +53,8 @@ def plot_old_valid(self, gals=None, colors=None):
     """
     plt.figure(figsize=(10, 4))
     ax = plt.subplot(121)
-    plt.plot(self.ztrue, self.photoz_mode, 'k,', label=(self._name).replace("_", " "))
-    leg = ax.legend(handlelength=0, handletextpad=0, fancybox=True)
+    plt.plot(self.ztrue, self.photoz_mode, 'k,', label=(self._code).replace("_", " "))
+    leg = ax.legend(fancybox=True, handlelength=0, handletextpad=0, loc="upper left")
     for item in leg.legendHandles:
         item.set_visible(False)
     if gals:
@@ -66,11 +66,11 @@ def plot_old_valid(self, gals=None, colors=None):
     plt.xlim(0, zmax)
     plt.ylim(0, zmax)
     plt.ylabel('z$_{true}$')
-    plt.xlabel('z$_{phot}$ (mode)')
+    plt.xlabel('z$_{phot}$')
 
     plt.subplot(122)
     sns.kdeplot(self.ztrue, shade=True, label='z$_{true}$')
-    sns.kdeplot(self.photoz_mode, shade=True, label='z$_{phot}$ (mode)')
+    sns.kdeplot(self.photoz_mode, shade=True, label='z$_{phot}$')
     plt.xlabel('z')
     plt.legend()
     plt.tight_layout()
@@ -175,22 +175,22 @@ def ks_plot(self):
     Ancillary function to be used by class KS."""
 
     plt.figure(figsize=[4, 4])
-    plt.plot(self._metrics._xvals, self._metrics._pit_cdf[0], 'b-', label="sample PIT")
-    plt.plot(self._metrics._xvals, self._metrics._uniform_cdf[0], 'r-', label="uniform")
+    plt.plot(self._metrics._xvals, self._metrics._pit_cdf, 'b-', label="sample PIT")
+    plt.plot(self._metrics._xvals, self._metrics._uniform_cdf, 'r-', label="uniform")
     self._bin_stat = np.argmax(np.abs(self._metrics._pit_cdf - self._metrics._uniform_cdf))
     plt.vlines(x=self._metrics._xvals[self._bin_stat],
-               ymin=np.min([self._metrics._pit_cdf[0][self._bin_stat],
-                             self._metrics._uniform_cdf[0][self._bin_stat]]),
-               ymax=np.max([self._metrics._pit_cdf[0][self._bin_stat],
-                            self._metrics._uniform_cdf[0][self._bin_stat]]),
+               ymin=np.min([self._metrics._pit_cdf[self._bin_stat],
+                             self._metrics._uniform_cdf[self._bin_stat]]),
+               ymax=np.max([self._metrics._pit_cdf[self._bin_stat],
+                            self._metrics._uniform_cdf[self._bin_stat]]),
                colors='k')
-    plt.plot(self._metrics._xvals[self._bin_stat], self._metrics._pit_cdf[0][self._bin_stat], "ko")
-    plt.plot(self._metrics._xvals[self._bin_stat], self._metrics._uniform_cdf[0][self._bin_stat], "ko")
+    plt.plot(self._metrics._xvals[self._bin_stat], self._metrics._pit_cdf[self._bin_stat], "ko")
+    plt.plot(self._metrics._xvals[self._bin_stat], self._metrics._uniform_cdf[self._bin_stat], "ko")
     plt.xlabel("PIT value")
     plt.ylabel("CDF(PIT)")
     xtext = self._metrics._xvals[self._bin_stat]+0.05
-    ytext = np.mean([self._metrics._pit_cdf[0][self._bin_stat],
-                            self._metrics._uniform_cdf[0][self._bin_stat]])
+    ytext = np.mean([self._metrics._pit_cdf[self._bin_stat],
+                            self._metrics._uniform_cdf[self._bin_stat]])
     plt.text(xtext, ytext, f"KS={self._stat:.2f}", fontsize=16)
     plt.xlim(0,1)
     plt.ylim(0,1)
