@@ -177,6 +177,7 @@ def ks_plot(self):
     plt.figure(figsize=[4, 4])
     plt.plot(self._metrics._xvals, self._metrics._pit_cdf[0], 'b-', label="sample PIT")
     plt.plot(self._metrics._xvals, self._metrics._uniform_cdf[0], 'r-', label="uniform")
+    self._bin_stat = np.argmax(np.abs(self._metrics._pit_cdf - self._metrics._uniform_cdf))
     plt.vlines(x=self._metrics._xvals[self._bin_stat],
                ymin=np.min([self._metrics._pit_cdf[0][self._bin_stat],
                              self._metrics._uniform_cdf[0][self._bin_stat]]),
