@@ -20,6 +20,7 @@ from interfaces.rail.makeConfigParam import makeConfigParam  # build the paramet
 from interfaces.rail.processSEDs import processSEDs  # buiod a redshift -flux grid
 from interfaces.rail.templateFitting import templateFitting
 from interfaces.rail.simulateWithSEDs import simulateWithSEDs
+from interfaces.rail.delightLearn import delightLearn
 
 # Create a logger object.
 logger = logging.getLogger(__name__)
@@ -114,6 +115,9 @@ class delightPZ(BaseEstimation):
 
         # Template Fitting
         templateFitting(self.delightparamfile)
+
+        # Learn with Gaussian processes
+        delightLearn(self.delightparamfile)
 
 
     #############################################################################################################
