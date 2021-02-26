@@ -209,8 +209,16 @@ class DC1:
                "AD": dict([(code, value) for code, value in zip(self.codes, self.ad)])}
         return results
 
-
-
+    @property
+    def table(self):
+        table = "Code | PIT out rate | KS | CvM | AD | CDE loss  \n ---|---:|---:|---:|---:|---: \n "
+        for code in self.codes:
+            table += f"{code} | {self.results['PIT out rate'][code]:11.4f} "
+            table += f" | {self.results['KS'][code]:11.4f}"
+            table += f" | {self.results['CvM'][code]:11.4f}"
+            table += f" | {self.results['AD'][code]:11.4f}"
+            table += f" | {self.results['CDE loss'][code]:11.4f}\n"
+        return Markdown(table)
 
 
 
