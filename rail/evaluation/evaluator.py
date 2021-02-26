@@ -1,6 +1,7 @@
 import sys
 from rail.evaluation.sample import Sample
 from rail.evaluation.metrics import Metrics
+import time as t
 
 
 def main(argv):
@@ -18,9 +19,10 @@ def main(argv):
         python evaluator.py <code name> <PDFs file> <sample name> <z-spec file>
 
     Example:
-        python evaluator.py FZBoost ./results/FZBoost/test_FZBoost.hdf5 toy_data ../tests/data/test_dc2_validation_9816.hdf5
+        python evaluator.py FlexZBoost ./results/FZBoost/test_FZBoost.hdf5 toy_data ../tests/data/test_dc2_validation_9816.hdf5
 
     """
+    t0 = t.time()
     print()
     print()
     print("        *** RAIL EVALUATION MODULE ***")
@@ -32,7 +34,7 @@ def main(argv):
         print("    python evaluator.py <code name> <PDFs file> <sample name> <z-spec file>")
         print()
         print("Example:")
-        print("    python evaluator.py FZBoost ./results/FZBoost/test_FZBoost.hdf5 toy_data ../tests/data/test_dc2_validation_9816.hdf5")
+        print("    python evaluator.py FlexZBoost ./results/FZBoost/test_FZBoost.hdf5 toy_data ../tests/data/test_dc2_validation_9816.hdf5")
         print()
         print()
         sys.exit()
@@ -50,7 +52,7 @@ def main(argv):
 
     print("Reading data...")
     print()
-    sample = Sample(pdfs_file, ztrue_file, code ="FZBoost", name="toy data")
+    sample = Sample(pdfs_file, ztrue_file, code=code, name=name)
     print(sample)
     print()
     print()
@@ -59,7 +61,7 @@ def main(argv):
     print()
     print()
     metrics = Metrics(sample)
-    metrics.print_summary()
+    metrics.print_table()
     print()
 
 
@@ -69,17 +71,16 @@ def main(argv):
     print()
     fig_filename = metrics.plot_pit_qq(savefig=True)
     # TO DO: ADD METRICS PLOT HERE
-    print("Plots saved in:")
-    print ()
-    print (fig_filename)
+    print(f"PIT-QQ plot saved as:   {fig_filename}")
     print ()
 
+    t1 = t.time()
+    dt = t1 - t0
+    print()
+    print(f"Done! (total time: {int(dt)} seconds)")
+    print()
+    print()
 
-
-    print()
-    print("Done!")
-    print()
-    print()
 
 
 if __name__ == "__main__":

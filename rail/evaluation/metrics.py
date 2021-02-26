@@ -58,7 +58,6 @@ class Metrics:
         self._pit_out_rate = float(pit_n_outliers) / float(len(self._pit))
 
         # placeholders for metrics to be calculated
-        self._cde_loss_stat = None
         self._ks_stat = None
         self._ks_pvalue = None
         self._cvm_stat = None
@@ -66,6 +65,8 @@ class Metrics:
         self._ad_stat = None
         self._ad_critical_values = None
         self._ad_significance_levels = None
+        self._cde_loss = None
+
 
     @property
     def sample(self):
@@ -99,9 +100,6 @@ class Metrics:
                                          savefig=savefig)
         return fig_filename
 
-    @property
-    def cde_loss_stat(self):
-        return self._cde_loss_stat
 
     @property
     def ks_stat(self):
@@ -131,74 +129,58 @@ class Metrics:
     def ad_significance_levels(self):
         return self._ad_significance_levels
 
+    @property
+    def cde_loss_stat(self):
+        return self._cde_loss
+
+
     def compute_stats(self):
         if self._ks_stat is None:
-            print("Computing KS...")
             self._ks_stat = KS(self).stat
-        else:
-            print("KS already computed.")
         if self._cvm_stat is None:
-            print("Computing CvM...")
             self._cvm_stat = CvM(self).stat
-        else:
-            print("CvM already computed.")
         if self._ad_stat is None:
-            print("Computing AD...")
             self._ad_stat = AD(self).stat
-        else:
-            print("AD already computed.")
-        if self._cde_loss_stat is None:
-            print("Computing CDE loss...")
-            self._cde_loss_stat = CDE(self)._cde_loss_stat
-        else:
-            print("CDE loss already computed.")
+        if self._cde_loss is None:
+            self._cde_loss = CDE(self)._cde_loss
 
-    def markdown_summary_metrics(self, show_dc1=False):
+    def markdown_table(self, show_dc1=False):
         self.compute_stats()
         if show_dc1:
-            metrics_table = str("|Metric|Value| DC1 ref. value|\n" +
-                                "|---|---|---|\n" +
-                                f"PIT out rate | {self._pit_out_rate:8.4f} | 0.0202 \n" +
-                                f"CDE loss     | {self._cde_loss:8.4f} |  -10.60 \n" +
-                                f"KS           | {self._ks_stat:8.4f} | 0.01294 \n" +
-                                f"CvM          | {self._cvm_stat:8.4f} | 19.7154 \n" +
-                                f"AD           | {self._ad_stat:8.4f} | 303.6519 ")
+            dc1 = self.dc1
+            table = str("Metric|Value|DC1 reference value \n ---|---:|---: \n ")
+            table += f"PIT out rate | {self._pit_out_rate:11.4f} |{dc1['PIT out rate'][self._sample._code]:11.4f} \n"
+            table += f"KS           | {self._ks_stat:11.4f} |{dc1['KS'][self._sample._code]:11.4f} \n"
+            table += f"CvM          | {self._cvm_stat:11.4f} |{dc1['CvM'][self._sample._code]:11.4f} \n"
+            table += f"AD           | {self._ad_stat:11.4f} |{dc1['AD'][self._sample._code]:11.4f} \n"
+            table += f"CDE loss     | {self._cde_loss:11.4f} |{dc1['CDE loss'][self._sample._code]:11.4f}"
         else:
-            metrics_table = str("|Metric|Value|\n" +
-                                "|---|---|\n" +
-                                f"PIT out rate | {self._pit_out_rate:8.4f}\n" +
-                                f"CDE loss     | {self._cde_loss:8.4f}\n" +
-                                f"KS           | {self._ks_stat:8.4f}\n" +
-                                f"CvM          | {self._cvm_stat:8.4f}\n" +
-                                f"AD           | {self._ad_stat:8.4f}")
+            table = "Metric|Value \n ---|---: \n "
+            table += f"PIT out rate | {self._pit_out_rate:11.4f} \n"
+            table += f"KS           | {self._ks_stat:11.4f} \n"
+            table += f"CvM          | {self._cvm_stat:11.4f}\n"
+            table += f"AD           | {self._ad_stat:11.4f}\n"
+            table += f"CDE loss     | {self._cde_loss:11.4f}\n"
+        return Markdown(table)
 
-        return Markdown(metrics_table)
-
-    def print_summary_metrics(self):
+    def print_table(self):
         self.compute_stats()
-        metrics_table = str(  # f"### {self._sample._name}\n" +
-            "   Metric    |   Value \n" +
-            "-------------|----------\n" +
-            f"PIT out rate | {self._pit_out_rate:8.4f}\n" +
-            f"CDE loss     | {self._cde_loss:8.4f}\n" +
-            f"KS           | {self._ks_stat:8.4f}\n" +
-            f"CvM          | {self._cvm_stat:8.4f}\n" +
-            f"AD           | {self._ad_stat:8.4f}")
-        print(metrics_table)
-        return metrics_table
+        table = str(
+             "   Metric    |    Value \n" +
+             "-------------|-------------\n" +
+            f"PIT out rate | {self._pit_out_rate:11.4f}\n" +
+            f"KS           | {self._ks_stat:11.4f}\n" +
+            f"CvM          | {self._cvm_stat:11.4f}\n" +
+            f"AD           | {self._ad_stat:11.4f}\n" +
+            f"CDE loss     | {self._cde_loss:11.4f}")
+        print(table)
 
-    #@classmethod
-    #def dc1(cls): #, metric=None, code=None):
-    #    cls.dc1 = DC1().results
-    #    return cls.dc1
     @property
     def dc1(self):
         return DC1().results
 
-    # def dc1_metrics_table(cls, dc1, code):
-    #     metrics_table = str("|Metric|Value|\n|---|---|\n " +
-    #                         f"PIT out rate | {dc1["PIT out rate"][f"{code}"]}\n CDE loss | -10.60\n KS | ???\n CvM | ???\n AD | ???")
-    #     return Markdown(metrics_table)
+
+
 
 
 class DC1:
@@ -251,12 +233,13 @@ class CDE:
         nns = [np.argmin(np.abs(sample._zgrid - z)) for z in sample._ztrue]
         # Calculate second term E[f*(Z | X)]
         term2 = np.mean(pdf[range(n_obs), nns])
-        self._stat = term1 - 2 * term2
+        self._cde_loss = term1 - 2 * term2
         # update Metrics object
-        self._cde_loss_stat = self._stat
+        metrics._cde_loss = self._cde_loss
+
     @property
-    def stat(self):
-        return self._stat
+    def cde_loss(self):
+        return self._cde_loss
 
 
 class KS:
@@ -276,7 +259,7 @@ class KS:
         else:
             self._stat, self._pvalue = np.max(np.abs(metrics._pit_cdf - metrics._uniform_cdf)), None # p=value TBD
         # update Metrics object
-        self._metrics._ks_stat = self._stat
+        metrics._ks_stat = self._stat
 
     def plot(self):
         plots.ks_plot(self)
@@ -333,11 +316,13 @@ class AD:
         PIT values outside this range are discarded
     """
 
-    def __init__(self, metrics, ad_pit_min=0.001, ad_pit_max=0.999, scipy=False):
+    def __init__(self, metrics, ad_pit_min=0.0, ad_pit_max=1.0, scipy=False):
+
         mask_pit = (metrics._pit >= ad_pit_min) & (metrics._pit  <= ad_pit_max)
-        n_out = len(metrics._pit) - len(metrics._pit[mask_pit])
-        perc_out = (float(n_out)/float(len(metrics._pit)))*100.
-        print(f"{n_out} outliers (PIT<{ad_pit_min} or PIT>{ad_pit_max}) removed from the calculation ({perc_out:.1f}%)")
+        if (ad_pit_min != 0.0) or (ad_pit_max != 1.0):
+            n_out = len(metrics._pit) - len(metrics._pit[mask_pit])
+            perc_out = (float(n_out)/float(len(metrics._pit)))*100.
+            print(f"{n_out} outliers (PIT<{ad_pit_min} or PIT>{ad_pit_max}) removed from the calculation ({perc_out:.1f}%)")
         if scipy:
             self._stat, self._critical_values, self._significance_levels = stats.anderson(metrics._pit[mask_pit])
         else:
