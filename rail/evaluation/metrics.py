@@ -135,14 +135,14 @@ class Metrics:
 
 
     def compute_stats(self):
-        if self._ks_stat is None:
-            self._ks_stat = KS(self).stat
-        if self._cvm_stat is None:
-            self._cvm_stat = CvM(self).stat
-        if self._ad_stat is None:
-            self._ad_stat = AD(self).stat
-        if self._cde_loss is None:
-            self._cde_loss = CDE(self)._cde_loss
+        #if self._ks_stat is None:
+        self._ks_stat = KS(self).stat
+        #if self._cvm_stat is None:
+        self._cvm_stat = CvM(self).stat
+        #if self._ad_stat is None:
+        self._ad_stat = AD(self).stat
+        #if self._cde_loss is None:
+        self._cde_loss = CDE(self)._cde_loss
 
     def markdown_table(self, show_dc1=False):
         self.compute_stats()
@@ -286,10 +286,10 @@ class CvM:
 
     def __init__(self, metrics, scipy=False):
         if scipy:
-            cvm_result = stats.cramervonmises(self._pit, "uniform")
+            cvm_result = stats.cramervonmises(metrics._pit_dist, "uniform")
             self._stat, self._pvalue = cvm_result.statistic, cvm_result.pvalue
         else:
-            self._stat, self._pvalue = np.trapz((metrics._pit_cdf - metrics._uniform_cdf)**2, metrics._xvals), None
+            self._stat, self._pvalue = np.sqrt(np.trapz((metrics._pit_cdf - metrics._uniform_cdf)**2, metrics._uniform_cdf)), None
         # update Metrics object
         metrics._cvm_stat = self._stat
 
@@ -324,7 +324,9 @@ class AD:
             perc_out = (float(n_out)/float(len(metrics._pit)))*100.
             print(f"{n_out} outliers (PIT<{ad_pit_min} or PIT>{ad_pit_max}) removed from the calculation ({perc_out:.1f}%)")
         if scipy:
-            self._stat, self._critical_values, self._significance_levels = stats.anderson(metrics._pit[mask_pit])
+            #self._stat, self._critical_values, self._significance_levels = stats.anderson(metrics._pit[mask_pit])
+            self._stat, self._critical_values, self._significance_levels = None, None, None
+            print("Comparison to uniform distribution is not available in scipy.stats.anderson method.")
         else:
             ad_xvals = np.linspace(ad_pit_min, ad_pit_max, metrics._n_quant)
             ad_yscale_uniform = (ad_pit_max-ad_pit_min)/float(metrics._n_quant)
@@ -339,7 +341,7 @@ class AD:
             numerator = ((ad_pit_cdf - ad_uniform_cdf)**2)
             denominator = (ad_uniform_cdf*(1.-ad_uniform_cdf))
             with np.errstate(divide='ignore', invalid='ignore'):
-                self._stat = np.trapz(np.nan_to_num(numerator/denominator), ad_xvals)
+                self._stat = np.sqrt(float(len(metrics._sample)) * np.trapz(np.nan_to_num(numerator/denominator), ad_uniform_cdf))
             self._critical_values = None
             self._significance_levels = None
 
