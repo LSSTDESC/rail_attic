@@ -17,6 +17,7 @@ from pkg_resources import resource_filename
 
 from interfaces.rail.processFilters import processFilters  # interface added into delight in branch rail
 from interfaces.rail.makeConfigParam import makeConfigParam  # build the parameter file required by Delight
+from interfaces.rail.processSEDs import processSEDs  # buiod a redshift -flux grid
 
 # Create a logger object.
 logger = logging.getLogger(__name__)
@@ -97,8 +98,15 @@ class delightPZ(BaseEstimation):
         with open(self.delightparamfile, 'w') as out:
             out.write(paramfile_txt)
 
+
+        # Later will steer the calls to the Delight functions with RAIL config file
+
         # Build LSST filter model
         processFilters(self.delightparamfile)
+
+        # Build its own LSST-Flux-Redshift Model
+        processSEDs(self.delightparamfile)
+
 
     #############################################################################################################
     #

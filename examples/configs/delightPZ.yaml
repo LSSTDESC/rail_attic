@@ -5,6 +5,9 @@ run_params:
   rand_zmin: 0.0
   rand_zmax: 3.0
   nzbins: 301
+  dlght_width: 0.025
+  dlght_zmin: 0.0
+  dlght_zmax: 3.0
   tempdir: "./tmp"
   tempdatadir: "./tmp/delight_data"
   delightparamfile: "parametersTest.cfg"
