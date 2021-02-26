@@ -71,6 +71,7 @@ def plot_old_valid(self, gals=None, colors=None):
     plt.subplot(122)
     sns.kdeplot(self.ztrue, shade=True, label='z$_{true}$')
     sns.kdeplot(self.photoz_mode, shade=True, label='z$_{phot}$')
+    plt.xlim(0,)
     plt.xlabel('z')
     plt.legend()
     plt.tight_layout()
