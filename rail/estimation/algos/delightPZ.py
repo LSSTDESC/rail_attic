@@ -21,6 +21,7 @@ from interfaces.rail.processSEDs import processSEDs  # buiod a redshift -flux gr
 from interfaces.rail.templateFitting import templateFitting
 from interfaces.rail.simulateWithSEDs import simulateWithSEDs
 from interfaces.rail.delightLearn import delightLearn
+from interfaces.rail.delightApply import delightApply
 
 # Create a logger object.
 logger = logging.getLogger(__name__)
@@ -128,6 +129,10 @@ class delightPZ(BaseEstimation):
 
 
     def estimate(self, test_data):
+
+        delightApply(self.delightparamfile)
+
+
         pdf = []
         # allow for either format for now
         try:
