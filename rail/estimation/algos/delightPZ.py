@@ -50,6 +50,8 @@ class delightPZ(BaseEstimation):
         self.tempdatadir = inputs['tempdatadir']
         self.delightparamfile=inputs["delightparamfile"]
         self.delightparamfile = os.path.join(self.tempdir, self.delightparamfile)
+        self.tutorialmode = inputs["dlght_tutorialmode"]
+        self.tutorialpasseval = False
         self.inputs=inputs
 
         np.random.seed(87)
@@ -130,8 +132,14 @@ class delightPZ(BaseEstimation):
 
     def estimate(self, test_data):
 
-        delightApply(self.delightparamfile)
 
+        # when Delight runs in tutorial mode call only once delightApply
+        if  self.tutorialmode and not self.tutorialpasseval:
+            delightApply(self.delightparamfile)
+            self.tutorialpasseval = True    # avoid latter call to delightApply when running in tutorial mode
+        else:
+            # TBI later with DESC data
+            pass
 
         pdf = []
         # allow for either format for now
