@@ -1,6 +1,6 @@
 import numpy as np
 from pzflow.examples import example_flow, galaxy_data
-from rail.creation import FlowEngine
+from rail.creation.engines import FlowEngine
 
 
 def test_flowengine_sample():

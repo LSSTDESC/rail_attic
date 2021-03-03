@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from rail.creation.engine import Engine
+from rail.creation.engines import Engine
 from typing import Callable
 
 

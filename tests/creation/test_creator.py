@@ -1,10 +1,11 @@
 import pytest
 import numpy as np
 import pandas as pd
-from rail.creation import Creator, Engine
+
+from rail.creation import Creator, engines
 
 
-class sampleEngine(Engine):
+class sampleEngine(engines.Engine):
     "Create a test engine that is just a normal distribution."
 
     def sample(self, n_samples, seed=None):

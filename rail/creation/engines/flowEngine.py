@@ -1,9 +1,7 @@
 # this is a subclass of Engine that wraps a pzflow Flow so that it can
 # be used as the engine of a Creator object.
-# If we create more subclasses of Engine, we should move them to a subdirectory
-# However, this is currently the only one.
 
-from rail.creation.engine import Engine
+from rail.creation.engines import Engine
 
 
 class FlowEngine(Engine):

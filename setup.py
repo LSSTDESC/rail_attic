@@ -29,7 +29,7 @@ setup(
         "numpy",
         "scipy",
         "pyyaml",
-        "pandas",
+        "pandas>=1.1",
         "pyarrow",
         "tables",
     ],
