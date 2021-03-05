@@ -14,18 +14,33 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('../rail'))
+# Avoid imports that may be unsatisfied when running sphinx, see:
+# http://stackoverflow.com/questions/15889621/sphinx-how-to-exclude-imports-in-automodule#15912502
+# autodoc_mock_imports = ["h5py, numpy, pandas, pyarrow, pyyaml, pzflow, scipy, scikit-learn, tables"]
+
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.mathjax',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.viewcode']
+
+apidoc_module_dir = '../rail'
+
+# The master toctree document.
+master_doc = 'index'
 
 # -- Project information -----------------------------------------------------
 
 project = 'RAIL'
-copyright = '2020-2021, LSST DESC RAIL Contributors'
-author = 'LSST DESC RAIL Contributors'
+copyright = '2019-2021, LSST DESC RAIL Contributors'
+author = 'LSST DESC RAIL team'
 
 # The short X.Y version
-version = u'1.0'
+version = u'0.1'
 # The full version, including alpha/beta/rc tags
-release = u'1.0'
+release = u'0.1'
 
 
 # -- General configuration ---------------------------------------------------
@@ -52,7 +67,7 @@ templates_path = ['_templates']
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = ['.rst', '.md']
 
 # The master toctree document.
 master_doc = 'index'
@@ -89,7 +104,8 @@ html_theme = 'sphinx_rtd_theme'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = []
+# ['_static']
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -105,12 +121,12 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'raildoc'
+# htmlhelp_basename = 'raildoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
 
-latex_elements = {
+# latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
@@ -126,25 +142,25 @@ latex_elements = {
     # Latex figure (float) alignment
     #
     # 'figure_align': 'htbp',
-}
+# }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
-latex_documents = [
-    (master_doc, 'rail.tex', 'rail Documentation',
-     'railteam', 'manual'),
-]
+# latex_documents = [
+#     (master_doc, 'rail.tex', 'rail Documentation',
+#      'railteam', 'manual'),
+# ]
 
 
 # -- Options for manual page output ------------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, 'rail', 'rail Documentation',
-     [author], 1)
-]
+# man_pages = [
+#     (master_doc, 'rail', 'rail Documentation',
+#      [author], 1)
+# ]
 
 
 # -- Options for Texinfo output ----------------------------------------------
@@ -152,11 +168,11 @@ man_pages = [
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
-texinfo_documents = [
-    (master_doc, 'rail', 'rail Documentation',
-     author, 'rail', 'One line description of project.',
-     'Miscellaneous'),
-]
+# texinfo_documents = [
+#     (master_doc, 'rail', 'rail Documentation',
+#      author, 'rail', 'One line description of project.',
+#      'Miscellaneous'),
+# ]
 
 
 # -- Extension configuration -------------------------------------------------
