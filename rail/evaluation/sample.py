@@ -3,6 +3,7 @@ import h5py
 import numpy as np
 import plots
 
+
 class Sample:
     """
     Handle photo-z output data (pdfs + ztrue) of
@@ -43,7 +44,7 @@ class Sample:
             self._ztrue = np.loadtxt(self._ztrue_file, unpack=True, usecols=[2])
             self._pdfs_array = np.loadtxt(self._pdfs_file)
             path = "/".join(self._pdfs_file.split("/")[:-1])
-            self._zgrid  = np.loadtxt(path + "/zarrayfile.out")
+            self._zgrid = np.loadtxt(path + "/zarrayfile.out")
             self._photoz_mode = np.array([self._zgrid[np.argmax(pdf)] for pdf in self._pdfs_array])
         elif pdfs_file_format == "hdf5":
             with h5py.File(self._ztrue_file, 'r') as zf:
@@ -58,12 +59,6 @@ class Sample:
                 self._pdfs_array = np.array(pf[self._pdfs_key])
                 self._zgrid = np.array(pf[self._zgrid_key]).flatten()
                 self._photoz_mode = np.array(pf[self._photoz_mode_key])
-        elif pdfs_file_format == "pz":
-            print("DNF format")
-            self._photoz_mode, self._ztrue = np.loadtxt(self._ztrue_file, unpack=True, usecols=[0,2])
-            pdfs_file_array = np.loadtxt(self._pdfs_file)
-            self._pdfs_array = pdfs_file_array[1:, 3:]
-            self._zgrid = pdfs_file_array[0, 3:]
         else:
             raise ValueError(f"PDFs input file format {pdfs_file_format} is not supported.")
 
@@ -74,7 +69,7 @@ class Sample:
     def code(self):
         """Photo-z code/algorithm name"""
         return self._code
-    
+
     @property
     def name(self):
         """Sample name"""
@@ -89,7 +84,6 @@ class Sample:
     def zgrid(self):
         """Redshift grid (binning)"""
         return self._zgrid
-
 
     @property
     def photoz_mode(self):
@@ -111,13 +105,12 @@ class Sample:
         name_str = f'Sample: {self._name}'
         line_str = '-' * (max(len(code_str), len(name_str)))
         text = str(line_str + '\n' +
-          name_str +'\n' +
-          code_str + '\n' +
-          line_str + '\n' +
-          f'{len(self)} PDFs with {len(self._pdfs_array[0])} probabilities each \n' +
-          f'qp representation: {self._pdfs.gen_class.name} \n' +
-          f'z grid: {len(self._zgrid)} z values from {np.min(self._zgrid)} to {np.max(self._zgrid)} inclusive')
-
+                   name_str + '\n' +
+                   code_str + '\n' +
+                   line_str + '\n' +
+                   f'{len(self)} PDFs with {len(self._pdfs_array[0])} probabilities each \n' +
+                   f'qp representation: {self._pdfs.gen_class.name} \n' +
+                   f'z grid: {len(self._zgrid)} z values from {np.min(self._zgrid)} to {np.max(self._zgrid)} inclusive')
         return text
 
     def plot_pdfs(self, gals, show_ztrue=True, show_photoz_mode=False):
@@ -126,7 +119,5 @@ class Sample:
         return colors
 
     def plot_old_valid(self, gals=None, colors=None):
-        plots.plot_old_valid(self, gals=gals, colors=colors)
-
-
-
+        old_metrics_table = plots.plot_old_valid(self, gals=gals, colors=colors)
+        return old_metrics_table
