@@ -34,8 +34,8 @@ import rail
 #     sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # -- Load the version number ----------------------------------------------
-version = rail.__version__
-release = version
+# version = rail.__version__
+# release = version
 
 # -- General configuration ------------------------------------------------
 extensions = ['sphinx.ext.autodoc',
