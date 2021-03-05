@@ -1,19 +1,37 @@
-.. RAIL documentation master file, created by
-   sphinx-quickstart on Sat Jan 30 16:43:32 2021.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+============================================
+qp : quantile-parametrized PDF approximation
+============================================
 
-Redshift Assessment Infrastructure Layers (RAIL)
-================================================
+This repo is home to a series of LSST-DESC projects aiming to quantify the impact of imperfect prior information on probabilistic redshift estimation.
+RAIL differs from [PZIncomplete](https://github.com/LSSTDESC/pz_incomplete) in that it is broken into stages, each corresponding to a manageable unit of infrastructure advancement, a specific question, and a potential publication opportunity.
+By pursuing the piecemeal development of RAIL, we aim to achieve the broad goals of PZIncomplete.
 
-.. toctree::
-   :maxdepth: 1
-   :caption: Contents:
 
-   modules
+API Documentation
+=================
 
-Indices and tables
-==================
+Description coming soon!
 
-* :ref:`genindex`
-* :ref:`modindex`
+
+The Creation subpackage
+-------------
+
+.. automodule:: creation
+    :members:
+    :undoc-members:
+
+
+The Estimation subpackage
+-------------
+
+.. automodule:: estimation
+    :members:
+    :undoc-members:
+
+
+The Evaluation subpackage
+------------------------
+
+.. automodule:: evaluation
+    :members:
+    :undoc-members:
