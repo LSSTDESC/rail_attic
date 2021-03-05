@@ -1,0 +1,15 @@
+# Example catalog_loader config file.
+catalog_name: buzzard
+mag_columns:
+    - mag_true_u_lsst
+    - mag_true_g_lsst
+    - mag_true_r_lsst
+    - mag_true_i_lsst
+    - mag_true_z_lsst
+    - mag_true_y_lsst
+redshift_column: redshift_true
+gcr_filters:
+    - redshift_true < 2.0
+    - mag_true_r_lsst < 30.0
+native_filters:
+    - healpix_pixel == 1
