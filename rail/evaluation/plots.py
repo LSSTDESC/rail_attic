@@ -78,13 +78,13 @@ def plot_old_valid(sample, gals=None, colors=None):
     plt.tight_layout()
 
     sigma_iqr, bias, frac, sigma_mad = old_metrics(sample)
-    table = "Metric | Value  \n :---|---: \n "
+    table = "Metric | Value | DC1 paper  \n :---|---:|---: \n "
     #table += "$$\sigma_{IQR} / (1+z)$$ | "
-    table += f" scatter | {sigma_iqr:11.4f} \n"
+    table += f" scatter | {sigma_iqr:11.4f} | 0.0154  \n"
     #table += "$$b_{z}$$ | "
-    table += f"bias | {bias:11.5f} \n"
+    table += f"bias | {bias:11.5f} | -0.00027 \n"
     #table += "$$f_{out}$$ | "
-    table += f"outlier rate | {frac:11.3f} "
+    table += f"outlier rate | {frac:11.3f} | 0.020 "
     return table
 
 
