@@ -1,5 +1,5 @@
 ============================================
-qp : quantile-parametrized PDF approximation
+RAIL: Redshift Assessment Infrastructure Layers
 ============================================
 
 This repo is home to a series of LSST-DESC projects aiming to quantify the impact of imperfect prior information on probabilistic redshift estimation.
@@ -12,26 +12,34 @@ API Documentation
 
 Description coming soon!
 
+.. toctree::
+   :glob:
+
 
 The Creation subpackage
 -------------
+.. toctree::
+   :maxdepth: 2
+   :caption: creation
 
-.. automodule:: creation
-    :members:
-    :undoc-members:
+   api/rail.creation.rst
 
 
 The Estimation subpackage
 -------------
 
-.. automodule:: estimation
-    :members:
-    :undoc-members:
+.. toctree::
+   :maxdepth: 2
+   :caption: estimation
+
+    api/rail.estimation.rst
 
 
 The Evaluation subpackage
 ------------------------
 
-.. automodule:: evaluation
-    :members:
-    :undoc-members:
+.. toctree::
+   :maxdepth: 2
+   :caption: evaluation
+
+    api/rail.evaluation.rst
