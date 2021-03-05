@@ -31,11 +31,11 @@ class Metrics:
         self._n_quant = n_quant
         self._pit_min = pit_min
         self._pit_max = pit_max
-        if debug:
+        if debug: # subset for quick tests
             n = 1000
         else:
             n = len(self._sample)
-        self._pit = np.array([self._sample._pdfs[i].cdf(self._sample._ztrue[i])[0][0]
+        self._pit = np.nan_to_num([self._sample._pdfs[i].cdf(self._sample._ztrue[i])[0][0]
                               for i in range(n)])
         Qtheory = np.linspace(0., 1., self.n_quant)
         Qdata = np.quantile(self._pit, Qtheory)
