@@ -13,34 +13,20 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+import subprocess
 import sys
-sys.path.insert(0, os.path.abspath('../rail'))
-# Avoid imports that may be unsatisfied when running sphinx, see:
-# http://stackoverflow.com/questions/15889621/sphinx-how-to-exclude-imports-in-automodule#15912502
-# autodoc_mock_imports = ["h5py, numpy, pandas, pyarrow, pyyaml, pzflow, scipy, scikit-learn, tables"]
-
-extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.mathjax',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.viewcode']
-
-apidoc_module_dir = '../rail'
-
-# The master toctree document.
-master_doc = 'index'
+sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 
 project = 'RAIL'
 copyright = '2019-2021, LSST DESC RAIL Contributors'
-author = 'LSST DESC RAIL team'
+author = 'LSST DESC RAIL Contributors'
 
 # The short X.Y version
-version = u'0.1'
+version = u'1.0'
 # The full version, including alpha/beta/rc tags
-release = u'0.1'
+release = u'1.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -54,11 +40,15 @@ release = u'0.1'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.doctest',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.todo',
+    'sphinx.ext.coverage',
+    'sphinx.ext.ifconfig',
     'sphinx.ext.mathjax',
-    'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
-]
+    'sphinx.ext.napoleon']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -67,7 +57,7 @@ templates_path = ['_templates']
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = ['.rst', '.md']
+source_suffix = '.rst'
 
 # The master toctree document.
 master_doc = 'index'
@@ -104,8 +94,7 @@ html_theme = 'sphinx_rtd_theme'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = []
-# ['_static']
+# html_static_path = ['_static']
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -116,17 +105,25 @@ html_static_path = []
 # 'searchbox.html']``.
 #
 # html_sidebars = {}
-
+html_sidebars = {
+    '**': [
+        'about.html',
+        'navigation.html',
+        'relations.html',  # needs 'show_related': True theme option to display
+        'searchbox.html',
+        'donate.html',
+    ]
+}
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-# htmlhelp_basename = 'raildoc'
+htmlhelp_basename = 'raildoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
 
-# latex_elements = {
+latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
@@ -142,25 +139,25 @@ html_static_path = []
     # Latex figure (float) alignment
     #
     # 'figure_align': 'htbp',
-# }
+}
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
-# latex_documents = [
-#     (master_doc, 'rail.tex', 'rail Documentation',
-#      'railteam', 'manual'),
-# ]
+latex_documents = [
+    (master_doc, 'rail.tex', 'rail Documentation',
+     'railteam', 'manual'),
+]
 
 
 # -- Options for manual page output ------------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-# man_pages = [
-#     (master_doc, 'rail', 'rail Documentation',
-#      [author], 1)
-# ]
+man_pages = [
+    (master_doc, 'rail', 'rail Documentation',
+     [author], 1)
+]
 
 
 # -- Options for Texinfo output ----------------------------------------------
@@ -168,11 +165,92 @@ html_static_path = []
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
-# texinfo_documents = [
-#     (master_doc, 'rail', 'rail Documentation',
-#      author, 'rail', 'One line description of project.',
-#      'Miscellaneous'),
-# ]
+texinfo_documents = [
+    (master_doc, 'rail', 'rail Documentation',
+     author, 'rail', 'One line description of project.',
+     'Miscellaneous'),
+]
 
 
 # -- Extension configuration -------------------------------------------------
+
+# -- Options for Autodoc--------------------------------------------------
+# Autodoc collects docstrings and builds API pages
+# from sphinxcontrib.apidoc import main as apidoc_main
+
+def run_apidoc(_):
+    from sphinx.ext.apidoc import main as apidoc_main
+    cur_dir = os.path.normpath(os.path.dirname(__file__))
+    output_path = os.path.join(cur_dir, 'api')
+    modules = os.path.normpath(os.path.join(cur_dir, "../rail"))
+    paramlist = ['--separate', '--no-toc', '-f', '-M', '-o', output_path, modules]
+    apidoc_main(paramlist)
+
+def setup(app):
+    app.connect('builder-inited', run_apidoc)
+
+# -- Load from the config file -------------------------------------------
+config = open('doc-config.ini').read().strip().split('\n')
+apilist, demofiles, examplefiles = [], [], []
+apion, demoon, exon = False, False, False
+for entry in config:
+    if not entry or entry[0] == '#':
+        continue
+    if entry == 'APIDOC':
+        apion, demoon, exon = True, False, False
+        continue
+    elif entry == 'DEMO':
+        apion, demoon, exon = False, True, False
+        continue
+    elif entry == 'EXAMPLE':
+        apion, demoon, exon = False, False, True
+        continue
+    if apion:
+        apilist+= [entry]
+    elif demoon:
+        demofiles+= [entry]
+    elif exon:
+        examplefiles+= [entry]
+
+# -- Compile the examples into rst----------------------------------------
+outdir = 'compiled-examples/'
+nbconvert_opts = ['--to rst',
+                  '--ExecutePreprocessor.kernel_name=python3',
+                  # '--execute',
+                  f'--output-dir {outdir}']
+
+for demo in [*demofiles, *examplefiles]:
+    com = ' '.join(['jupyter nbconvert']+nbconvert_opts+[demo])
+    subprocess.run(com, shell=True)
+
+index_api_toc = \
+"""
+.. toctree::
+   :maxdepth: 1
+   :caption: Reference
+
+   api
+"""
+
+subprocess.run('cp source/index_body.rst index.rst', shell=True)
+with open('index.rst', 'a') as indexfile:
+    # indexfile.write(index_demo_toc)
+    # indexfile.write(index_examples_toc)
+    indexfile.write(index_api_toc)
+
+# -- Set up the API table of contents ------------------------------------
+apitoc = \
+"""API Documentation
+=================
+
+Information on specific functions, classes, and methods.
+
+.. toctree::
+   :glob:
+
+"""
+for onemodule in apilist:
+    apitoc+= f"   api/rail.{onemodule}.rst\n"
+with open('api.rst', 'w') as apitocfile:
+    apitocfile.write(apitoc)
+

@@ -1,19 +1,45 @@
-.. RAIL documentation master file, created by
-   sphinx-quickstart on Sat Jan 30 16:43:32 2021.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+===============================================
+RAIL: Redshift Assessment Infrastructure Layers
+===============================================
 
-Redshift Assessment Infrastructure Layers (RAIL)
-================================================
+This repo is home to a series of LSST-DESC projects aiming to quantify the impact of imperfect prior information on probabilistic redshift estimation.
+RAIL differs from [PZIncomplete](https://github.com/LSSTDESC/pz_incomplete) in that it is broken into stages, each corresponding to a manageable unit of infrastructure advancement, a specific question, and a potential publication opportunity.
+By pursuing the piecemeal development of RAIL, we aim to achieve the broad goals of PZIncomplete.
+
+
+API Documentation
+=================
+
+Description coming soon!
 
 .. toctree::
-   :maxdepth: 1
-   :caption: Contents:
+   :glob:
 
-   modules
 
-Indices and tables
-==================
+The Creation subpackage
+-----------------------
+.. toctree::
+   :maxdepth: 2
+   :caption: creation
 
-* :ref:`genindex`
-* :ref:`modindex`
+   api/rail.creation.rst
+
+
+The Estimation subpackage
+-------------------------
+
+.. toctree::
+   :maxdepth: 2
+   :caption: estimation
+
+    api/rail.estimation.rst
+
+
+The Evaluation subpackage
+-------------------------
+
+.. toctree::
+   :maxdepth: 2
+   :caption: evaluation
+
+    api/rail.evaluation.rst
