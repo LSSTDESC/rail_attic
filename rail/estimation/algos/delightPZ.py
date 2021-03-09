@@ -23,6 +23,7 @@ from interfaces.rail.simulateWithSEDs import simulateWithSEDs # simulate its own
 from interfaces.rail.delightLearn import delightLearn
 from interfaces.rail.delightApply import delightApply
 from interfaces.rail.convertDESCcat  import convertDESCcat   # convert DESC input file into Delight format
+from interfaces.rail.calibrateTemplateMixturePriors import calibrateTemplateMixturePriors
 
 # Create a logger object.
 logger = logging.getLogger(__name__)
@@ -52,6 +53,7 @@ class delightPZ(BaseEstimation):
         self.delightparamfile=inputs["delightparamfile"]
         self.delightparamfile = os.path.join(self.tempdir, self.delightparamfile)
         self.tutorialmode = inputs["dlght_tutorialmode"]
+        self.dlght_calibrateTemplateMixturePrior =inputs["dlght_calibrateTemplateMixturePrior"]
         self.tutorialpasseval = False
         self.inputs=inputs
 
@@ -120,8 +122,12 @@ class delightPZ(BaseEstimation):
             # Delight build its own Mock simulations
             simulateWithSEDs(self.delightparamfile)
 
-        else:  # convert hdf5 into ascii
+        else:  # convert hdf5 into ascii in desc input mode
             convertDESCcat(self.delightparamfile, self.trainfile, self.testfile)
+
+            if self.dlght_calibrateTemplateMixturePrior:
+                calibrateTemplateMixturePriors(self.delightparamfile)
+
 
         # Template Fitting
         templateFitting(self.delightparamfile)

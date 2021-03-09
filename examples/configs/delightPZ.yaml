@@ -14,5 +14,6 @@ run_params:
   tempdatadir: "./tmp/delight_data"
   delightparamfile: "parametersTest.cfg"
   dlght_tutorialmode: False
+  dlght_calibrateTemplateMixturePrior: True
 
 
