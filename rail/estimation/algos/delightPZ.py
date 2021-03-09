@@ -17,11 +17,12 @@ from pkg_resources import resource_filename
 
 from interfaces.rail.processFilters import processFilters  # interface added into delight in branch rail
 from interfaces.rail.makeConfigParam import makeConfigParam  # build the parameter file required by Delight
-from interfaces.rail.processSEDs import processSEDs  # buiod a redshift -flux grid
+from interfaces.rail.processSEDs import processSEDs  # build a redshift -flux grid model
 from interfaces.rail.templateFitting import templateFitting
-from interfaces.rail.simulateWithSEDs import simulateWithSEDs
+from interfaces.rail.simulateWithSEDs import simulateWithSEDs # simulate its own SED in tutorial mode
 from interfaces.rail.delightLearn import delightLearn
 from interfaces.rail.delightApply import delightApply
+from interfaces.rail.convertDESCcat  import convertDESCcat   # convert DESC input file into Delight format
 
 # Create a logger object.
 logger = logging.getLogger(__name__)
@@ -53,6 +54,8 @@ class delightPZ(BaseEstimation):
         self.tutorialmode = inputs["dlght_tutorialmode"]
         self.tutorialpasseval = False
         self.inputs=inputs
+
+
 
         np.random.seed(87)
 
@@ -113,8 +116,12 @@ class delightPZ(BaseEstimation):
         # Build its own LSST-Flux-Redshift Model
         processSEDs(self.delightparamfile)
 
-        # Mock simulation
-        simulateWithSEDs(self.delightparamfile)
+        if self.tutorialmode:
+            # Delight build its own Mock simulations
+            simulateWithSEDs(self.delightparamfile)
+
+        else:  # convert hdf5 into ascii
+            convertDESCcat(self.delightparamfile, self.trainfile, self.testfile)
 
         # Template Fitting
         templateFitting(self.delightparamfile)
