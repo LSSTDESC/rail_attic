@@ -23,7 +23,7 @@ from interfaces.rail.simulateWithSEDs import simulateWithSEDs # simulate its own
 from interfaces.rail.delightLearn import delightLearn
 from interfaces.rail.delightApply import delightApply
 from interfaces.rail.convertDESCcat  import convertDESCcat   # convert DESC input file into Delight format
-from interfaces.rail.calibrateTemplateMixturePriors import calibrateTemplateMixturePriors
+from interfaces.rail.calibrateTemplateMixturePriors import *
 
 # Create a logger object.
 logger = logging.getLogger(__name__)
