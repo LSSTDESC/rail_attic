@@ -294,7 +294,7 @@ class CvM:
 
     def __init__(self, metrics, scipy=False):
         if scipy:
-            cvm_result = stats.cramervonmises(metrics._pit_dist, "uniform")
+            cvm_result = stats.cramervonmises(metrics._pit, "uniform")
             self._stat, self._pvalue = cvm_result.statistic, cvm_result.pvalue
         else:
             self._stat, self._pvalue = np.sqrt(np.trapz((metrics._pit_cdf - metrics._uniform_cdf)**2, metrics._uniform_cdf)), None
