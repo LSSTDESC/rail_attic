@@ -183,44 +183,6 @@ class Metrics:
 
 
 
-class DC1:
-
-    def __init__(self):
-        # Reference values:
-        self.codes = ("ANNz2", "BPZ", "CMNN", "Delight", "EAZY", "FlexZBoost",
-                 "GPz", "LePhare", "METAPhoR", "SkyNet", "TPZ")
-        self.metrics = ("PIT out rate", "CDE loss", "KS", "CvM", "AD")
-        self.pit_out_rate = [0.0265, 0.0192, 0.0034, 0.0006, 0.0154, 0.0202,
-                             0.0058, 0.0486, 0.0229, 0.0001, 0.0130]
-        self.cde_loss = [-6.88, -7.82, -10.43, -8.33, -7.07, -10.60,
-                         -9.93, -1.66, -6.28, -7.89, -9.55]
-        self.ks = [0.01740478, 0.01118018, 0.00502691, 0.02396731, 0.04302462, 0.01294894,
-                   0.01452443, 0.02449423, 0.02965564, 0.04911712, 0.00954685]
-        self.cvm = [60.33973412, 37.09194799, 2.9165108, 105.65338329, 440.07007555, 19.71544373,
-                    61.60230833, 141.08468956, 153.05291971, 961.53956815, 24.30815299]
-        self.ad = [564.01888766, 358.09533373, 30.64646869, 624.17799304, 2000.11675363, 303.65198293,
-                   618.63599149, 1212.07245582, 1445.53118933, 5689.32253132, 282.36983696]
-    @property
-    def results(self):
-        results = {"PIT out rate": dict([(code, value) for code, value in zip(self.codes, self.pit_out_rate)]),
-               "CDE loss": dict([(code, value) for code, value in zip(self.codes, self.cde_loss)]),
-               "KS": dict([(code, value) for code, value in zip(self.codes, self.ks)]),
-               "CvM": dict([(code, value) for code, value in zip(self.codes, self.cvm)]),
-               "AD": dict([(code, value) for code, value in zip(self.codes, self.ad)])}
-        return results
-
-    @property
-    def table(self):
-        table = "Code | PIT out rate | KS | CvM | AD | CDE loss  \n ---|---:|---:|---:|---:|---: \n "
-        for code in self.codes:
-            table += f"{code} | {self.results['PIT out rate'][code]:11.4f} "
-            table += f" | {self.results['KS'][code]:11.4f}"
-            table += f" | {self.results['CvM'][code]:11.4f}"
-            table += f" | {self.results['AD'][code]:11.4f}"
-            table += f" | {self.results['CDE loss'][code]:11.4f}\n"
-        return Markdown(table)
-
-
 
 class CDE:
     """Computes the estimated conditional density loss described in
