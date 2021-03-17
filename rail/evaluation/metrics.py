@@ -35,29 +35,27 @@ class Metrics:
             n = 1000
         else:
             n = len(self._sample)
-        self._pit = np.nan_to_num([self._sample._pdfs[i].cdf(self._sample._ztrue[i])[0][0]
-                              for i in range(n)])
+        self._pit = np.nan_to_num([self._sample._pdfs[i].cdf(self._sample._ztrue[i])[0][0] for i in range(n)])
+        # Quantiles
         Qtheory = np.linspace(0., 1., self.n_quant)
         Qdata = np.quantile(self._pit, Qtheory)
         self._qq_vectors = (Qtheory, Qdata)
-        # Uniform distribution amplitude
-        self._yscale_uniform = 1. / float(n_quant)
-        # Distribution of PIT values as it was a PDF
+        # Normalized distribution of PIT values (PIT PDF)
         self._xvals = Qtheory
-        self._pit_dist, self._pit_bins_edges = np.histogram(self._pit, bins=n_quant, density=True)
-        self._uniform_dist = np.ones_like(self._pit_dist) * self._yscale_uniform
+        self._pit_pdf, self._pit_bins_edges = np.histogram(self._pit, bins=n_quant, density=True)
+        self._uniform_pdf = np.full(n_quant, 1.0 / float(n_quant))
         # Define qp Ensemble to use CDF functionallity (an ensemble with only 1 PDF)
         self._pit_ensamble = qp.Ensemble(qp.hist, data=dict(bins=self._pit_bins_edges,
-                                                            pdfs=np.array([self._pit_dist])))
+                                                            pdfs=np.array([self._pit_pdf])))
         self._uniform_ensamble = qp.Ensemble(qp.interp, data=dict(xvals=self._xvals,
-                                                                  yvals=np.array([self._uniform_dist])))
+                                                                  yvals=np.array([self._uniform_pdf])))
         self._pit_cdf = self._pit_ensamble.cdf(self._xvals)[0]
         self._uniform_cdf = self._uniform_ensamble.cdf(self._xvals)[0]
-        # Fraction of outliers
-        pit_n_outliers = len(self._pit[(self._pit < pit_min) | (self._pit > pit_max)])
-        self._pit_out_rate = float(pit_n_outliers) / float(len(self._pit))
 
         # placeholders for metrics to be calculated
+        self._pit_out_rate = None
+        self._cde_loss = None
+        self._kld = None
         self._ks_stat = None
         self._ks_pvalue = None
         self._cvm_stat = None
@@ -65,7 +63,7 @@ class Metrics:
         self._ad_stat = None
         self._ad_critical_values = None
         self._ad_significance_levels = None
-        self._cde_loss = None
+
 
 
     @property
@@ -77,29 +75,40 @@ class Metrics:
         return self._n_quant
 
     @property
+    def pit_min(self):
+        return self._pit_min
+
+    @property
+    def pit_max(self):
+        return self._pit_max
+
+    @property
     def pit(self):
         return self._pit
+
+    @property
+    def pit_pdf(self):
+        return self._pit_pdf
+
+    @property
+    def uniform_pdf(self):
+        return self._uniform_pdf
 
     @property
     def qq_vectors(self):
         return self._qq_vectors
 
     @property
-    def yscale_uniform(self):
-        return self._yscale_uniform
-
-    @property
     def pit_out_rate(self):
         return self._pit_out_rate
 
-    def plot_pit_qq(self, bins=None, label=None, title=None, show_pit=True,
-                    show_qq=True, show_pit_out_rate=True, savefig=False):
-        fig_filename = utils.plot_pit_qq(self, bins=bins, label=label, title=title,
-                                         show_pit=show_pit, show_qq=show_qq,
-                                         show_pit_out_rate=show_pit_out_rate,
-                                         savefig=savefig)
-        return fig_filename
+    @property
+    def cde_loss(self):
+        return self._cde_loss
 
+    @property
+    def kld(self):
+        return self._kld
 
     @property
     def ks_stat(self):
@@ -130,19 +139,29 @@ class Metrics:
         return self._ad_significance_levels
 
     @property
-    def cde_loss_stat(self):
-        return self._cde_loss
+    def dc1(self):
+        return DC1().results
+
+
+
+
+    def plot_pit_qq(self, bins=None, label=None, title=None, show_pit=True,
+                    show_qq=True, show_pit_out_rate=True, savefig=False):
+        """Make plot PIT-QQ as Figure 2 from Schmidt et al. 2020."""
+        fig_filename = utils.plot_pit_qq(self, bins=bins, label=label, title=title,
+                                         show_pit=show_pit, show_qq=show_qq,
+                                         show_pit_out_rate=show_pit_out_rate,
+                                         savefig=savefig)
+        return fig_filename
 
 
     def compute_stats(self):
-        #if self._ks_stat is None:
-        self._ks_stat = KS(self).stat
-        #if self._cvm_stat is None:
-        self._cvm_stat = CvM(self).stat
-        #if self._ad_stat is None:
-        self._ad_stat = AD(self).stat
-        #if self._cde_loss is None:
+        self._pit_out_rate = PitOutRate(self)._pit_out_rate
         self._cde_loss = CDE(self)._cde_loss
+        self._kld = KLD(self).kld
+        self._ks_stat = KS(self).stat
+        self._cvm_stat = CvM(self).stat
+        self._ad_stat = AD(self).stat
 
     def markdown_table(self, show_dc1=False):
         self.compute_stats()
@@ -150,17 +169,19 @@ class Metrics:
             dc1 = self.dc1
             table = str("Metric|Value|DC1 reference value \n ---|---:|---: \n ")
             table += f"PIT out rate | {self._pit_out_rate:11.4f} |{dc1['PIT out rate'][self._sample._code]:11.4f} \n"
-            table += f"KS           | {self._ks_stat:11.4f} |{dc1['KS'][self._sample._code]:11.4f} \n"
-            table += f"CvM          | {self._cvm_stat:11.4f} |{dc1['CvM'][self._sample._code]:11.4f} \n"
-            table += f"AD           | {self._ad_stat:11.4f} |{dc1['AD'][self._sample._code]:11.4f} \n"
             table += f"CDE loss     | {self._cde_loss:11.4f} |{dc1['CDE loss'][self._sample._code]:11.4f}"
+            table += f"KLD          | {self._kld:11.4f}      |  N/A  \n"
+            table += f"KS           | {self._ks_stat:11.4f}  |{dc1['KS'][self._sample._code]:11.4f} \n"
+            table += f"CvM          | {self._cvm_stat:11.4f} |{dc1['CvM'][self._sample._code]:11.4f} \n"
+            table += f"AD           | {self._ad_stat:11.4f}  |{dc1['AD'][self._sample._code]:11.4f} \n"
         else:
             table = "Metric|Value \n ---|---: \n "
             table += f"PIT out rate | {self._pit_out_rate:11.4f} \n"
+            table += f"CDE loss     | {self._cde_loss:11.4f}\n"
+            table += f"KLD          | {self._kld:11.4f}      |  N/A  \n"
             table += f"KS           | {self._ks_stat:11.4f} \n"
             table += f"CvM          | {self._cvm_stat:11.4f}\n"
             table += f"AD           | {self._ad_stat:11.4f}\n"
-            table += f"CDE loss     | {self._cde_loss:11.4f}\n"
         return Markdown(table)
 
     def print_table(self):
@@ -169,31 +190,51 @@ class Metrics:
              "   Metric    |    Value \n" +
              "-------------|-------------\n" +
             f"PIT out rate | {self._pit_out_rate:11.4f}\n" +
+            f"CDE loss     | {self._cde_loss:11.4f}\n " +
+            f"KLD          | {self._kld:11.4f}\n" +
             f"KS           | {self._ks_stat:11.4f}\n" +
             f"CvM          | {self._cvm_stat:11.4f}\n" +
-            f"AD           | {self._ad_stat:11.4f}\n" +
-            f"CDE loss     | {self._cde_loss:11.4f}")
+            f"AD           | {self._ad_stat:11.4f}\n")
         print(table)
 
+
+
+
+class PitOutRate:
+    """ Fraction of PIT outliers """
+    def __init__(self, metrics):
+        """Class constructor.
+        Compute fraction of PIT values which are close to 0 (pit < pit_min) and 1 (pit > pit_max).
+        pit_min and pit_max limits are parameters of the metrics parent object.
+
+        Parameters
+        ----------
+        metrics: `metrics` object
+            instance of metrics base class which is connected to a given sample
+        """
+        pit_n_outliers = len(metrics.pit[(metrics.pit < metrics.pit_min) | (metrics.pit > metrics.pit_max)])
+        self._pit_out_rate = float(pit_n_outliers) / float(len(metrics.pit))
+        metrics._pit_out_rate = self._pit_out_rate
+
     @property
-    def dc1(self):
-        return DC1().results
-
-
-
-
+    def pit_out_rate(self):
+        return self._pit_out_rate
 
 
 class CDE:
     """Computes the estimated conditional density loss described in
-    Izbicki & Lee 2017 (arXiv:1704.08095).
-    Parameters
-    ----------
-    sample: `Sample`
-        sample object defined in ./sample.py
-    """
+    Izbicki & Lee 2017 (arXiv:1704.08095). """
 
     def __init__(self, metrics):
+        """Class constructor.
+        Compute CDE loss statistic and update the
+        parent metric object with property metrics._cde_loss .
+
+        Parameters
+        ----------
+        metrics: `metrics` object
+            instance of metrics base class which is connected to a given sample
+        """
         sample = metrics._sample
         pdf = sample._pdfs.pdf([sample._zgrid])
         n_obs, n_grid = (pdf).shape
@@ -210,6 +251,28 @@ class CDE:
     @property
     def cde_loss(self):
         return self._cde_loss
+
+
+class KLD:
+    """
+    Compute the Kullback-Leibler Divergence between the the empirical PIT
+    distribution and a theoretical uniform distribution between 0 and 1."""
+
+    def __init__(self, metrics):
+        """Class constructor.
+        Compute KLD statistic using scipy.stats.entropy and update
+        the parent metric object with property metrics._kld_stat .
+
+        Parameters
+        ----------
+        metrics: `metrics` object
+            instance of metrics base class which is connected to a given sample
+        """
+        self._kld = stats.entropy(metrics.pit_pdf, metrics.uniform_pdf)
+
+    @property
+    def kld(self):
+        return self._kld
 
 
 class KS:
