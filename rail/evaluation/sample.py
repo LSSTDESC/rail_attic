@@ -1,7 +1,7 @@
 import qp
 import h5py
 import numpy as np
-import plots
+import utils
 
 
 class Sample:
@@ -114,10 +114,10 @@ class Sample:
         return text
 
     def plot_pdfs(self, gals, show_ztrue=True, show_photoz_mode=False):
-        colors = plots.plot_pdfs(self, gals, show_ztrue=show_ztrue,
+        colors = utils.plot_pdfs(self, gals, show_ztrue=show_ztrue,
                                  show_photoz_mode=show_photoz_mode)
         return colors
 
     def plot_old_valid(self, gals=None, colors=None):
-        old_metrics_table = plots.plot_old_valid(self, gals=gals, colors=colors)
+        old_metrics_table = utils.plot_old_valid(self, gals=gals, colors=colors)
         return old_metrics_table

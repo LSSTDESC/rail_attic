@@ -2,7 +2,7 @@ import numpy as np
 from scipy import stats
 import qp
 from IPython.display import Markdown
-import plots
+import utils
 
 
 class Metrics:
@@ -94,7 +94,7 @@ class Metrics:
 
     def plot_pit_qq(self, bins=None, label=None, title=None, show_pit=True,
                     show_qq=True, show_pit_out_rate=True, savefig=False):
-        fig_filename = plots.plot_pit_qq(self, bins=bins, label=label, title=title,
+        fig_filename = utils.plot_pit_qq(self, bins=bins, label=label, title=title,
                                          show_pit=show_pit, show_qq=show_qq,
                                          show_pit_out_rate=show_pit_out_rate,
                                          savefig=savefig)
@@ -270,7 +270,7 @@ class KS:
         metrics._ks_stat = self._stat
 
     def plot(self):
-        plots.ks_plot(self)
+        utils.ks_plot(self)
 
     @property
     def stat(self):
