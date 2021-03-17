@@ -179,8 +179,8 @@ def plot_pit_qq(metrics, bins=None, title=None, label=None,
         plt.ylabel("$\Delta$Q", fontsize=18)
         ax2.plot([0, 1], [0, 0], color='k', linestyle='--', linewidth=2)
         plt.xlim(-0.001, 1.001)
-        plt.ylim(np.min([-0.1, np.min(metrics.qq_vectors[1] - metrics.qq_vectors[0])*1.05]),
-                 np.max([0.1, np.max(metrics.qq_vectors[1] - metrics.qq_vectors[0])*1.05]))
+        plt.ylim(np.min([-0.12, np.min(metrics.qq_vectors[1] - metrics.qq_vectors[0])*1.05]),
+                 np.max([0.12, np.max(metrics.qq_vectors[1] - metrics.qq_vectors[0])*1.05]))
     if show_pit:
         if show_qq:
             plt.xlabel("Qtheory / PIT Value", fontsize=18)
@@ -215,14 +215,14 @@ def ks_plot(ks):
                ymax=np.max([ks._metrics._pit_cdf[ks._bin_stat],
                             ks._metrics._uniform_cdf[ks._bin_stat]]),
                colors='k')
-    plt.plot(ks._metrics._xvals[ks._bin_stat], ks._metrics._pit_cdf[ks._bin_stat], "ko")
-    plt.plot(ks._metrics._xvals[ks._bin_stat], ks._metrics._uniform_cdf[ks._bin_stat], "ko")
+    plt.plot(ks._metrics._xvals[ks._bin_stat], ks._metrics._pit_cdf[ks._bin_stat], "k.")
+    plt.plot(ks._metrics._xvals[ks._bin_stat], ks._metrics._uniform_cdf[ks._bin_stat], "k.")
     plt.xlabel("PIT value")
     plt.ylabel("CDF(PIT)")
-    xtext = ks._metrics._xvals[ks._bin_stat]+0.05
-    ytext = np.mean([ks._metrics._pit_cdf[ks._bin_stat],
-                            ks._metrics._uniform_cdf[ks._bin_stat]])
-    plt.text(xtext, ytext, f"KS={ks._stat:.2f}", fontsize=16)
+    xtext = 0.63  # ks._metrics._xvals[ks._bin_stat]+0.05
+    ytext = 0.03  # np.mean([ks._metrics._pit_cdf[ks._bin_stat],
+                 #           ks._metrics._uniform_cdf[ks._bin_stat]])
+    plt.text(xtext, ytext, f"KS={ks._stat:.4f}", fontsize=16)
     plt.xlim(0,1)
     plt.ylim(0,1)
     plt.legend()
