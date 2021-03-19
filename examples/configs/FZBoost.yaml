@@ -14,3 +14,4 @@ run_params:
   max_basis: 35
   basis_system: cosine
   regression_params: {'max_depth': 8,'objective':'reg:squarederror'}
+  inform_options: {'save_train': False, 'load_model': False}

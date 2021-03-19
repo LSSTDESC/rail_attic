@@ -5,6 +5,7 @@ read in fromfile and pdf width set to base_width*(1+zmode).
 """
 
 import numpy as np
+import pickle
 # from numpy import inf
 import sklearn.neural_network as sknn
 from sklearn.preprocessing import StandardScaler
@@ -72,6 +73,7 @@ class simpleNN(BaseEstimation):
         self.zmin = inputs['zmin']
         self.zmax = inputs['zmax']
         self.nzbins = inputs['nzbins']
+        self.inform_options = inputs['inform_options']
         np.random.seed(71)
 
     def inform(self):
@@ -86,6 +88,14 @@ class simpleNN(BaseEstimation):
                                      activation='tanh', solver='lbfgs')
         simplenn.fit(input_data, speczs)
         self.model = simplenn
+        if self.inform_options['save_train']:
+            with open(self.inform_options['modelfile'], 'wb') as f:
+                pickle.dump(file=f, obj=self.model,
+                            protocol=pickle.HIGHEST_PROTOCOL)
+
+    def load_pretrained_model(self):
+        modelfile = self.inform_options['modelfile']
+        self.model = pickle.load(open(modelfile, 'rb'))
 
     def estimate(self, test_data):
         color_data = make_color_data(test_data)

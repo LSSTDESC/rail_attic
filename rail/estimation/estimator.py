@@ -66,6 +66,13 @@ class Estimator(object):
         """
         raise NotImplementedError
 
+    def load_pretrained_model(self):
+        """
+        If inform step has been run separately, this funciton will
+        load the information required to run estimate
+        """
+        raise NotImplementedError  # pragma: no cover
+
     def estimate(self, input_data):
         """
         The main run method for the photo-z, should be implemented in
