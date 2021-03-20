@@ -57,7 +57,6 @@ class delightPZ(BaseEstimation):
         self.tutorialmode = inputs["dlght_tutorialmode"]
         self.dlght_calibrateTemplateMixturePrior =inputs["dlght_calibrateTemplateMixturePrior"]
         self.tutorialpasseval = False
-        self.applypassonce = False
         self.chunknum=0
         self.inputs=inputs
 
@@ -75,6 +74,11 @@ class delightPZ(BaseEstimation):
         """
           this is random, so does nothing
         """
+
+        msg = " INFORM "
+        logger.info(msg)
+
+
         logger.info("Try to workout filters")
 
         # create usefull tempory directory
@@ -150,7 +154,7 @@ class delightPZ(BaseEstimation):
 
         self.chunknum += 1
 
-        msg = " chunk number {} ".format(self.chunknum)
+        msg = " ESTIMATE : chunk number {} ".format(self.chunknum)
         logger.info(msg)
 
         basedelight_datapath = resource_filename('delight', '../data')
@@ -159,6 +163,10 @@ class delightPZ(BaseEstimation):
 
         # when Delight runs in tutorial mode call only once delightApply
         if  self.tutorialmode and not self.tutorialpasseval:
+
+            msg = "TUTORIAL MODE : process chunk {}".format(self.chunknum)
+            logger.info(msg)
+
             # Template Fitting
             templateFitting(self.delightparamfile)
 
@@ -166,16 +174,14 @@ class delightPZ(BaseEstimation):
             delightApply(self.delightparamfile)
             self.tutorialpasseval = True    # avoid latter call to delightApply when running in tutorial mode
 
-        elif self.applypassonce: # case whe one want to run the whole validation dataset
+        elif self.tutorialmode and self.tutorialpasseval:
+            msg="TUTORIAL MODE : skip chunk {}".format(self.chunknum)
+            logger.info(msg)
 
-            # Template Fitting
-            templateFitting(self.delightparamfile)
+        elif not self.tutorialmode : # let rail split the test data into chunks
+            msg = "STANDARD MODE : process chunk {}".format(self.chunknum)
+            logger.info(msg)
 
-            # TBI later with DESC data
-            delightApply(self.delightparamfile)
-            self.applypassonce = False
-
-        else: # let rail split the test data into chunks
             # Generate a new parameter file for delight this chunk
             paramfile_txt=makeConfigParamChunk(basedelight_datapath, self.inputs, self.chunknum)
 
@@ -201,6 +207,13 @@ class delightPZ(BaseEstimation):
 
             # estimation for that chunk
             delightApply(delightparamfilechunk)
+
+
+
+        else:
+            msg = "STANDARD MODE : pass chunk {}".format(self.chunknum)
+            logger.info(msg)
+
 
         pdf = []
         # allow for either format for now

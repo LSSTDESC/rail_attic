@@ -13,6 +13,7 @@ run_params:
   tempdir: "./tmp"
   tempdatadir: "./tmp/delight_data"
   delightparamfile: "parametersTest.cfg"
+# activate simulation mode
   dlght_tutorialmode: False
   dlght_calibrateTemplateMixturePrior: False
 
