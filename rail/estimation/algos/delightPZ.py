@@ -127,14 +127,13 @@ class delightPZ(BaseEstimation):
             simulateWithSEDs(self.delightparamfile)
 
         else:  # convert hdf5 into ascii in desc input mode
-            convertDESCcat(self.delightparamfile, self.trainfile, self.testfile)
+            convertDESCcat(self.delightparamfile, self.trainfile, self.testfile,flag_filter=True)
 
             if self.dlght_calibrateTemplateMixturePrior:
                 calibrateTemplateMixturePriors(self.delightparamfile)
 
 
-        # Template Fitting
-        templateFitting(self.delightparamfile)
+
 
         # Learn with Gaussian processes
         delightLearn(self.delightparamfile)
@@ -160,17 +159,27 @@ class delightPZ(BaseEstimation):
 
         # when Delight runs in tutorial mode call only once delightApply
         if  self.tutorialmode and not self.tutorialpasseval:
+            # Template Fitting
+            templateFitting(self.delightparamfile)
+
+            # Gaussian process fitting
             delightApply(self.delightparamfile)
             self.tutorialpasseval = True    # avoid latter call to delightApply when running in tutorial mode
+
         elif self.applypassonce: # case whe one want to run the whole validation dataset
+
+            # Template Fitting
+            templateFitting(self.delightparamfile)
+
             # TBI later with DESC data
             delightApply(self.delightparamfile)
             self.applypassonce = False
+
         else: # let rail split the test data into chunks
             # Generate a new parameter file for delight this chunk
             paramfile_txt=makeConfigParamChunk(basedelight_datapath, self.inputs, self.chunknum)
 
-            # generate the configparameter filename from chunk number
+            # generate the config-parameter filename from chunk number
             delightparamfile=self.delightparamfile
             logger.debug(delightparamfile)
             dirn=os.path.dirname(delightparamfile)
@@ -185,7 +194,10 @@ class delightPZ(BaseEstimation):
                 out.write(paramfile_txt)
 
             # convert the chunk data into the required  flux-redshift validation file for delight
-            convertDESCcatChunk(delightparamfilechunk, test_data, self.chunknum)
+            convertDESCcatChunk(delightparamfilechunk, test_data, self.chunknum,flag_filter=True)
+
+            # template fitting for that chunk
+            templateFitting(delightparamfilechunk)
 
             # estimation for that chunk
             delightApply(delightparamfilechunk)
@@ -200,6 +212,7 @@ class delightPZ(BaseEstimation):
         zmode = np.round(np.random.uniform(0.0, self.zmax, numzs), 3)
         widths = self.width * (1.0 + zmode)
         self.zgrid = np.linspace(0., self.zmax, self.nzbins)
+
         for i in range(numzs):
             pdf.append(norm.pdf(self.zgrid, zmode[i], widths[i]))
         pz_dict = {'zmode': zmode, 'pz_pdf': pdf}
