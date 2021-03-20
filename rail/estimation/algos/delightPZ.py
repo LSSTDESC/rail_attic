@@ -16,13 +16,15 @@ import logging
 from pkg_resources import resource_filename
 
 from interfaces.rail.processFilters import processFilters  # interface added into delight in branch rail
-from interfaces.rail.makeConfigParam import makeConfigParam  # build the parameter file required by Delight
+#from interfaces.rail.makeConfigParam import makeConfigParam  # build the parameter file required by Delight
+from interfaces.rail.makeConfigParam import *  # build the parameter file required by Delight
 from interfaces.rail.processSEDs import processSEDs  # build a redshift -flux grid model
 from interfaces.rail.templateFitting import templateFitting
 from interfaces.rail.simulateWithSEDs import simulateWithSEDs # simulate its own SED in tutorial mode
 from interfaces.rail.delightLearn import delightLearn
 from interfaces.rail.delightApply import delightApply
 from interfaces.rail.convertDESCcat  import convertDESCcat   # convert DESC input file into Delight format
+from interfaces.rail.convertDESCcat  import *   # convert DESC input file into Delight format
 from interfaces.rail.calibrateTemplateMixturePriors import *
 
 # Create a logger object.
@@ -55,6 +57,8 @@ class delightPZ(BaseEstimation):
         self.tutorialmode = inputs["dlght_tutorialmode"]
         self.dlght_calibrateTemplateMixturePrior =inputs["dlght_calibrateTemplateMixturePrior"]
         self.tutorialpasseval = False
+        self.applypassonce = False
+        self.chunknum=0
         self.inputs=inputs
 
 
@@ -145,14 +149,46 @@ class delightPZ(BaseEstimation):
 
     def estimate(self, test_data):
 
+        self.chunknum += 1
+
+        msg = " chunk number {} ".format(self.chunknum)
+        logger.info(msg)
+
+        basedelight_datapath = resource_filename('delight', '../data')
+        print(self.delightparamfile)
+
 
         # when Delight runs in tutorial mode call only once delightApply
         if  self.tutorialmode and not self.tutorialpasseval:
             delightApply(self.delightparamfile)
             self.tutorialpasseval = True    # avoid latter call to delightApply when running in tutorial mode
-        else:
+        elif self.applypassonce: # case whe one want to run the whole validation dataset
             # TBI later with DESC data
-            pass
+            delightApply(self.delightparamfile)
+            self.applypassonce = False
+        else: # let rail split the test data into chunks
+            # Generate a new parameter file for delight this chunk
+            paramfile_txt=makeConfigParamChunk(basedelight_datapath, self.inputs, self.chunknum)
+
+            # generate the configparameter filename from chunk number
+            delightparamfile=self.delightparamfile
+            logger.debug(delightparamfile)
+            dirn=os.path.dirname(delightparamfile)
+            basn=os.path.basename(delightparamfile)
+            basnsplit=basn.split(".")
+            basnchunk =  basnsplit[0] + "_" + str(self.chunknum) + "." + basnsplit[1]
+            delightparamfilechunk = os.path.join(dirn,basnchunk)
+            logger.debug("parameter file for delight :" + delightparamfilechunk)
+
+            # save the config parameter file for the data chunk that Delight needs
+            with open(delightparamfilechunk, 'w') as out:
+                out.write(paramfile_txt)
+
+            # convert the chunk data into the required  flux-redshift validation file for delight
+            convertDESCcatChunk(delightparamfilechunk, test_data, self.chunknum)
+
+            # estimation for that chunk
+            delightApply(delightparamfilechunk)
 
         pdf = []
         # allow for either format for now
