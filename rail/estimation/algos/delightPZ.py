@@ -1,8 +1,16 @@
-"""
-Example code that just spits out random numbers between 0 and 3
-for z_mode, and Gaussian centered at z_mode with width
-random_width*(1+zmode).
-"""
+##########################################################################################
+#
+# RAIL interface class to Delight
+#
+# Steering Delight from RAIL
+# Used on Vera C. Runbin LSST only estimation
+#
+# Author        : Sylvie Dagoret-Campagne
+# Affiliation   : IJCLab/IN2P3/CNRS/France
+# Creation date : March 2021
+# Last update   : March 21th 2021
+#
+############################################################################################
 
 import numpy as np
 from scipy.stats import norm
@@ -46,21 +54,34 @@ class delightPZ(BaseEstimation):
 
         inputs = self.config_dict['run_params']
 
+        # redshift bins
         self.width = inputs['rand_width']
         self.zmin = inputs['rand_zmin']
         self.zmax = inputs['rand_zmax']
         self.nzbins = inputs['nzbins']
+
+        # temporary directories for Delight temprary file
         self.tempdir = inputs['tempdir']
         self.tempdatadir = inputs['tempdatadir']
+        # name of delight configuration file
         self.delightparamfile=inputs["delightparamfile"]
         self.delightparamfile = os.path.join(self.tempdir, self.delightparamfile)
+        # Choice of the running mode
         self.tutorialmode = inputs["dlght_tutorialmode"]
-        self.dlght_calibrateTemplateMixturePrior =inputs["dlght_calibrateTemplateMixturePrior"]
-        self.tutorialpasseval = False
+        self.tutorialpasseval = False  # onmy one chunk for simulation
+        # for standard mode with DC2 dataset
+        self.flag_filter_training = inputs["flag_filter_training"]
+        self.snr_cut_training = inputs["snr_cut_training"]
+        self.flag_filter_validation = inputs["flag_filter_validation"]
+        self.snr_cut_validation = inputs["snr_cut_validation"]
+
+
+        # counter on the chunk validation dataset
         self.chunknum=0
-        self.inputs=inputs
 
-
+        self.dlght_calibrateTemplateMixturePrior = inputs["dlght_calibrateTemplateMixturePrior"]
+        # all parameter files
+        self.inputs = inputs
 
         np.random.seed(87)
 
@@ -131,7 +152,12 @@ class delightPZ(BaseEstimation):
             simulateWithSEDs(self.delightparamfile)
 
         else:  # convert hdf5 into ascii in desc input mode
-            convertDESCcat(self.delightparamfile, self.trainfile, self.testfile,flag_filter=True)
+            convertDESCcat(self.delightparamfile, self.trainfile, self.testfile,\
+                           flag_filter_training=self.flag_filter_training,\
+                           flag_filter_validation=self.flag_filter_validation,\
+                           snr_cut_training=self.snr_cut_training,\
+                           snr_cut_validation=self.snr_cut_validation)
+
 
             if self.dlght_calibrateTemplateMixturePrior:
                 calibrateTemplateMixturePriors(self.delightparamfile)
@@ -200,7 +226,9 @@ class delightPZ(BaseEstimation):
                 out.write(paramfile_txt)
 
             # convert the chunk data into the required  flux-redshift validation file for delight
-            convertDESCcatChunk(delightparamfilechunk, test_data, self.chunknum,flag_filter=True)
+            convertDESCcatChunk(delightparamfilechunk, test_data, self.chunknum,\
+                                flag_filter_validation=self.flag_filter_validation,\
+                                snr_cut_validation=self.snr_cut_validation)
 
             # template fitting for that chunk
             templateFitting(delightparamfilechunk)
@@ -221,6 +249,9 @@ class delightPZ(BaseEstimation):
             d = test_data['i_mag']
         except Exception:
             d = test_data['mag_i_lsst']
+
+
+
         numzs = len(d)
         zmode = np.round(np.random.uniform(0.0, self.zmax, numzs), 3)
         widths = self.width * (1.0 + zmode)

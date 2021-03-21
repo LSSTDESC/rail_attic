@@ -1,20 +1,62 @@
+##########################################################################################
+#
+# RAIL configuration file for delightPZ module
+#
+# Steering Delight from RAIL
+# Used on Vera C. Runbin LSST only estimation
+#
+# Author        : Sylvie Dagoret-Campagne
+# Affiliation   : IJCLab/IN2P3/CNRS/France
+# Creation date : March 2021
+# Last update   : March 21th 2021
+#
+############################################################################################
 run_params:
   class_name: delightPZ
   run_name: test_delightPZ
+#----------------------------------
+# initial parameters for be removed
+#----------------------------------
   rand_width: 0.025
   rand_zmin: 0.0
   rand_zmax: 3.0
   nzbins: 301
+#------------------------------------------------
+# redshift range and binning for delight
+# dlght_ prepend means a parameter used by Delight
+#------------------------------------------------
   dlght_redshiftMin: 0.1
   dlght_redshiftMax: 3.101
   dlght_redshiftNumBinsGPpred: 300
   dlght_redshiftBinSize: 0.001
   dlght_redshiftDisBinSize: 0.2
+#---------------------------------------
+# temporary directory for delight work
+#---------------------------------------
   tempdir: "./tmp"
   tempdatadir: "./tmp/delight_data"
+#----------------------------------------
+# delight configuration file filename
+#----------------------------------------
   delightparamfile: "parametersTest.cfg"
-# activate simulation mode
+#------------------------------------------------------------------------
+# Running mode
+# tutorial mode :
+#   - True  : activate internal flux simulation
+#   - False : activate use of DC2 datasets for training and Validation
+#-----------------------------------------------------------------------
   dlght_tutorialmode: False
+#------------------------------------------------------------------------
+# Filtering of training and Validation dataset
+# according flux SNR
+#-------------------------------------------------------------------------
+  flag_filter_training: True
+  snr_cut_training: 5
+  flag_filter_validation: True
+  snr_cut_validation: 5
+#-----------------------------------------------------------------------
+# Special run
+#-------------------------------------------------------------------------
   dlght_calibrateTemplateMixturePrior: False
 
 
