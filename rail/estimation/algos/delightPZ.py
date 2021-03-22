@@ -226,7 +226,7 @@ class delightPZ(BaseEstimation):
                 out.write(paramfile_txt)
 
             # convert the chunk data into the required  flux-redshift validation file for delight
-            convertDESCcatChunk(delightparamfilechunk, test_data, self.chunknum,\
+            indexes_sel=convertDESCcatChunk(delightparamfilechunk, test_data, self.chunknum,\
                                 flag_filter_validation=self.flag_filter_validation,\
                                 snr_cut_validation=self.snr_cut_validation)
 
