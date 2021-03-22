@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from rail.estimation.utils import iter_chunk_hdf5_data
+from rail.fileIO import iter_chunk_hdf5_data
 from rail.estimation.algos import randomPZ, sklearn_nn, flexzboost, trainZ
 
 

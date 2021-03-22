@@ -2,7 +2,7 @@ import pytest
 import os
 import numpy as np
 from rail.estimation.estimator import Estimator
-from rail.estimation.utils import write_output_file
+from rail.fileIO import write_output_file
 
 # this is temporary until unit test uses a definite test data set and creates
 # the yaml file on the fly

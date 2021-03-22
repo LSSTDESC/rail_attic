@@ -1,5 +1,5 @@
 import pytest
-from rail.estimation.utils import load_training_data
+from rail.fileIO import load_training_data
 
 
 h5_data_file = 'tests/data/pandas_test_hdf5.h5'

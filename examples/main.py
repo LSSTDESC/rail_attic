@@ -1,10 +1,10 @@
 import sys
 import os
 import yaml
-from rail.estimation.utils import initialize_writeout, iter_chunk_hdf5_data
-from rail.estimation.utils import write_out_chunk, finalize_writeout
-from rail.estimation.utils import write_qp_output_chunk, initialize_qp_output
-from rail.estimation.utils import qp_reformat_output
+from rail.fileIO import initialize_writeout, iter_chunk_hdf5_data
+from rail.fileIO import write_out_chunk, finalize_writeout
+from rail.fileIO import write_qp_output_chunk, initialize_qp_output
+from rail.fileIO import qp_reformat_output
 from rail.estimation.estimator import Estimator
 
 

@@ -1,5 +1,5 @@
 import os
-from rail.estimation.utils import load_training_data, get_input_data_size_hdf5
+from rail.fileIO import load_training_data, get_input_data_size_hdf5
 import yaml
 
 
