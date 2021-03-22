@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
-#import numpy as np
+import numpy as np
 import seaborn as sns
-from metrics import *
+from metrics import PitOutRate
 
 
 
@@ -142,9 +142,9 @@ def plot_pit_qq(metrics, bins=None, title=None, label=None,
     if metrics._pit_out_rate is None:
         PitOutRate(metrics)
 
-        if show_pit_out_rate:
-            label += "\n PIT$_{out}$: "
-            label += f"{metrics._pit_out_rate:.4f}"
+    if show_pit_out_rate:
+        label += "\n PIT$_{out}$: "
+        label += f"{metrics._pit_out_rate:.4f}"
 
     plt.figure(figsize=[4, 5])
     gs = gridspec.GridSpec(2, 1, height_ratios=[3, 1])

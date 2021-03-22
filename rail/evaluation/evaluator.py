@@ -61,7 +61,7 @@ def main(argv):
     print()
     print()
     metrics = Metrics(sample)
-    metrics.print_table()
+    metrics.print_metrics_table()
     print()
 
 

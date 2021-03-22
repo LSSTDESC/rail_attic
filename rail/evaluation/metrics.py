@@ -131,16 +131,8 @@ class Metrics:
         return self._ad_stat
 
     @property
-    def ad_critical_values(self):
-        return self._ad_critical_values
-
-    @property
-    def ad_significance_levels(self):
-        return self._ad_significance_levels
-
-    @property
     def dc1(self):
-        return DC1().results
+        return utils.DC1().results
 
 
 
@@ -155,22 +147,22 @@ class Metrics:
         return fig_filename
 
 
-    def compute_stats(self):
+    def compute_metrics(self):
         self._pit_out_rate = PitOutRate(self)._pit_out_rate
         self._cde_loss = CDE(self)._cde_loss
-        self._kld = KLD(self).kld
+        #self._kld = KLD(self).kld
         self._ks_stat = KS(self).stat
         self._cvm_stat = CvM(self).stat
         self._ad_stat = AD(self).stat
 
-    def markdown_table(self, show_dc1=False):
-        self.compute_stats()
+    def markdown_metrics_table(self, show_dc1=False):
+        self.compute_metrics()
         if show_dc1:
             dc1 = self.dc1
             table = str("Metric|Value|DC1 reference value \n ---|---:|---: \n ")
             table += f"PIT out rate | {self._pit_out_rate:11.4f} |{dc1['PIT out rate'][self._sample._code]:11.4f} \n"
-            table += f"CDE loss     | {self._cde_loss:11.4f} |{dc1['CDE loss'][self._sample._code]:11.4f}"
-            table += f"KLD          | {self._kld:11.4f}      |  N/A  \n"
+            table += f"CDE loss     | {self._cde_loss:11.4f} |{dc1['CDE loss'][self._sample._code]:11.4f} \n"
+            #table += f"KLD          | {self._kld:11.4f}      |  N/A  \n"
             table += f"KS           | {self._ks_stat:11.4f}  |{dc1['KS'][self._sample._code]:11.4f} \n"
             table += f"CvM          | {self._cvm_stat:11.4f} |{dc1['CvM'][self._sample._code]:11.4f} \n"
             table += f"AD           | {self._ad_stat:11.4f}  |{dc1['AD'][self._sample._code]:11.4f} \n"
@@ -178,20 +170,20 @@ class Metrics:
             table = "Metric|Value \n ---|---: \n "
             table += f"PIT out rate | {self._pit_out_rate:11.4f} \n"
             table += f"CDE loss     | {self._cde_loss:11.4f}\n"
-            table += f"KLD          | {self._kld:11.4f}      |  N/A  \n"
+            #table += f"KLD          | {self._kld:11.4f}      |  N/A  \n"
             table += f"KS           | {self._ks_stat:11.4f} \n"
             table += f"CvM          | {self._cvm_stat:11.4f}\n"
             table += f"AD           | {self._ad_stat:11.4f}\n"
         return Markdown(table)
 
-    def print_table(self):
-        self.compute_stats()
+    def print_metrics_table(self):
+        self.compute_metrics()
         table = str(
              "   Metric    |    Value \n" +
              "-------------|-------------\n" +
             f"PIT out rate | {self._pit_out_rate:11.4f}\n" +
             f"CDE loss     | {self._cde_loss:11.4f}\n " +
-            f"KLD          | {self._kld:11.4f}\n" +
+            #f"KLD          | {self._kld:11.4f}\n" +
             f"KS           | {self._ks_stat:11.4f}\n" +
             f"CvM          | {self._cvm_stat:11.4f}\n" +
             f"AD           | {self._ad_stat:11.4f}\n")
@@ -252,29 +244,6 @@ class CDE:
     def cde_loss(self):
         return self._cde_loss
 
-
-class KLD:
-    """
-    Compute the Kullback-Leibler Divergence between the the empirical PIT
-    distribution and a theoretical uniform distribution between 0 and 1."""
-
-    def __init__(self, metrics):
-        """Class constructor.
-        Compute KLD statistic using scipy.stats.entropy and update
-        the parent metric object with property metrics._kld_stat .
-
-        Parameters
-        ----------
-        metrics: `metrics` object
-            instance of metrics base class which is connected to a given sample
-        """
-        self._kld = stats.entropy(metrics.pit_pdf, metrics.uniform_pdf)
-
-    @property
-    def kld(self):
-        return self._kld
-
-
 class KS:
     """
     Compute the Kolmogorov-Smirnov statistic and p-value (TBD) for the PIT
@@ -285,14 +254,16 @@ class KS:
     metrics: `metrics` object
         instance of metrics base class which is connected to a given sample
     """
-    def __init__(self, metrics, scipy=False):
+    def __init__(self, metrics, scipy=True):
         self._metrics = metrics
         if scipy:
-            self._stat, self._pvalue = stats.kstest(metrics._pit, "uniform")
+            self._stat, self._pvalue = stats.kstest(metrics.pit, "uniform")
         else:
-            self._stat, self._pvalue = np.max(np.abs(metrics._pit_cdf - metrics._uniform_cdf)), None # p=value TBD
-        # update Metrics object
+            self._stat, self._pvalue = np.max(np.abs(metrics._pit_cdf - metrics._uniform_cdf)), None  # p-value TBD
+        self._metrics = metrics
+    # update Metrics object
         metrics._ks_stat = self._stat
+
 
     def plot(self):
         utils.ks_plot(self)
@@ -306,6 +277,7 @@ class KS:
         return self._pvalue
 
 
+
 class CvM:
     """
     Compute the Cramer-von Mises statistic and p-value (TBD) for the PIT
@@ -317,13 +289,14 @@ class CvM:
         instance of metrics base class which is connected to a given sample
     """
 
-    def __init__(self, metrics, scipy=False):
+    def __init__(self, metrics, scipy=True):
         if scipy:
             cvm_result = stats.cramervonmises(metrics._pit, "uniform")
             self._stat, self._pvalue = cvm_result.statistic, cvm_result.pvalue
         else:
-            self._stat, self._pvalue = np.sqrt(np.trapz((metrics._pit_cdf - metrics._uniform_cdf)**2, metrics._uniform_cdf)), None
-        # update Metrics object
+            self._stat, self._pvalue = np.sqrt(np.trapz((metrics._pit_cdf - metrics._uniform_cdf) ** 2, metrics._uniform_cdf)), None
+
+    # update Metrics object
         metrics._cvm_stat = self._stat
 
     @property
@@ -349,34 +322,28 @@ class AD:
         PIT values outside this range are discarded
     """
 
-    def __init__(self, metrics, ad_pit_min=0.0, ad_pit_max=1.0, scipy=False):
+    def __init__(self, metrics, ad_pit_min=0.0, ad_pit_max=1.0):
 
         mask_pit = (metrics._pit >= ad_pit_min) & (metrics._pit  <= ad_pit_max)
         if (ad_pit_min != 0.0) or (ad_pit_max != 1.0):
             n_out = len(metrics._pit) - len(metrics._pit[mask_pit])
             perc_out = (float(n_out)/float(len(metrics._pit)))*100.
             print(f"{n_out} outliers (PIT<{ad_pit_min} or PIT>{ad_pit_max}) removed from the calculation ({perc_out:.1f}%)")
-        if scipy:
-            #self._stat, self._critical_values, self._significance_levels = stats.anderson(metrics._pit[mask_pit])
-            self._stat, self._critical_values, self._significance_levels = None, None, None
-            print("Comparison to uniform distribution is not available in scipy.stats.anderson method.")
-        else:
-            ad_xvals = np.linspace(ad_pit_min, ad_pit_max, metrics._n_quant)
-            ad_yscale_uniform = (ad_pit_max-ad_pit_min)/float(metrics._n_quant)
-            ad_pit_dist, ad_pit_bins_edges = np.histogram(metrics._pit[mask_pit], bins=metrics._n_quant, density=True)
-            ad_uniform_dist = np.ones_like(ad_pit_dist) * ad_yscale_uniform
-            # Redo CDFs to consider outliers mask
-            ad_pit_ensamble = qp.Ensemble(qp.hist, data=dict(bins=ad_pit_bins_edges, pdfs=np.array([ad_pit_dist])))
-            ad_pit_cdf = ad_pit_ensamble.cdf(ad_xvals)[0]
-            ad_uniform_ensamble = qp.Ensemble(qp.hist,
-                                              data=dict(bins=ad_pit_bins_edges, pdfs=np.array([ad_uniform_dist])))
-            ad_uniform_cdf = ad_uniform_ensamble.cdf(ad_xvals)[0]
-            numerator = ((ad_pit_cdf - ad_uniform_cdf)**2)
-            denominator = (ad_uniform_cdf*(1.-ad_uniform_cdf))
-            with np.errstate(divide='ignore', invalid='ignore'):
-                self._stat = np.sqrt(float(len(metrics._sample)) * np.trapz(np.nan_to_num(numerator/denominator), ad_uniform_cdf))
-            self._critical_values = None
-            self._significance_levels = None
+
+        ad_xvals = np.linspace(ad_pit_min, ad_pit_max, metrics.n_quant)
+        ad_yscale_uniform = (ad_pit_max-ad_pit_min)/float(metrics._n_quant)
+        ad_pit_dist, ad_pit_bins_edges = np.histogram(metrics.pit[mask_pit], bins=metrics.n_quant, density=True)
+        ad_uniform_dist = np.full(metrics.n_quant, ad_yscale_uniform)
+        # Redo CDFs to account for outliers mask
+        ad_pit_ensamble = qp.Ensemble(qp.hist, data=dict(bins=ad_pit_bins_edges, pdfs=np.array([ad_pit_dist])))
+        ad_pit_cdf = ad_pit_ensamble.cdf(ad_xvals)[0]
+        ad_uniform_ensamble = qp.Ensemble(qp.hist,
+                                          data=dict(bins=ad_pit_bins_edges, pdfs=np.array([ad_uniform_dist])))
+        ad_uniform_cdf = ad_uniform_ensamble.cdf(ad_xvals)[0]
+        numerator = ((ad_pit_cdf - ad_uniform_cdf)**2)
+        denominator = (ad_uniform_cdf*(1.-ad_uniform_cdf))
+        with np.errstate(divide='ignore', invalid='ignore'):
+            self._stat = np.sqrt(float(len(metrics._sample)) * np.trapz(np.nan_to_num(numerator/denominator), ad_uniform_cdf))
 
         # update Metrics object
         metrics._ad_stat = self._stat
@@ -385,13 +352,31 @@ class AD:
     def stat(self):
         return self._stat
 
-    @property
-    def critical_values(self):
-        return self._critical_values
+
+
+
+class KLD:
+    """
+    Compute the Kullback-Leibler Divergence between the the empirical PIT
+    distribution and a theoretical uniform distribution between 0 and 1."""
+
+    def __init__(self, metrics):
+        """Class constructor.
+        Compute KLD statistic using scipy.stats.entropy and update
+        the parent metric object with property metrics._kld_stat .
+
+        Parameters
+        ----------
+        metrics: `metrics` object
+            instance of metrics base class which is connected to a given sample
+        """
+        self._kld = stats.entropy(metrics.pit_pdf, metrics.uniform_pdf)
+        # update Metrics object
+        metrics._kld = self._kld
 
     @property
-    def significance_levels(self):
-        return self._significance_levels
+    def kld(self):
+        return self._kld
 
 
 class CRPS:
