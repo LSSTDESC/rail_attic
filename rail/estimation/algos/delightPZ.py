@@ -34,6 +34,7 @@ from interfaces.rail.delightApply import delightApply
 from interfaces.rail.convertDESCcat  import convertDESCcat   # convert DESC input file into Delight format
 from interfaces.rail.convertDESCcat  import *   # convert DESC input file into Delight format
 from interfaces.rail.calibrateTemplateMixturePriors import *
+from interfaces.rail.getDelightRedshiftEstimation import *
 
 # Create a logger object.
 logger = logging.getLogger(__name__)
@@ -250,14 +251,23 @@ class delightPZ(BaseEstimation):
         except Exception:
             d = test_data['mag_i_lsst']
 
-
-
         numzs = len(d)
-        zmode = np.round(np.random.uniform(0.0, self.zmax, numzs), 3)
-        widths = self.width * (1.0 + zmode)
         self.zgrid = np.linspace(0., self.zmax, self.nzbins)
+
+
+        if self.tutorialmode:
+            # fill creazy values (simulation not send to rail)
+            zmode = np.round(np.random.uniform(0.0, self.zmax, numzs), 3)
+            widths = self.width * (1.0 + zmode)
+
+        else:
+            zmode,widths = getDelightRedshiftEstimation(delightparamfilechunk,self.chunknum,numzs,indexes_sel)
+            zmode = np.round(zmode,3)
+
 
         for i in range(numzs):
             pdf.append(norm.pdf(self.zgrid, zmode[i], widths[i]))
+
         pz_dict = {'zmode': zmode, 'pz_pdf': pdf}
+
         return pz_dict

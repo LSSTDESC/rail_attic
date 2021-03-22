@@ -25,8 +25,8 @@ run_params:
 # redshift range and binning for delight
 # dlght_ prepend means a parameter used by Delight
 #------------------------------------------------
-  dlght_redshiftMin: 0.1
-  dlght_redshiftMax: 3.101
+  dlght_redshiftMin: 0.01
+  dlght_redshiftMax: 3.01
   dlght_redshiftNumBinsGPpred: 300
   dlght_redshiftBinSize: 0.001
   dlght_redshiftDisBinSize: 0.2
@@ -53,7 +53,7 @@ run_params:
   flag_filter_training: True
   snr_cut_training: 5
   flag_filter_validation: True
-  snr_cut_validation: 5
+  snr_cut_validation: 3
 #-----------------------------------------------------------------------
 # Special run
 #-------------------------------------------------------------------------
