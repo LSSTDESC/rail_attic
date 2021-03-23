@@ -4,4 +4,4 @@ run_params:
   zmin: 0.0
   zmax: 3.0
   nzbins: 301
-  inform_options: {'save_train': False, 'load_model': False}  
+  inform_options: {'save_train': False, 'load_model': True, 'modelfile': 'trainZmodel.pkl'}  

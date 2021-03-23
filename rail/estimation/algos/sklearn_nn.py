@@ -76,13 +76,13 @@ class simpleNN(BaseEstimation):
         self.inform_options = inputs['inform_options']
         np.random.seed(71)
 
-    def inform(self):
+    def inform(self, training_data):
         """
           train the NN model
         """
-        speczs = self.training_data['redshift']
+        speczs = training_data['redshift']
         print("stacking some data...")
-        color_data = make_color_data(self.training_data)
+        color_data = make_color_data(training_data)
         input_data = regularize_data(color_data)
         simplenn = sknn.MLPRegressor(hidden_layer_sizes=(12, 12),
                                      activation='tanh', solver='lbfgs')

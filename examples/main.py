@@ -1,6 +1,7 @@
 import sys
 import os
 import yaml
+from rail.fileIO import load_training_data
 from rail.fileIO import initialize_writeout, iter_chunk_hdf5_data
 from rail.fileIO import write_out_chunk, finalize_writeout
 from rail.fileIO import write_qp_output_chunk, initialize_qp_output
@@ -36,13 +37,19 @@ def main(argv):
     print(f"code name: {name}")
 
     pz = code(base_config, run_dict)
+    
+    trainfile = pz.trainfile
+    train_fmt = trainfile.split(".")[-1]
+
+    training_data = load_training_data(trainfile, train_fmt,
+                                       pz.groupname)
 
     pz.inform_dict = run_dict['run_params']['inform_options']
     if pz.inform_dict['load_model']:
         # note: specific options set in subclasss func def
         pz.load_pretrained_model()
     else:
-        pz.inform()
+        pz.inform(training_data)
 
     if 'run_name' in run_dict['run_params']:
         outfile = run_dict['run_params']['run_name'] + '.hdf5'

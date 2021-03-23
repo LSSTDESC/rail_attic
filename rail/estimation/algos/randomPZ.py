@@ -30,7 +30,7 @@ class randomPZ(BaseEstimation):
         self.nzbins = inputs['nzbins']
         np.random.seed(87)
 
-    def inform(self):
+    def inform(self, training_data):
         """
           this is random, so does nothing
         """

@@ -102,13 +102,13 @@ class FZBoost(BaseEstimation):
         z_val = sz_data[perm[ntrain:]]
         return x_train, x_val, z_train, z_val
 
-    def inform(self):
+    def inform(self, training_data):
         """
           train flexzboost model model
         """
-        speczs = self.training_data['redshift']
+        speczs = training_data['redshift']
         print("stacking some data...")
-        color_data = make_color_data(self.training_data)
+        color_data = make_color_data(training_data)
         train_dat, val_dat, train_sz, val_sz = self.split_data(color_data,
                                                                speczs,
                                                                self.trainfrac)

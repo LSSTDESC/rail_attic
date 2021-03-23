@@ -6,6 +6,7 @@ N (z) of the training set.
 """
 
 
+import pickle
 import numpy as np
 from rail.estimation.estimator import Estimator as BaseEstimation
 import qp
@@ -20,23 +21,31 @@ class trainZ(BaseEstimation):
         self.zmin = inputs['zmin']
         self.zmax = inputs['zmax']
         self.nzbins = inputs['nzbins']
+        self.inform_options = inputs['inform_options']
 
+    def inform(self, training_data):
         zbins = np.linspace(self.zmin, self.zmax, self.nzbins+1)
-        speczs = np.sort(self.training_data['redshift'])
+        speczs = np.sort(training_data['redshift'])
         train_pdf, _ = np.histogram(speczs, zbins)
-        self.midpoints = zbins[:-1] + np.diff(zbins)/2
-        self.zmode = self.midpoints[np.argmax(train_pdf)]
+        midpoints = zbins[:-1] + np.diff(zbins)/2
+        self.zmode = midpoints[np.argmax(train_pdf)]
         cdf = np.cumsum(train_pdf)
         self.cdf = cdf / cdf[-1]
         self.train_pdf = train_pdf/self.cdf
-        self.zgrid = self.midpoints
-        np.random.seed(87)
-
-    def inform(self):
-        pass
+        self.zgrid = midpoints
+        model = trainZmodel(self.zgrid, self.train_pdf, self.zmode)
+        if self.inform_options['save_train']:
+            with open(self.inform_options['modelfile'], 'wb') as f:
+                pickle.dump(file=f, obj=model,
+                            protocol=pickle.HIGHEST_PROTOCOL)
+        np.random.seed(87) # set here for tests matching
 
     def load_pretrained_model(self):
-        pass
+        modelfile = self.inform_options['modelfile']
+        model = pickle.load(open(modelfile, 'rb'))
+        self.zgrid = model.zgrid
+        self.train_pdf = model.pdf
+        self.zmode = model.zmode
 
     def estimate(self, test_data):
         test_size = len(test_data['id'])
@@ -51,3 +60,15 @@ class trainZ(BaseEstimation):
             pz_dict = {'zmode': zmode, 'pz_pdf': np.tile(self.train_pdf,
                                                          (test_size, 1))}
             return pz_dict
+
+
+class trainZmodel:
+    """
+    Temporary class to store the single trainZ pdf for trained model.
+    Given how simple this is to compute, this seems like overkill.
+    """
+    def __init__(self, zgrid, pdf, zmode):
+        self.zgrid = zgrid
+        self.pdf = pdf
+        self.zmode = zmode
+        
