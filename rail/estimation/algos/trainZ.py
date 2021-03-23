@@ -71,4 +71,3 @@ class trainZmodel:
         self.zgrid = zgrid
         self.pdf = pdf
         self.zmode = zmode
-        

@@ -24,9 +24,10 @@ def test_loading():
 
 
 def test_train_not_implemented():
+    fakedata = {'u': 99., 'g': 99., 'r': 99.}
     with pytest.raises(NotImplementedError):
         instance = Estimator(base_config=test_base_yaml)
-        instance.inform()
+        instance.inform(fakedata)
 
 
 def test_estimate_not_implemented():

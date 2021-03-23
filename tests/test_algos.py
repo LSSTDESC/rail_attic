@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from rail.fileIO import iter_chunk_hdf5_data
+from rail.fileIO import iter_chunk_hdf5_data, load_training_data
 from rail.estimation.algos import randomPZ, sklearn_nn, flexzboost, trainZ
 
 
@@ -17,7 +17,12 @@ def one_algo(single_estimator, single_input):
     """
 
     pz = single_estimator(test_base_yaml, single_input)
-    pz.inform()
+    trainfile = pz.trainfile
+    train_fmt = trainfile.split(".")[-1]
+    training_data = load_training_data(trainfile, train_fmt,
+                                       pz.groupname)
+    pz.inform_dict = single_input['run_params']['inform_options']
+    pz.inform(training_data)
     # set chunk size to pz.num_rows to ensure all run in one chunk
     for _, end, data in iter_chunk_hdf5_data(pz.testfile, pz.num_rows,
                                              pz.hdf5_groupname):
