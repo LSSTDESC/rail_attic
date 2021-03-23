@@ -29,6 +29,7 @@ setup(
                       'pyarrow',
                       'tables',
                       'astropy',
+                      'qp@git+https://github.com/LSSTDESC/qp.git#egg=qp'
                       ],
     extras_require={
         'Full': ['sklearn', 'FlexCode[all]', 'corner', 'dill', 'flax==0.2.0',
