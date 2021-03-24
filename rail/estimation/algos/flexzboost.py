@@ -82,6 +82,13 @@ class FZBoost(BaseEstimation):
         self.basis_system = inputs['basis_system']
         self.regress_params = inputs['regression_params']
         self.inform_options = inputs['inform_options']
+        if 'save_train' in self.inform_options == True:
+            try:
+                self.modelfile=self.inform_options['modelfile']
+            except:
+                defModel = "default_model.out"
+                print(f"name for model not found, will save to {defModel}")
+                self.inform_options['modelfile']=defModel
 
     @staticmethod
     def split_data(fz_data, sz_data, trainfrac):
@@ -147,10 +154,6 @@ class FZBoost(BaseEstimation):
             with open(self.inform_options['modelfile'], 'wb') as f:
                 pickle.dump(file=f, obj=model,
                             protocol=pickle.HIGHEST_PROTOCOL)
-
-    def load_pretrained_model(self):
-        modelfile = self.inform_options['modelfile']
-        self.model = pickle.load(open(modelfile, 'rb'))
 
     def estimate(self, test_data):
         color_data = make_color_data(test_data)

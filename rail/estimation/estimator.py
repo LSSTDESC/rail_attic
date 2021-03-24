@@ -1,6 +1,8 @@
 import os
 from rail.estimation.utils import load_training_data, get_input_data_size_hdf5
 import yaml
+import pickle
+import sys
 
 
 class Estimator(object):
@@ -67,9 +69,21 @@ class Estimator(object):
     def load_pretrained_model(self):
         """
         If inform step has been run separately, this funciton will
-        load the information required to run estimate
+        load the information required to run estimate.  As a
+        default we will include the loading of a pickled model,
+        but the idea is that a specific code can override this
+        function by writing a custom model load in the subclass
         """
-        raise NotImplementedError  # pragma: no cover
+        try:
+            modelfile = self.inform_options['modelfile']
+        except KeyError:
+            print("inform_options['modelfile'] not specified, exiting!")
+            sys.exit(1)
+        try:
+            self.model = pickle.load(open(modelfile, 'rb'))
+        except FileNotFoundError:
+            print(f"File {self.inform_options['modelfile']} not found!")
+            sys.exit(1)
 
     def estimate(self, input_data):
         """
