@@ -3,6 +3,7 @@ from scipy import stats
 import qp
 from IPython.display import Markdown
 import utils
+import os
 
 
 class Metrics:
@@ -31,11 +32,17 @@ class Metrics:
         self._n_quant = n_quant
         self._pit_min = pit_min
         self._pit_max = pit_max
-        if debug: # subset for quick tests
-            n = 1000
+        self._debug = debug
+        n = len(self._sample)
+        if debug:
+            #n = 1000 # subset for quick tests
+            print("DEBUG MODE")
+            #ids = np.random.choice(n, 10000)
+            self._pit = np.loadtxt(os.path.join(sample.path,"TESTPITVALS.out"), unpack=True, usecols=[1])#[ids]
+            self.new_pit = np.nan_to_num([self._sample._pdfs[i].cdf(self._sample._ztrue[i])[0][0] for i in range(n)])# ids])
         else:
             n = len(self._sample)
-        self._pit = np.nan_to_num([self._sample._pdfs[i].cdf(self._sample._ztrue[i])[0][0] for i in range(n)])
+            self._pit = np.nan_to_num([self._sample._pdfs[i].cdf(self._sample._ztrue[i])[0][0] for i in range(n)])
         # Quantiles
         Qtheory = np.linspace(0., 1., self.n_quant)
         Qdata = np.quantile(self._pit, Qtheory)
@@ -43,14 +50,15 @@ class Metrics:
         # Normalized distribution of PIT values (PIT PDF)
         self._xvals = Qtheory
         self._pit_pdf, self._pit_bins_edges = np.histogram(self._pit, bins=n_quant, density=True)
+        #self._uniform_pdf = stats.uniform(self._xvals, scale=n_quant)
         self._uniform_pdf = np.full(n_quant, 1.0 / float(n_quant))
-        # Define qp Ensemble to use CDF functionallity (an ensemble with only 1 PDF)
-        self._pit_ensamble = qp.Ensemble(qp.hist, data=dict(bins=self._pit_bins_edges,
+        # Define qp Ensemble to use CDF functionality (an ensemble with only 1 PDF)
+        self._pit_ensemble = qp.Ensemble(qp.hist, data=dict(bins=self._pit_bins_edges,
                                                             pdfs=np.array([self._pit_pdf])))
-        self._uniform_ensamble = qp.Ensemble(qp.interp, data=dict(xvals=self._xvals,
+        self._uniform_ensemble = qp.Ensemble(qp.interp, data=dict(xvals=self._xvals,
                                                                   yvals=np.array([self._uniform_pdf])))
-        self._pit_cdf = self._pit_ensamble.cdf(self._xvals)[0]
-        self._uniform_cdf = self._uniform_ensamble.cdf(self._xvals)[0]
+        self._pit_cdf = self._pit_ensemble.cdf(self._xvals)[0]
+        self._uniform_cdf = self._uniform_ensemble.cdf(self._xvals)[0]
 
         # placeholders for metrics to be calculated
         self._pit_out_rate = None
@@ -132,7 +140,7 @@ class Metrics:
 
     @property
     def dc1(self):
-        return utils.DC1().results
+        return utils.DC1() #.results
 
 
 
@@ -150,7 +158,7 @@ class Metrics:
     def compute_metrics(self):
         self._pit_out_rate = PitOutRate(self)._pit_out_rate
         self._cde_loss = CDE(self)._cde_loss
-        #self._kld = KLD(self).kld
+        self._kld = KLD(self).kld
         self._ks_stat = KS(self).stat
         self._cvm_stat = CvM(self).stat
         self._ad_stat = AD(self).stat
@@ -160,20 +168,20 @@ class Metrics:
         if show_dc1:
             dc1 = self.dc1
             table = str("Metric|Value|DC1 reference value \n ---|---:|---: \n ")
-            table += f"PIT out rate | {self._pit_out_rate:11.4f} |{dc1['PIT out rate'][self._sample._code]:11.4f} \n"
-            table += f"CDE loss     | {self._cde_loss:11.4f} |{dc1['CDE loss'][self._sample._code]:11.4f} \n"
+            table += f"PIT out rate | {self._pit_out_rate:11.4f} |{dc1.results['PIT out rate'][self._sample._code]:11.4f} \n"
+            table += f"CDE loss     | {self._cde_loss:11.2f} |{dc1.results['CDE loss'][self._sample._code]:11.2f} \n"
             #table += f"KLD          | {self._kld:11.4f}      |  N/A  \n"
-            table += f"KS           | {self._ks_stat:11.4f}  |{dc1['KS'][self._sample._code]:11.4f} \n"
-            table += f"CvM          | {self._cvm_stat:11.4f} |{dc1['CvM'][self._sample._code]:11.4f} \n"
-            table += f"AD           | {self._ad_stat:11.4f}  |{dc1['AD'][self._sample._code]:11.4f} \n"
+            table += f"KS           | {self._ks_stat:11.4f}  |{dc1.results['KS'][self._sample._code]:11.4f} \n"
+            table += f"CvM          | {self._cvm_stat:11.4f} |{dc1.results['CvM'][self._sample._code]:11.4f} \n"
+            table += f"AD           | {self._ad_stat:11.4f}  |{dc1.results['AD'][self._sample._code]:11.4f} \n"
         else:
             table = "Metric|Value \n ---|---: \n "
             table += f"PIT out rate | {self._pit_out_rate:11.4f} \n"
-            table += f"CDE loss     | {self._cde_loss:11.4f}\n"
-            #table += f"KLD          | {self._kld:11.4f}      |  N/A  \n"
-            table += f"KS           | {self._ks_stat:11.4f} \n"
-            table += f"CvM          | {self._cvm_stat:11.4f}\n"
-            table += f"AD           | {self._ad_stat:11.4f}\n"
+            table += f"CDE loss     | {self._cde_loss:11.2f} \n"
+            table += f"KLD          | {self._kld:11.4f}      \n"
+            table += f"KS           | {self._ks_stat:11.4f}  \n"
+            table += f"CvM          | {self._cvm_stat:11.4f} \n"
+            table += f"AD           | {self._ad_stat:11.4f}  \n"
         return Markdown(table)
 
     def print_metrics_table(self):
@@ -183,7 +191,7 @@ class Metrics:
              "-------------|-------------\n" +
             f"PIT out rate | {self._pit_out_rate:11.4f}\n" +
             f"CDE loss     | {self._cde_loss:11.4f}\n " +
-            #f"KLD          | {self._kld:11.4f}\n" +
+            f"KLD          | {self._kld:11.4f}\n" +
             f"KS           | {self._ks_stat:11.4f}\n" +
             f"CvM          | {self._cvm_stat:11.4f}\n" +
             f"AD           | {self._ad_stat:11.4f}\n")
@@ -254,14 +262,14 @@ class KS:
     metrics: `metrics` object
         instance of metrics base class which is connected to a given sample
     """
-    def __init__(self, metrics, scipy=True):
+    def __init__(self, metrics, scipy=False):
         self._metrics = metrics
         if scipy:
             self._stat, self._pvalue = stats.kstest(metrics.pit, "uniform")
         else:
             self._stat, self._pvalue = np.max(np.abs(metrics._pit_cdf - metrics._uniform_cdf)), None  # p-value TBD
         self._metrics = metrics
-    # update Metrics object
+        # update Metrics object
         metrics._ks_stat = self._stat
 
 
@@ -289,15 +297,17 @@ class CvM:
         instance of metrics base class which is connected to a given sample
     """
 
-    def __init__(self, metrics, scipy=True):
+    def __init__(self, metrics, scipy=False):
+        self._metrics = metrics
         if scipy:
             cvm_result = stats.cramervonmises(metrics._pit, "uniform")
             self._stat, self._pvalue = cvm_result.statistic, cvm_result.pvalue
         else:
-            self._stat, self._pvalue = np.sqrt(np.trapz((metrics._pit_cdf - metrics._uniform_cdf) ** 2, metrics._uniform_cdf)), None
-
-    # update Metrics object
+            self._stat, self._pvalue = np.sqrt(np.trapz((metrics._pit_cdf - metrics._uniform_cdf) ** 2,
+                                                        metrics._uniform_cdf)), None  # p-value TBD
+        # update Metrics object
         metrics._cvm_stat = self._stat
+
 
     @property
     def stat(self):
@@ -335,16 +345,15 @@ class AD:
         ad_pit_dist, ad_pit_bins_edges = np.histogram(metrics.pit[mask_pit], bins=metrics.n_quant, density=True)
         ad_uniform_dist = np.full(metrics.n_quant, ad_yscale_uniform)
         # Redo CDFs to account for outliers mask
-        ad_pit_ensamble = qp.Ensemble(qp.hist, data=dict(bins=ad_pit_bins_edges, pdfs=np.array([ad_pit_dist])))
-        ad_pit_cdf = ad_pit_ensamble.cdf(ad_xvals)[0]
-        ad_uniform_ensamble = qp.Ensemble(qp.hist,
+        ad_pit_ensemble = qp.Ensemble(qp.hist, data=dict(bins=ad_pit_bins_edges, pdfs=np.array([ad_pit_dist])))
+        ad_pit_cdf = ad_pit_ensemble.cdf(ad_xvals)[0]
+        ad_uniform_ensemble = qp.Ensemble(qp.hist,
                                           data=dict(bins=ad_pit_bins_edges, pdfs=np.array([ad_uniform_dist])))
-        ad_uniform_cdf = ad_uniform_ensamble.cdf(ad_xvals)[0]
+        ad_uniform_cdf = ad_uniform_ensemble.cdf(ad_xvals)[0]
         numerator = ((ad_pit_cdf - ad_uniform_cdf)**2)
         denominator = (ad_uniform_cdf*(1.-ad_uniform_cdf))
         with np.errstate(divide='ignore', invalid='ignore'):
             self._stat = np.sqrt(float(len(metrics._sample)) * np.trapz(np.nan_to_num(numerator/denominator), ad_uniform_cdf))
-
         # update Metrics object
         metrics._ad_stat = self._stat
 

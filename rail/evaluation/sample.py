@@ -40,12 +40,12 @@ class Sample:
         pdfs_file_format = (self._pdfs_file.split(".")[-1]).lower()
 
         if pdfs_file_format == "out":
-            print("Validation file from DC1 paper!")
+            #print("Validation file from DC1 paper!")
             self._ztrue = np.loadtxt(self._ztrue_file, unpack=True, usecols=[2])
             self._pdfs_array = np.loadtxt(self._pdfs_file)
-            path = "/".join(self._pdfs_file.split("/")[:-1])
-            self._zgrid = np.loadtxt(path + "/zarrayfile.out")
-            self._photoz_mode = np.array([self._zgrid[np.argmax(pdf)] for pdf in self._pdfs_array])
+            self.path = "/".join(self._pdfs_file.split("/")[:-1])
+            self._zgrid = np.loadtxt(self.path + "/zarrayfile.out")
+            self._photoz_mode = np.array([self._zgrid[np.argmax(pdf)] for pdf in self._pdfs_array]) # qp mode?
         elif pdfs_file_format == "hdf5":
             with h5py.File(self._ztrue_file, 'r') as zf:
                 try:

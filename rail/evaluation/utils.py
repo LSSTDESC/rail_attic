@@ -1,8 +1,12 @@
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import numpy as np
+import pandas as pd
 import seaborn as sns
 from metrics import PitOutRate
+from IPython.display import Markdown
+import os
+
 
 
 
@@ -53,8 +57,12 @@ def plot_old_valid(sample, gals=None, colors=None):
     colors: `list`, (optional)
         list of HTML codes for colors used in the plot highlighted points
     """
-    plt.figure(figsize=(10, 4))
+    df = pd.DataFrame({'z$_{true}$': sample.ztrue,
+                       'z$_{phot}$': sample.photoz_mode})
+    fig = plt.figure(figsize=(10, 4), dpi=100)
+    fig.suptitle(sample.name, fontsize=16)
     ax = plt.subplot(121)
+    #sns.jointplot(data=df, x='z$_{true}$', y='z$_{phot}$', kind="kde")
     plt.plot(sample.ztrue, sample.photoz_mode, 'k,', label=(sample._code).replace("_", " "))
     leg = ax.legend(fancybox=True, handlelength=0, handletextpad=0, loc="upper left")
     for item in leg.legendHandles:
@@ -64,29 +72,18 @@ def plot_old_valid(sample, gals=None, colors=None):
             colors = ['r'] * len(gals)
         for i, gal in enumerate(gals):
             plt.plot(sample.ztrue[gal], sample.photoz_mode[gal], 'o', color=colors[i], label=f'Galaxy {gal}')
-    zmax = np.max(sample.ztrue) * 1.05
+    zmax = np.max(sample.ztrue) * 1.01
     plt.xlim(0, zmax)
     plt.ylim(0, zmax)
     plt.xlabel('z$_{true}$')
     plt.ylabel('z$_{phot}$')
-
     plt.subplot(122)
     sns.kdeplot(sample.ztrue, shade=True, label='z$_{true}$')
     sns.kdeplot(sample.photoz_mode, shade=True, label='z$_{phot}$')
-    plt.xlim(0,)
+    plt.xlim(0,zmax)
     plt.xlabel('z')
     plt.legend()
     plt.tight_layout()
-
-    sigma_iqr, bias, frac, sigma_mad = old_metrics(sample)
-    table = "Metric | Value | DC1 paper  \n :---|---:|---: \n "
-    #table += "$$\sigma_{IQR} / (1+z)$$ | "
-    table += f" scatter | {sigma_iqr:11.4f} | 0.0154  \n"
-    #table += "$$b_{z}$$ | "
-    table += f"bias | {bias:11.5f} | -0.00027 \n"
-    #table += "$$f_{out}$$ | "
-    table += f"outlier rate | {frac:11.3f} | 0.020 "
-    return table
 
 
 def old_metrics(sample):
@@ -97,20 +94,32 @@ def old_metrics(sample):
     sigma_mad = point.CalculateSigmaMAD()
     return sigma_iqr, bias, frac, sigma_mad
 
-
-#     z_peak = self._photoz_mode
-#     z_weight = None # TBD
-# • RMS scatter σ < 0.02(1 + ztrue)
-# • bias bz < 0.003
-# • catastrophic outlier rate fout < 10 per cent
-
-
+def old_metrics_table(samples, show_dc1 = False):
+    if type(samples) != list:
+        samples = [samples]
+    rows = ["|Metric |", "|:---|", "|scatter |", "|bias |", "|outlier rate |"]
+    for sample in samples:
+        sigma_iqr, bias, frac, sigma_mad = old_metrics(sample)
+        rows[0] += f"{sample.code} {sample.name} |"
+        rows[1] += "---:|"
+        rows[2] += f"{sigma_iqr:11.4f} |"
+        rows[3] += f"{bias:11.5f} |"
+        rows[4] += f"{frac:11.3f} |"
+    if show_dc1:
+        rows[0] += "DC1 paper"
+        rows[1] += "---:"
+        rows[2] += f"  0.0154"
+        rows[3] += f" -0.00027"
+        rows[4] += f"  0.020"
+    table = ("\n").join(rows)
+    return Markdown(table)
 
 
 
 def plot_pit_qq(metrics, bins=None, title=None, label=None,
                 show_pit=True, show_qq=True,
-                show_pit_out_rate=True, savefig=False):
+                show_pit_out_rate=True, savefig=False,
+                debug_dc1=False):
     """Quantile-quantile plot
     Ancillary function to be used by class Metrics.
 
@@ -341,7 +350,7 @@ class EvaluatePointStats(object):
 
 class DC1:
 
-    def __init__(self):
+    def __init__(self): #, data_path=None):
         # Reference values:
         self.codes = ("ANNz2", "BPZ", "CMNN", "Delight", "EAZY", "FlexZBoost",
                  "GPz", "LePhare", "METAPhoR", "SkyNet", "TPZ")
@@ -356,6 +365,16 @@ class DC1:
                     61.60230833, 141.08468956, 153.05291971, 961.53956815, 24.30815299]
         self.ad = [564.01888766, 358.09533373, 30.64646869, 624.17799304, 2000.11675363, 303.65198293,
                    618.63599149, 1212.07245582, 1445.53118933, 5689.32253132, 282.36983696]
+    #     if data_path:
+    #         self._pits_paper = np.loadtxt(os.path.join(data_path,"TESTPITVALS.out"), unpack=True, usecols=[1])
+    #         print(f"{len(self._pits_paper)} PITs read from DC1 paper results.")
+    #     else:
+    #         self._pits_paper = None
+    #
+    # @property
+    # def pits_paper(self):
+    #     return self._pits_paper
+
     @property
     def results(self):
         results = {"PIT out rate": dict([(code, value) for code, value in zip(self.codes, self.pit_out_rate)]),
