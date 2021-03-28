@@ -58,5 +58,15 @@ run_params:
 # Special run
 #-------------------------------------------------------------------------
   dlght_calibrateTemplateMixturePrior: False
-
+#-------------------------------------------------------------------------
+# Delight parameters that must be optimized
+#---------------------------------------------------------------------------
+  zPriorSigma: 0.2
+  ellPriorSigma: 0.5
+  fluxLuminosityNorm: 1.0
+  alpha_C: 1.0e3
+  V_C: 0.1
+  alpha_L: 1.0e2
+  V_L: 0.1
+  lineWidthSigma: 20
 
