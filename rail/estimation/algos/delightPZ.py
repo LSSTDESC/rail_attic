@@ -55,11 +55,10 @@ class delightPZ(BaseEstimation):
 
         inputs = self.config_dict['run_params']
 
-        # redshift bins
-        self.width = inputs['rand_width']
-        self.zmin = inputs['rand_zmin']
-        self.zmax = inputs['rand_zmax']
-        self.nzbins = inputs['nzbins']
+        self.width = inputs['dlght_redshiftBinSize']
+        self.zmin = inputs['dlght_redshiftMin']
+        self.zmax = inputs['dlght_redshiftMax']
+        self.nzbins = int((self.zmax-self.zmin)/self.width)
 
         # temporary directories for Delight temprary file
         self.tempdir = inputs['tempdir']
@@ -252,12 +251,12 @@ class delightPZ(BaseEstimation):
             d = test_data['mag_i_lsst']
 
         numzs = len(d)
-        self.zgrid = np.linspace(0., self.zmax, self.nzbins)
+        self.zgrid = np.linspace(self.zmin, self.zmax, self.nzbins)
 
 
         if self.tutorialmode:
             # fill creazy values (simulation not send to rail)
-            zmode = np.round(np.random.uniform(0.0, self.zmax, numzs), 3)
+            zmode = np.round(np.random.uniform(self.zmax, self.zmax, numzs), 3)
             widths = self.width * (1.0 + zmode)
 
         else:

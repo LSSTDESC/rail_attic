@@ -14,13 +14,6 @@
 run_params:
   class_name: delightPZ
   run_name: test_delightPZ
-#----------------------------------
-# initial parameters for be removed
-#----------------------------------
-  rand_width: 0.025
-  rand_zmin: 0.0
-  rand_zmax: 3.0
-  nzbins: 301
 #------------------------------------------------
 # redshift range and binning for delight
 # dlght_ prepend means a parameter used by Delight
@@ -28,7 +21,7 @@ run_params:
   dlght_redshiftMin: 0.01
   dlght_redshiftMax: 3.01
   dlght_redshiftNumBinsGPpred: 300
-  dlght_redshiftBinSize: 0.001
+  dlght_redshiftBinSize: 0.01
   dlght_redshiftDisBinSize: 0.2
 #---------------------------------------
 # temporary directory for delight work
@@ -59,7 +52,7 @@ run_params:
 #-------------------------------------------------------------------------
   dlght_calibrateTemplateMixturePrior: False
 #-------------------------------------------------------------------------
-# Delight parameters that must be optimized
+# Delight hyper-parameters that must be optimized
 #---------------------------------------------------------------------------
   zPriorSigma: 0.2
   ellPriorSigma: 0.5
