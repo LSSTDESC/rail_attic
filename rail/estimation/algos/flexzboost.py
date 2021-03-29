@@ -36,7 +36,7 @@ def make_color_data(data_dict):
                 band1[j] = band1err[j]
                 band1err[j] = 1.0
         for j, xx in enumerate(band2):
-            if np.isclose(xx, 99., atol=0.01):
+            if np.isclose(xx, 99., atol=0.01):  #pragma: no cover
                 band2[j] = band2err[j]
                 band2err[j] = 1.0
 
