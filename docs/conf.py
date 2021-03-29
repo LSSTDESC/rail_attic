@@ -47,6 +47,7 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
+    'sphinx.ext.autosummary',
     'sphinx.ext.githubpages',
     'sphinx.ext.napoleon']
 
@@ -90,6 +91,9 @@ html_theme = 'sphinx_rtd_theme'
 # documentation.
 #
 # html_theme_options = {}
+html_theme_options = {'prev_next_buttons_location': None,
+                      'collapse_navigation': False,
+                      'titles_only': True}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -145,8 +149,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'rail.tex', 'rail Documentation',
-     'railteam', 'manual'),
+    (master_doc, 'rail.tex', 'RAIL Documentation',
+     'railteam', 'Manual'),
 ]
 
 
@@ -155,7 +159,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'rail', 'rail Documentation',
+    (master_doc, 'RAIL', 'RAIL Documentation',
      [author], 1)
 ]
 
@@ -166,8 +170,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'rail', 'rail Documentation',
-     author, 'rail', 'One line description of project.',
+    (master_doc, 'RAIL', 'RAIL Documentation',
+     author, 'RAIL', 'One line description of project.',
      'Miscellaneous'),
 ]
 
@@ -206,11 +210,11 @@ for entry in config:
         apion, demoon, exon = False, False, True
         continue
     if apion:
-        apilist+= [entry]
+        apilist += [entry]
     elif demoon:
-        demofiles+= [entry]
+        demofiles += [entry]
     elif exon:
-        examplefiles+= [entry]
+        examplefiles += [entry]
 
 # -- Compile the examples into rst----------------------------------------
 outdir = 'compiled-examples/'
@@ -253,4 +257,3 @@ for onemodule in apilist:
     apitoc+= f"   api/rail.{onemodule}.rst\n"
 with open('api.rst', 'w') as apitocfile:
     apitocfile.write(apitoc)
-
