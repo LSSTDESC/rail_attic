@@ -1,10 +1,24 @@
 import numpy as np
 import os
+import pytest
 from rail.estimation.utils import iter_chunk_hdf5_data
 from rail.estimation.algos import randomPZ, sklearn_nn, flexzboost, trainZ
 
 
 test_base_yaml = './tests/test.yaml'
+
+flex_config_dict = {'run_params': {'zmin': 0.0, 'zmax': 3.0, 'nzbins': 301,
+                                   'trainfrac': 0.75, 'bumpmin': 0.02,
+                                   'bumpmax': 0.35, 'nbump': 3,
+                                   'sharpmin': 0.7, 'sharpmax': 2.1,
+                                   'nsharp': 3, 'max_basis': 35,
+                                   'basis_system': 'cosine',
+                                   'regression_params': {'max_depth': 8,
+                                                         'objective':
+                                                             'reg:squarederror'},
+                                   'inform_options': {'save_train': True,
+                                                      'modelfile': 'model.tmp'}
+                                   }}
 
 
 def one_algo(single_estimator, single_input):
@@ -65,18 +79,7 @@ def test_simple_nn():
 
 
 def test_flexzboost():
-    config_dict = {'run_params': {'zmin': 0.0, 'zmax': 3.0, 'nzbins': 301,
-                                  'trainfrac': 0.75, 'bumpmin': 0.02,
-                                  'bumpmax': 0.35, 'nbump': 3,
-                                  'sharpmin': 0.7, 'sharpmax': 2.1,
-                                  'nsharp': 3, 'max_basis': 35,
-                                  'basis_system': 'cosine',
-                                  'regression_params': {'max_depth': 8,
-                                                        'objective':
-                                                        'reg:squarederror'},
-                                  'inform_options': {'save_train': True,
-                                                     'modelfile': 'model.tmp'}
-                                  }}
+    config_dict = flex_config_dict
     zb_expected = np.array([0.13, 0.13, 0.13, 0.12, 0.12, 0.13, 0.12, 0.13,
                             0.12, 0.12])
     pz_algo = flexzboost.FZBoost
@@ -100,3 +103,40 @@ def test_train_pz():
     print(pz_dict['zmode'])
     assert np.isclose(pz_dict['zmode'], zb_expected).all()
     assert np.isclose(pz_dict['zmode'], rerun_pz_dict['zmode']).all()
+
+
+def test_missing_modelfile_keyword():
+    config_dict = {'run_params': {'zmin': 0.0, 'zmax': 3.0, 'nzbins': 301,
+                                  'trainfrac': 0.75, 'bumpmin': 0.02,
+                                  'bumpmax': 0.35, 'nbump': 3,
+                                  'sharpmin': 0.7, 'sharpmax': 2.1,
+                                  'nsharp': 3, 'max_basis': 35,
+                                  'basis_system': 'cosine',
+                                  'regression_params': {'max_depth': 8,
+                                                        'objective':
+                                                        'reg:squarederror'},
+                                  'inform_options': {'save_train': True}
+                                  }}
+    pz_algo = flexzboost.FZBoost
+    pz = pz_algo(test_base_yaml, config_dict)
+    with pytest.raises(KeyError):
+        pz.load_pretrained_model()
+
+
+def test_wrong_modelfile_keyword():
+    config_dict = {'run_params': {'zmin': 0.0, 'zmax': 3.0, 'nzbins': 301,
+                                  'trainfrac': 0.75, 'bumpmin': 0.02,
+                                  'bumpmax': 0.35, 'nbump': 3,
+                                  'sharpmin': 0.7, 'sharpmax': 2.1,
+                                  'nsharp': 3, 'max_basis': 35,
+                                  'basis_system': 'cosine',
+                                  'regression_params': {'max_depth': 8,
+                                                        'objective':
+                                                        'reg:squarederror'},
+                                  'inform_options': {'save_train': True,
+                                                     'modelfile': 'nonexist.pkl'}
+                                  }}
+    pz_algo = flexzboost.FZBoost
+    pz = pz_algo(test_base_yaml, config_dict)
+    with pytest.raises(FileNotFoundError):
+        pz.load_pretrained_model()

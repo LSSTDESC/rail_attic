@@ -82,13 +82,13 @@ class FZBoost(BaseEstimation):
         self.basis_system = inputs['basis_system']
         self.regress_params = inputs['regression_params']
         self.inform_options = inputs['inform_options']
-        if 'save_train' in self.inform_options == True:
+        if 'save_train' in self.inform_options is True:
             try:
-                self.modelfile=self.inform_options['modelfile']
-            except:
+                self.modelfile = self.inform_options['modelfile']
+            except KeyError:  #pragma: no cover
                 defModel = "default_model.out"
                 print(f"name for model not found, will save to {defModel}")
-                self.inform_options['modelfile']=defModel
+                self.inform_options['modelfile'] = defModel
 
     @staticmethod
     def split_data(fz_data, sz_data, trainfrac):
