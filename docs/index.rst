@@ -1,6 +1,6 @@
-============================================
+===============================================
 RAIL: Redshift Assessment Infrastructure Layers
-============================================
+===============================================
 
 This repo is home to a series of LSST-DESC projects aiming to quantify the impact of imperfect prior information on probabilistic redshift estimation.
 RAIL differs from [PZIncomplete](https://github.com/LSSTDESC/pz_incomplete) in that it is broken into stages, each corresponding to a manageable unit of infrastructure advancement, a specific question, and a potential publication opportunity.
@@ -17,7 +17,7 @@ Description coming soon!
 
 
 The Creation subpackage
--------------
+-----------------------
 .. toctree::
    :maxdepth: 2
    :caption: creation
@@ -26,7 +26,7 @@ The Creation subpackage
 
 
 The Estimation subpackage
--------------
+-------------------------
 
 .. toctree::
    :maxdepth: 2
@@ -36,7 +36,7 @@ The Estimation subpackage
 
 
 The Evaluation subpackage
-------------------------
+-------------------------
 
 .. toctree::
    :maxdepth: 2
