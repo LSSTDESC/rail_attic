@@ -73,7 +73,7 @@ class simpleNN(BaseEstimation):
         self.zmax = inputs['zmax']
         self.nzbins = inputs['nzbins']
         self.inform_options = inputs['inform_options']
-        if 'save_train' in self.inform_options is True:
+        if 'save_train' in inputs['inform_options']:
             try:
                 self.modelfile = self.inform_options['modelfile']
             except KeyError:  #pragma: no cover
