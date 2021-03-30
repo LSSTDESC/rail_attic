@@ -1,6 +1,7 @@
 import os
 from rail.estimation.utils import load_training_data, get_input_data_size_hdf5
 import yaml
+import pickle
 import pprint
 
 
@@ -73,6 +74,28 @@ class Estimator(object):
         photo-z method, should be implemented in the subclass
         """
         raise NotImplementedError
+
+    def load_pretrained_model(self):
+        """
+        If inform step has been run separately, this funciton will
+        load the information required to run estimate.  As a
+        default we will include the loading of a pickled model,
+        but the idea is that a specific code can override this
+        function by writing a custom model load in the subclass
+        """
+        try:
+            modelfile = self.inform_options['modelfile']
+        except KeyError:
+            print("inform_options['modelfile'] not specified, exiting!")
+            raise KeyError("inform_options['modelfile'] not found!")
+        try:
+            self.model = pickle.load(open(modelfile, 'rb'))
+            print(f"success in loading {self.inform_options['modelfile']}")
+        except FileNotFoundError:
+            print(f"File {self.inform_options['modelfile']} not found!")
+            raise FileNotFoundError("File " +
+                                    self.inform_options['modelfile'] +
+                                    " not found!")
 
     def estimate(self, input_data):
         """

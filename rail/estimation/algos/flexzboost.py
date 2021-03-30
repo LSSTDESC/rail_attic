@@ -7,6 +7,7 @@ p(z) shape) via cde-loss over a grid.
 """
 
 import numpy as np
+import pickle
 import flexcode
 from flexcode.regression_models import XGBoost
 from flexcode.loss_functions import cde_loss
@@ -35,7 +36,7 @@ def make_color_data(data_dict):
                 band1[j] = band1err[j]
                 band1err[j] = 1.0
         for j, xx in enumerate(band2):
-            if np.isclose(xx, 99., atol=0.01):
+            if np.isclose(xx, 99., atol=0.01):  #pragma: no cover
                 band2[j] = band2err[j]
                 band2err[j] = 1.0
 
@@ -80,6 +81,15 @@ class FZBoost(BaseEstimation):
         self.max_basis = inputs['max_basis']
         self.basis_system = inputs['basis_system']
         self.regress_params = inputs['regression_params']
+        self.inform_options = inputs['inform_options']
+        if 'save_train' in inputs['inform_options']:
+            try:
+                self.modelfile = self.inform_options['modelfile']
+                print(f"saving to modelfile {self.modelfile}")
+            except KeyError:  #pragma: no cover
+                defModel = "default_model.out"
+                print(f"name for model not found, will save to {defModel}")
+                self.inform_options['modelfile'] = defModel
 
     @staticmethod
     def split_data(fz_data, sz_data, trainfrac):
@@ -141,6 +151,10 @@ class FZBoost(BaseEstimation):
                 bestsharp = sharp
         model.sharpen_alpha = bestsharp
         self.model = model
+        if self.inform_options['save_train']:
+            with open(self.inform_options['modelfile'], 'wb') as f:
+                pickle.dump(file=f, obj=model,
+                            protocol=pickle.HIGHEST_PROTOCOL)
 
     def estimate(self, test_data):
         color_data = make_color_data(test_data)

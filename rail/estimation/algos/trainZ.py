@@ -33,6 +33,9 @@ class trainZ(BaseEstimation):
     def inform(self):
         pass
 
+    def load_pretrained_model(self):
+        pass
+
     def estimate(self, test_data):
         test_size = len(test_data['id'])
         zmode = np.repeat(self.zmode, test_size)
