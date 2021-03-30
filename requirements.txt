@@ -1,0 +1,6 @@
+h5py
+numpy
+pandas
+pzflow
+scipy
+scikit-learn

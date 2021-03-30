@@ -1,4 +1,4 @@
-# RAIL creation modules
+# RAIL creation modules 
 
 The code here enables the generation of mock photometry corresponding to a fully self-consistent forward model of the joint probability space of redshift and photometry.
 
