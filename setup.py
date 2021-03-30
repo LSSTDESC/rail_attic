@@ -32,7 +32,9 @@ setup(
                       'pyarrow',
                       'tables',
                       'astropy',
+                      'qp @ git+https://github.com/LSSTDESC/qp.git',
                       ],
+    dependency_links=['git+https://github.com/LSSTDESC/qp.git#egg=qp'],
     extras_require={
         'Full': ['sklearn', 'FlexCode[all]', 'pzflow'],
         'estimation': ['sklearn', 'FlexCode[all]'],
