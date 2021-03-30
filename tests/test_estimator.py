@@ -3,11 +3,19 @@ import os
 import numpy as np
 from rail.estimation.estimator import Estimator
 from rail.fileIO import write_output_file
+import yaml
+
 
 # this is temporary until unit test uses a definite test data set and creates
 # the yaml file on the fly
 
 test_base_yaml = 'tests/base.yaml'
+
+
+def test_init_with_dict():
+    # test we can init with a dict we have already loaded
+    d = yaml.safe_load(open(test_base_yaml))['base_config']
+    _ = Estimator(d)
 
 
 def test_initialization():
