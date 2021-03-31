@@ -2,14 +2,15 @@ import qp
 import h5py
 import numpy as np
 import utils
-
+from scipy.interpolate import interp1d
+from scipy.integrate import quad
 
 class Sample:
     """
     Handle photo-z output data (pdfs + ztrue) of
     a given sample. Inherits from qp.Ensemble."""
 
-    def __init__(self, pdfs_file, ztrue_file, code="", name="", **kwargs):
+    def __init__(self, pdfs_file, ztrue_file, code="", name="", qp_pit=True, **kwargs):
         """Class constructor
 
         Parameters
@@ -31,6 +32,8 @@ class Sample:
         self._ztrue_file = ztrue_file
         self._code = code
         self._name = name
+        self._qp_pit = qp_pit
+        self._pit = None
 
         self._pdfs_key = kwargs.get('pdfs_key', "photoz_pdf")
         self._zgrid_key = kwargs.get('zgrid_key', "zgrid")
@@ -62,8 +65,12 @@ class Sample:
         else:
             raise ValueError(f"PDFs input file format {pdfs_file_format} is not supported.")
 
+
+
         self._pdfs = qp.Ensemble(qp.interp, data=dict(xvals=self._zgrid,
                                                       yvals=self._pdfs_array))
+
+
 
     @property
     def code(self):
@@ -94,6 +101,20 @@ class Sample:
     def pdfs(self):
         """qp.Ensemble object containing the PDFs ('interp' representation)"""
         return self._pdfs
+
+    @property
+    def pit(self):
+        if self._pit is None:
+            n = len(self)
+            if self._qp_pit:
+                self._pit = np.nan_to_num([self._pdfs[i].cdf(self._ztrue[i])[0][0] for i in range(n)])
+                # self.old_pit = np.loadtxt(os.path.join(sample.path,"TESTPITVALS.out"), unpack=True, usecols=[1])[ids]
+            else:
+                self._pit = np.empty(n)
+                for i in range(n):
+                    tmpfunc = interp1d(self._zgrid, self._pdfs_array[i], bounds_error=False, fill_value=0.0)
+                    self._pit[i] = quad(tmpfunc, 0, self._ztrue[i])[0]
+        return self._pit
 
     def __len__(self):
         if (len(self._ztrue) != (self._pdfs.npdf)):
