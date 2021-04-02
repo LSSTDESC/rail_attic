@@ -87,7 +87,7 @@ def iter_chunk_hdf5_data(infile, chunk_size=100_000, groupname='None'):
     if groupname != 'None':
         f = infp[groupname]
     else:
-        f = infp
+        f = infp  #pragma: no cover
     for i in range(0, num_rows, chunk_size):
         start = i
         end = i+chunk_size

@@ -25,7 +25,9 @@ def one_algo(single_estimator, single_input):
     pz.inform_dict = single_input['run_params']['inform_options']
     pz.inform(training_data)
     # set chunk size to pz.num_rows to ensure all run in one chunk
-    for _, end, data in iter_chunk_hdf5_data(pz.testfile, pz.num_rows,
+    oversize_rows = pz.num_rows + 4  # test proper chunking truncation
+    for _, end, data in iter_chunk_hdf5_data(pz.testfile,
+                                             oversize_rows,
                                              pz.hdf5_groupname):
         pz_dict = pz.estimate(data)
     assert end == pz.num_rows
