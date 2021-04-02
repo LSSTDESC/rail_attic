@@ -60,7 +60,7 @@ def get_input_data_size_hdf5(infile, groupname='None'):
     infp = h5py.File(infile, "r")
     if groupname != 'None':
         f = infp[groupname]
-    else:
+    else:  #pragma: no cover
         f = infp
     firstkey = list(f.keys())[0]
     nrows = len(f[firstkey])

@@ -4,6 +4,7 @@ import os
 import numpy as np
 from rail.fileIO import load_training_data, initialize_qp_output
 from rail.fileIO import write_qp_output_chunk, qp_reformat_output
+from rail.fileIO import initialize_writeout
 
 
 h5_data_file = 'tests/data/pandas_test_hdf5.h5'
@@ -43,3 +44,21 @@ def test_qp_file_writing():
     assert os.path.exists(metafile)
     os.remove(outfile)
     os.remove(metafile)
+
+
+def test_qp_existing_file_overwrite():
+    testfile = "./existing_file.hdf5"
+    metafile = "./existing_file_meta.hdf5"
+    open(testfile, "a").close()  # create fake empty files
+    open(metafile, "a").close()
+    initialize_qp_output(testfile)
+    assert not os.path.exists(testfile)  # check that files
+    assert not os.path.exists(metafile)  # deleted
+
+
+def test_subdir_creation():
+    testfile = "./FAKEDIR/test.hdf5"
+    initialize_writeout(testfile, 5, 5)
+    assert os.path.exists(testfile)
+    os.remove(testfile)
+    os.rmdir("FAKEDIR")
