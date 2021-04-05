@@ -86,7 +86,7 @@ class FZBoost(BaseEstimation):
         if 'save_train' in inputs['inform_options']:
             try:
                 self.modelfile = self.inform_options['modelfile']
-                print(f"saving to modelfile {self.modelfile}")
+                print(f"using modelfile {self.modelfile}")
             except KeyError:  #pragma: no cover
                 defModel = "default_model.out"
                 print(f"name for model not found, will save to {defModel}")
