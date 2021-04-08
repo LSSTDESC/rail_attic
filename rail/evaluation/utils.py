@@ -5,9 +5,6 @@ import pandas as pd
 import seaborn as sns
 from metrics import PitOutRate
 from IPython.display import Markdown
-import os
-
-
 
 
 def plot_pdfs(sample, gals, show_ztrue=True, show_photoz_mode=False):
@@ -118,8 +115,7 @@ def old_metrics_table(samples, show_dc1 = False):
 
 def plot_pit_qq(metrics, bins=None, title=None, label=None,
                 show_pit=True, show_qq=True,
-                show_pit_out_rate=True, savefig=False,
-                debug_dc1=False):
+                show_pit_out_rate=True, savefig=False):
     """Quantile-quantile plot
     Ancillary function to be used by class Metrics.
 
@@ -231,9 +227,8 @@ def ks_plot(ks):
     plt.plot(ks._metrics._xvals[ks._bin_stat], ks._metrics._uniform_cdf[ks._bin_stat], "k.")
     plt.xlabel("PIT value")
     plt.ylabel("CDF(PIT)")
-    xtext = 0.63  # ks._metrics._xvals[ks._bin_stat]+0.05
-    ytext = 0.03  # np.mean([ks._metrics._pit_cdf[ks._bin_stat],
-                 #           ks._metrics._uniform_cdf[ks._bin_stat]])
+    xtext = 0.63
+    ytext = 0.03
     plt.text(xtext, ytext, f"KS={ks._stat:.4f}", fontsize=16)
     plt.xlim(0,1)
     plt.ylim(0,1)
@@ -246,7 +241,7 @@ def ks_plot(ks):
 class EvaluatePointStats(object):
     """Copied from PZDC1paper repo. Adapted to remove the cut based on magnitude."""
 
-    def __init__(self,pzvec,szvec): #,magvec,imagcut=25.3):
+    def __init__(self,pzvec,szvec):
         """An object that takes in the vectors of the point photo-z
         the spec-z, and the i-band magnitudes for calculating the
         point statistics
@@ -261,13 +256,8 @@ class EvaluatePointStats(object):
         """
         self.pzs = pzvec
         self.szs = szvec
-        #self.mags = magvec
-        #self.imagcut = imagcut
         ez = (pzvec - szvec)/(1.+szvec)
         self.ez_all = ez
-        #mask = (magvec<imagcut)
-        #ezcut = ez[mask]
-        #self.ez_magcut = ezcut
 
     def CalculateSigmaIQR(self):
         """Calculate the width of the e_z distribution
@@ -283,13 +273,7 @@ class EvaluatePointStats(object):
         sigma_iqr_all = iqr_all/1.349
         self.sigma_iqr_all = sigma_iqr_all
 
-        # xx75,xx25 = np.percentile(self.ez_magcut,[75.,25.])
-        # iqr_cut = xx75 - xx25
-        # sigma_iqr_cut= iqr_cut/1.349
-        # self.sigma_iqr_magcut = sigma_iqr_cut
-        #store the sigmas for the catastrophic outlier calculation
-
-        return sigma_iqr_all#,sigma_iqr_cut
+        return sigma_iqr_all
 
     def CalculateBias(self):
         """calculates the bias of the ez and ez_magcut samples.  In
@@ -300,8 +284,7 @@ class EvaluatePointStats(object):
         bias_magcut: median of the magcut ez sample
         """
         bias_all = np.median(self.ez_all)
-        #bias_magcut = np.median(self.ez_magcut)
-        return bias_all #,bias_magcut
+        return bias_all
 
     def CalculateOutlierRate(self):
         """Calculates the catastrophic outlier rate, defined in the
@@ -314,19 +297,12 @@ class EvaluatePointStats(object):
         sample
         """
         num_all = len(self.ez_all)
-        #num_magcut = len(self.ez_magcut)
         threesig_all = 3.0*self.sigma_iqr_all
-        #threesig_cut = 3.0*self.sigma_iqr_magcut
         cutcriterion_all = np.maximum(0.06,threesig_all)
-        #cutcriterion_magcut = np.maximum(0.06,threesig_cut)
-        #print("using %.3g for cut for whole sample and %.3g for magcut sample\n"%(cutcriterion_all,cutcriterion_magcut))
         mask_all = (self.ez_all>np.fabs(cutcriterion_all))
-        #mask_magcut = (self.ez_magcut>np.fabs(cutcriterion_magcut))
         outlier_all = np.sum(mask_all)
-        #outlier_magcut = np.sum(mask_magcut)
         frac_all = float(outlier_all)/float(num_all)
-        #frac_magcut = float(outlier_magcut)/float(num_magcut)
-        return frac_all #,frac_magcut
+        return frac_all
 
     def CalculateSigmaMAD(self):
         """Function to calculate median absolute deviation and sigma
@@ -337,20 +313,16 @@ class EvaluatePointStats(object):
         sigma_mad_cut: sigma_MAD for the magnitude cut sample
         """
         tmpmed_all = np.median(self.ez_all)
-        #tmpmed_cut = np.median(self.ez_magcut)
         tmpx_all = np.fabs(self.ez_all - tmpmed_all)
-        #tmpx_cut = np.fabs(self.ez_magcut - tmpmed_cut)
         mad_all = np.median(tmpx_all)
-        #mad_cut = np.median(tmpx_cut)
         sigma_mad_all = mad_all*1.4826
-        #sigma_mad_cut = mad_cut*1.4826
-        return sigma_mad_all #,sigma_mad_cut
+        return sigma_mad_all
 
 
 
 class DC1:
 
-    def __init__(self): #, data_path=None):
+    def __init__(self):
         # Reference values:
         self.codes = ("ANNz2", "BPZ", "CMNN", "Delight", "EAZY", "FlexZBoost",
                  "GPz", "LePhare", "METAPhoR", "SkyNet", "TPZ")
@@ -359,21 +331,13 @@ class DC1:
                              0.0058, 0.0486, 0.0229, 0.0001, 0.0130]
         self.cde_loss = [-6.88, -7.82, -10.43, -8.33, -7.07, -10.60,
                          -9.93, -1.66, -6.28, -7.89, -9.55]
-        self.ks = [0.01740478, 0.01118018, 0.00502691, 0.02396731, 0.04302462, 0.01294894,
-                   0.01452443, 0.02449423, 0.02965564, 0.04911712, 0.00954685]
-        self.cvm = [60.33973412, 37.09194799, 2.9165108, 105.65338329, 440.07007555, 19.71544373,
-                    61.60230833, 141.08468956, 153.05291971, 961.53956815, 24.30815299]
-        self.ad = [564.01888766, 358.09533373, 30.64646869, 624.17799304, 2000.11675363, 303.65198293,
-                   618.63599149, 1212.07245582, 1445.53118933, 5689.32253132, 282.36983696]
-    #     if data_path:
-    #         self._pits_paper = np.loadtxt(os.path.join(data_path,"TESTPITVALS.out"), unpack=True, usecols=[1])
-    #         print(f"{len(self._pits_paper)} PITs read from DC1 paper results.")
-    #     else:
-    #         self._pits_paper = None
-    #
-    # @property
-    # def pits_paper(self):
-    #     return self._pits_paper
+        self.ks = [0.0200, 0.0388, 0.0795, 0.08763, 0.0723, 0.0240,
+                   0.0241, 0.0663, 0.0438, 0.0747, 0.1138, 0.0047]
+        self.cvm = [52.25, 280.79, 1011.11, 1075.17, 1105.58, 68.83,
+                    66.80, 473.05, 298.56, 763.00, 1.16]
+        self.ad = [759.2, 1557.5, 6307.5, 6167.5, 4418.6, 478.8,
+                   670.9, 383.8, 715.5,  4216.4, 10565.7, 7.7]
+
 
     @property
     def results(self):
