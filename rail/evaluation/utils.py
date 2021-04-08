@@ -5,6 +5,39 @@ import pandas as pd
 import seaborn as sns
 from metrics import PitOutRate
 from IPython.display import Markdown
+import h5py
+import os
+
+
+def read_pz_output(pdfs_file, ztrue_file, pdfs_key="photoz_pdf", zgrid_key="zgrid",
+                   photoz_mode_key="photoz_mode", ztrue_key="redshift"):
+
+    _, ext = os.path.splitext(pdfs_file)
+
+    if ext == ".hdf5":
+        with h5py.File(ztrue_file, 'r') as zf:
+            try:
+                ztrue = np.array(zf['photometry'][ztrue_key])
+            except:
+                try:
+                    ztrue = np.array(zf[ztrue_key])
+                except:
+                    raise ValueError('Invalid key for true redshift column in ztrue file.')
+        with h5py.File(pdfs_file, 'r') as pf:
+            pdfs = np.array(pf[pdfs_key])
+            zgrid = np.array(pf[zgrid_key]).flatten()
+            photoz_mode = np.array(pf[photoz_mode_key])
+    elif ext == ".out":
+        print("Validation file from DC1 paper!")
+        ztrue = np.loadtxt(ztrue_file, unpack=True, usecols=[2])
+        pdfs_array = np.loadtxt(_pdfs_file)
+        path = "/".join(pdfs_file.split("/")[:-1])
+        zgrid = np.loadtxt(path + "/zarrayfile.out")
+        photoz_mode = np.array([zgrid[np.argmax(pdf)] for pdf in pdfs_array])  # qp mode?
+    else:
+        raise ValueError(f"PDFs input file format {ext} is not supported.")
+
+    return pdfs, zgrid, ztrue, photoz_mode
 
 
 def plot_pdfs(sample, gals, show_ztrue=True, show_photoz_mode=False):
@@ -28,11 +61,11 @@ def plot_pdfs(sample, gals, show_ztrue=True, show_photoz_mode=False):
     colors = []
     peaks = []
     for i, gal in enumerate(gals):
-        peaks.append(sample._pdfs[gal].pdf(sample._photoz_mode[gal]))
+        peaks.append(sample.pdf(sample.photoz_mode[gal])[gal])
         if i == 0:
-            axes = sample.pdfs.plot(key=gal, xlim=(0., 2.2), label=f"Galaxy {gal}")
+            axes = sample.plot(key=gal, xlim=(0., 2.2), label=f"Galaxy {gal}")
         else:
-            _ = sample.pdfs.plot(key=gal, axes=axes, label=f"Galaxy {gal}")
+            _ = sample.plot(key=gal, axes=axes, label=f"Galaxy {gal}")
         colors.append(axes.get_lines()[-1].get_color())
         if show_ztrue:
             axes.vlines(sample.ztrue[gal], ymin=0, ymax=100, colors=colors[-1], ls='--')
