@@ -2,15 +2,16 @@ import qp
 import h5py
 import numpy as np
 import utils
-from scipy.interpolate import interp1d
-from scipy.integrate import quad
+import os
 
-class Sample:
+
+class Sample():
     """
+    Expands qp.Ensemble to add metadata and specific plots.
     Handle photo-z output data (pdfs + ztrue) of
     a given sample. Inherits from qp.Ensemble."""
 
-    def __init__(self, pdfs_file, ztrue_file, code="", name="", qp_pit=True, **kwargs):
+    def __init__(self, pdfs_file, ztrue_file, code="", name="", **kwargs):
         """Class constructor
 
         Parameters
@@ -32,44 +33,39 @@ class Sample:
         self._ztrue_file = ztrue_file
         self._code = code
         self._name = name
-        self._qp_pit = qp_pit
-        self._pit = None
 
         self._pdfs_key = kwargs.get('pdfs_key', "photoz_pdf")
         self._zgrid_key = kwargs.get('zgrid_key', "zgrid")
-        self._photoz_mode_key = kwargs.get('photoz_mode', "photoz_mode")
+        self._photoz_mode_key = kwargs.get('photoz_mode_key', "photoz_mode")
         self._ztrue_key = kwargs.get('ztrue_key', "redshift")
 
         pdfs_file_format = (self._pdfs_file.split(".")[-1]).lower()
 
-        if pdfs_file_format == "out":
-            #print("Validation file from DC1 paper!")
+        if pdfs_file_format == "hdf5":
+            with h5py.File(self._ztrue_file, 'r') as zf:
+                try:
+                    self._ztrue = np.array(zf['photometry'][self._ztrue_key])[:10]
+                except:
+                    try:
+                        self._ztrue = np.array(zf[self._ztrue_key])[:10]
+                    except:
+                        raise ValueError('Invalid key for true redshift column in ztrue file.')
+            with h5py.File(self._pdfs_file, 'r') as pf:
+                self._pdfs_array = np.array(pf[self._pdfs_key])[:10]
+                self._zgrid = np.array(pf[self._zgrid_key]).flatten()
+                self._photoz_mode = np.array(pf[self._photoz_mode_key])[:10]
+        elif pdfs_file_format == "out":
+            print("Validation file from DC1 paper!")
             self._ztrue = np.loadtxt(self._ztrue_file, unpack=True, usecols=[2])
             self._pdfs_array = np.loadtxt(self._pdfs_file)
             self.path = "/".join(self._pdfs_file.split("/")[:-1])
             self._zgrid = np.loadtxt(self.path + "/zarrayfile.out")
-            self._photoz_mode = np.array([self._zgrid[np.argmax(pdf)] for pdf in self._pdfs_array]) # qp mode?
-        elif pdfs_file_format == "hdf5":
-            with h5py.File(self._ztrue_file, 'r') as zf:
-                try:
-                    self._ztrue = np.array(zf['photometry'][self._ztrue_key])
-                except:
-                    try:
-                        self._ztrue = np.array(zf[self._ztrue_key])
-                    except:
-                        raise ValueError('Invalid key for true redshift column in ztrue file.')
-            with h5py.File(self._pdfs_file, 'r') as pf:
-                self._pdfs_array = np.array(pf[self._pdfs_key])
-                self._zgrid = np.array(pf[self._zgrid_key]).flatten()
-                self._photoz_mode = np.array(pf[self._photoz_mode_key])
+            self._photoz_mode = np.array([self._zgrid[np.argmax(pdf)] for pdf in self._pdfs_array])  # qp mode?
         else:
             raise ValueError(f"PDFs input file format {pdfs_file_format} is not supported.")
 
 
-
-        self._pdfs = qp.Ensemble(qp.interp, data=dict(xvals=self._zgrid,
-                                                      yvals=self._pdfs_array))
-
+        self._pdfs = qp.Ensemble(qp.interp, data=dict(xvals=self._zgrid, yvals=self._pdfs_array))
 
 
     @property
@@ -102,19 +98,7 @@ class Sample:
         """qp.Ensemble object containing the PDFs ('interp' representation)"""
         return self._pdfs
 
-    @property
-    def pit(self):
-        if self._pit is None:
-            n = len(self)
-            if self._qp_pit:
-                self._pit = np.nan_to_num([self._pdfs[i].cdf(self._ztrue[i])[0][0] for i in range(n)])
-                # self.old_pit = np.loadtxt(os.path.join(sample.path,"TESTPITVALS.out"), unpack=True, usecols=[1])[ids]
-            else:
-                self._pit = np.empty(n)
-                for i in range(n):
-                    tmpfunc = interp1d(self._zgrid, self._pdfs_array[i], bounds_error=False, fill_value=0.0)
-                    self._pit[i] = quad(tmpfunc, 0, self._ztrue[i])[0]
-        return self._pit
+
 
     def __len__(self):
         if (len(self._ztrue) != (self._pdfs.npdf)):
