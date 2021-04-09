@@ -291,22 +291,13 @@ class Summary:
         self._kld = None
 
     def evaluate_all_metrics(self):
-        print("Evaluating metrics...")
-        print()
         sample = self._sample
         self._pit_out_rate = PitOutRate(sample).evaluate()
-        print(self._pit_out_rate)
         self._ks_stat, _ = KS(sample).evaluate()
-        print(self._ks_stat)
         self._cvm_stat, _ = CvM(sample).evaluate()
-        print(self._cvm_stat)
         self._ad_stat, _, _ = AD(sample).evaluate()
-        print(self._ad_stat)
         self._cde_loss = CDE(sample).evaluate()
-        print(self._cde_loss)
         self._kld = KLD(sample).evaluate()
-        print(self._kld)
-        print("Done!")
 
     def markdown_metrics_table(self, show_dc1=False):
         self.evaluate_all_metrics()
