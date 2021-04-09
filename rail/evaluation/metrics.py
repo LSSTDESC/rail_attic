@@ -1,395 +1,286 @@
 import numpy as np
 from scipy import stats
 import qp
-from IPython.display import Markdown
 import utils
-import os
 
 
 class Metrics:
-    """
-       ***   Metrics class   ***
-    Receives a Sample object as input.
-    Computes PIT and QQ vectors on the initialization.
-    It's the basis for the other metrics, such as KS, AD, and CvM.
-    """
-    def __init__(self, sample, n_quant=100, pit_min=0.0001, pit_max=0.9999, debug=False):
-        """Class constructor
+    """ A superclass for metrics"""
+
+    def __init__(self, sample=None, name=None):
+        """Class constructor.
         Parameters
         ----------
-        sample: `Sample`
-            sample object defined in ./sample.py
-        n_quant: `int`, (optional)
-            number of quantiles for the QQ plot
-        pit_min: `float`
-            lower limit to define PIT outliers
-            default is 0.0001
-        pit_max:
-            upper limit to define PIT outliers
-            default is 0.9999
+        sample: `qp.ensemble`
+            ensemble of PDFS
+        name: `str`
+            the name of the metric
         """
-        self._sample = sample
-        self._n_quant = n_quant
-        self._pit_min = pit_min
-        self._pit_max = pit_max
-        self._debug = debug
-        n = len(self._sample)
-        if debug:
-            #n = 1000 # subset for quick tests
-            print("DEBUG MODE")
-            #ids = np.random.choice(n, 10000)
-            self._pit = np.loadtxt(os.path.join(sample.path,"TESTPITVALS.out"), unpack=True, usecols=[1])#[ids]
-            self.new_pit = np.nan_to_num([self._sample._pdfs[i].cdf(self._sample._ztrue[i])[0][0] for i in range(n)])# ids])
-        else:
-            n = len(self._sample)
-            self._pit = np.nan_to_num([self._sample._pdfs[i].cdf(self._sample._ztrue[i])[0][0] for i in range(n)])
-        # Quantiles
-        Qtheory = np.linspace(0., 1., self.n_quant)
-        Qdata = np.quantile(self._pit, Qtheory)
-        self._qq_vectors = (Qtheory, Qdata)
-        # Normalized distribution of PIT values (PIT PDF)
-        self._xvals = Qtheory
-        self._pit_pdf, self._pit_bins_edges = np.histogram(self._pit, bins=n_quant, density=True)
-        #self._uniform_pdf = stats.uniform(self._xvals, scale=n_quant)
-        self._uniform_pdf = np.full(n_quant, 1.0 / float(n_quant))
-        # Define qp Ensemble to use CDF functionality (an ensemble with only 1 PDF)
-        self._pit_ensemble = qp.Ensemble(qp.hist, data=dict(bins=self._pit_bins_edges,
-                                                            pdfs=np.array([self._pit_pdf])))
-        self._uniform_ensemble = qp.Ensemble(qp.interp, data=dict(xvals=self._xvals,
-                                                                  yvals=np.array([self._uniform_pdf])))
-        self._pit_cdf = self._pit_ensemble.cdf(self._xvals)[0]
-        self._uniform_cdf = self._uniform_ensemble.cdf(self._xvals)[0]
+        self.sample = sample
+        self.name = name
 
-        # placeholders for metrics to be calculated
-        self._pit_out_rate = None
-        self._cde_loss = None
-        self._kld = None
-        self._ks_stat = None
-        self._ks_pvalue = None
-        self._cvm_stat = None
-        self._cvm_pvalue = None
-        self._ad_stat = None
-        self._ad_critical_values = None
-        self._ad_significance_levels = None
+    def evaluate(self):
+        """
+        Evaluates the metric a function of the truth and prediction
+        Parameters
+        ----------
+        data: `ndarray`
+            PDFs or PITs, depending on the metric
+        Returns
+        -------
+        metric: float
+            value of the metric
+        """
+        print('No metric specified')
+        metric = None
+        return metric
 
 
-
-    @property
-    def sample(self):
-        return self._sample
-
-    @property
-    def n_quant(self):
-        return self._n_quant
-
-    @property
-    def pit_min(self):
-        return self._pit_min
-
-    @property
-    def pit_max(self):
-        return self._pit_max
-
-    @property
-    def pit(self):
-        return self._pit
-
-    @property
-    def pit_pdf(self):
-        return self._pit_pdf
-
-    @property
-    def uniform_pdf(self):
-        return self._uniform_pdf
-
-    @property
-    def qq_vectors(self):
-        return self._qq_vectors
-
-    @property
-    def pit_out_rate(self):
-        return self._pit_out_rate
-
-    @property
-    def cde_loss(self):
-        return self._cde_loss
-
-    @property
-    def kld(self):
-        return self._kld
-
-    @property
-    def ks_stat(self):
-        return self._ks_stat
-
-    @property
-    def ks_pvalue(self):
-        return self._ks_pvalue
-
-    @property
-    def cvm_stat(self):
-        return self._cvm_stat
-
-    @property
-    def cvm_pvalue(self):
-        return self._cvm_pvalue
-
-    @property
-    def ad_stat(self):
-        return self._ad_stat
-
-    @property
-    def dc1(self):
-        return utils.DC1() #.results
+# -------------------------------#
+"""    Metrics subclasses    """
 
 
-
-
-    def plot_pit_qq(self, bins=None, label=None, title=None, show_pit=True,
-                    show_qq=True, show_pit_out_rate=True, savefig=False):
-        """Make plot PIT-QQ as Figure 2 from Schmidt et al. 2020."""
-        fig_filename = utils.plot_pit_qq(self, bins=bins, label=label, title=title,
-                                         show_pit=show_pit, show_qq=show_qq,
-                                         show_pit_out_rate=show_pit_out_rate,
-                                         savefig=savefig)
-        return fig_filename
-
-
-    def compute_metrics(self):
-        self._pit_out_rate = PitOutRate(self)._pit_out_rate
-        self._cde_loss = CDE(self)._cde_loss
-        self._kld = KLD(self).kld
-        self._ks_stat = KS(self).stat
-        self._cvm_stat = CvM(self).stat
-        self._ad_stat = AD(self).stat
-
-    def markdown_metrics_table(self, show_dc1=False):
-        self.compute_metrics()
-        if show_dc1:
-            dc1 = self.dc1
-            table = str("Metric|Value|DC1 reference value \n ---|---:|---: \n ")
-            table += f"PIT out rate | {self._pit_out_rate:11.4f} |{dc1.results['PIT out rate'][self._sample._code]:11.4f} \n"
-            table += f"CDE loss     | {self._cde_loss:11.2f} |{dc1.results['CDE loss'][self._sample._code]:11.2f} \n"
-            #table += f"KLD          | {self._kld:11.4f}      |  N/A  \n"
-            table += f"KS           | {self._ks_stat:11.4f}  |{dc1.results['KS'][self._sample._code]:11.4f} \n"
-            table += f"CvM          | {self._cvm_stat:11.4f} |{dc1.results['CvM'][self._sample._code]:11.4f} \n"
-            table += f"AD           | {self._ad_stat:11.4f}  |{dc1.results['AD'][self._sample._code]:11.4f} \n"
-        else:
-            table = "Metric|Value \n ---|---: \n "
-            table += f"PIT out rate | {self._pit_out_rate:11.4f} \n"
-            table += f"CDE loss     | {self._cde_loss:11.2f} \n"
-            table += f"KLD          | {self._kld:11.4f}      \n"
-            table += f"KS           | {self._ks_stat:11.4f}  \n"
-            table += f"CvM          | {self._cvm_stat:11.4f} \n"
-            table += f"AD           | {self._ad_stat:11.4f}  \n"
-        return Markdown(table)
-
-    def print_metrics_table(self):
-        self.compute_metrics()
-        table = str(
-             "   Metric    |    Value \n" +
-             "-------------|-------------\n" +
-            f"PIT out rate | {self._pit_out_rate:11.4f}\n" +
-            f"CDE loss     | {self._cde_loss:11.4f}\n " +
-            f"KLD          | {self._kld:11.4f}\n" +
-            f"KS           | {self._ks_stat:11.4f}\n" +
-            f"CvM          | {self._cvm_stat:11.4f}\n" +
-            f"AD           | {self._ad_stat:11.4f}\n")
-        print(table)
-
-
-
-
-class PitOutRate:
+class PitOutRate(Metrics):
     """ Fraction of PIT outliers """
-    def __init__(self, metrics):
-        """Class constructor.
-        Compute fraction of PIT values which are close to 0 (pit < pit_min) and 1 (pit > pit_max).
-        pit_min and pit_max limits are parameters of the metrics parent object.
 
+    def __init__(self, sample, name="PIT out rate"):
+        """Class constructor.
         Parameters
         ----------
-        metrics: `metrics` object
-            instance of metrics base class which is connected to a given sample
+        sample: `qp.ensemble`
+            ensemble of PDFS
+        name: `str`
+            the name of the metric
         """
-        pit_n_outliers = len(metrics.pit[(metrics.pit < metrics.pit_min) | (metrics.pit > metrics.pit_max)])
-        self._pit_out_rate = float(pit_n_outliers) / float(len(metrics.pit))
-        metrics._pit_out_rate = self._pit_out_rate
+        super().__init__(sample, name)
+        self._metric = None
+
+    def evaluate(self, pit_min=0.0001, pit_max=0.9999):
+        """Compute fraction of PIT outliers"""
+        pits = self.sample.pit
+        n_outliers = len(pits[(pits < pit_min) | (pits > pit_max)])
+        self._metric = float(n_outliers) / float(len(self.sample))
+        return self._metric
 
     @property
-    def pit_out_rate(self):
-        return self._pit_out_rate
+    def metric(self):
+        return self._metric
 
 
-class CDE:
-    """Computes the estimated conditional density loss described in
-    Izbicki & Lee 2017 (arXiv:1704.08095). """
+class KS(Metrics):
+    """ Kolmogorov-Smirnov statistic """
 
-    def __init__(self, metrics):
+    def __init__(self, sample, name="KS"):
         """Class constructor.
-        Compute CDE loss statistic and update the
-        parent metric object with property metrics._cde_loss .
-
         Parameters
         ----------
-        metrics: `metrics` object
-            instance of metrics base class which is connected to a given sample
+        sample: `qp.ensemble`
+            ensemble of PDFS
+        name: `str`
+            the name of the metric
         """
-        sample = metrics._sample
-        pdf = sample._pdfs.pdf([sample._zgrid])
-        n_obs, n_grid = (pdf).shape
-        # Calculate first term E[\int f*(z | X)^2 dz]
-        term1 = np.mean(np.trapz(np.array(pdf) ** 2, sample._zgrid))
-        # z bin closest to ztrue
-        nns = [np.argmin(np.abs(sample._zgrid - z)) for z in sample._ztrue]
-        # Calculate second term E[f*(Z | X)]
-        term2 = np.mean(pdf[range(n_obs), nns])
-        self._cde_loss = term1 - 2 * term2
-        # update Metrics object
-        metrics._cde_loss = self._cde_loss
+        super().__init__(sample, name)
+        self._metric = None
+        self._statistic = None
+        self._pvalue = None
+
+    def evaluate(self):
+        """ Use scipy.stats.kstest to compute the Kolmogorov-Smirnov statistic for
+        the PIT values by comparing with a uniform distribution between 0 and 1. """
+        pits = self.sample.pit
+        self._statistic, self._pvalue = stats.kstest(pits, stats.uniform.cdf)
+        self._metric = self._statistic
+        return self._statistic, self._pvalue
 
     @property
-    def cde_loss(self):
-        return self._cde_loss
+    def metric(self):
+        return self._metric
 
-class KS:
-    """
-    Compute the Kolmogorov-Smirnov statistic and p-value (TBD) for the PIT
-    values by comparing with a uniform distribution between 0 and 1.
+    @property
+    def statistic(self):
+        return self._statistic
 
-    Parameters
-    ----------
-    metrics: `metrics` object
-        instance of metrics base class which is connected to a given sample
-    """
-    def __init__(self, metrics, scipy=False):
-        self._metrics = metrics
-        if scipy:
-            self._stat, self._pvalue = stats.kstest(metrics.pit, "uniform")
-        else:
-            self._stat, self._pvalue = np.max(np.abs(metrics._pit_cdf - metrics._uniform_cdf)), None  # p-value TBD
-        self._metrics = metrics
-        # update Metrics object
-        metrics._ks_stat = self._stat
-
+    @property
+    def pvalue(self):
+        return self._pvalue
 
     def plot(self):
         utils.ks_plot(self)
 
-    @property
-    def stat(self):
-        return self._stat
 
-    @property
-    def pvalue(self):
-        return self._pvalue
+class CvM(Metrics):
+    """ Cramer-von Mises statistic """
 
-
-
-class CvM:
-    """
-    Compute the Cramer-von Mises statistic and p-value (TBD) for the PIT
-    values by comparing with a uniform distribution between 0 and 1.
-
-    Parameters
-    ----------
-    metrics: `metrics` object
-        instance of metrics base class which is connected to a given sample
-    """
-
-    def __init__(self, metrics, scipy=False):
-        self._metrics = metrics
-        if scipy:
-            cvm_result = stats.cramervonmises(metrics._pit, "uniform")
-            self._stat, self._pvalue = cvm_result.statistic, cvm_result.pvalue
-        else:
-            self._stat, self._pvalue = np.sqrt(np.trapz((metrics._pit_cdf - metrics._uniform_cdf) ** 2,
-                                                        metrics._uniform_cdf)), None  # p-value TBD
-        # update Metrics object
-        metrics._cvm_stat = self._stat
-
-
-    @property
-    def stat(self):
-        return self._stat
-
-    @property
-    def pvalue(self):
-        return self._pvalue
-
-
-class AD:
-    """
-    Compute the Anderson-Darling statistic and p-value for the PIT
-    values by comparing with a uniform distribution between 0 and 1.
-    Since the statistic diverges at 0 and 1, PIT values too close to
-    0 or 1 are discarded.
-    Parameters
-    ----------
-    pit: `numpy.ndarray`
-        array with PIT values for all galaxies in the sample
-    ad_pit_min, ad_pit_max: floats
-        PIT values outside this range are discarded
-    """
-
-    def __init__(self, metrics, ad_pit_min=0.0, ad_pit_max=1.0):
-
-        mask_pit = (metrics._pit >= ad_pit_min) & (metrics._pit  <= ad_pit_max)
-        if (ad_pit_min != 0.0) or (ad_pit_max != 1.0):
-            n_out = len(metrics._pit) - len(metrics._pit[mask_pit])
-            perc_out = (float(n_out)/float(len(metrics._pit)))*100.
-            print(f"{n_out} outliers (PIT<{ad_pit_min} or PIT>{ad_pit_max}) removed from the calculation ({perc_out:.1f}%)")
-
-        ad_xvals = np.linspace(ad_pit_min, ad_pit_max, metrics.n_quant)
-        ad_yscale_uniform = (ad_pit_max-ad_pit_min)/float(metrics._n_quant)
-        ad_pit_dist, ad_pit_bins_edges = np.histogram(metrics.pit[mask_pit], bins=metrics.n_quant, density=True)
-        ad_uniform_dist = np.full(metrics.n_quant, ad_yscale_uniform)
-        # Redo CDFs to account for outliers mask
-        ad_pit_ensemble = qp.Ensemble(qp.hist, data=dict(bins=ad_pit_bins_edges, pdfs=np.array([ad_pit_dist])))
-        ad_pit_cdf = ad_pit_ensemble.cdf(ad_xvals)[0]
-        ad_uniform_ensemble = qp.Ensemble(qp.hist,
-                                          data=dict(bins=ad_pit_bins_edges, pdfs=np.array([ad_uniform_dist])))
-        ad_uniform_cdf = ad_uniform_ensemble.cdf(ad_xvals)[0]
-        numerator = ((ad_pit_cdf - ad_uniform_cdf)**2)
-        denominator = (ad_uniform_cdf*(1.-ad_uniform_cdf))
-        with np.errstate(divide='ignore', invalid='ignore'):
-            self._stat = np.sqrt(float(len(metrics._sample)) * np.trapz(np.nan_to_num(numerator/denominator), ad_uniform_cdf))
-        # update Metrics object
-        metrics._ad_stat = self._stat
-
-    @property
-    def stat(self):
-        return self._stat
-
-
-
-
-class KLD:
-    """
-    Compute the Kullback-Leibler Divergence between the the empirical PIT
-    distribution and a theoretical uniform distribution between 0 and 1."""
-
-    def __init__(self, metrics):
+    def __init__(self, sample, name="CvM"):
         """Class constructor.
-        Compute KLD statistic using scipy.stats.entropy and update
-        the parent metric object with property metrics._kld_stat .
+        Parameters
+        ----------
+        sample: `qp.ensemble`
+            ensemble of PDFS
+        name: `str`
+            the name of the metric
+        """
+        super().__init__(sample, name)
+        self._metric = None
+        self._statistic = None
+        self._pvalue = None
+
+    def evaluate(self):
+        """ Use scipy.stats.cramervonmises to compute the Cramer-von Mises statistic for
+        the PIT values by comparing with a uniform distribution between 0 and 1. """
+        pits = self.sample.pit
+        cvm_result = stats.cramervonmises(pits, "uniform")
+        self._statistic, self._pvalue = cvm_result.statistic, cvm_result.pvalue
+        self._metric = self._statistic
+        return self._statistic, self._pvalue
+
+    @property
+    def metric(self):
+        return self._metric
+
+    @property
+    def statistic(self):
+        return self._statistic
+
+    @property
+    def pvalue(self):
+        return self._pvalue
+
+
+class AD(Metrics):
+    """ Anderson-Darling statistic """
+
+    def __init__(self, sample, name="AD"):
+        """Class constructor.
+        Parameters
+        ----------
+        sample: `qp.ensemble`
+            ensemble of PDFS
+        name: `str`
+            the name of the metric
+        """
+        super().__init__(sample, name)
+        self._metric = None
+        self._statistic = None
+        self._critical_values = None
+        self._significance_level = None
+
+    def evaluate(self, ad_pit_min=0.0, ad_pit_max=1.0):
+        """ Use scipy.stats.anderson_ksamp to compute the Anderson-Darling statistic
+        for the PIT values by comparing with a uniform distribution between 0 and 1.
+        Up to the current version (1.6.2), scipy.stats.anderson does not support
+        uniform distributions as reference for 1-sample test.
 
         Parameters
         ----------
-        metrics: `metrics` object
-            instance of metrics base class which is connected to a given sample
+        ad_pit_min, ad_pit_max: floats
+            PIT values outside this range are discarded
         """
-        self._kld = stats.entropy(metrics.pit_pdf, metrics.uniform_pdf)
-        # update Metrics object
-        metrics._kld = self._kld
+        pits = self.sample.pit
+        uniform = np.arange(len(pits))
+        mask = (pits > ad_pit_min) & (pits < ad_pit_max)
+        ad_results = stats.anderson_ksamp([pits[mask], uniform[mask]])
+        self._statistic, self._critical_values, self._significance_level = ad_results
+        self._metric = self._statistic
+        return self._statistic, self._critical_values, self._significance_level
 
     @property
-    def kld(self):
-        return self._kld
+    def metric(self):
+        return self._metric
+
+    @property
+    def statistic(self):
+        return self._statistic
+
+    @property
+    def critical_values(self):
+        return self._critical_values
+
+    @property
+    def significance_level(self):
+        return self._significance_level
 
 
-class CRPS:
-    ''' = continuous rank probability score (Gneiting et al., 2006)'''
+class CDE(Metrics):
+    """ Conditional density loss """
 
-    def __init__(self):
+    def __init__(self, sample, name="CDE loss"):
+        """Class constructor.
+        Parameters
+        ----------
+        sample: `qp.ensemble`
+            ensemble of PDFS
+        name: `str`
+            the name of the metric
+        """
+        super().__init__(sample, name)
+        self._metric = None
+
+    def evaluate(self):
+        """Evaluate the estimated conditional density loss described in
+        Izbicki & Lee 2017 (arXiv:1704.08095). """
+        pdf = self.sample.pdf([self.sample.zgrid])
+        n_obs, n_grid = (pdf).shape
+        # Calculate first term E[\int f*(z | X)^2 dz]
+        term1 = np.mean(np.trapz(np.array(pdf) ** 2, x=self.sample.zgrid))
+        # z bin closest to ztrue
+        nns = [np.argmin(np.abs(self.sample.zgrid - z)) for z in self.sample.ztrue]
+        # Calculate second term E[f*(Z | X)]
+        term2 = np.mean(pdf[range(n_obs), nns])
+        self._metric = term1 - 2 * term2
+        return self._metric
+
+    @property
+    def metric(self):
+        return self._metric
+
+
+class KLD(Metrics):
+    """ Kullback-Leibler Divergence """
+
+    def __init__(self, sample, name="KLD"):
+        """Class constructor.
+        Parameters
+        ----------
+        sample: `qp.ensemble`
+            ensemble of PDFS
+        name: `str`
+            the name of the metric
+        """
+        super().__init__(sample, name)
+        self._metric = None
+
+    def evaluate(self):
+        """ Use scipy.stats.entropy to compute the Kullback-Leibler
+        Divergence between the empirical PIT distribution and a
+        theoretical uniform distribution between 0 and 1."""
+        pits = self.sample.pit
+        xvals = self.sample.qq[0]
+        pit_pdf, _ = np.histogram(pits, bins=len(xvals))
+        uniform_pdf = np.full(self.sample.n_quant, 1.0 / float(self.sample.n_quant))
+        self.S = stats.entropy(pit_pdf, uniform_pdf)
+        self._metric = self.S
+        return self._metric
+
+    @property
+    def metric(self):
+        return self._metric
+
+
+class CRPS(Metrics):
+    ''' Continuous rank probability score (Gneiting et al., 2006)'''
+
+    def __init__(self, sample, name="CRPS"):
+        """Class constructor.
+        Parameters
+        ----------
+        sample: `qp.ensemble`
+            ensemble of PDFS
+        name: `str`
+            the name of the metric
+        """
+        super().__init__(sample, name)
+        self._metric = None
+
+    def evaluate(self):
         raise NotImplementedError
