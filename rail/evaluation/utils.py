@@ -7,6 +7,8 @@ from metrics import PitOutRate
 from IPython.display import Markdown
 import h5py
 import os
+from qp.ensemble import Ensemble
+from qp import interp
 
 
 def read_pz_output(pdfs_file, ztrue_file, pdfs_key="photoz_pdf", zgrid_key="zgrid",
@@ -239,24 +241,31 @@ def plot_pit_qq(sample, bins=None, title=None, label=None,
 def ks_plot(ks):
     """ KS test illustration.
     Ancillary function to be used by class KS."""
+    pits = ks.sample.pit
+    xvals = ks.sample.qq[0]
+    yvals = np.array([np.histogram(pits, bins=len(xvals))[0]])
+    pit_cdf = Ensemble(interp, data=dict(xvals=xvals, yvals=yvals)).cdf(xvals)[0]
+    uniform_yvals = np.array([np.full(ks.sample.n_quant, 1.0 / float(ks.sample.n_quant))])
+    uniform_cdf = Ensemble(interp, data=dict(xvals=xvals, yvals=uniform_yvals)).cdf(xvals)[0]
 
     plt.figure(figsize=[4, 4])
-    plt.plot(ks._metrics._xvals, ks._metrics._pit_cdf, 'b-', label="sample PIT")
-    plt.plot(ks._metrics._xvals, ks._metrics._uniform_cdf, 'r-', label="uniform")
-    ks._bin_stat = np.argmax(np.abs(ks._metrics._pit_cdf - ks._metrics._uniform_cdf))
-    plt.vlines(x=ks._metrics._xvals[ks._bin_stat],
-               ymin=np.min([ks._metrics._pit_cdf[ks._bin_stat],
-                             ks._metrics._uniform_cdf[ks._bin_stat]]),
-               ymax=np.max([ks._metrics._pit_cdf[ks._bin_stat],
-                            ks._metrics._uniform_cdf[ks._bin_stat]]),
+    plt.plot(xvals, uniform_cdf, 'r-', label="uniform")
+    plt.plot(xvals, pit_cdf, 'b-', label="sample PIT")
+    bin_stat = np.argmax(np.abs(pit_cdf - uniform_cdf))
+
+    plt.vlines(x=xvals[bin_stat],
+               ymin=np.min([pit_cdf[bin_stat], uniform_cdf[bin_stat]]),
+               ymax=np.max([pit_cdf[bin_stat], uniform_cdf[bin_stat]]),
                colors='k')
-    plt.plot(ks._metrics._xvals[ks._bin_stat], ks._metrics._pit_cdf[ks._bin_stat], "k.")
-    plt.plot(ks._metrics._xvals[ks._bin_stat], ks._metrics._uniform_cdf[ks._bin_stat], "k.")
+    plt.plot(xvals[bin_stat], pit_cdf[bin_stat], "k.")
+    plt.plot(xvals[bin_stat], uniform_cdf[bin_stat], "k.")
+    ymean = (pit_cdf[bin_stat]+uniform_cdf[bin_stat])/2.
+    plt.text(xvals[bin_stat]+0.05, ymean, "max", fontsize=16)
     plt.xlabel("PIT value")
     plt.ylabel("CDF(PIT)")
     xtext = 0.63
     ytext = 0.03
-    plt.text(xtext, ytext, f"KS={ks._stat:.4f}", fontsize=16)
+    plt.text(xtext, ytext, f"KS={ks.stat:.4f}", fontsize=16)
     plt.xlim(0,1)
     plt.ylim(0,1)
     plt.legend()
