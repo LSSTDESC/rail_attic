@@ -31,10 +31,10 @@ def read_pz_output(pdfs_file, ztrue_file, pdfs_key="photoz_pdf", zgrid_key="zgri
     elif ext == ".out":
         print("Validation file from DC1 paper!")
         ztrue = np.loadtxt(ztrue_file, unpack=True, usecols=[2])
-        pdfs_array = np.loadtxt(_pdfs_file)
+        pdfs = np.loadtxt(pdfs_file)
         path = "/".join(pdfs_file.split("/")[:-1])
         zgrid = np.loadtxt(path + "/zarrayfile.out")
-        photoz_mode = np.array([zgrid[np.argmax(pdf)] for pdf in pdfs_array])  # qp mode?
+        photoz_mode = np.array([zgrid[np.argmax(pdf)] for pdf in pdfs])  # qp mode?
     else:
         raise ValueError(f"PDFs input file format {ext} is not supported.")
 
