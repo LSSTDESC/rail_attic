@@ -3,7 +3,7 @@ from matplotlib import gridspec
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from metrics import PitOutRate
+from metrics import *
 from IPython.display import Markdown
 import h5py
 import os
@@ -13,7 +13,6 @@ from qp import interp
 
 def read_pz_output(pdfs_file, ztrue_file, pdfs_key="photoz_pdf", zgrid_key="zgrid",
                    photoz_mode_key="photoz_mode", ztrue_key="redshift"):
-
     _, ext = os.path.splitext(pdfs_file)
 
     if ext == ".hdf5":
@@ -94,7 +93,7 @@ def plot_old_valid(sample, gals=None, colors=None):
     fig = plt.figure(figsize=(10, 4), dpi=100)
     fig.suptitle(sample.name, fontsize=16)
     ax = plt.subplot(121)
-    #sns.jointplot(data=df, x='z$_{true}$', y='z$_{phot}$', kind="kde")
+    # sns.jointplot(data=df, x='z$_{true}$', y='z$_{phot}$', kind="kde")
     plt.plot(sample.ztrue, sample.photoz_mode, 'k,', label=(sample._code).replace("_", " "))
     leg = ax.legend(fancybox=True, handlelength=0, handletextpad=0, loc="upper left")
     for item in leg.legendHandles:
@@ -112,7 +111,7 @@ def plot_old_valid(sample, gals=None, colors=None):
     plt.subplot(122)
     sns.kdeplot(sample.ztrue, shade=True, label='z$_{true}$')
     sns.kdeplot(sample.photoz_mode, shade=True, label='z$_{phot}$')
-    plt.xlim(0,zmax)
+    plt.xlim(0, zmax)
     plt.xlabel('z')
     plt.legend()
     plt.tight_layout()
@@ -126,7 +125,8 @@ def old_metrics(sample):
     sigma_mad = point.CalculateSigmaMAD()
     return sigma_iqr, bias, frac, sigma_mad
 
-def old_metrics_table(samples, show_dc1 = False):
+
+def old_metrics_table(samples, show_dc1=False):
     if type(samples) != list:
         samples = [samples]
     rows = ["|Metric |", "|:---|", "|scatter |", "|bias |", "|outlier rate |"]
@@ -145,7 +145,6 @@ def old_metrics_table(samples, show_dc1 = False):
         rows[4] += f"  0.020"
     table = ("\n").join(rows)
     return Markdown(table)
-
 
 
 def plot_pit_qq(sample, bins=None, title=None, label=None,
@@ -218,8 +217,8 @@ def plot_pit_qq(sample, bins=None, title=None, label=None,
         plt.ylabel("$\Delta$Q", fontsize=18)
         ax2.plot([0, 1], [0, 0], color='k', linestyle='--', linewidth=2)
         plt.xlim(-0.001, 1.001)
-        plt.ylim(np.min([-0.12, np.min(sample.qq[1] - sample.qq[0])*1.05]),
-                 np.max([0.12, np.max(sample.qq[1] - sample.qq[0])*1.05]))
+        plt.ylim(np.min([-0.12, np.min(sample.qq[1] - sample.qq[0]) * 1.05]),
+                 np.max([0.12, np.max(sample.qq[1] - sample.qq[0]) * 1.05]))
     if show_pit:
         if show_qq:
             plt.xlabel("Q$_{theory}$ / PIT Value", fontsize=18)
@@ -230,13 +229,14 @@ def plot_pit_qq(sample, bins=None, title=None, label=None,
             plt.xlabel("Q$_{theory}$", fontsize=18)
     if savefig:
         fig_filename = str("plot_pit_qq_" +
-                           f"{(sample.code).replace(' ','_')}" +
-                           f"_{(sample.name).replace(' ','_')}.png")
+                           f"{(sample.code).replace(' ', '_')}" +
+                           f"_{(sample.name).replace(' ', '_')}.png")
         plt.savefig(fig_filename)
     else:
         fig_filename = None
 
     return fig_filename
+
 
 def ks_plot(ks):
     """ KS test illustration.
@@ -259,25 +259,95 @@ def ks_plot(ks):
                colors='k')
     plt.plot(xvals[bin_stat], pit_cdf[bin_stat], "k.")
     plt.plot(xvals[bin_stat], uniform_cdf[bin_stat], "k.")
-    ymean = (pit_cdf[bin_stat]+uniform_cdf[bin_stat])/2.
-    plt.text(xvals[bin_stat]+0.05, ymean, "max", fontsize=16)
+    ymean = (pit_cdf[bin_stat] + uniform_cdf[bin_stat]) / 2.
+    plt.text(xvals[bin_stat] + 0.05, ymean, "max", fontsize=16)
     plt.xlabel("PIT value")
     plt.ylabel("CDF(PIT)")
     xtext = 0.63
     ytext = 0.03
-    plt.text(xtext, ytext, f"KS={ks.stat:.4f}", fontsize=16)
-    plt.xlim(0,1)
-    plt.ylim(0,1)
+    plt.text(xtext, ytext, f"KS={ks.statistic:.4f}", fontsize=16)
+    plt.xlim(0, 1)
+    plt.ylim(0, 1)
     plt.legend()
     plt.tight_layout()
 
+
+class Summary:
+    """ Summary tables with all metrics available. """
+
+    def __init__(self, sample):
+        """Class constructor."""
+        self._sample = sample
+        # placeholders for metrics to be calculated
+        self._pit_out_rate = None
+        self._ks_stat = None
+        self._ks_pvalue = None
+        self._cvm_stat = None
+        self._cvm_pvalue = None
+        self._ad_stat = None
+        self._ad_critical_values = None
+        self._ad_significance_levels = None
+        self._cde_loss = None
+        self._kld = None
+
+    def evaluate_all_metrics(self):
+        print("Evaluating metrics...")
+        print()
+        sample = self._sample
+        self._pit_out_rate = PitOutRate(sample).evaluate()
+        print(self._pit_out_rate)
+        self._ks_stat, _ = KS(sample).evaluate()
+        print(self._ks_stat)
+        self._cvm_stat, _ = CvM(sample).evaluate()
+        print(self._cvm_stat)
+        self._ad_stat, _, _ = AD(sample).evaluate()
+        print(self._ad_stat)
+        self._cde_loss = CDE(sample).evaluate()
+        print(self._cde_loss)
+        self._kld = KLD(sample).evaluate()
+        print(self._kld)
+        print("Done!")
+
+    def markdown_metrics_table(self, show_dc1=False):
+        self.evaluate_all_metrics()
+        if show_dc1:
+            dc1 = DC1()
+            table = str("Metric|Value|DC1 reference value \n ---|---:|---: \n ")
+            table += f"PIT out rate | {self._pit_out_rate:11.4f} |{dc1.results['PIT out rate'][self._sample._code]:11.4f} \n"
+            table += f"KS           | {self._ks_stat:11.4f}  |{dc1.results['KS'][self._sample._code]:11.4f} \n"
+            table += f"CvM          | {self._cvm_stat:11.4f} |{dc1.results['CvM'][self._sample._code]:11.4f} \n"
+            table += f"AD           | {self._ad_stat:11.4f}  |{dc1.results['AD'][self._sample._code]:11.4f} \n"
+            table += f"CDE loss     | {self._cde_loss:11.2f} |{dc1.results['CDE loss'][self._sample._code]:11.2f} \n"
+            table += f"KLD          | {self._kld:11.4f}      |  N/A  \n"
+        else:
+            table = "Metric|Value \n ---|---: \n "
+            table += f"PIT out rate | {self._pit_out_rate:11.4f} \n"
+            table += f"KS           | {self._ks_stat:11.4f}  \n"
+            table += f"CvM          | {self._cvm_stat:11.4f} \n"
+            table += f"AD           | {self._ad_stat:11.4f}  \n"
+            table += f"CDE loss     | {self._cde_loss:11.2f} \n"
+            table += f"KLD          | {self._kld:11.4f}      \n"
+        return Markdown(table)
+
+    def print_metrics_table(self):
+        self.evaluate_all_metrics()
+        table = str(
+            "   Metric    |    Value \n" +
+            "-------------|-------------\n" +
+            f"PIT out rate | {self._pit_out_rate:11.4f}\n" +
+            f"KS           | {self._ks_stat:11.4f}\n" +
+            f"CvM          | {self._cvm_stat:11.4f}\n" +
+            f"AD           | {self._ad_stat:11.4f}\n" +
+            f"CDE loss     | {self._cde_loss:11.4f}\n " +
+            f"KLD          | {self._kld:11.4f}\n")
+        print(table)
 
 
 
 class EvaluatePointStats(object):
     """Copied from PZDC1paper repo. Adapted to remove the cut based on magnitude."""
 
-    def __init__(self,pzvec,szvec):
+    def __init__(self, pzvec, szvec):
         """An object that takes in the vectors of the point photo-z
         the spec-z, and the i-band magnitudes for calculating the
         point statistics
@@ -292,7 +362,7 @@ class EvaluatePointStats(object):
         """
         self.pzs = pzvec
         self.szs = szvec
-        ez = (pzvec - szvec)/(1.+szvec)
+        ez = (pzvec - szvec) / (1. + szvec)
         self.ez_all = ez
 
     def CalculateSigmaIQR(self):
@@ -304,9 +374,9 @@ class EvaluatePointStats(object):
         sigma_IQR_all float: width of ez distribution for full sample
         sigma_IQR_magcut float: width of ez distribution for magcut sample
         """
-        x75,x25 = np.percentile(self.ez_all,[75.,25.])
-        iqr_all = x75-x25
-        sigma_iqr_all = iqr_all/1.349
+        x75, x25 = np.percentile(self.ez_all, [75., 25.])
+        iqr_all = x75 - x25
+        sigma_iqr_all = iqr_all / 1.349
         self.sigma_iqr_all = sigma_iqr_all
 
         return sigma_iqr_all
@@ -333,11 +403,11 @@ class EvaluatePointStats(object):
         sample
         """
         num_all = len(self.ez_all)
-        threesig_all = 3.0*self.sigma_iqr_all
-        cutcriterion_all = np.maximum(0.06,threesig_all)
-        mask_all = (self.ez_all>np.fabs(cutcriterion_all))
+        threesig_all = 3.0 * self.sigma_iqr_all
+        cutcriterion_all = np.maximum(0.06, threesig_all)
+        mask_all = (self.ez_all > np.fabs(cutcriterion_all))
         outlier_all = np.sum(mask_all)
-        frac_all = float(outlier_all)/float(num_all)
+        frac_all = float(outlier_all) / float(num_all)
         return frac_all
 
     def CalculateSigmaMAD(self):
@@ -351,9 +421,8 @@ class EvaluatePointStats(object):
         tmpmed_all = np.median(self.ez_all)
         tmpx_all = np.fabs(self.ez_all - tmpmed_all)
         mad_all = np.median(tmpx_all)
-        sigma_mad_all = mad_all*1.4826
+        sigma_mad_all = mad_all * 1.4826
         return sigma_mad_all
-
 
 
 class DC1:
@@ -361,7 +430,7 @@ class DC1:
     def __init__(self):
         # Reference values:
         self.codes = ("ANNz2", "BPZ", "CMNN", "Delight", "EAZY", "FlexZBoost",
-                 "GPz", "LePhare", "METAPhoR", "SkyNet", "TPZ")
+                      "GPz", "LePhare", "METAPhoR", "SkyNet", "TPZ")
         self.metrics = ("PIT out rate", "CDE loss", "KS", "CvM", "AD")
         self.pit_out_rate = [0.0265, 0.0192, 0.0034, 0.0006, 0.0154, 0.0202,
                              0.0058, 0.0486, 0.0229, 0.0001, 0.0130]
@@ -372,16 +441,15 @@ class DC1:
         self.cvm = [52.25, 280.79, 1011.11, 1075.17, 1105.58, 68.83,
                     66.80, 473.05, 298.56, 763.00, 1.16]
         self.ad = [759.2, 1557.5, 6307.5, 6167.5, 4418.6, 478.8,
-                   670.9, 383.8, 715.5,  4216.4, 10565.7, 7.7]
-
+                   670.9, 383.8, 715.5, 4216.4, 10565.7, 7.7]
 
     @property
     def results(self):
         results = {"PIT out rate": dict([(code, value) for code, value in zip(self.codes, self.pit_out_rate)]),
-               "CDE loss": dict([(code, value) for code, value in zip(self.codes, self.cde_loss)]),
-               "KS": dict([(code, value) for code, value in zip(self.codes, self.ks)]),
-               "CvM": dict([(code, value) for code, value in zip(self.codes, self.cvm)]),
-               "AD": dict([(code, value) for code, value in zip(self.codes, self.ad)])}
+                   "CDE loss": dict([(code, value) for code, value in zip(self.codes, self.cde_loss)]),
+                   "KS": dict([(code, value) for code, value in zip(self.codes, self.ks)]),
+                   "CvM": dict([(code, value) for code, value in zip(self.codes, self.cvm)]),
+                   "AD": dict([(code, value) for code, value in zip(self.codes, self.ad)])}
         return results
 
     @property
@@ -394,4 +462,3 @@ class DC1:
             table += f" | {self.results['AD'][code]:11.4f}"
             table += f" | {self.results['CDE loss'][code]:11.4f}\n"
         return Markdown(table)
-
