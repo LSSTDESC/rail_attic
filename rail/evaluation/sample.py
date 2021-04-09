@@ -34,6 +34,7 @@ class Sample(Ensemble):
         self._photoz_mode = photoz_mode
         self._code = code
         self._name = name
+        self._pit = None
 
     @property
     def code(self):
@@ -59,6 +60,13 @@ class Sample(Ensemble):
     def photoz_mode(self):
         """Photo-z (mode) array"""
         return self._photoz_mode
+
+    @property
+    def pit(self):
+        if  self._pit is None:
+            pit_array = np.array([self[i].cdf(self.ztrue[i])[0][0] for i in range(len(self))])
+            self._pit = pit_array
+        return self._pit
 
     def __len__(self):
         if len(self._ztrue) != len(self._pdfs):
