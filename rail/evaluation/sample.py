@@ -8,7 +8,7 @@ class Sample(Ensemble):
     """ Expand qp.Ensemble to append true redshifts
     array, metadata, and specific plots. """
 
-    def __init__(self, pdfs, zgrid, ztrue, photoz_mode, code="", name=""):
+    def __init__(self, pdfs, zgrid, ztrue, photoz_mode, code="", name="", n_quant=100):
         """Class constructor
 
         Parameters
@@ -34,7 +34,10 @@ class Sample(Ensemble):
         self._photoz_mode = photoz_mode
         self._code = code
         self._name = name
+        self._n_quant = n_quant
         self._pit = None
+        self._qq = None
+
 
     @property
     def code(self):
@@ -62,11 +65,22 @@ class Sample(Ensemble):
         return self._photoz_mode
 
     @property
+    def n_quant(self):
+        return self._n_quant
+
+    @property
     def pit(self):
-        if  self._pit is None:
+        if self._pit is None:
             pit_array = np.array([self[i].cdf(self.ztrue[i])[0][0] for i in range(len(self))])
             self._pit = pit_array
         return self._pit
+
+    @property
+    def qq(self, n_quant=100):
+        q_theory = np.linspace(0., 1., n_quant)
+        q_data = np.quantile(self.pit, q_theory)
+        self._qq = (q_theory, q_data)
+        return self._qq
 
     def __len__(self):
         if len(self._ztrue) != len(self._pdfs):
@@ -94,3 +108,12 @@ class Sample(Ensemble):
     def plot_old_valid(self, gals=None, colors=None):
         old_metrics_table = utils.plot_old_valid(self, gals=gals, colors=colors)
         return old_metrics_table
+
+    def plot_pit_qq(self, bins=None, label=None, title=None, show_pit=True,
+                    show_qq=True, show_pit_out_rate=True, savefig=False):
+        """Make plot PIT-QQ as Figure 2 from Schmidt et al. 2020."""
+        fig_filename = utils.plot_pit_qq(self, bins=bins, label=label, title=title,
+                                         show_pit=show_pit, show_qq=show_qq,
+                                         show_pit_out_rate=show_pit_out_rate,
+                                         savefig=savefig)
+        return fig_filename
