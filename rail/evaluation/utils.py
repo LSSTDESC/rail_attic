@@ -329,7 +329,7 @@ class Summary:
             f"KS           | {self._ks_stat:11.4f}\n" +
             f"CvM          | {self._cvm_stat:11.4f}\n" +
             f"AD           | {self._ad_stat:11.4f}\n" +
-            f"CDE loss     | {self._cde_loss:11.4f}\n " +
+            f"CDE loss     | {self._cde_loss:11.4f}\n" +
             f"KLD          | {self._kld:11.4f}\n")
         print(table)
 

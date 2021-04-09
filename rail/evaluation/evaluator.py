@@ -1,6 +1,6 @@
 import sys
 from rail.evaluation.sample import Sample
-from rail.evaluation.metrics import Metrics
+from rail.evaluation.utils import *
 import time as t
 
 
@@ -52,7 +52,8 @@ def main(argv):
 
     print("Reading data...")
     print()
-    sample = Sample(pdfs_file, ztrue_file, code=code, name=name)
+    pdfs, zgrid, ztrue, photoz_mode = read_pz_output(pdfs_file, ztrue_file)
+    sample = Sample(pdfs, zgrid, ztrue, photoz_mode, code="FlexZBoost", name="toy data")
     print(sample)
     print()
     print()
@@ -60,16 +61,15 @@ def main(argv):
     print("Computing metrics...")
     print()
     print()
-    metrics = Metrics(sample)
-    metrics.print_metrics_table()
+    summary = Summary(sample)
+    summary.print_metrics_table()
     print()
-
 
 
     print("Making plots...")
     print()
     print()
-    fig_filename = metrics.plot_pit_qq(savefig=True)
+    fig_filename = sample.plot_pit_qq(savefig=True)
     # TO DO: ADD METRICS PLOT HERE
     print(f"PIT-QQ plot saved as:   {fig_filename}")
     print ()
