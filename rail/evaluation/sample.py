@@ -1,72 +1,39 @@
-import qp
-import h5py
+from qp.ensemble import Ensemble
+from qp import interp
 import numpy as np
 import utils
-import os
 
 
-class Sample():
-    """
-    Expands qp.Ensemble to add metadata and specific plots.
-    Handle photo-z output data (pdfs + ztrue) of
-    a given sample. Inherits from qp.Ensemble."""
+class Sample(Ensemble):
+    """ Expand qp.Ensemble to append true redshifts
+    array, metadata, and specific plots. """
 
-    def __init__(self, pdfs_file, ztrue_file, code="", name="", **kwargs):
+    def __init__(self, pdfs, zgrid, ztrue, photoz_mode, code="", name=""):
         """Class constructor
 
         Parameters
         ----------
-        pdfs_file: `str`
-            full path to RAIL's estimation output file (format HDF5)
-        ztrue_file: `str`
-            full path to the file containing true redshifts,
-            e.g., RAIL's estimation input file (format HDF5)
+        pdfs: `ndarray`
+            photo-z PDFs array, shape=(Ngals, Nbins)
+        zgrid: `ndarray`
+            PDF bins centers, shape=(Nbins,)
+        ztrue: `ndarray`
+            true redshifts, shape=(Ngals,)
+        photoz_mode: `ndarray`
+            photo-z (PDF mode), shape=(Ngals,)
         code: `str`, (optional)
             algorithm name (for plot legends)
         name: `str`, (optional)
             sample name (for plot legends)
-        **kwargs: `dict`, (optional)
-            key parameters to read the HDF5 input files, in case
-            they are different from RAIL's default output
         """
-        self._pdfs_file = pdfs_file
-        self._ztrue_file = ztrue_file
+
+        super().__init__(interp, data=dict(xvals=zgrid, yvals=pdfs))
+        self._pdfs = pdfs
+        self._zgrid = zgrid
+        self._ztrue = ztrue
+        self._photoz_mode = photoz_mode
         self._code = code
         self._name = name
-
-        self._pdfs_key = kwargs.get('pdfs_key', "photoz_pdf")
-        self._zgrid_key = kwargs.get('zgrid_key', "zgrid")
-        self._photoz_mode_key = kwargs.get('photoz_mode_key', "photoz_mode")
-        self._ztrue_key = kwargs.get('ztrue_key', "redshift")
-
-        pdfs_file_format = (self._pdfs_file.split(".")[-1]).lower()
-
-        if pdfs_file_format == "hdf5":
-            with h5py.File(self._ztrue_file, 'r') as zf:
-                try:
-                    self._ztrue = np.array(zf['photometry'][self._ztrue_key])[:10]
-                except:
-                    try:
-                        self._ztrue = np.array(zf[self._ztrue_key])[:10]
-                    except:
-                        raise ValueError('Invalid key for true redshift column in ztrue file.')
-            with h5py.File(self._pdfs_file, 'r') as pf:
-                self._pdfs_array = np.array(pf[self._pdfs_key])[:10]
-                self._zgrid = np.array(pf[self._zgrid_key]).flatten()
-                self._photoz_mode = np.array(pf[self._photoz_mode_key])[:10]
-        elif pdfs_file_format == "out":
-            print("Validation file from DC1 paper!")
-            self._ztrue = np.loadtxt(self._ztrue_file, unpack=True, usecols=[2])
-            self._pdfs_array = np.loadtxt(self._pdfs_file)
-            self.path = "/".join(self._pdfs_file.split("/")[:-1])
-            self._zgrid = np.loadtxt(self.path + "/zarrayfile.out")
-            self._photoz_mode = np.array([self._zgrid[np.argmax(pdf)] for pdf in self._pdfs_array])  # qp mode?
-        else:
-            raise ValueError(f"PDFs input file format {pdfs_file_format} is not supported.")
-
-
-        self._pdfs = qp.Ensemble(qp.interp, data=dict(xvals=self._zgrid, yvals=self._pdfs_array))
-
 
     @property
     def code(self):
@@ -93,15 +60,8 @@ class Sample():
         """Photo-z (mode) array"""
         return self._photoz_mode
 
-    @property
-    def pdfs(self):
-        """qp.Ensemble object containing the PDFs ('interp' representation)"""
-        return self._pdfs
-
-
-
     def __len__(self):
-        if (len(self._ztrue) != (self._pdfs.npdf)):
+        if len(self._ztrue) != len(self._pdfs):
             raise ValueError("Number of pdfs and true redshifts do not match!!!")
         return len(self._ztrue)
 
@@ -113,9 +73,9 @@ class Sample():
                    name_str + '\n' +
                    code_str + '\n' +
                    line_str + '\n' +
-                   f'{len(self)} PDFs with {len(self._pdfs_array[0])} probabilities each \n' +
-                   f'qp representation: {self._pdfs.gen_class.name} \n' +
-                   f'z grid: {len(self._zgrid)} z values from {np.min(self._zgrid)} to {np.max(self._zgrid)} inclusive')
+                   f'{len(self)} PDFs with {len(self.zgrid)} probabilities each \n' +
+                   f'qp representation: {self.gen_class.name} \n' +
+                   f'z grid: {len(self.zgrid)} z values from {np.min(self.zgrid)} to {np.max(self.zgrid)} inclusive')
         return text
 
     def plot_pdfs(self, gals, show_ztrue=True, show_photoz_mode=False):
