@@ -3,9 +3,8 @@
 
 # RAIL: Redshift Assessment Infrastructure Layers
 
-This repo is home to the back-end of the LSST-DESC PZ WG's software pipelines aiming to guide the selection and implementation of redshift estimators, encompassing the former [PZIncomplete](https://github.com/LSSTDESC/pz_incomplete) and [PZCalibrate](https://github.com/LSSTDESC/pz_calibrate) codes.
-RAIL differs from PZIncomplete in that it is broken into stages, each corresponding to a manageable unit of infrastructure advancement, a specific question, and a guaranteed publication opportunity.
-As PZCalibrate was indeed completed, it will be wrapped for incorporation into RAIL.
+RAIL's purpose is to be the infrastructure enabling the PZ WG Deliverables in [the LSST-DESC Science Roadmap (see Sec. 5.18)](https://lsstdesc.org/assets/pdf/docs/DESC_SRM_latest.pdf), aiming to guide the selection and implementation of redshift estimators in DESC pipelines.
+RAIL differs from previous plans for PZ pipeline infrastructure in that it is broken into stages, each corresponding to a manageable unit of infrastructure advancement, a specific question to answer with that code, and a guaranteed publication opportunity.
 RAIL uses [qp](https://github.com/LSSTDESC/qp) as a back-end for handling univariate probability density functions (PDFs) such as photo-z posteriors or n(z) samples.
 
 ## Contributing
@@ -35,14 +34,15 @@ An outline of the baseline RAIL is illustrated [here](https://docs.google.com/dr
 
 ## Future Plans
 
-RAIL's purpose is to be the infrastructure enabling the PZ WG Deliverables in [the LSST-DESC Science Roadmap (see Sec. 5.18)](https://lsstdesc.org/assets/pdf/docs/DESC_SRM_latest.pdf), which aim to break up the PZ WG's pipeline responsibilities into smaller milestones that can be accomplished by individuals or small groups on short timescales, i.e. under a year.
-The next stages  of RAIL development (tentative project codenames subject to change) are intended to be paper-able projects each of which addresses one or more SRM Deliverables by incrementally advancing the code along the way to project completion.
+RAIL's design aims to break up the PZ WG's pipeline responsibilities into smaller milestones that can be accomplished by individuals or small groups on short timescales, i.e. under a year.
+The next stages of RAIL development (tentative project codenames subject to change) are intended to be paper-able projects each of which addresses one or more SRM Deliverables by incrementally advancing the code along the way to project completion.
 They are scoped such that any can be executed in any order or even simultaneously.
-* _RAILyard_: Extend the imperfect prior models and experimental design to accommodate template-fitting codes
-* _Off the RAILs_: Investigate the effects of erroneous spectroscopic redshifts (or uncertain narrow-band photo-zs) in a training set
-* _Third RAIL_: Investigate the effects of imperfect deblending on estimated photo-z posteriors
-* _RAIL gauge_: Investigate the impact of measurement errors (PSF, aperture photometry, flux calibration, etc.) on estimated photo-z posteriors
-* _DERAIL_: Propagate the impact of imperfect prior information to 3x2pt cosmological parameter constraints
-* _RAIL line_: Implement a more sophisticated true photo-z posterior model with SEDs and emission lines
+* _RAILyard_: Assess the performance of template-fitting codes by extending the creation subpackage to forward model templates
+* _RAIL network_: Assess the performance of clustering-redshift methods by extendint the creation subpackage to forward model positions
+* _Off the RAILs_: Investigate the effects of erroneous spectroscopic redshifts (or uncertain narrow-band photo-zs) in a training set by extending the creation subpackage's imperfect prior model
+* _Third RAIL_: Investigate the effects of imperfect deblending on estimated photo-z posteriors by extending the creation subpackage to forward model the effect of imperfect deblending
+* _RAIL gauge_: Investigate the impact of measurement errors (PSF, aperture photometry, flux calibration, etc.) on estimated photo-z posteriors by including their effects in the the forward model of the creation subpackage
+* _DERAIL_: Investigate the impact of imperfect photo-z posterior estimation on a probe-specific (e.g. 3x2pt) cosmological parameter constraint by connecting the estimation subpackage to other DESC pipelines
+* _RAIL line_: Assess the sensitivity of estimated photo-z posteriors to photometry impacted by emission lines by extending the creation subpackage's forward model
 
-Informal library of fun train-themed names for future projects/pipelines built with RAIL: _RAILroad_, _tRAILblazer_
+Informal library of fun train-themed names for future projects/pipelines built with RAIL: _RAILroad_, _tRAILblazer_, _tRAILmix_, _tRAILer_
