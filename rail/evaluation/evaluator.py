@@ -53,23 +53,26 @@ def main(argv):
     print("Reading data...")
     print()
     pdfs, zgrid, ztrue, photoz_mode = read_pz_output(pdfs_file, ztrue_file)
-    sample = Sample(pdfs, zgrid, ztrue, photoz_mode, code="FlexZBoost", name="toy data")
-    print(sample)
+    #sample = Sample(pdfs, zgrid, ztrue, photoz_mode, code="FlexZBoost", name="toy data")
+    #print(sample)
     print()
     print()
 
     print("Computing metrics...")
     print()
     print()
-    summary = Summary(sample)
-    summary.print_metrics_table()
+    pit = PIT(pdfs, zgrid, ztrue)
+    pit.evaluate()
+    pits = pit.metric
+    summary = Summary(pdfs, zgrid, ztrue)
+    summary.print_metrics_table(pits=pits)
     print()
 
 
     print("Making plots...")
     print()
     print()
-    fig_filename = sample.plot_pit_qq(savefig=True)
+    fig_filename = pit.plot_pit_qq(code=code, savefig=True)
     # TO DO: ADD METRICS PLOT HERE
     print(f"PIT-QQ plot saved as:   {fig_filename}")
     print ()
