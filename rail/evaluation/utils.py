@@ -180,6 +180,7 @@ def plot_pit_qq(pit, bins=None, title=None, code=None,
         title = ""
 
     if code is None:
+        code = ""
         label = ""
     else:
         label = code + "\n"
@@ -278,67 +279,6 @@ def ks_plot(ks, n_quant=100):
     plt.legend()
     plt.tight_layout()
 
-
-class Summary:
-    """ Summary tables with all metrics available. """
-
-    def __init__(self, sample):
-        """Class constructor."""
-        self._sample = sample
-        # placeholders for metrics to be calculated
-        self._pit_out_rate = None
-        self._ks_stat = None
-        self._ks_pvalue = None
-        self._cvm_stat = None
-        self._cvm_pvalue = None
-        self._ad_stat = None
-        self._ad_critical_values = None
-        self._ad_significance_levels = None
-        self._cde_loss = None
-        self._kld = None
-
-    def evaluate_all_metrics(self):
-        sample = self._sample
-        self._pit_out_rate = PitOutRate(sample).evaluate()
-        self._ks_stat, _ = KS(sample).evaluate()
-        self._cvm_stat, _ = CvM(sample).evaluate()
-        self._ad_stat, _, _ = AD(sample).evaluate()
-        self._cde_loss = CDE(sample).evaluate()
-        self._kld = KLD(sample).evaluate()
-
-    def markdown_metrics_table(self, show_dc1=False):
-        self.evaluate_all_metrics()
-        if show_dc1:
-            dc1 = DC1()
-            table = str("Metric|Value|DC1 reference value \n ---|---:|---: \n ")
-            table += f"PIT out rate | {self._pit_out_rate:11.4f} |{dc1.results['PIT out rate'][self._sample._code]:11.4f} \n"
-            table += f"KS           | {self._ks_stat:11.4f}  |{dc1.results['KS'][self._sample._code]:11.4f} \n"
-            table += f"CvM          | {self._cvm_stat:11.4f} |{dc1.results['CvM'][self._sample._code]:11.4f} \n"
-            table += f"AD           | {self._ad_stat:11.4f}  |{dc1.results['AD'][self._sample._code]:11.4f} \n"
-            table += f"CDE loss     | {self._cde_loss:11.2f} |{dc1.results['CDE loss'][self._sample._code]:11.2f} \n"
-            table += f"KLD          | {self._kld:11.4f}      |  N/A  \n"
-        else:
-            table = "Metric|Value \n ---|---: \n "
-            table += f"PIT out rate | {self._pit_out_rate:11.4f} \n"
-            table += f"KS           | {self._ks_stat:11.4f}  \n"
-            table += f"CvM          | {self._cvm_stat:11.4f} \n"
-            table += f"AD           | {self._ad_stat:11.4f}  \n"
-            table += f"CDE loss     | {self._cde_loss:11.2f} \n"
-            table += f"KLD          | {self._kld:11.4f}      \n"
-        return Markdown(table)
-
-    def print_metrics_table(self):
-        self.evaluate_all_metrics()
-        table = str(
-            "   Metric    |    Value \n" +
-            "-------------|-------------\n" +
-            f"PIT out rate | {self._pit_out_rate:11.4f}\n" +
-            f"KS           | {self._ks_stat:11.4f}\n" +
-            f"CvM          | {self._cvm_stat:11.4f}\n" +
-            f"AD           | {self._ad_stat:11.4f}\n" +
-            f"CDE loss     | {self._cde_loss:11.4f}\n" +
-            f"KLD          | {self._kld:11.4f}\n")
-        print(table)
 
 
 

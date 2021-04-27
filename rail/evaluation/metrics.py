@@ -2,6 +2,7 @@ import numpy as np
 from scipy import stats
 import qp
 import utils
+from IPython.display import Markdown
 
 
 class Metrics:
@@ -282,3 +283,68 @@ class CRPS(Metrics):
 
     def evaluate(self):
         raise NotImplementedError
+
+
+
+
+
+class Summary:
+    """ Summary tables with all metrics available. """
+    def __init__(self, pdfs, xvals, ztrue):
+        """Class constructor."""
+        # placeholders for metrics to be calculated
+        self._pdfs = pdfs
+        self._xvals = xvals
+        self._ztrue = ztrue
+        self._pit_out_rate = None
+        self._ks = None
+        self._cvm = None
+        self._ad = None
+        self._kld = None
+        self._cde_loss = None
+
+    def evaluate_all(self, pits=None):
+        if pits is None:
+            pits = PIT(self._pdfs, self._xvals, self._ztrue).evaluate()
+        self._pit_out_rate = PitOutRate(self._pdfs, self._xvals, self._ztrue).evaluate(pits=pits)
+        self._ks, _ = KS(self._pdfs, self._xvals, self._ztrue).evaluate(pits=pits)
+        self._cvm, _ = CvM(self._pdfs, self._xvals, self._ztrue).evaluate(pits=pits)
+        self._ad, _, _ = AD(self._pdfs, self._xvals, self._ztrue).evaluate(pits=pits)
+        self._kld = KLD(self._pdfs, self._xvals, self._ztrue).evaluate(pits=pits)
+        self._cde_loss = CDE(self._pdfs, self._xvals, self._ztrue).evaluate()
+
+    def markdown_metrics_table(self, show_dc1=None, pits=None):
+        self.evaluate_all(pits=pits)
+        if show_dc1:
+            dc1 = utils.DC1()
+            if show_dc1 not in dc1.codes:
+                raise ValueError(f"{show_dc1} not in the list of codes from DC1: {dc1.codes}" )
+            table = str("Metric|Value|DC1 reference value \n ---|---:|---: \n ")
+            table += f"PIT out rate | {self._pit_out_rate:11.4f} |{dc1.results['PIT out rate'][show_dc1]:11.4f} \n"
+            table += f"KS           | {self._ks:11.4f}  |{dc1.results['KS'][show_dc1]:11.4f} \n"
+            table += f"CvM          | {self._cvm:11.4f} |{dc1.results['CvM'][show_dc1]:11.4f} \n"
+            table += f"AD           | {self._ad:11.4f}  |{dc1.results['AD'][show_dc1]:11.4f} \n"
+            table += f"KLD          | {self._kld:11.4f}      |  N/A  \n"
+            table += f"CDE loss     | {self._cde_loss:11.2f} |{dc1.results['CDE loss'][show_dc1]:11.2f} \n"
+        else:
+            table = "Metric|Value \n ---|---: \n "
+            table += f"PIT out rate | {self._pit_out_rate:11.4f} \n"
+            table += f"KS           | {self._ks:11.4f}  \n"
+            table += f"CvM          | {self._cvm:11.4f} \n"
+            table += f"AD           | {self._ad:11.4f}  \n"
+            table += f"CDE loss     | {self._cde_loss:11.2f} \n"
+            table += f"KLD          | {self._kld:11.4f}      \n"
+        return Markdown(table)
+
+    def print_metrics_table(self, pits=None):
+        self.evaluate_all(pits=pits)
+        table = str(
+            "   Metric    |    Value \n" +
+            "-------------|-------------\n" +
+            f"PIT out rate | {self._pit_out_rate:11.4f}\n" +
+            f"KS           | {self._ks:11.4f}\n" +
+            f"CvM          | {self._cvm:11.4f}\n" +
+            f"AD           | {self._ad:11.4f}\n" +
+            f"KLD          | {self._kld:11.4f}\n" +
+            f"CDE loss     | {self._cde_loss:11.4f}\n" )
+        print(table)
