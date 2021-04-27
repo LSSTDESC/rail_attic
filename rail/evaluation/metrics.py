@@ -165,7 +165,7 @@ class AD(Metrics):
         self._critical_values = None
         self._significance_level = None
 
-    def evaluate(self, pits=None, ad_pit_min=0.0, ad_pit_max=1.0, scipy=True):
+    def evaluate(self, pits=None, ad_pit_min=0.0, ad_pit_max=1.0):
         """ Use scipy.stats.anderson_ksamp to compute the Anderson-Darling statistic
         for the PIT values by comparing with a uniform distribution between 0 and 1.
         Up to the current version (1.6.2), scipy.stats.anderson does not support
@@ -178,32 +178,17 @@ class AD(Metrics):
         """
         if pits is None:
             pits = PIT(self._pdfs, self._xvals, self._ztrue).evaluate()
-        mask = (pits > ad_pit_min) & (pits < ad_pit_max)
-
+        mask = (pits >= ad_pit_min) & (pits <= ad_pit_max)
         pits_clean = pits[mask]
+        diff = len(pits) - len(pits_clean)
+        if diff > 0:
+            print(f"{diff} PITs removed from the sample.")
         uniform_yvals = np.linspace(ad_pit_min, ad_pit_max, len(pits_clean))
-        if scipy:
-            ad_results = stats.anderson_ksamp([pits_clean, uniform_yvals])
-            self._statistic, self._critical_values, self._significance_level = ad_results
-        else:
-            pit_pdf, _ = np.histogram(pits, bins=len(self._xvals))
-            pit_cdf = qp.Ensemble(qp.interp, data=dict(xvals=self._xvals, yvals=np.array([pit_pdf]))).cdf(self._xvals)[0]
-            uniform_pdf, _ = np.histogram(uniform_yvals, bins=len(self._xvals)) #np.full(self.sample.n_quant, 1.0 / float(self.sample.n_quant))
-            uniform_cdf = qp.Ensemble(qp.interp, data=dict(xvals=self._xvals, yvals=np.array([uniform_pdf]))).cdf(self._xvals)[0]
-            numerator = (pit_cdf - uniform_cdf)*(pit_cdf - uniform_cdf)
-            denominator = (uniform_cdf * (1. - uniform_cdf))
-            with np.errstate(divide='ignore', invalid='ignore'):
-                self._statistic = np.sqrt(len(pits_clean) * np.trapz(np.nan_to_num(numerator / denominator), uniform_cdf))
-            self._critical_values = None
-            self._significance_levels = None
-            self._metric = self._statistic
-            n = len(pit_cdf)
-            #self._discrete = np.sum([((2*i-1)/n)*(np.log(pit_cdf[i])+np.log(1-pit_cdf[n+1-i])) for i in range(len(uniform_cdf))])
-
+        ad_results = stats.anderson_ksamp([pits_clean, uniform_yvals])
+        self._statistic, self._critical_values, self._significance_level = ad_results
         self._metric = self._statistic
 
         return self._statistic, self._critical_values, self._significance_level
-
 
     @property
     def statistic(self):
