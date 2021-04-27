@@ -147,14 +147,16 @@ def old_metrics_table(samples, show_dc1=False):
     return Markdown(table)
 
 
-def plot_pit_qq(sample, bins=None, title=None, label=None,
+def plot_pit_qq(pit, bins=None, title=None, code=None,
                 show_pit=True, show_qq=True,
-                show_pit_out_rate=True, savefig=False) -> str:
+                pit_out_rate=None, savefig=False) -> str:
     """Quantile-quantile plot
     Ancillary function to be used by class Metrics.
 
     Parameters
     ----------
+    pit: `PIT` object
+        class from metrics.py
     bins: `int`, optional
         number of PIT bins
         if None, use the same number of quantiles (sample.n_quant)
@@ -166,27 +168,33 @@ def plot_pit_qq(sample, bins=None, title=None, label=None,
         include PIT histogram (default=True)
     show_qq: `bool`, optional
         include QQ plot (default=True)
-    show_pit_out_rate: `bool`, optional
-        print metric value on the plot panel (default=True)
+    pit_out_rate: `ndarray`, optional
+        print metric value on the plot panel (default=None)
     savefig: `bool`, optional
         save plot in .png file (default=False)
     """
 
     if bins is None:
-        bins = sample.n_quant
+        bins = 100
     if title is None:
-        title = (sample.name).replace("_", " ")
-    if label is None:
-        label = (sample.code).replace("_", " ")
-    if show_pit_out_rate:
-        pit_out_rate = PitOutRate(sample).evaluate()
-        label += "\n PIT$_{out}$: "
-        label += f"{pit_out_rate:.4f}"
+        title = ""
+
+    if code is None:
+        label = ""
+    else:
+        label = code + "\n"
+    if pit_out_rate:
+        if type(pit_out_rate) == float:
+            label += "PIT$_{out}$: "
+            label += f"{pit_out_rate:.4f}"
+        else:
+            print("Unsupported format for pit_out_rate.")
+
     plt.figure(figsize=[4, 5])
     gs = gridspec.GridSpec(2, 1, height_ratios=[3, 1])
     ax0 = plt.subplot(gs[0])
     if show_qq:
-        ax0.plot(sample.qq[0], sample.qq[1], c='r', linestyle='-',
+        ax0.plot(pit.qq[0], pit.qq[1], c='r', linestyle='-',
                  linewidth=3, label=label)
         ax0.plot([0, 1], [0, 1], color='k', linestyle='--', linewidth=2)
         ax0.set_ylabel("Q$_{data}$", fontsize=18)
@@ -195,17 +203,17 @@ def plot_pit_qq(sample, bins=None, title=None, label=None,
     plt.title(title)
     if show_pit:
         try:
-            y_uni = float(len(sample)) / float(bins)
+            y_uni = float(len(pit.metric)) / float(bins)
         except:
-            y_uni = float(len(sample)) / float(len(bins))
+            y_uni = float(len(pit.metric)) / float(len(bins))
         if not show_qq:
-            ax0.hist(sample.pit, bins=bins, alpha=0.7, label=label)
+            ax0.hist(pit.metric, bins=bins, alpha=0.7, label=label)
             ax0.set_ylabel('Number')
             ax0.hlines(y_uni, xmin=0, xmax=1, color='k')
             plt.ylim(0, )  # -0.001, 1.001)
         else:
             ax1 = ax0.twinx()
-            ax1.hist(sample.pit, bins=bins, alpha=0.7)
+            ax1.hist(pit.metric, bins=bins, alpha=0.7)
             ax1.set_ylabel('Number')
             ax1.hlines(y_uni, xmin=0, xmax=1, color='k')
     leg = ax0.legend(handlelength=0, handletextpad=0, fancybox=True)
@@ -213,12 +221,12 @@ def plot_pit_qq(sample, bins=None, title=None, label=None,
         item.set_visible(False)
     if show_qq:
         ax2 = plt.subplot(gs[1])
-        ax2.plot(sample.qq[0], (sample.qq[1] - sample.qq[0]), c='r', linestyle='-', linewidth=3)
+        ax2.plot(pit.qq[0], (pit.qq[1] - pit.qq[0]), c='r', linestyle='-', linewidth=3)
         plt.ylabel("$\Delta$Q", fontsize=18)
         ax2.plot([0, 1], [0, 0], color='k', linestyle='--', linewidth=2)
         plt.xlim(-0.001, 1.001)
-        plt.ylim(np.min([-0.12, np.min(sample.qq[1] - sample.qq[0]) * 1.05]),
-                 np.max([0.12, np.max(sample.qq[1] - sample.qq[0]) * 1.05]))
+        plt.ylim(np.min([-0.12, np.min(pit.qq[1] - pit.qq[0]) * 1.05]),
+                 np.max([0.12, np.max(pit.qq[1] - pit.qq[0]) * 1.05]))
     if show_pit:
         if show_qq:
             plt.xlabel("Q$_{theory}$ / PIT Value", fontsize=18)
@@ -229,8 +237,7 @@ def plot_pit_qq(sample, bins=None, title=None, label=None,
             plt.xlabel("Q$_{theory}$", fontsize=18)
     if savefig:
         fig_filename = str("plot_pit_qq_" +
-                           f"{(sample.code).replace(' ', '_')}" +
-                           f"_{(sample.name).replace(' ', '_')}.png")
+                           f"{(code).replace(' ', '_')}.png")
         plt.savefig(fig_filename)
     else:
         fig_filename = None

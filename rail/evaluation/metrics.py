@@ -51,7 +51,7 @@ class PIT(Metrics):
     def __init__(self, pdfs, xvals, ztrue, name="PIT"):
         """Class constructor. """
         super().__init__(pdfs, xvals, ztrue, name)
-        self._metric = None
+        self._qq = None
 
     def evaluate(self):
         """Compute PIT array using qp.Ensemble class"""
@@ -59,6 +59,21 @@ class PIT(Metrics):
         self._metric = np.array([pdfs_ensemble[i].cdf(self._ztrue[i])[0][0] for i in range(len(self._ztrue))])
         return self._metric
 
+    @property
+    def qq(self, n_quant=100):
+        q_theory = np.linspace(0., 1., n_quant)
+        q_data = np.quantile(self._metric, q_theory)
+        self._qq = (q_theory, q_data)
+        return self._qq
+
+    def plot_pit_qq(self, bins=None, code=None, title=None, show_pit=True,
+                    show_qq=True, pit_out_rate=None, savefig=False):
+        """Make plot PIT-QQ as Figure 2 from Schmidt et al. 2020."""
+        fig_filename = utils.plot_pit_qq(self, bins=bins, code=code, title=title,
+                                         show_pit=show_pit, show_qq=show_qq,
+                                         pit_out_rate=pit_out_rate,
+                                         savefig=savefig)
+        return fig_filename
 
 class PitOutRate(Metrics):
     """ Fraction of PIT outliers """
@@ -214,7 +229,6 @@ class CDE(Metrics):
             the name of the metric
         """
         super().__init__(pdfs, xvals, ztrue, name)
-        # self._metric = None
 
     def evaluate(self):
         """Evaluate the estimated conditional density loss described in
@@ -248,7 +262,6 @@ class KLD(Metrics):
             the name of the metric
         """
         super().__init__(pdfs, xvals, ztrue, name)
-        # self._metric = None
 
     def evaluate(self, pits=None):
         """ Use scipy.stats.entropy to compute the Kullback-Leibler
@@ -278,7 +291,7 @@ class CRPS(Metrics):
             the name of the metric
         """
         super().__init__(sample, name)
-        self._metric = None
+
 
     def evaluate(self):
         raise NotImplementedError
