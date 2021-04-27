@@ -97,12 +97,14 @@ class KS(Metrics):
         super().__init__(pdfs, xvals, ztrue, name)
         self._statistic = None
         self._pvalue = None
+        self._pits = None
 
     def evaluate(self, pits=None):
         """ Use scipy.stats.kstest to compute the Kolmogorov-Smirnov statistic for
         the PIT values by comparing with a uniform distribution between 0 and 1. """
         if pits is None:
             pits = PIT(self._pdfs, self._xvals, self._ztrue).evaluate()
+        self._pits = pits
         self._statistic, self._pvalue = stats.kstest(pits, stats.uniform.cdf)
         self._metric = self._statistic
         return self._statistic, self._pvalue

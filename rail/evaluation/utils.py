@@ -245,14 +245,14 @@ def plot_pit_qq(pit, bins=None, title=None, code=None,
     return fig_filename
 
 
-def ks_plot(ks):
+def ks_plot(ks, n_quant=100):
     """ KS test illustration.
     Ancillary function to be used by class KS."""
-    pits = ks.sample.pit
-    xvals = ks.sample.qq[0]
+    pits = ks._pits
+    xvals = np.linspace(0., 1., n_quant)
     yvals = np.array([np.histogram(pits, bins=len(xvals))[0]])
     pit_cdf = Ensemble(interp, data=dict(xvals=xvals, yvals=yvals)).cdf(xvals)[0]
-    uniform_yvals = np.array([np.full(ks.sample.n_quant, 1.0 / float(ks.sample.n_quant))])
+    uniform_yvals = np.array([np.full(n_quant, 1.0 / float(n_quant))])
     uniform_cdf = Ensemble(interp, data=dict(xvals=xvals, yvals=uniform_yvals)).cdf(xvals)[0]
 
     plt.figure(figsize=[4, 4])
