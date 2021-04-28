@@ -1,5 +1,4 @@
 import sys
-from rail.evaluation.sample import Sample
 from rail.evaluation.utils import *
 import time as t
 
@@ -7,7 +6,7 @@ import time as t
 def main(argv):
     """ RAIL Evaluation module - command line mode:
     * Compute all metrics available and display them in a table.
-    * Make validation plots and save them in PNG files.
+    * Make PIT-QQ plot and save it a PNG file.
 
     Parameters:
     -----------
@@ -51,21 +50,17 @@ def main(argv):
         print()
 
     print("Reading data...")
-    print()
     pdfs, zgrid, ztrue, photoz_mode = read_pz_output(pdfs_file, ztrue_file)
-    #sample = Sample(pdfs, zgrid, ztrue, photoz_mode, code="FlexZBoost", name="toy data")
-    #print(sample)
     print()
     print()
 
     print("Computing metrics...")
-    print()
-    print()
     pit = PIT(pdfs, zgrid, ztrue)
     pit.evaluate()
     pits = pit.metric
     summary = Summary(pdfs, zgrid, ztrue)
     summary.print_metrics_table(pits=pits)
+    print()
     print()
 
 
@@ -75,11 +70,11 @@ def main(argv):
     fig_filename = pit.plot_pit_qq(code=code, savefig=True)
     # TO DO: ADD METRICS PLOT HERE
     print(f"PIT-QQ plot saved as:   {fig_filename}")
+    print()
     print ()
 
     t1 = t.time()
     dt = t1 - t0
-    print()
     print(f"Done! (total time: {int(dt)} seconds)")
     print()
     print()
