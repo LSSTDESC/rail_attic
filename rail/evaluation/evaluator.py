@@ -67,8 +67,9 @@ def main(argv):
     print("Making plots...")
     print()
     print()
-    fig_filename = pit.plot_pit_qq(code=code, savefig=True)
-    # TO DO: ADD METRICS PLOT HERE
+    pit_out_rate = PitOutRate(pdfs, zgrid, ztrue).evaluate(pits=pits)
+
+    fig_filename = pit.plot_pit_qq(pit_out_rate=pit_out_rate, code=code, savefig=True)
     print(f"PIT-QQ plot saved as:   {fig_filename}")
     print()
     print ()
