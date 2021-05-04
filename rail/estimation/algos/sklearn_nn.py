@@ -11,7 +11,35 @@ import sklearn.neural_network as sknn
 from sklearn.preprocessing import StandardScaler
 from scipy.stats import norm
 from rail.estimation.estimator import Estimator as BaseEstimation
+from rail.estimation.utils import check_and_print_params
 import qp
+
+
+def_param = {'run_params': {'width': 0.05, 'zmin': 0.0,
+                            'zmax': 3.0, 'nzbins': 301,
+                            'max_iter': 500,
+                            'inform_options': {'save_train': False,
+                                               'load_model': False,
+                                               'modelfile':
+                                               'simpleNN.pkl'
+                                               }}}
+
+
+descrip_dict = {'width': "width (float): The ad hoc base width of the PDFs",
+                'zmin': "zmin (float): The minimum redshift of the z grid",
+                'zmax': "zmax (float): The maximum redshift of the z grid",
+                'nzbins': "nzbins (int): The number of points in the z grid",
+                'max_iter': "max_iter (int): max number of iterations while "
+                "training the neural net.  Too low a value will cause an "
+                "error to be printed (though the code will still work, just"
+                "not optimally)",
+                'inform_options': "inform_options (dict): a dictionary of "
+                "options for loading and storing of the pretrained model.  "
+                "This includes:\n modelfile (str): the filename to save or "
+                "load a trained model to/from\n save_train (bool): boolean "
+                "to set whether to save a trained model\n load_model (bool): "
+                "boolean to set whether to load a pretrained model"
+                }
 
 
 def make_color_data(data_dict):
@@ -57,7 +85,7 @@ class simpleNN(BaseEstimation):
     and then put an error of width*(1+zb).  We'll do a "real" NN
     photo-z later.
     """
-    def __init__(self, base_config, config_dict):
+    def __init__(self, base_config, config_dict='None'):
         """
         Parameters:
         -----------
@@ -65,6 +93,11 @@ class simpleNN(BaseEstimation):
           dictionary of all variables read in from the run_params
           values in the yaml file
         """
+        if config_dict == "None":
+            print("No config file supplied, using default parameters")
+            config_dict = def_param
+        config_dict = check_and_print_params(config_dict, def_param,
+                                             descrip_dict)
 
         super().__init__(base_config=base_config, config_dict=config_dict)
         inputs = self.config_dict['run_params']
@@ -73,6 +106,7 @@ class simpleNN(BaseEstimation):
         self.zmin = inputs['zmin']
         self.zmax = inputs['zmax']
         self.nzbins = inputs['nzbins']
+        self.maxiter = inputs['max_iter']
         self.inform_options = inputs['inform_options']
         if 'save_train' in inputs['inform_options']:
             try:
@@ -93,7 +127,8 @@ class simpleNN(BaseEstimation):
         color_data = make_color_data(training_data)
         input_data = regularize_data(color_data)
         simplenn = sknn.MLPRegressor(hidden_layer_sizes=(12, 12),
-                                     activation='tanh', solver='lbfgs')
+                                     activation='tanh', solver='lbfgs',
+                                     max_iter=self.maxiter)
         simplenn.fit(input_data, speczs)
         self.model = simplenn
         if self.inform_options['save_train']:

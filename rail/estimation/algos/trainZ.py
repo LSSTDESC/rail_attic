@@ -9,12 +9,44 @@ N (z) of the training set.
 import pickle
 import numpy as np
 from rail.estimation.estimator import Estimator as BaseEstimation
+from rail.estimation.utils import check_and_print_params
 import qp
+
+
+default_params_dict = {'run_params': {'zmin': 0.0, 'zmax': 3.0, 'nzbins': 301,
+                                      'inform_options': {'save_train': False,
+                                                         'load_model': False,
+                                                         'modelfile':
+                                                         'trainZmodel.pkl'
+                                                         }}}
+
+
+param_description_dict = {'zmin': "zmin: (float): The minimum redshift of "
+                          "the z grid",
+                          'zmax': "zmax: (float): The maximum redshift of "
+                          "the z grid",
+                          'nzbins': "nzbins: (int) the number of gridpoints in"
+                          " the z grid",
+                          'inform_options': "inform_options: (dict): a "
+                          "dictionary of options for loading and storing of "
+                          "the pretrained model.  This includes:\n "
+                          "modelfile:(str) the filename to save or load a "
+                          "trained model from.\n save_train:(bool) boolean to "
+                          "set whether to save a trained model.\n "
+                          "load_model:(bool): boolean to set whether to "
+                          "load a trained model from filename modelfile"}
 
 
 class trainZ(BaseEstimation):
 
-    def __init__(self, base_config, config_dict):
+    def __init__(self, base_config, config_dict="None"):
+        if config_dict == "None":
+            print("No config file supplied, using default parameters")
+            config_dict = default_params_dict
+
+        config_dict = check_and_print_params(config_dict, default_params_dict,
+                                             param_description_dict)
+
         super().__init__(base_config=base_config, config_dict=config_dict)
 
         inputs = self.config_dict['run_params']
@@ -31,7 +63,8 @@ class trainZ(BaseEstimation):
         self.zmode = midpoints[np.argmax(train_pdf)]
         cdf = np.cumsum(train_pdf)
         self.cdf = cdf / cdf[-1]
-        self.train_pdf = train_pdf/self.cdf
+        norm = cdf[-1]*(zbins[2]-zbins[1])
+        self.train_pdf = train_pdf/norm
         self.zgrid = midpoints
         model = trainZmodel(self.zgrid, self.train_pdf, self.zmode)
         if self.inform_options['save_train']:
