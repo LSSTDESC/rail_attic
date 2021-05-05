@@ -38,11 +38,16 @@ def one_algo(single_estimator, single_input):
     for _, end, data in iter_chunk_hdf5_data(pz.testfile, pz.num_rows,
                                              pz.hdf5_groupname):
         rerun_pz_dict = pz.estimate(data)
-    pz.output_format='qp'
+    pz.output_format = 'qp'
     for _, end, data in iter_chunk_hdf5_data(pz.testfile,
                                              pz.num_rows,
                                              pz.hdf5_groupname):
         _ = pz.estimate(data)
+    # add a test load for no config dict
+    # check that all keys are present
+    noconfig_pz = single_estimator(test_base_yaml)
+    for key in single_input['run_params'].keys():
+        assert key in noconfig_pz.config_dict['run_params']
     return pz_dict, rerun_pz_dict
 
 
@@ -64,7 +69,7 @@ def test_random_pz():
 
 def test_simple_nn():
     config_dict = {'run_params': {'width': 0.025, 'zmin': 0.0, 'zmax': 3.0,
-                                  'nzbins': 301,
+                                  'nzbins': 301, 'max_iter': 250,
                                   'inform_options': {'save_train': True,
                                                      'modelfile': 'model.tmp'}
                                   }}
