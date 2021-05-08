@@ -23,18 +23,41 @@ import coloredlogs
 import logging
 from pkg_resources import resource_filename
 
-from interfaces.rail.processFilters import processFilters  # interface added into delight in branch rail
-#from interfaces.rail.makeConfigParam import makeConfigParam  # build the parameter file required by Delight
-from interfaces.rail.makeConfigParam import *  # build the parameter file required by Delight
-from interfaces.rail.processSEDs import processSEDs  # build a redshift -flux grid model
-from interfaces.rail.templateFitting import templateFitting
-from interfaces.rail.simulateWithSEDs import simulateWithSEDs # simulate its own SED in tutorial mode
-from interfaces.rail.delightLearn import delightLearn
-from interfaces.rail.delightApply import delightApply
-from interfaces.rail.convertDESCcat  import convertDESCcat   # convert DESC input file into Delight format
-from interfaces.rail.convertDESCcat  import *   # convert DESC input file into Delight format
-from interfaces.rail.calibrateTemplateMixturePriors import *
-from interfaces.rail.getDelightRedshiftEstimation import *
+# Delight initialisation
+
+#from interfaces.rail.processFilters import processFilters  # interface added into delight in branch rail
+from rail.estimation.algos.include_delightPZ.processFilters import processFilters
+#from interfaces.rail.processSEDs import processSEDs  # build a redshift -flux grid model
+from rail.estimation.algos.include_delightPZ.processSEDs import processSEDs  # build a redshift -flux grid model
+
+# interface with Delight through files
+#from interfaces.rail.makeConfigParam import *  # build the parameter file required by Delight
+from rail.estimation.algos.include_delightPZ.makeConfigParam import *  # build the parameter file required by Delight
+
+#from interfaces.rail.convertDESCcat  import convertDESCcat   # convert DESC input file into Delight format
+#from interfaces.rail.convertDESCcat  import *   # convert DESC input file into Delight format
+#from from rail.estimation.algos.include_delightPZ.convertDESCcat  import convertDESCcat   # convert DESC input file into Delight format
+from rail.estimation.algos.include_delightPZ.convertDESCcat  import *   # convert DESC input file into Delight format
+
+# mock data simulation
+#from interfaces.rail.simulateWithSEDs import simulateWithSEDs # simulate its own SED in tutorial mode
+from rail.estimation.algos.include_delightPZ.simulateWithSEDs import simulateWithSEDs # simulate its own SED in tutorial mode
+
+# Delight algorithms
+
+#from interfaces.rail.templateFitting import templateFitting
+from rail.estimation.algos.include_delightPZ.templateFitting import templateFitting
+#from interfaces.rail.delightLearn import delightLearn
+from rail.estimation.algos.include_delightPZ.delightLearn import delightLearn
+#from interfaces.rail.delightApply import delightApply
+from rail.estimation.algos.include_delightPZ.delightApply import delightApply
+
+# other
+
+#from interfaces.rail.calibrateTemplateMixturePriors import *
+from rail.estimation.algos.include_delightPZ.calibrateTemplateMixturePriors import *
+#from interfaces.rail.getDelightRedshiftEstimation import *
+from rail.estimation.algos.include_delightPZ.getDelightRedshiftEstimation import *
 
 # Create a logger object.
 logger = logging.getLogger(__name__)
@@ -66,6 +89,9 @@ class delightPZ(BaseEstimation):
         # name of delight configuration file
         self.delightparamfile=inputs["delightparamfile"]
         self.delightparamfile = os.path.join(self.tempdir, self.delightparamfile)
+
+        self.delightindata=inputs['dlght_inputdata']
+
         # Choice of the running mode
         self.tutorialmode = inputs["dlght_tutorialmode"]
         self.tutorialpasseval = False  # onmy one chunk for simulation
@@ -82,6 +108,8 @@ class delightPZ(BaseEstimation):
         self.dlght_calibrateTemplateMixturePrior = inputs["dlght_calibrateTemplateMixturePrior"]
         # all parameter files
         self.inputs = inputs
+
+
 
         np.random.seed(87)
 
@@ -122,11 +150,27 @@ class delightPZ(BaseEstimation):
                 raise
 
 
+        if not os.path.exists(self.delightindata):
+            msg = " No Delight input data in dir  " + self.delightindata
+            logger.error(msg)
+            exit(-1)
+
+        SUBDIRs = ['BROWN_SEDs', 'CWW_SEDs', 'FILTERS']
+
+        for subdir in SUBDIRs:
+            theinpath=os.path.join(self.delightindata,subdir)
+            if not os.path.exists(theinpath):
+                msg = " No Delight input data in dir  " + theinpath
+                logger.error(msg)
+                exit(-1)
+
 
 
         # Very awfull way to get the internal data path for Delight
         # This is the delight setup.py tools that get the data there
-        basedelight_datapath = resource_filename('delight', '../data')
+        #basedelight_datapath = resource_filename('delight', '../data')
+        basedelight_datapath = self.delightindata
+
         logger.debug("Guessed basedelight_datapath  = " + basedelight_datapath )
 
         # gives to Delight where are its datapath and provide yaml arguments

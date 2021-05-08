@@ -3,12 +3,12 @@
 # RAIL configuration file for delightPZ module
 #
 # Steering Delight from RAIL
-# Used on Vera C. Runbin LSST only estimation
+# Used on Vera C. Rubin LSST only estimation
 #
 # Author        : Sylvie Dagoret-Campagne
 # Affiliation   : IJCLab/IN2P3/CNRS/France
 # Creation date : March 2021
-# Last update   : March 21th 2021
+# Last update   : May 8th 2021
 #
 ############################################################################################
 run_params:
@@ -23,11 +23,15 @@ run_params:
   dlght_redshiftNumBinsGPpred: 300
   dlght_redshiftBinSize: 0.01
   dlght_redshiftDisBinSize: 0.2
+#-----------------------------------------------
+# Delight input data
+#----------------------------------------------
+  dlght_inputdata: "./tmp/delight_indata"
 #---------------------------------------
 # temporary directory for delight work
 #---------------------------------------
-  tempdir: "./tmp"
-  tempdatadir: "./tmp/delight_data"
+  tempdir: "./tmpsim"
+  tempdatadir: "./tmpsim/delight_data"
 #----------------------------------------
 # delight configuration file filename
 #----------------------------------------
@@ -38,7 +42,7 @@ run_params:
 #   - True  : activate internal flux simulation
 #   - False : activate use of DC2 datasets for training and Validation
 #-----------------------------------------------------------------------
-  dlght_tutorialmode: False
+  dlght_tutorialmode: True
 #------------------------------------------------------------------------
 # Filtering of training and Validation dataset
 # according flux SNR
