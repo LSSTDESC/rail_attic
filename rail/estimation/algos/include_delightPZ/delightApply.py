@@ -8,10 +8,9 @@ from delight.photoz_gp import PhotozGP
 from delight.photoz_kernels import Photoz_mean_function, Photoz_kernel
 from delight.utils_cy import approx_flux_likelihood_cy
 from time import time
-import configparser
 
-import logging
 import coloredlogs
+import logging
 
 
 logger = logging.getLogger(__name__)

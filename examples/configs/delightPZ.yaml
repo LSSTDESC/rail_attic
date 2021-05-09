@@ -26,7 +26,7 @@ run_params:
 #-----------------------------------------------
 # Delight input data
 #----------------------------------------------
-  dlght_inputdata: "./tmp/delight_indata"
+  dlght_inputdata: "./tmpsim/delight_indata"
 #---------------------------------------
 # temporary directory for delight work
 #---------------------------------------

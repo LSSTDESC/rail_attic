@@ -14,10 +14,10 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 from delight.io import *
 from delight.utils import *
-import configparser
 
-import logging
+
 import coloredlogs
+import logging
 
 
 logger = logging.getLogger(__name__)

@@ -2,7 +2,6 @@
 import sys
 from mpi4py import MPI
 import numpy as np
-import configparser
 from scipy.interpolate import interp1d
 from delight.io import *
 from delight.utils import *
@@ -13,8 +12,8 @@ import matplotlib.pyplot as plt
 import emcee
 import corner
 
-import logging
 import coloredlogs
+import logging
 
 
 # Create a logger object.

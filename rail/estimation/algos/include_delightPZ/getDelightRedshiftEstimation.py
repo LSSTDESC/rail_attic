@@ -8,10 +8,9 @@ import pprint
 from delight.io import *
 from delight.utils import *
 import h5py
-import configparser
 
-import logging
 import coloredlogs
+import logging
 
 
 logger = logging.getLogger(__name__)

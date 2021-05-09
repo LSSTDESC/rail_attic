@@ -19,12 +19,11 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 from delight.io import *
 from delight.utils import *
-import configparser
+
+import coloredlogs
+import logging
 
 import h5py
-import logging
-import coloredlogs
-
 
 #from interfaces.rail.utils  import load_training_data, get_input_data_size_hdf5,load_raw_hdf5_data
 from rail.estimation.utils  import load_training_data, get_input_data_size_hdf5,load_raw_hdf5_data

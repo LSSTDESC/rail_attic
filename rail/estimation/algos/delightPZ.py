@@ -109,8 +109,6 @@ class delightPZ(BaseEstimation):
         # all parameter files
         self.inputs = inputs
 
-
-
         np.random.seed(87)
 
     #############################################################################################################
@@ -163,6 +161,11 @@ class delightPZ(BaseEstimation):
                 msg = " No Delight input data in dir  " + theinpath
                 logger.error(msg)
                 exit(-1)
+
+
+
+
+
 
 
 
@@ -227,9 +230,11 @@ class delightPZ(BaseEstimation):
         msg = " ESTIMATE : chunk number {} ".format(self.chunknum)
         logger.info(msg)
 
-        basedelight_datapath = resource_filename('delight', '../data')
-        print(self.delightparamfile)
+        #basedelight_datapath = resource_filename('delight', '../data')
+        basedelight_datapath = self.delightindata
 
+        msg=" Delight input data file are in dir : {} ".format(self.delightparamfile)
+        logger.debug(msg)
 
         # when Delight runs in tutorial mode call only once delightApply
         if  self.tutorialmode and not self.tutorialpasseval:

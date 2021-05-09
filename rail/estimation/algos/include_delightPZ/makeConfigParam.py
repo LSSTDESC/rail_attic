@@ -14,17 +14,15 @@ from scipy.optimize import leastsq
 
 from delight.utils import *
 from delight.io import *
-import configparser
+
+import coloredlogs
+import logging
+
 
 import os
 import yaml
 
 from pkg_resources import resource_filename
-
-
-import logging
-import coloredlogs
-
 
 # Create a logger object.
 logger = logging.getLogger(__name__)
@@ -53,12 +51,12 @@ def makeConfigParam(path,inputs_rail):
     logger.info(msg)
 
     logger.debug(" received path = "+ path)
-
+    #logger.debug(" received input_rail = " + inputs_rail)
 
     # 1) Let 's create a parameter file from scratch.
 
-#    paramfile_txt = "\n"
-#    paramfile_txt += \
+    #paramfile_txt = "\n"
+    #paramfile_txt += \
     paramfile_txt = \
 """
 # DELIGHT parameter file
@@ -72,7 +70,7 @@ def makeConfigParam(path,inputs_rail):
 """
 
     # 2) Filter Section
-#    paramfile_txt += "\n"
+    paramfile_txt += "\n"
     paramfile_txt += \
 """
 [Bands]
@@ -377,8 +375,9 @@ def makeConfigParamChunk(path,inputs_rail,chunknum):
 
     # 1) Let 's create a parameter file from scratch.
 
-    paramfile_txt = "\n"
-    paramfile_txt += \
+    #paramfile_txt = "\n"
+    #paramfile_txt += \
+    paramfile_txt = \
 """
 # DELIGHT parameter file
 # Syntactic rules:
@@ -391,8 +390,9 @@ def makeConfigParamChunk(path,inputs_rail,chunknum):
 """
 
     # 2) Filter Section
-    paramfile_txt = "\n"
-    paramfile_txt += """
+    paramfile_txt += "\n"
+    paramfile_txt += \
+"""
 [Bands]
 names: lsst_u lsst_g lsst_r lsst_i lsst_z lsst_y
 """

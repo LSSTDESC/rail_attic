@@ -10,15 +10,12 @@ import sys
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.optimize import leastsq
-import configparser
 
 from delight.utils import *
 from delight.io import *
 
-from delight.io import parseParamFile
-
-import logging
 import coloredlogs
+import logging
 
 # Create a logger object.
 logger = logging.getLogger(__name__)
@@ -39,9 +36,9 @@ def processFilters(configfilename):
     logger.info(msg)
 
 
-    params = parseParamFile(configfilename, verbose=True, catFilesNeeded=False)
+    params = parseParamFile(configfilename, verbose=False, catFilesNeeded=False)
 
-    numCoefs = params['numCoefs']
+    numCoefs = params["numCoefs"]
     bandNames = params['bandNames']
     make_plots= params['bands_makeplots']
 

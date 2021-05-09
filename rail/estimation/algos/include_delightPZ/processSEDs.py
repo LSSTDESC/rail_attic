@@ -12,18 +12,18 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
-import configparser
 
 
 from delight.io import *
 from delight.utils import *
 
-import logging
 import coloredlogs
+import logging
 
 
 logger = logging.getLogger(__name__)
 coloredlogs.install(level='DEBUG', logger=logger,fmt='%(asctime)s,%(msecs)03d %(programname)s, %(name)s[%(process)d] %(levelname)s %(message)s')
+
 
 
 def processSEDs(configfilename):
