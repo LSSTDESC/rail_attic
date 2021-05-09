@@ -25,13 +25,19 @@ run_params:
   dlght_redshiftDisBinSize: 0.2
 #-----------------------------------------------
 # Delight input data
+# example recommended:
+# - DC2 mode : dlght_inputdata: "./tmp/delight_indata"
+# - tutorial mode : dlght_inputdata: "./tmpsim/delight_indata"
 #----------------------------------------------
-  dlght_inputdata: "./tmpsim/delight_indata"
+  dlght_inputdata: "./tmp/delight_indata"
 #---------------------------------------
 # temporary directory for delight work
+# example recommended:
+# - DC2 mode : tempdir: "./tmp" and tempdatadir: "./tmp/delight_data"
+# - tutorial mode : tempdir: "./tmpsim" and tempdatadir: "./tmpsim/delight_data"
 #---------------------------------------
-  tempdir: "./tmpsim"
-  tempdatadir: "./tmpsim/delight_data"
+  tempdir: "./tmp"
+  tempdatadir: "./tmp/delight_data"
 #----------------------------------------
 # delight configuration file filename
 #----------------------------------------
@@ -42,7 +48,7 @@ run_params:
 #   - True  : activate internal flux simulation
 #   - False : activate use of DC2 datasets for training and Validation
 #-----------------------------------------------------------------------
-  dlght_tutorialmode: True
+  dlght_tutorialmode: False
 #------------------------------------------------------------------------
 # Filtering of training and Validation dataset
 # according flux SNR
