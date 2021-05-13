@@ -118,7 +118,8 @@ def filter_flux_entries(d,nb=6,nsig=5):
 
     # collection of indexes
     indexes = []
-    indexes = np.array(indexes, dtype=np.int)
+    #indexes = np.array(indexes, dtype=np.int)
+    indexes = np.array(indexes, dtype=int)
 
     for idx in np.arange(nb):
         ratio = d[:, 2 + idx] / d[:, 8 + idx]  # flux divided by sigma-flux

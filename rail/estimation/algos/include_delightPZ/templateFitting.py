@@ -17,6 +17,9 @@ from delight.utils import *
 from delight.photoz_gp import PhotozGP
 from delight.photoz_kernels import Photoz_mean_function, Photoz_kernel
 
+from rail.estimation.algos.include_delightPZ.libPriorPZ import *
+
+
 
 import coloredlogs
 import logging
@@ -25,7 +28,7 @@ import logging
 logger = logging.getLogger(__name__)
 coloredlogs.install(level='DEBUG', logger=logger,fmt='%(asctime)s,%(msecs)03d %(programname)s, %(name)s[%(process)d] %(levelname)s %(message)s')
 
-
+FLAG_NEW_PRIOR = True
 
 def templateFitting(configfilename):
     """
@@ -41,6 +44,8 @@ def templateFitting(configfilename):
     if threadNum == 0:
         logger.info("--- TEMPLATE FITTING ---")
 
+        if FLAG_NEW_PRIOR:
+            logger.info("==> New Prior calculation from Benitez")
 
     # Parse parameters file
 
@@ -123,12 +128,23 @@ def templateFitting(configfilename):
         # - model based on SED : f_mod
         like_grid = approx_flux_likelihood(fluxes, fluxesVar, f_mod[:, :, bands],normalized=True, marginalizeEll=True,ell_hat=ell_hat_z, ell_var=(ell_hat_z*params['ellPriorSigma'])**2)
 
-        b_in = np.array(params['p_t'])[None, :]
-        beta2 = np.array(params['p_z_t'])**2.0
+        if FLAG_NEW_PRIOR:
+            maglim=26  # M5 magnitude max
+            p_z = libPriorPZ(redshiftGrid,maglim=maglim)  # return 2D template nz x nt, nt is 8
 
-        #compute prior on z
 
-        p_z = b_in * redshiftGrid[:, None] / beta2[None, :] *np.exp(-0.5 * redshiftGrid[:, None]**2 / beta2[None, :])
+        else:
+            b_in = np.array(params['p_t'])[None, :]
+            beta2 = np.array(params['p_z_t'])**2.0
+
+            #compute prior on z
+            p_z = b_in * redshiftGrid[:, None] / beta2[None, :] *np.exp(-0.5 * redshiftGrid[:, None]**2 / beta2[None, :])
+
+        if loc < 0:
+            np.set_printoptions(threshold=20, edgeitems=10, linewidth=140,formatter=dict(float=lambda x: "%.3e" % x))  # float arrays %.3g
+            print(p_z)
+
+        # Compute likelihood x prior
         like_grid *= p_z
 
         localPDFs[loc, :] += like_grid.sum(axis=1)

@@ -23,6 +23,13 @@ logger = logging.getLogger(__name__)
 coloredlogs.install(level='DEBUG', logger=logger,fmt='%(asctime)s,%(msecs)03d %(programname)s, %(name)s[%(process)d] %(levelname)s %(message)s')
 
 
+def mknames(nt):
+    return ['Elliptical ' + str(i + 1) for i in range(nt[0])] \
+           + ['Spiral ' + str(i + 1) for i in range(nt[1])] \
+           + ['Starburst ' + str(i + 1) for i in range(nt[2])]
+
+
+
 # This is the prior HDFN prior from Benitez 2000, adapted from the BPZ code.
 # This could be replaced with any redshift, magnitude, and type distribution.
 def bpz_prior(z, m, nt):
@@ -92,7 +99,7 @@ def libPriorPZ(z_grid,maglim,nt=8):
     """
 
     msg = "--- libPriorPZ"
-    logger.info(msg)
+    #logger.info(msg)
 
     # Just some boolean indexing of templates used. Needed later for some BPZ fcts.
     selectedtemplates = np.repeat(False, nt)
