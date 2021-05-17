@@ -31,6 +31,11 @@ from rail.estimation.utils  import load_training_data, get_input_data_size_hdf5,
 logger = logging.getLogger(__name__)
 coloredlogs.install(level='DEBUG', logger=logger,fmt='%(asctime)s,%(msecs)03d %(programname)s, %(name)s[%(process)d] %(levelname)s %(message)s')
 
+# option to convert DC2 flux level (in AB units) into internal Delight units
+# this option will be removed when optimisation of parameters will be implemented
+FLAG_CONVERTFLUX_TODELIGHTUNIT=True
+
+
 
 def group_entries(f):
     """
@@ -154,6 +159,12 @@ def convertDESCcatChunk(configfilename,data,chunknum,flag_filter_validation = Tr
         msg="--- Convert DESC catalogs chunk {}---".format(chunknum)
         logger.info(msg)
 
+        if FLAG_CONVERTFLUX_TODELIGHTUNIT:
+            flux_multiplicative_factor = 2.22e10
+        else:
+            flux_multiplicative_factor = 1
+
+
 
         # produce a numpy array
         magdata = group_entries(data)
@@ -261,6 +272,11 @@ def convertDESCcatChunk(configfilename,data,chunknum,flag_filter_validation = Tr
                 trueFlux = fdata_f[k, 2 + i]
                 noise = fdata_f[k, 8 + i]
 
+                # put the DC2 data to the internal units of Delight
+                trueFlux *= flux_multiplicative_factor
+                noise *= flux_multiplicative_factor
+
+
                 # fluxes[k, i] = trueFlux + noise * np.random.randn() # noisy flux
                 fluxes[k, i] = trueFlux
 
@@ -331,6 +347,13 @@ def convertDESCcat(configfilename,desctraincatalogfile,desctargetcatalogfile,\
 
 
     logger.info("--- Convert DESC training and target catalogs ---")
+
+    if FLAG_CONVERTFLUX_TODELIGHTUNIT:
+        flux_multiplicative_factor = 2.22e10
+    else:
+        flux_multiplicative_factor = 1
+
+
 
     # 1) DESC catalog file
     msg="read DESC hdf5 training file {} ".format(desctraincatalogfile)
@@ -435,6 +458,11 @@ def convertDESCcat(configfilename,desctraincatalogfile,desctargetcatalogfile,\
         for i in range(numB):
             trueFlux = fdata_f[k,2+i]
             noise    = fdata_f[k,8+i]
+
+            # put the DC2 data to the internal units of Delight
+            trueFlux *= flux_multiplicative_factor
+            noise *= flux_multiplicative_factor
+
 
             #fluxes[k, i] = trueFlux + noise * np.random.randn() # noisy flux
             fluxes[k, i] = trueFlux

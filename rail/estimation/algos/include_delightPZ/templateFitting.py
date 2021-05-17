@@ -119,8 +119,14 @@ def templateFitting(configfilename):
         # ell_hat_z = normedRefFlux * 4 * np.pi\
         #    * params['fluxLuminosityNorm'] \
         #    * (DL(redshiftGrid)**2. * (1+redshiftGrid))[:, None]
+
+        # OLD way be keep it now
         ell_hat_z = 1
         params['ellPriorSigma'] = 1e12
+
+        # Not working
+        #ell_hat_z=0.45e-4
+        #params['ellPriorSigma'] = 1e12
 
         # approximate flux likelihood, with scaling of both the mean and variance.
         # This approximates the true likelihood with an iterative scheme.
