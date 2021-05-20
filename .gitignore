@@ -104,9 +104,12 @@ venv.bak/
 .mypy_cache/
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 # vscode
 .vscode/
 =======
+=======
+>>>>>>> ca90fc91f5433a7c955a44345f8d811bcc07962b
 
 # MAC OS 
 .DS_Store
@@ -117,4 +120,7 @@ venv.bak/
 # VSCode
 .vscode
 
+<<<<<<< HEAD
 >>>>>>> 81ff354dc1a353a86c65be26a30bc5eca1929b11
+=======
+>>>>>>> ca90fc91f5433a7c955a44345f8d811bcc07962b
