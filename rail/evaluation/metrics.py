@@ -3,28 +3,19 @@ from scipy import stats
 import qp
 import utils
 from IPython.display import Markdown
+from rail.evaluation.qp_metrics import KS, CvM
 
-
-class Metrics:
-    """ A superclass for metrics"""
-    def __init__(self, pdfs=None, xvals=None, ztrue=None, name=None):
+class Evaluator:
+    """ A superclass for metrics evaluations"""
+    def __init__(self, qp_ens):
         """Class constructor.
         Parameters
         ----------
-        pdfs: `ndarray`
-            array of PDFS
-        xvals: `ndarray`
-            pdf bins (z grid)
-        ztrue: `ndarray`
-            true redshifts
-        name: `str`
-            the name of the metric
+        qp_obj: `qp object`
+            PDF ensemble in qp format
         """
-        self._pdfs = pdfs
-        self._xvals = xvals
-        self._ztrue = ztrue
-        self._name = name
-        self._metric = None
+        
+        self._qp_ens = qp_ens
 
 
     def evaluate(self):
@@ -36,36 +27,37 @@ class Metrics:
         metric: `float` or `ndarray`
             value of the metric
         """
-        print('No metric specified')
-        return self._metric
-
-    @property
-    def metric(self):
-        return self._metric
+        raise NotImplementedError
 
 
 
 """    Metrics subclasses below   """
 
-class PIT(Metrics):
+class PIT(Evaluator):
     """ Probability Integral Transform """
-    def __init__(self, pdfs, xvals, ztrue, name="PIT"):
+    def __init__(self, qp_ens, ztrue):
         """Class constructor. """
-        super().__init__(pdfs, xvals, ztrue, name)
-        self._qq = None
+        super().__init__(qp_ens, ztrue)
+        self._ztrue = ztrue
+        self._pit = np.array([self._qp_ens[i].cdf(self._ztrue[i])[0][0] for i in range(len(self._ztrue))])
 
-    def evaluate(self):
+    def evaluate(self, eval_grid='None'):
         """Compute PIT array using qp.Ensemble class"""
-        pdfs_ensemble = qp.Ensemble(qp.interp, data=dict(xvals=self._xvals, yvals=self._pdfs))
-        self._metric = np.array([pdfs_ensemble[i].cdf(self._ztrue[i])[0][0] for i in range(len(self._ztrue))])
-        return self._metric
+        self.qq = _evaluate_qq(eval_grid)
+        self.ks, self. ks_pval = KS(self._qp_ens, stats.uniform)
+        self.cvm, self.cvm_pval = CvM(self._qp_ens, stats.uniform)
 
-    @property
-    def qq(self, n_quant=100):
-        q_theory = np.linspace(0., 1., n_quant)
-        q_data = np.quantile(self._metric, q_theory)
-        self._qq = (q_theory, q_data)
-        return self._qq
+    def _evaluate_qq(self, eval_grid='None'):
+        if eval_grid == 'None':
+            eval_grid = np.linspace(0, 1, 100)
+        q_theory = eval_grid
+        q_data = np.quantile(self._pit, q_theory)
+        qq = (q_theory, q_data)
+        return qq
+
+    def plot_all_pit(self):
+        utils.ks_plot(self)
+
 
     def plot_pit_qq(self, bins=None, code=None, title=None, show_pit=True,
                     show_qq=True, pit_out_rate=None, savefig=False):
@@ -76,7 +68,7 @@ class PIT(Metrics):
                                          savefig=savefig)
         return fig_filename
 
-class PitOutRate(Metrics):
+class PitOutRate(Evaluator):
     """ Fraction of PIT outliers """
     def __init__(self, pdfs, xvals, ztrue, name="PIT out rate"):
         """Class constructor. """
@@ -91,38 +83,7 @@ class PitOutRate(Metrics):
         return self._metric
 
 
-class KS(Metrics):
-    """ Kolmogorov-Smirnov statistic """
-    def __init__(self, pdfs, xvals, ztrue, name="KS"):
-        """Class constructor. """
-        super().__init__(pdfs, xvals, ztrue, name)
-        self._statistic = None
-        self._pvalue = None
-        self._pits = None
-
-    def evaluate(self, pits=None):
-        """ Use scipy.stats.kstest to compute the Kolmogorov-Smirnov statistic for
-        the PIT values by comparing with a uniform distribution between 0 and 1. """
-        if pits is None:
-            pits = PIT(self._pdfs, self._xvals, self._ztrue).evaluate()
-        self._pits = pits
-        self._statistic, self._pvalue = stats.kstest(pits, stats.uniform.cdf)
-        self._metric = self._statistic
-        return self._statistic, self._pvalue
-
-    @property
-    def statistic(self):
-        return self._statistic
-
-    @property
-    def pvalue(self):
-        return self._pvalue
-
-    def plot(self):
-        utils.ks_plot(self)
-
-
-class CvM(Metrics):
+class CvM(Evaluator):
     """ Cramer-von Mises statistic """
 
     def __init__(self, pdfs, xvals, ztrue, name="CvM"):
@@ -150,7 +111,7 @@ class CvM(Metrics):
         return self._pvalue
 
 
-class AD(Metrics):
+class AD(Evaluator):
     """ Anderson-Darling statistic """
     def __init__(self, pdfs, xvals, ztrue, name="AD"):
         """Class constructor.
@@ -204,10 +165,10 @@ class AD(Metrics):
         return self._significance_level
 
 
-class CDE(Metrics):
+class CDE(Evaluator):
     """ Conditional density loss """
 
-    def __init__(self, pdfs, xvals, ztrue, name="CDE loss"):
+    def __init__(self, qp_ens, ztrue):
         """Class constructor.
         Parameters
         ----------
@@ -216,7 +177,7 @@ class CDE(Metrics):
         name: `str`
             the name of the metric
         """
-        super().__init__(pdfs, xvals, ztrue, name)
+        super().__init__(qp_ens, ztrue, name)
 
     def evaluate(self):
         """Evaluate the estimated conditional density loss described in
@@ -237,7 +198,7 @@ class CDE(Metrics):
         return self._metric
 
 
-class KLD(Metrics):
+class KLD(Evaluator):
     """ Kullback-Leibler Divergence """
 
     def __init__(self, pdfs, xvals, ztrue, name="KLD"):
@@ -266,7 +227,7 @@ class KLD(Metrics):
 
 
 
-class CRPS(Metrics):
+class CRPS(Evaluator):
     ''' Continuous rank probability score (Gneiting et al., 2006)'''
 
     def __init__(self, sample, name="CRPS"):
