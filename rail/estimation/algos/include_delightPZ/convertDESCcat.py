@@ -591,6 +591,10 @@ def convertDESCcat(configfilename,desctraincatalogfile,desctargetcatalogfile,\
             trueFlux = fdata_f[k, 2 + i]
             noise = fdata_f[k, 8 + i]
 
+            # put the DC2 data to the internal units of Delight
+            trueFlux *= flux_multiplicative_factor
+            noise *= flux_multiplicative_factor
+
             #fluxes[k, i] = trueFlux + noise * np.random.randn()
             fluxes[k, i] = trueFlux
 
@@ -598,7 +602,9 @@ def convertDESCcat(configfilename,desctraincatalogfile,desctargetcatalogfile,\
                 #fluxes[k, i]=np.abs(noise)/10.
                 fluxes[k, i] = trueFlux
 
-            fluxesVar[k, i] = noise**2.
+            fluxesVar[k, i] = noise**2
+
+
 
     data = np.zeros((numObjects, 1 + len(params['target_bandOrder'])))
     bandIndices, bandNames, bandColumns, bandVarColumns, redshiftColumn,refBandColumn = readColumnPositions(params, prefix="target_")
