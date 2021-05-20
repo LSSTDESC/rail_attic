@@ -103,5 +103,18 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+<<<<<<< HEAD
 # vscode
 .vscode/
+=======
+
+# MAC OS 
+.DS_Store
+
+# PyCharm 
+.idea
+
+# VSCode
+.vscode
+
+>>>>>>> 81ff354dc1a353a86c65be26a30bc5eca1929b11

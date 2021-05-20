@@ -22,6 +22,7 @@ setup(
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "Operating System :: OS Independent",
+<<<<<<< HEAD
         "Programming Language :: Python",
     ],
     install_requires=[
@@ -33,6 +34,18 @@ setup(
         "pyarrow",
         "tables",
     ],
+=======
+        "Programming Language :: Python"
+        ],
+    install_requires=['numpy',
+                      'h5py',
+                      'scipy>=1.6.0',
+                      'pyyaml',
+                      'pandas',
+                      'pyarrow',
+                      'tables',
+                      ],
+>>>>>>> 81ff354dc1a353a86c65be26a30bc5eca1929b11
     extras_require={
         "Full": ["sklearn", "FlexCode[all]", "pzflow"],
         "estimation": ["sklearn", "FlexCode[all]"],
