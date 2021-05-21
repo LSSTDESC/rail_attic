@@ -9,9 +9,10 @@ default_quants = np.linspace(0, 1, 100)
 _pitMetaMetrics = {}
 def PITMetaMetric(cls):
     argspec = inspect.getargspec(cls.evaluate)
-    num_defaults=len(argspec.defaults)
-    kwargs = {var: val for var, val in zip(argspec.args[-num_defaults:], argspec.defaults)}
-    _pitMetaMetrics.setdefault(cls, {})["default"] = kwargs
+    if argspec.defaults is not None:
+        num_defaults=len(argspec.defaults)
+        kwargs = {var: val for var, val in zip(argspec.args[-num_defaults:], argspec.defaults)}
+        _pitMetaMetrics.setdefault(cls, {})["default"] = kwargs
     return cls
 
 
@@ -30,8 +31,8 @@ class PIT(Evaluator):
         -----
         eval_grid shouldn't be necessary but new qp doesn't have a samples parameterization, only spline from KDE of samples
         """
-        pit = qp.spline_from_samples(xvals=eval_grid, samples=self.pit_samps)
-        pit.samples = self.pit_samps
+        pit = qp.spline_from_samples(xvals=eval_grid, samples=self._pit_samps)
+        pit.samples = self._pit_samps
 
         if meta_options is not None:
             metamets = {}
