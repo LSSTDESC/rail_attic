@@ -31,7 +31,8 @@ class PIT(Evaluator):
         -----
         eval_grid shouldn't be necessary but new qp doesn't have a samples parameterization, only spline from KDE of samples
         """
-        pit = qp.spline_from_samples(xvals=eval_grid, samples=self._pit_samps)
+        pit = qp.spline_from_samples(xvals=eval_grid,
+                                     samples=np.atleast_2d(self._pit_samps))
         pit.samples = self._pit_samps
 
         if meta_options is not None:
@@ -111,7 +112,7 @@ class PITKS(PITMeta):
     def evaluate(self):
         """ Use scipy.stats.kstest to compute the Kolmogorov-Smirnov test statistic for
         the PIT values by comparing with a uniform distribution between 0 and 1. """
-        stat, pval = stats.kstest(self.pit.samples, 'uniform')
+        stat, pval = stats.kstest(self._pit.samples, 'uniform')
         return stat_and_pval(stat, pval)
 
 @PITMetaMetric
@@ -124,7 +125,7 @@ class PITCvM(PITMeta):
     def evaluate(self):
         """ Use scipy.stats.cramervonmises to compute the Cramer-von Mises statistic for
         the PIT values by comparing with a uniform distribution between 0 and 1. """
-        stat, pval = stats.cramervonmises(self.pit.samples, 'uniform')
+        stat, pval = stats.cramervonmises(self._pit.samples, 'uniform')
         return stat_and_pval(stat, pval)
 
 @PITMetaMetric
@@ -150,7 +151,7 @@ class PITAD(PITMeta):
         -------
 
         """
-        pits = self.pit.samples
+        pits = self._pit.samples
         mask = (pits >= pit_min) & (pits <= pit_max)
         pits_clean = pits[mask]
         diff = len(pits) - len(pits_clean)
