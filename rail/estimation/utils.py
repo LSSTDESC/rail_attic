@@ -21,4 +21,3 @@ def check_and_print_params(config_dict, default_param_dict, desc_dict):
         print(f"{key}: {desc_dict[key]}")
         print(f"{key} value: {config_dict['run_params'][key]}")
     return config_dict
-

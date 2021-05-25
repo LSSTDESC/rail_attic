@@ -37,7 +37,7 @@ def main(argv):
     print(f"code name: {name}")
 
     pz = code(base_config, run_dict)
-    
+
     pz.inform_dict = run_dict['run_params']['inform_options']
     if pz.inform_dict['load_model']:
         # note: specific options set in subclasss func def
@@ -45,7 +45,7 @@ def main(argv):
     else:
         trainfile = pz.trainfile
         train_fmt = trainfile.split(".")[-1]
-        training_data = load_training_data(trainfile, 
+        training_data = load_training_data(trainfile,
                                            train_fmt,
                                            pz.groupname)
         pz.inform(training_data)

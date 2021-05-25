@@ -4,6 +4,7 @@ incomplete_dict = {'run_params': {'zmin': 0.0}}
 complete_dict = {'run_params': {'zmin': 0.0, 'zmax': 3.0}}
 desc_dict = {'zmin': "zmin: minimum z", 'zmax': "zmax: max z"}
 
+
 def test_incomplete_dict():
     # check that feeding incomplete dict returns all values
     # in complete_dict, i.e. check adding a key
