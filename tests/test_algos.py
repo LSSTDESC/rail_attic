@@ -1,7 +1,7 @@
 import numpy as np
 import os
+from rail.fileIO import iter_chunk_hdf5_data, load_training_data
 import pytest
-from rail.estimation.utils import iter_chunk_hdf5_data
 from rail.estimation.algos import randomPZ, sklearn_nn, flexzboost, trainZ
 
 
@@ -18,9 +18,16 @@ def one_algo(single_estimator, single_input):
     """
 
     pz = single_estimator(test_base_yaml, single_input)
-    pz.inform()
+    trainfile = pz.trainfile
+    train_fmt = trainfile.split(".")[-1]
+    training_data = load_training_data(trainfile, train_fmt,
+                                       pz.groupname)
+    pz.inform_dict = single_input['run_params']['inform_options']
+    pz.inform(training_data)
     # set chunk size to pz.num_rows to ensure all run in one chunk
-    for _, end, data in iter_chunk_hdf5_data(pz.testfile, pz.num_rows,
+    oversize_rows = pz.num_rows + 4  # test proper chunking truncation
+    for _, end, data in iter_chunk_hdf5_data(pz.testfile,
+                                             oversize_rows,
                                              pz.hdf5_groupname):
         pz_dict = pz.estimate(data)
     assert end == pz.num_rows
@@ -31,6 +38,16 @@ def one_algo(single_estimator, single_input):
     for _, end, data in iter_chunk_hdf5_data(pz.testfile, pz.num_rows,
                                              pz.hdf5_groupname):
         rerun_pz_dict = pz.estimate(data)
+    pz.output_format = 'qp'
+    for _, end, data in iter_chunk_hdf5_data(pz.testfile,
+                                             pz.num_rows,
+                                             pz.hdf5_groupname):
+        _ = pz.estimate(data)
+    # add a test load for no config dict
+    # check that all keys are present
+    noconfig_pz = single_estimator(test_base_yaml)
+    for key in single_input['run_params'].keys():
+        assert key in noconfig_pz.config_dict['run_params']
     return pz_dict, rerun_pz_dict
 
 
@@ -52,7 +69,7 @@ def test_random_pz():
 
 def test_simple_nn():
     config_dict = {'run_params': {'width': 0.025, 'zmin': 0.0, 'zmax': 3.0,
-                                  'nzbins': 301,
+                                  'nzbins': 301, 'max_iter': 250,
                                   'inform_options': {'save_train': True,
                                                      'modelfile': 'model.tmp'}
                                   }}
