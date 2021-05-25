@@ -109,7 +109,8 @@ def delightApply(configfilename):
         bestTypes = np.zeros((numTObjCk, ), dtype=int)
         ells = np.zeros((numTObjCk, ), dtype=int)
 
-        # load the GP parameters already learned on training dataset
+        # loop on training data and training GP coefficients produced by delight_learn
+        # It fills the model_mean and model_covar predicted by GP
         loc = TR_firstLine - 1
         trainingDataIter = getDataFromFile(params, TR_firstLine, TR_lastLine,prefix="training_", ftype="gpparams")
 
@@ -118,12 +119,15 @@ def delightApply(configfilename):
             t1 = time()
             redshifts[loc] = z              # redshift of all training samples
             gp.setCore(X, B, nt,flatarray[0:nt+B+B*(B+1)//2])
-            bestTypes[loc] = gp.bestType   # retreive the best-type found by delight-learn
-            ells[loc] = ell                # retreive the luminosity parameter l
+            bestTypes[loc] = gp.bestType   # retrieve the best-type found by delight-learn
+            ells[loc] = ell                # retrieve the luminosity parameter l
+
+            # here is the model prediction of Gaussian Process for that particular trainning galaxy
             model_mean[:, loc, :], model_covar[:, loc, :] = gp.predictAndInterpolate(redshiftGrid, ell=ell)
             t2 = time()
             # print(loc, t2-t1)
 
+        #Redshift prior on training galaxy
         # p_t = params['p_t'][bestTypes][None, :]
         # p_z_t = params['p_z_t'][bestTypes][None, :]
         # compute the prior for taht training sample
@@ -140,7 +144,7 @@ def delightApply(configfilename):
 
         targetDataIter = getDataFromFile(params, firstLine, lastLine,prefix="target_", getXY=False, CV=False)
 
-        # loop on target
+        # loop on target samples
         for loc, (z, normedRefFlux, bands, fluxes, fluxesVar, bCV, dCV, dVCV) in enumerate(targetDataIter):
             t1 = time()
             ell_hat_z = normedRefFlux * 4 * np.pi * params['fluxLuminosityNorm'] * (DL(redshiftGrid)**2. * (1+redshiftGrid))
@@ -148,6 +152,7 @@ def delightApply(configfilename):
             if params['useCompression'] and params['compressionFilesFound']:
                 indices = np.array(next(iterCompI).split(' '), dtype=int)
                 sel = np.in1d(targetIndices, indices, assume_unique=True)
+                # same likelihood as for template fitting
                 like_grid2 = approx_flux_likelihood(fluxes,fluxesVar,model_mean[:, sel, :][:, :, bands],
                 f_mod_covar=model_covar[:, sel, :][:, :, bands],
                 marginalizeEll=True, normalized=False,
@@ -156,16 +161,19 @@ def delightApply(configfilename):
                 like_grid *= prior[:, sel]
             else:
                 like_grid = np.zeros((nz, model_mean.shape[1]))
+                # same likelihood as for template fitting, but cython
                 approx_flux_likelihood_cy(
                     like_grid, nz, model_mean.shape[1], bands.size,
-                    fluxes, fluxesVar,
-                    model_mean[:, :, bands],
+                    fluxes, fluxesVar,  # target galaxy fluxes and variance
+                    model_mean[:, :, bands],     # prediction with Gaussian process
                     model_covar[:, :, bands],
-                    ell_hat=ell_hat_z,
+                    ell_hat=ell_hat_z,           # it will find internally the ell
                     ell_var=(ell_hat_z*params['ellPriorSigma'])**2)
-                like_grid *= prior[:, :]
+                like_grid *= prior[:, :] #likelihood multiplied by redshift training galaxies priors
             t2 = time()
-            localPDFs[loc, :] += like_grid.sum(axis=1)
+            localPDFs[loc, :] += like_grid.sum(axis=1)  # the final redshift posterior is sum over training galaxies posteriors
+
+            # compute the evidence for each model
             evidences = np.trapz(like_grid, x=redshiftGrid, axis=0)
             t3 = time()
 
