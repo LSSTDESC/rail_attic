@@ -3,6 +3,7 @@ import os
 from rail.fileIO import iter_chunk_hdf5_data, load_training_data
 import pytest
 from rail.estimation.algos import randomPZ, sklearn_nn, flexzboost, trainZ
+from rail.estimation.algos import bpz_lite
 
 
 test_base_yaml = './tests/test.yaml'
@@ -115,6 +116,36 @@ def test_train_pz():
     pdf_expected[10:16] = [7, 23, 8, 23, 26, 13]
     pz_algo = trainZ.trainZ
     pz_dict, rerun_pz_dict = one_algo(pz_algo, config_dict)
+    print(pz_dict['zmode'])
+    assert np.isclose(pz_dict['zmode'], zb_expected).all()
+    assert np.isclose(pz_dict['zmode'], rerun_pz_dict['zmode']).all()
+
+
+def test_bpz_lite():
+    cdict = {'run_params': {'zmin': 0.0, 'zmax': 3.0,
+                            'dz': 0.01,
+                            'nzbins': 301,
+                            'path_to_bpz':
+                                "/Users/sam/WORK/software/DESC_BPZ",
+                            'columns_file':
+                                "./examples/TMPBPZ/test.columns",
+                            'spectra_file': "SED/CWWSB4.list",
+                            'madau_flag': 'no',
+                            'bands': 'ugrizy',
+                            'prior_band': 'i',
+                            'prior_file': 'hdfn_gen',
+                            'p_min': 0.005,
+                            'gauss_kernel': 0.0,
+                            'zp_errors':
+                                [0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+                            'mag_err_min': 0.005,
+                            'inform_options': {'save_train': True,
+                                               'modelfile': 'model.out'
+                                               }}}
+    zb_expected = np.array([0.18, 2.88, 0.14, 0.21, 2.97, 0.18, 0.23, 0.23,
+                            2.98, 2.92])
+    pz_algo = bpz_lite.BPZ_lite
+    pz_dict, rerun_pz_dict = one_algo(pz_algo, cdict)
     print(pz_dict['zmode'])
     assert np.isclose(pz_dict['zmode'], zb_expected).all()
     assert np.isclose(pz_dict['zmode'], rerun_pz_dict['zmode']).all()
