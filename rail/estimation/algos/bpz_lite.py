@@ -8,7 +8,7 @@ with TXPipe and ceci by Joe Zuntz and Sam Schmidt
 for BPZPipe.  This version for RAIL removes a few
 features and concentrates on just predicting the PDF.
 
-Missing from full BPZ: 
+Missing from full BPZ:
 -no tracking of 'best' type/TB
 -no "interp" between templates
 -no ODDS, chi^2, ML quantities
@@ -20,7 +20,6 @@ Missing from full BPZ:
 """
 
 
-import sys
 import os
 import numpy as np
 import glob
@@ -30,12 +29,8 @@ from rail.estimation.estimator import Estimator
 from rail.estimation.utils import check_and_print_params
 
 def_param = {'run_params': {'zmin': 0.0, 'zmax': 3.0,
-                            'dz': 0.01, 
+                            'dz': 0.01,
                             'nzbins': 301,
-                            'path_to_bpz':
-                                '/Users/sam/WORK/software/DESC_BPZ',
-                            'data_path':
-                                '/Users/sam/WORK/software/TMPRAIL/RAIL/rail/estimation/data',
                             'columns_file':
                                 './examples/TMPBPZ/test.columns',
                             'spectra_file': 'SED/CWWSB4.list',
@@ -54,15 +49,11 @@ def_param = {'run_params': {'zmin': 0.0, 'zmax': 3.0,
                                  'load_model': False,
                                  'modelfile':
                                  'model.out'}
-                                 }}
+                            }}
 desc_dict = {'zmin': "zmin (float): min z  for grid",
              'zmax': "zmax (float): max z for grid",
              'dz': "dz (float): delta z in grid",
              'nzbins': "nzbins (int): # of bins in zgrid",
-             'path_to_bpz': "path to bpz (str): absolute "
-             "path to the BPZpy3 code on your machine",
-             'data_path': "data_path (str): path to the SED"
-             ", FILTER, and AB files",
              'columns_file': "columns_file (str): name of "
              "the file specifying the columns",
              'spectra_file': "spectra_file (str): name of "
@@ -78,7 +69,7 @@ desc_dict = {'zmin': "zmin (float): min z  for grid",
              "trained in, e.g. 'i'",
              'prior_file': "prior_file (str): the file "
              "name of the prior, which should be located "
-             "in the root $path_to_bpz directory.  If the "
+             "in the root BPZ directory.  If the "
              "full prior file is named e.g. "
              "'prior_dc2_lsst_trained_model.py' then we should "
              "set the value to 'dc2_lsst_trained_model', as "
@@ -134,8 +125,6 @@ class BPZ_lite(Estimator):
         self.dz = inputs['dz']
         self.zgrid = np.arange(self.zmin, self.zmax + self.dz, self.dz)
         self.nzbins = len(self.zgrid)
-        self.path_to_bpz = inputs['path_to_bpz']
-        # self.data_path = inputs['data_path']
         self.columns_file = inputs['columns_file']
         self.spectra_file = inputs['spectra_file']
         self.madau = inputs['madau_flag']
@@ -156,15 +145,10 @@ class BPZ_lite(Estimator):
                 defModel = "default_model.out"
                 print(f"name for model not found, will save to {defModel}")
                 self.inform_options['modelfile'] = defModel
-        os.environ["BPZPY3PATH"] = self.path_to_bpz
-        # try to kludge this
-        # os.environ["BPZDATAPATH"] = self.data_path
         railpath = os.path.dirname(rail.__file__)
-        tmpdatapath = os.path.join(railpath,"estimation/data")
+        tmpdatapath = os.path.join(railpath, "estimation/data")
         os.environ["BPZDATAPATH"] = tmpdatapath
         self.data_path = tmpdatapath
-        # add bpz path, as a few functions get loaded by code below
-        sys.path.append(self.path_to_bpz)
 
         # load the template fluxes from the AB files
         self.flux_templates = self.load_templates()
@@ -191,7 +175,7 @@ class BPZ_lite(Estimator):
         flux_templates = np.zeros((nz, nt, nf))
 
         # make a list of all available AB files in the AB directory
-        ab_file_list = glob.glob(os.path.join(data_path,"AB")+"/*.AB")
+        ab_file_list = glob.glob(os.path.join(data_path, "AB")+"/*.AB")
         ab_file_db = [os.path.split(x)[-1] for x in ab_file_list]
 
         for i, s in enumerate(spectra):
@@ -199,7 +183,7 @@ class BPZ_lite(Estimator):
                 model = f"{s}.{f}.AB"
                 if model not in ab_file_db:
                     self.make_new_ab_file(s, f)
-                model_path = os.path.join(data_path,"AB", model)
+                model_path = os.path.join(data_path, "AB", model)
                 zo, f_mod_0 = get_data(model_path, (0, 1))
                 flux_templates[:, i, j] = match_resol(zo, f_mod_0, z)
 
