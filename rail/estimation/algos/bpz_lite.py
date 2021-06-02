@@ -135,7 +135,7 @@ class BPZ_lite(Estimator):
         self.zgrid = np.arange(self.zmin, self.zmax + self.dz, self.dz)
         self.nzbins = len(self.zgrid)
         self.path_to_bpz = inputs['path_to_bpz']
-        self.data_path = inputs['data_path']
+        # self.data_path = inputs['data_path']
         self.columns_file = inputs['columns_file']
         self.spectra_file = inputs['spectra_file']
         self.madau = inputs['madau_flag']
@@ -162,6 +162,7 @@ class BPZ_lite(Estimator):
         railpath = os.path.dirname(rail.__file__)
         tmpdatapath = os.path.join(railpath,"estimation/data")
         os.environ["BPZDATAPATH"] = tmpdatapath
+        self.data_path = tmpdatapath
         # add bpz path, as a few functions get loaded by code below
         sys.path.append(self.path_to_bpz)
 
