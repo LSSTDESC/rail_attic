@@ -125,10 +125,6 @@ def test_bpz_lite():
     cdict = {'run_params': {'zmin': 0.0, 'zmax': 3.0,
                             'dz': 0.01,
                             'nzbins': 301,
-                            'path_to_bpz':
-                                "/",
-                            'data_path':
-                                './rail/estimation/data',
                             'columns_file':
                                 "./examples/TMPBPZ/test.columns",
                             'spectra_file': "SED/CWWSB4.list",
