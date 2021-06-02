@@ -25,6 +25,7 @@ import os
 import numpy as np
 import glob
 import qp
+import rail
 from rail.estimation.estimator import Estimator
 from rail.estimation.utils import check_and_print_params
 
@@ -156,7 +157,11 @@ class BPZ_lite(Estimator):
                 print(f"name for model not found, will save to {defModel}")
                 self.inform_options['modelfile'] = defModel
         os.environ["BPZPY3PATH"] = self.path_to_bpz
-        os.environ["BPZDATAPATH"] = self.data_path
+        # try to kludge this
+        # os.environ["BPZDATAPATH"] = self.data_path
+        railpath = os.path.dirname(rail.__file__)
+        tmpdatapath = os.path.join(railpath,"estimation/data")
+        os.environ["BPZDATAPATH"] = tmpdatapath
         # add bpz path, as a few functions get loaded by code below
         sys.path.append(self.path_to_bpz)
 
