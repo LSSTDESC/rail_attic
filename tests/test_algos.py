@@ -126,7 +126,9 @@ def test_bpz_lite():
                             'dz': 0.01,
                             'nzbins': 301,
                             'path_to_bpz':
-                                "/Users/sam/WORK/software/DESC_BPZ",
+                                "/",
+                            'data_path':
+                                './rail/estimation/data',
                             'columns_file':
                                 "./examples/TMPBPZ/test.columns",
                             'spectra_file': "SED/CWWSB4.list",

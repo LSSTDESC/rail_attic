@@ -32,6 +32,7 @@ setup(
                       'pyarrow',
                       'tables',
                       'astropy',
+                      'DESC_BPZ @ git+https://github.com/LSSTDESC/DESC_BPZ',
                       ],
     extras_require={
         'Full': ['sklearn', 'FlexCode[all]', 'pzflow',
