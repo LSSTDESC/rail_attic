@@ -8,8 +8,11 @@ setup(
     author_email="aimalz@nyu.edu",
     packages=packages,
     package_data={
-        "": ["*.hdf5", "*.yaml"],
+        "": ["*.hdf5", "*.yaml", "*.sed", "*.res", "*.AB"],
         "tests": ["*.hdf5", "*.yaml"],
+        "rail/estimation/data/SED": ["*.sed"],
+        "rail/estimation/data/FILTER": ["*.res"],
+        "rail/estimation/data/AB": ["*.AB"],
     },
     include_package_data=True,
     license="BSD 3-Clause License",
