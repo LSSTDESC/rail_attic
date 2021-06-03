@@ -4,8 +4,6 @@ run_params:
   zmin: 0.0
   zmax: 3.0
   dz: 0.01
-  path_to_bpz: /Users/sam/WORK/software/DESC_BPZ
-  data_path: /Users/sam/WORK/software/TMPRAIL/RAIL/rail/estimation/data
   columns_file: ./TMPBPZ/test.columns
   spectra_file: SED/CWWSB4.list
   madau_reddening: no
