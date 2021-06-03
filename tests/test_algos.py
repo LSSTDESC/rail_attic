@@ -125,6 +125,7 @@ def test_bpz_lite():
     cdict = {'run_params': {'zmin': 0.0, 'zmax': 3.0,
                             'dz': 0.01,
                             'nzbins': 301,
+                            'data_path': None,
                             'columns_file':
                                 "./examples/TMPBPZ/test.columns",
                             'spectra_file': "SED/CWWSB4.list",
@@ -153,6 +154,7 @@ def test_bpz_lite_wkernel_flatprior():
     cdict = {'run_params': {'zmin': 0.0, 'zmax': 3.0,
                             'dz': 0.01,
                             'nzbins': 301,
+                            'data_path': None,
                             'columns_file':
                                 "./examples/TMPBPZ/test.columns",
                             'spectra_file': "SED/CWWSB4.list",

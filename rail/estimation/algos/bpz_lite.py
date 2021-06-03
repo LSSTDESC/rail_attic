@@ -31,6 +31,7 @@ from rail.estimation.utils import check_and_print_params
 def_param = {'run_params': {'zmin': 0.0, 'zmax': 3.0,
                             'dz': 0.01,
                             'nzbins': 301,
+                            'data_path': None,
                             'columns_file':
                                 './examples/TMPBPZ/test.columns',
                             'spectra_file': 'SED/CWWSB4.list',
@@ -54,6 +55,10 @@ desc_dict = {'zmin': "zmin (float): min z  for grid",
              'zmax': "zmax (float): max z for grid",
              'dz': "dz (float): delta z in grid",
              'nzbins': "nzbins (int): # of bins in zgrid",
+             'data_path': "data_path (str): file path to the "
+             "SED, FILTER, and AB directories.  If left to "
+             "default `None` it will use the install "
+             "directory for rail + estimation/data",
              'columns_file': "columns_file (str): name of "
              "the file specifying the columns",
              'spectra_file': "spectra_file (str): name of "
@@ -145,10 +150,15 @@ class BPZ_lite(Estimator):
                 defModel = "default_model.out"
                 print(f"name for model not found, will save to {defModel}")
                 self.inform_options['modelfile'] = defModel
-        railpath = os.path.dirname(rail.__file__)
-        tmpdatapath = os.path.join(railpath, "estimation/data")
-        os.environ["BPZDATAPATH"] = tmpdatapath
-        self.data_path = tmpdatapath
+        datapath = inputs['data_path']
+        if datapath is None or datapath == "None":
+            railpath = os.path.dirname(rail.__file__)
+            tmpdatapath = os.path.join(railpath, "estimation/data")
+            os.environ["BPZDATAPATH"] = tmpdatapath
+            self.data_path = tmpdatapath
+        else:  #pragma: no cover
+            self.data_path = datapath
+            os.environ['BPZDATAPATH'] = self.data_path
 
         # load the template fluxes from the AB files
         self.flux_templates = self.load_templates()
