@@ -149,6 +149,34 @@ def test_bpz_lite():
     assert np.isclose(pz_dict['zmode'], rerun_pz_dict['zmode']).all()
 
 
+def test_bpz_lite_wkernel_flatprior():
+    cdict = {'run_params': {'zmin': 0.0, 'zmax': 3.0,
+                            'dz': 0.01,
+                            'nzbins': 301,
+                            'columns_file':
+                                "./examples/TMPBPZ/test.columns",
+                            'spectra_file': "SED/CWWSB4.list",
+                            'madau_flag': 'no',
+                            'bands': 'ugrizy',
+                            'prior_band': 'i',
+                            'prior_file': 'flat',
+                            'p_min': 0.005,
+                            'gauss_kernel': 0.1,
+                            'zp_errors':
+                                [0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+                            'mag_err_min': 0.005,
+                            'inform_options': {'save_train': True,
+                                               'modelfile': 'model.out'
+                                               }}}
+    zb_expected = np.array([0.18, 2.88, 0.12, 0.15, 2.97, 2.78, 0.11, 0.19,
+                            2.98, 2.92])
+    pz_algo = bpz_lite.BPZ_lite
+    pz_dict, rerun_pz_dict = one_algo(pz_algo, cdict)
+    print(pz_dict['zmode'])
+    assert np.isclose(pz_dict['zmode'], zb_expected).all()
+    assert np.isclose(pz_dict['zmode'], rerun_pz_dict['zmode']).all()
+
+
 def test_missing_modelfile_keyword():
     config_dict = {'run_params': {'zmin': 0.0, 'zmax': 3.0, 'nzbins': 301,
                                   'trainfrac': 0.75, 'bumpmin': 0.02,
