@@ -15,4 +15,6 @@ consistent with our `LICENSE
 <https://opensource.org/licenses/BSD-3-Clause>`_).
 
 External contributors and DESC members wishing to use RAIL for non-DESC projects
-should consult with the PHOTOZ working group conveners, ideally before the work has started, but definitely before any publication or posting of the work to the arXiv.
+should consult with the Photometric Redshifts (PZ) Working Group conveners,
+ideally before the work has started, but definitely before any publication or
+posting of the work to the arXiv.
