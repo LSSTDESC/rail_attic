@@ -1,0 +1,8 @@
+base_config:
+  chunk_size: 2500
+  configpath: ./configs
+  hdf5_groupname: photometry
+  outpath: ./results
+  output_format: qp
+  testfile: ../../tests/data/test_dc2_validation_9816.hdf5
+  trainfile: ../../tests/data/test_dc2_training_9816.hdf5

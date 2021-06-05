@@ -5,6 +5,6 @@ run_params:
   rand_zmin: 0.0
   rand_zmax: 3.0
   nzbins: 301
-  
+  inform_options: {'save_train': False, 'load_model': False}  
 
 
