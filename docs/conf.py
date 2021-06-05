@@ -54,8 +54,6 @@ extensions = [
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
-# apidoc_module_dir = '../rail'
-
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
@@ -75,7 +73,6 @@ language = 'en'
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-# exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'setup.rst', 'api/rail.rst']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'setup.rst']
 
 # The name of the Pygments (syntax highlighting) style to use.
@@ -235,7 +232,6 @@ index_api_toc = \
 .. toctree::
    :maxdepth: 1
    :caption: Reference
-
    api
 """
 
@@ -249,12 +245,9 @@ with open('index.rst', 'a') as indexfile:
 apitoc = \
 """API Documentation
 =================
-
 Information on specific functions, classes, and methods.
-
 .. toctree::
    :glob:
-
 """
 for onemodule in apilist:
     apitoc+= f"   api/rail.{onemodule}.rst\n"
