@@ -228,6 +228,17 @@ for demo in [*demofiles, *examplefiles]:
     com = ' '.join(['jupyter nbconvert']+nbconvert_opts+[demo])
     subprocess.run(com, shell=True)
 
+index_demo_toc = \
+"""
+.. toctree::
+   :maxdepth: 1
+   :caption: Usage Demos
+
+"""
+for demo in demofiles:
+    fname = ''.join(demo.split('.')[:-1]).split('/')[-1]+'.rst'
+    index_demo_toc+= f"   {outdir}{fname}\n"
+
 index_api_toc = \
 """
 .. toctree::
@@ -239,7 +250,7 @@ index_api_toc = \
 
 subprocess.run('cp source/index_body.rst index.rst', shell=True)
 with open('index.rst', 'a') as indexfile:
-    # indexfile.write(index_demo_toc)
+    indexfile.write(index_demo_toc)
     # indexfile.write(index_examples_toc)
     indexfile.write(index_api_toc)
 
