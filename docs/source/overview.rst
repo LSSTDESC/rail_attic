@@ -3,7 +3,9 @@ Rapid overview
 **************
 
 RAIL is the LSST-DESC framework for redshift assessment.
-It comprises of three packages : creation, estimation, and validation.
+As part of its core functionality, RAIL provides tools to ....<continue>
+
+RAIL comprises three packages: creation, estimation, and validation.
 
 The `creation` package
 ======================
