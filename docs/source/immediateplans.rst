@@ -2,6 +2,7 @@
 Immediate plans
 ***************
 
+This repo is home to a series of LSST-DESC projects aiming to quantify the impact of imperfect prior information on probabilistic redshift estimation.
 An outline of the baseline RAIL is illustrated `here <https://docs.google.com/drawings/d/1or8xyBqLkpc_4_Cr-ROSA3F7fBm3RMRnRzytorw_FYM/edit?usp=sharing>`_.
 
 1. MonoRAIL: Build the basic infrastructure for controlled experiments of forward-modeled photo-z posteriors
