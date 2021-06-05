@@ -73,7 +73,8 @@ language = 'en'
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'setup.rst']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'setup.rst', 'source/index_body.rst']
+# exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'setup.rst']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
@@ -232,6 +233,7 @@ index_api_toc = \
 .. toctree::
    :maxdepth: 1
    :caption: Reference
+
    api
 """
 
@@ -245,9 +247,12 @@ with open('index.rst', 'a') as indexfile:
 apitoc = \
 """API Documentation
 =================
+
 Information on specific functions, classes, and methods.
+
 .. toctree::
    :glob:
+
 """
 for onemodule in apilist:
     apitoc+= f"   api/rail.{onemodule}.rst\n"
