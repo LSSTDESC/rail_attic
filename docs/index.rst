@@ -17,17 +17,5 @@ The source code is publically available at https://github.com/LSSTDESC/RAIL
 
    source/overview
    source/installation
+   source/contributing
    source/citing
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Usage Demos
-
-   compiled-demos-examples/basic-creation-demo.rst
-   compiled-demos-examples/degradation-demo.rst
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Reference
-
-   api
