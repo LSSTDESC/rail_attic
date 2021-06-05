@@ -1,6 +1,6 @@
-**************
+************
 Installation
-**************
+************
 
 To install RAIL you currently need to build it from source::
   
