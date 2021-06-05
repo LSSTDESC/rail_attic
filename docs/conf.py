@@ -218,7 +218,7 @@ for entry in config:
         examplefiles += [entry]
 
 # -- Compile the examples into rst----------------------------------------
-outdir = 'compiled-examples/'
+outdir = 'compiled-demos-examples/'
 nbconvert_opts = ['--to rst',
                   '--ExecutePreprocessor.kernel_name=python3',
                   # '--execute',
