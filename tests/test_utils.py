@@ -1,21 +1,15 @@
-import pytest
-from rail.estimation.utils import load_training_data
+from rail.estimation.utils import check_and_print_params
+
+incomplete_dict = {'run_params': {'zmin': 0.0}}
+complete_dict = {'run_params': {'zmin': 0.0, 'zmax': 3.0}}
+desc_dict = {'zmin': "zmin: minimum z", 'zmax': "zmax: max z"}
 
 
-h5_data_file = 'tests/data/pandas_test_hdf5.h5'
-parquet_data_file = 'tests/data/parquet_test.parquet'
-no_group_file = 'tests/data/no_groupname_test.hdf5'
-
-
-def test_pandas_readin():
-    _ = load_training_data(h5_data_file, fmt='h5')
-    _ = load_training_data(parquet_data_file, fmt='parquet')
-
-
-def test_no_groupname():
-    _ = load_training_data(no_group_file, fmt='hdf5', groupname='None')
-
-
-def test_missing_file_ext():
-    with pytest.raises(NotImplementedError):
-        _ = load_training_data(no_group_file, fmt='csv')
+def test_incomplete_dict():
+    # check that feeding incomplete dict returns all values
+    # in complete_dict, i.e. check adding a key
+    new_dict = check_and_print_params(incomplete_dict,
+                                      complete_dict,
+                                      desc_dict)
+    for key in complete_dict['run_params'].keys():
+        assert key in new_dict['run_params'].keys()

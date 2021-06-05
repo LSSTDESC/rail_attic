@@ -1,6 +1,7 @@
 import os
-from rail.estimation.utils import load_training_data, get_input_data_size_hdf5
+from rail.fileIO import get_input_data_size_hdf5
 import yaml
+import pickle
 import pprint
 
 
@@ -48,16 +49,15 @@ class Estimator(object):
             setattr(self, n, v)
         for attr in ['zmode', 'zgrid', 'pz_pdf']:
             setattr(self, attr, None)
-        self.trainfile = base_dict['trainfile']
         self.outpath = base_dict['outpath']
-        self.train_fmt = self.trainfile.split(".")[-1]
 
+        self.trainfile = base_dict['trainfile']
         self.groupname = base_dict['hdf5_groupname']
-        self.training_data = load_training_data(self.trainfile, self.train_fmt,
-                                                self.groupname)
         self.testfile = base_dict['testfile']
         self.num_rows = get_input_data_size_hdf5(self.testfile, self.groupname)
         self._chunk_size = base_dict['chunk_size']
+
+        self.output_format = base_dict['output_format']
 
         self.test_fmt = self.testfile.split(".")[-1]
         # self.test_data = load_data(self.testfile, self.test_fmt)
@@ -67,12 +67,38 @@ class Estimator(object):
 
         self.config_dict = config_dict
 
-    def inform(self):
+    def inform(self, training_data):
         """
         Prior settings and/or training algorithm for the individual
         photo-z method, should be implemented in the subclass
+        Input:
+        ------
+        training_data: dict
+          dictionary of the training data, *including* redshift
         """
         raise NotImplementedError
+
+    def load_pretrained_model(self):
+        """
+        If inform step has been run separately, this funciton will
+        load the information required to run estimate.  As a
+        default we will include the loading of a pickled model,
+        but the idea is that a specific code can override this
+        function by writing a custom model load in the subclass
+        """
+        try:
+            modelfile = self.inform_options['modelfile']
+        except KeyError:
+            print("inform_options['modelfile'] not specified, exiting!")
+            raise KeyError("inform_options['modelfile'] not found!")
+        try:
+            self.model = pickle.load(open(modelfile, 'rb'))
+            print(f"success in loading {self.inform_options['modelfile']}")
+        except FileNotFoundError:
+            print(f"File {self.inform_options['modelfile']} not found!")
+            raise FileNotFoundError("File " +
+                                    self.inform_options['modelfile'] +
+                                    " not found!")
 
     def estimate(self, input_data):
         """
