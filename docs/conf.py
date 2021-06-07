@@ -19,9 +19,12 @@ sys.path.insert(0, os.path.abspath('..'))
 
 from unittest.mock import MagicMock
 
-MOCK_MODULES = ['qp', 'flexcode']
+MOCK_MODULES = ['qp', 'flexcode', 'flexcode.regression_models', 'flexcode.loss_functions']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = MagicMock()
+
+sys.modules['flexcode'].regression_models.XGBoost = MagicMock
+sys.modules['flexcode'].loss_functions.cde_loss = MagicMock
 
 # -- Project information -----------------------------------------------------
 
