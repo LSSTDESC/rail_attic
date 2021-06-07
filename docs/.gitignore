@@ -1,7 +1,5 @@
 index.rst
 api.rst
 api/*.rst
-compiled-examples/*.rst
-compiled-examples/*_files/*.png
-
+_compiled/
 _build/
