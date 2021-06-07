@@ -70,10 +70,10 @@ master_doc = 'index'
 # Usually you set "language" from the command line for these cases.
 language = 'en'
 
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
-# This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'setup.rst']
+# Files to ignore when looking for source files
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'setup.rst',
+                    'api/rail.rst', 'source/index_body.rst',
+                    'api/rail.modbackend.*']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
@@ -227,6 +227,30 @@ for demo in [*demofiles, *examplefiles]:
     com = ' '.join(['jupyter nbconvert']+nbconvert_opts+[demo])
     subprocess.run(com, shell=True)
 
+
+# -- Build index.html ----------------------------------------------------
+index_examples_toc = \
+""".. toctree::
+   :maxdepth: 1
+   :caption: Examples
+
+"""
+for example in examplefiles:
+    fname = ''.join(example.split('.')[:-1]).split('/')[-1]+'.rst'
+    index_examples_toc+= f"   {outdir}{fname}\n"
+
+# This is automatic
+index_demo_toc = \
+"""
+.. toctree::
+   :maxdepth: 1
+   :caption: Usage Demos
+
+"""
+for demo in demofiles:
+    fname = ''.join(demo.split('.')[:-1]).split('/')[-1]+'.rst'
+    index_demo_toc+= f"   {outdir}{fname}\n"
+
 index_api_toc = \
 """
 .. toctree::
@@ -238,8 +262,8 @@ index_api_toc = \
 
 subprocess.run('cp source/index_body.rst index.rst', shell=True)
 with open('index.rst', 'a') as indexfile:
-    # indexfile.write(index_demo_toc)
-    # indexfile.write(index_examples_toc)
+    indexfile.write(index_demo_toc)
+    indexfile.write(index_examples_toc)
     indexfile.write(index_api_toc)
 
 # -- Set up the API table of contents ------------------------------------
