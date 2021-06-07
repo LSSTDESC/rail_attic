@@ -14,5 +14,5 @@ def _all_python_files():
 for name in _all_python_files():
     try:
         __import__(name, globals(), locals(), level=1)
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  #pragma: no cover
         print("estimator {} not installed".format(name))
