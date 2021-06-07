@@ -71,11 +71,15 @@ def get_input_data_size_hdf5(infile, groupname='None'):
 def iter_chunk_hdf5_data(infile, chunk_size=100_000, groupname='None'):
     """
     itrator for sending chunks of data in hdf5.
-    input:
-    ------
+
+    Parameters
+    ----------
       infile: input file name (str)
       chunk_size: size of chunk to iterate over (int)
-    output: interator chunk consisting of dictionary of all the keys
+    
+    Returns
+    -------
+    interator chunk consisting of dictionary of all the keys
     Currently only implemented for hdf5
       start: start index (int)
       end: ending index (int)
@@ -148,8 +152,9 @@ def write_qp_output_chunk(tmpfile, outfile, qp_chunk, chunk_num):
     that the data is coming in the same order as it was fed in.
     We will have to think of a new output writing scheme when we
     switch to parallel processing where chunks may be out o sequence
-    Inputs:
-    -------
+    
+    Parameters
+    ----------
     tmpfile: str
       name of temp file
     outfile: str
@@ -173,8 +178,9 @@ def qp_reformat_output(tmpfile, outfile, num_chunks):
     The current quick and dirty implementation spits out iterator
     chunks in individual astropy table "paths", this function will
     simply 'vstack' those back into a single file
-    Inputs:
-    -------
+    
+    Parameters
+    ----------
     tmpfile: str
       name of temporary hdf5 file with chunked data
     outfile: str
