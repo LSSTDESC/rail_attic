@@ -3,13 +3,11 @@ def check_and_print_params(config_dict, default_param_dict, desc_dict):
     Function that tests that all required parameters are in file, if
     not, then add default value.  It also prints a short description
     of each parameter along with the value being used.
-
-    Parameters
-    ----------
+    Inputs:
+    -------
     config_dict: dict
       dictionary of input params
-
-    Returns
+    Output:
     -------
     updated_dict: dict
       updated parameter dictionary

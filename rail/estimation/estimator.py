@@ -70,10 +70,9 @@ class Estimator(object):
     def inform(self, training_data):
         """
         Prior settings and/or training algorithm for the individual
-        photo-z method, should be implemented in the subclass!
-
-        Parameters
-        ----------
+        photo-z method, should be implemented in the subclass
+        Input:
+        ------
         training_data: dict
           dictionary of the training data, *including* redshift
         """
