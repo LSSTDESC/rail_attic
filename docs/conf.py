@@ -17,6 +17,17 @@ import subprocess
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
+# Use unittest mock module to shield some modules away from docs building.
+# This way one does not need to install them when dealing with the doc
+from unittest.mock import MagicMock
+
+MOCK_MODULES = ['qp', 'flexcode', 'flexcode.regression_models', 'flexcode.loss_functions']
+for mod_name in MOCK_MODULES:
+    sys.modules[mod_name] = MagicMock()
+
+sys.modules['flexcode'].regression_models.XGBoost = MagicMock
+sys.modules['flexcode'].loss_functions.cde_loss = MagicMock
+
 # -- Project information -----------------------------------------------------
 
 project = 'RAIL'
