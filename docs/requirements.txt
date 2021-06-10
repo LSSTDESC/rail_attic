@@ -1,7 +1,6 @@
 jupyter
 jupyterlab
 numpy
-astropy
 sphinx
 matplotlib
 pandas
