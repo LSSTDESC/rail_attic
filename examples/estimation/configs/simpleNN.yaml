@@ -1,7 +1,7 @@
 run_params:
   class_name: simpleNN
   run_name: test_simpleNN
-  width: 0.065
+  width: 0.025
   zmin: 0.0
   zmax: 3.0
   nzbins: 301

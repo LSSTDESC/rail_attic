@@ -9,8 +9,8 @@ setup(
     packages=packages,
     package_data={
         "": ["*.hdf5", "*.yaml", "*.sed", "*.res", "*.AB",
-             "*.list"],
-        "tests": ["*.hdf5", "*.yaml"],
+             "*.list", "*.columns"],
+        "tests": ["*.hdf5", "*.yaml", "*.columns"],
         "rail/estimation/data/SED": ["*.sed", "*.list"],
         "rail/estimation/data/FILTER": ["*.res"],
         "rail/estimation/data/AB": ["*.AB"],

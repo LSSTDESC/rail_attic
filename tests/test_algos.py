@@ -127,7 +127,7 @@ def test_bpz_lite():
                             'nzbins': 301,
                             'data_path': None,
                             'columns_file':
-                                "./examples/TMPBPZ/test.columns",
+                                "./examples/estimation/configs/test_bpz.columns",
                             'spectra_file': "SED/CWWSB4.list",
                             'madau_flag': 'no',
                             'bands': 'ugrizy',
@@ -156,7 +156,7 @@ def test_bpz_lite_wkernel_flatprior():
                             'nzbins': 301,
                             'data_path': None,
                             'columns_file':
-                                "./examples/TMPBPZ/test.columns",
+                                "./examples/estimation/configs/test_bpz.columns",
                             'spectra_file': "SED/CWWSB4.list",
                             'madau_flag': 'no',
                             'bands': 'ugrizy',

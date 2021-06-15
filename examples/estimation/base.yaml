@@ -5,4 +5,4 @@ base_config:
   chunk_size: 1000
   configpath: ./configs
   outpath: ./results
-  output_format: old
+  output_format: qp
