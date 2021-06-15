@@ -33,7 +33,7 @@ def_param = {'run_params': {'zmin': 0.0, 'zmax': 3.0,
                             'nzbins': 301,
                             'data_path': None,
                             'columns_file':
-                                './examples/TMPBPZ/test.columns',
+                                './examples/estimation/configs/test_bpz.columns',
                             'spectra_file': 'SED/CWWSB4.list',
                             'madau_flag': 'no',
                             'bands': 'ugrizy',
