@@ -3,7 +3,7 @@ from matplotlib import gridspec
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from metrics import *
+#from metrics import *
 from IPython.display import Markdown
 import h5py
 import os
