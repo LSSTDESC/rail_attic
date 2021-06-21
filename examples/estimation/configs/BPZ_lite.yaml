@@ -4,7 +4,7 @@ run_params:
   zmin: 0.0
   zmax: 3.0
   dz: 0.01
-  columns_file: ./test_bpz.columns
+  columns_file: ./configs/test_bpz.columns
   spectra_file: SED/CWWSB4.list
   madau_reddening: no
   bands: ugrizy
