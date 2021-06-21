@@ -1,5 +1,10 @@
 import sys
+
+import qp
+
 from rail.evaluation.plot_utils import *
+from rail.evaluation.metrics.pit import *
+from rail.evaluation.metrics.cdeloss import *
 import time as t
 
 class Summary:
@@ -75,10 +80,10 @@ def main(argv):
 
     Usage:
     ------
-        python evaluator.py <code name> <PDFs file> <sample name> <z-spec file>
+        python main.py <code name> <PDFs file> <sample name> <z-spec file>
 
     Example:
-        python evaluator.py FlexZBoost ./results/FZBoost/test_FZBoost.hdf5 toy_data ../tests/data/test_dc2_validation_9816.hdf5
+        python main.py FlexZBoost ../estimation/results/FZBoost/test_FZBoost.hdf5 toy_data ../../tests/data/test_dc2_validation_9816.hdf5
 
     """
     t0 = t.time()
@@ -90,10 +95,10 @@ def main(argv):
         print()
         print()
         print("Usage:")
-        print("    python evaluator.py <code name> <PDFs file> <sample name> <z-spec file>")
+        print("    python main.py <code name> <PDFs file> <sample name> <z-spec file>")
         print()
         print("Example:")
-        print("    python evaluator.py FlexZBoost ./results/FZBoost/test_FZBoost.hdf5 toy_data ../tests/data/test_dc2_validation_9816.hdf5")
+        print("    python main.py FlexZBoost ../estimation/results/FZBoost/test_FZBoost.hdf5 toy_data ../../tests/data/test_dc2_validation_9816.hdf5")
         print()
         print()
         sys.exit()
@@ -111,13 +116,15 @@ def main(argv):
 
     print("Reading data...")
     pdfs, zgrid, ztrue, photoz_mode = read_pz_output(pdfs_file, ztrue_file)
+    pz_ensemble = qp.Ensemble(qp.interp, data=dict(xvals=zgrid, yvals=pdfs))
     print()
     print()
+    quit()
 
     print("Computing metrics...")
-    pit = PIT(pdfs, zgrid, ztrue)
+    pit = PIT(pz_ensemble, ztrue)
     pit.evaluate()
-    pits = pit.metric
+    pits = pit.pit
     summary = Summary(pdfs, zgrid, ztrue)
     summary.print_metrics_table(pits=pits)
     print()
