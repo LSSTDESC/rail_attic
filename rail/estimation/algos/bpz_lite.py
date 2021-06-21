@@ -27,8 +27,6 @@ import rail
 from rail.estimation.estimator import Estimator
 from rail.estimation.utils import check_and_print_params
 from desc_bpz.useful_py3 import get_str, get_data, match_resol
-from desc_bpz.bpz_tools_py3 import ABflux, e_mag2frac
-from desc_bpz.bpz_tools_py3 import p_c_z_t, prior
 
 
 def_param = {'run_params': {'zmin': 0.0, 'zmax': 3.0,
@@ -202,6 +200,8 @@ class BPZ_lite(Estimator):
         return flux_templates
 
     def make_new_ab_file(self, spectrum, filter):
+        from desc_bpz.bpz_tools_py3 import ABflux
+
         madau = self.madau
 
         new_file = f"{spectrum}.{filter}.AB"
@@ -209,6 +209,8 @@ class BPZ_lite(Estimator):
         ABflux(spectrum, filter, madau)
 
     def preprocess_magnitudes(self, data):
+        from desc_bpz.bpz_tools_py3 import e_mag2frac
+
         bands = self.bands
 
         # Load the magnitudes
@@ -263,6 +265,9 @@ class BPZ_lite(Estimator):
         return data
 
     def estimate_pdf(self, flux_templates, kernel, flux, flux_err, mag_0, z):
+
+        from desc_bpz.bpz_tools_py3 import p_c_z_t, prior
+
         prior_file = self.prior_file
         p_min = self.p_min
 
