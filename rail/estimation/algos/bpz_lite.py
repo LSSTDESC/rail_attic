@@ -160,6 +160,10 @@ class BPZ_lite(Estimator):
         else:  #pragma: no cover
             self.data_path = datapath
             os.environ['BPZDATAPATH'] = self.data_path
+        if not os.path.exists(self.data_path): #pragma: no cover
+            raise FileNotFoundError("BPZDATAPATH " + self.data_path
+                                    + " does not exist! Check value of "
+                                    + "data_path in config file!")
 
         # load the template fluxes from the AB files
         self.flux_templates = self.load_templates()
