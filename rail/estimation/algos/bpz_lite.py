@@ -363,15 +363,14 @@ class BPZ_lite(Estimator):
         pdfs = np.zeros((ng, nz))
         zmode = np.zeros(ng)
         # Loop over all ng galaxies!
-        mag_0s = test_data['mags'][:, m_0_col]
-        fluxes = test_data['flux']
-        flux_errs = test_data['flux_err']
-        flux_temps = self.flux_templates
-        zgrid = self.zgrid
-        pdfs, zmode = [self.estimate_pdf(flux_temps, kernel, flux,
-                                         flux_err, mag_0, zgrid)
-                       for i, flux, flux_err, mag_0 in
-                       enumerate(fluxes, flux_errs, mag_0s)]
+        for i in range(ng):
+            mag_0 = test_data['mags'][i, m_0_col]
+            flux = test_data['flux'][i]
+            flux_err = test_data['flux_err'][i]
+            pdfs[i], zmode[i] = self.estimate_pdf(self.flux_templates,
+                                                  kernel, flux,
+                                                  flux_err, mag_0,
+                                                  self.zgrid)
 
         if self.output_format == 'qp':
             qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid,
