@@ -3,6 +3,7 @@ from matplotlib import gridspec
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from rail.evaluation.metrics.pit import *
 #from metrics import *
 from IPython.display import Markdown
 import h5py
@@ -144,7 +145,7 @@ def old_metrics_table(photoz, ztrue, name="", show_dc1=True):
     return Markdown(table)
 
 
-def plot_pit_qq(pit, bins=None, title=None, code=None,
+def plot_pit_qq(pdfs, zgrid, ztrue, bins=None, title=None, code=None,
                 show_pit=True, show_qq=True,
                 pit_out_rate=None, savefig=False) -> str:
     """Quantile-quantile plot
@@ -191,27 +192,35 @@ def plot_pit_qq(pit, bins=None, title=None, code=None,
     plt.figure(figsize=[4, 5])
     gs = gridspec.GridSpec(2, 1, height_ratios=[3, 1])
     ax0 = plt.subplot(gs[0])
+    sample = Sample(pdfs, zgrid, ztrue)
+
     if show_qq:
-        ax0.plot(pit.qq[0], pit.qq[1], c='r', linestyle='-',
-                 linewidth=3, label=label)
+        ax0.plot(sample.qq[0], sample.qq[1], c='r',
+                 linestyle='-', linewidth=3, label=label)
         ax0.plot([0, 1], [0, 1], color='k', linestyle='--', linewidth=2)
         ax0.set_ylabel("Q$_{data}$", fontsize=18)
         plt.ylim(-0.001, 1.001)
     plt.xlim(-0.001, 1.001)
     plt.title(title)
     if show_pit:
+        fzdata = qp.Ensemble(qp.interp, data=dict(xvals=zgrid, yvals=pdfs))
+        pitobj = PIT(fzdata, ztrue)
+        spl_ens, metamets = pitobj.evaluate()
+        pit_vals = np.array(pitobj._pit_samps)
+        pit_out_rate = PITOutRate(spl_ens).evaluate()[0][0]
+
         try:
-            y_uni = float(len(pit.metric)) / float(bins)
+            y_uni = float(len(pit_vals)) / float(bins)
         except:
-            y_uni = float(len(pit.metric)) / float(len(bins))
+            y_uni = float(len(pit_vals)) / float(len(bins))
         if not show_qq:
-            ax0.hist(pit.metric, bins=bins, alpha=0.7, label=label)
+            ax0.hist(pit_vals, bins=bins, alpha=0.7, label=label)
             ax0.set_ylabel('Number')
             ax0.hlines(y_uni, xmin=0, xmax=1, color='k')
             plt.ylim(0, )  # -0.001, 1.001)
         else:
             ax1 = ax0.twinx()
-            ax1.hist(pit.metric, bins=bins, alpha=0.7)
+            ax1.hist(pit_vals, bins=bins, alpha=0.7)
             ax1.set_ylabel('Number')
             ax1.hlines(y_uni, xmin=0, xmax=1, color='k')
     leg = ax0.legend(handlelength=0, handletextpad=0, fancybox=True)
@@ -219,12 +228,12 @@ def plot_pit_qq(pit, bins=None, title=None, code=None,
         item.set_visible(False)
     if show_qq:
         ax2 = plt.subplot(gs[1])
-        ax2.plot(pit.qq[0], (pit.qq[1] - pit.qq[0]), c='r', linestyle='-', linewidth=3)
+        ax2.plot(sample.qq[0], (sample.qq[1] - sample.qq[0]), c='r', linestyle='-', linewidth=3)
         plt.ylabel("$\Delta$Q", fontsize=18)
         ax2.plot([0, 1], [0, 0], color='k', linestyle='--', linewidth=2)
         plt.xlim(-0.001, 1.001)
-        plt.ylim(np.min([-0.12, np.min(pit.qq[1] - pit.qq[0]) * 1.05]),
-                 np.max([0.12, np.max(pit.qq[1] - pit.qq[0]) * 1.05]))
+        plt.ylim(np.min([-0.12, np.min(sample.qq[1] - sample.qq[0]) * 1.05]),
+                 np.max([0.12, np.max(sample.qq[1] - sample.qq[0]) * 1.05]))
     if show_pit:
         if show_qq:
             plt.xlabel("Q$_{theory}$ / PIT Value", fontsize=18)
@@ -403,7 +412,7 @@ class Sample(Ensemble):
     """ Expand qp.Ensemble to append true redshifts
     array, metadata, and specific plots. """
 
-    def __init__(self, pdfs, zgrid, ztrue, photoz_mode, code="", name="", n_quant=100):
+    def __init__(self, pdfs, zgrid, ztrue, photoz_mode=None, code="", name="", n_quant=100):
         """Class constructor
 
         Parameters
