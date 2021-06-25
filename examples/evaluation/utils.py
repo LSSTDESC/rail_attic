@@ -182,11 +182,13 @@ def plot_pit_qq(pdfs, zgrid, ztrue, bins=None, title=None, code=None,
         label = ""
     else:
         label = code + "\n"
-    if pit_out_rate:
-        if type(pit_out_rate) == float:
+
+
+    if pit_out_rate is not None:
+        try:
             label += "PIT$_{out}$: "
-            label += f"{pit_out_rate:.4f}"
-        else:
+            label += f"{float(pit_out_rate):.4f}"
+        except:
             print("Unsupported format for pit_out_rate.")
 
     plt.figure(figsize=[4, 5])
