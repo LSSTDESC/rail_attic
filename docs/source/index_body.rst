@@ -2,12 +2,16 @@
 RAIL: Redshift Assessment Infrastructure Layers
 ===============================================
 
-The LSST-DESC Redshift Assessment Infrastructure Layer (RAIL) code is a framework to perform photometric redshift estimation and analysis for DESC.
+The LSST-DESC Redshift Assessment Infrastructure Layer (RAIL) code is a framework to perform photometric redshift (PZ) estimation and analysis for DESC.
 
-RAIL differs from `PZIncomplete <https://github.com/LSSTDESC/pz_incomplete>`_ in that it is broken into stages, each corresponding to a manageable unit of infrastructure advancement, a specific question, and a potential publication opportunity.
-By pursuing the piecemeal development of RAIL, we aim to achieve the broad goals of PZIncomplete.
+RAIL's purpose is to be the infrastructure enabling the PZ working group deliverables in [the LSST-DESC Science Roadmap (see Sec. 5.18)](https://lsstdesc.org/assets/pdf/docs/DESC_SRM_latest.pdf),
+aiming to guide the selection and implementation of redshift estimators in DESC pipelines.
+RAIL differs from previous plans for PZ pipeline infrastructure in that it is broken into stages,
+each corresponding to a manageable unit of infrastructure advancement, a specific question to answer with that code, and a guaranteed publication opportunity.
+RAIL uses [qp](https://github.com/LSSTDESC/qp) as a back-end for handling univariate probability density functions (PDFs) such as photo-z posteriors or n(z) samples.
 
 The source code is publically available at https://github.com/LSSTDESC/RAIL.
+
 
 .. toctree::
    :maxdepth: 1

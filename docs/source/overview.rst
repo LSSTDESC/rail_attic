@@ -3,23 +3,28 @@ Rapid overview
 **************
 
 RAIL is the LSST-DESC framework for redshift assessment.
-As part of its core functionality, RAIL provides tools to ....<continue>
+There are three aspects to the RAIL approach, each defined by a minimal version that can be developed further as necessary.
+The purpose of each piece of infrastructure is outlined below.
 
-RAIL comprises three packages: creation, estimation, and validation.
-It will eventually also comprise a fourth package: summarization.
+RAIL differs from `PZIncomplete <https://github.com/LSSTDESC/pz_incomplete>`_ in that it is broken into stages,
+each corresponding to a manageable unit of infrastructure advancement, a specific question, and a potential publication opportunity.
+By pursuing the piecemeal development of RAIL, we aim to achieve the broad goals of PZIncomplete.
 
-The `creation` package
-======================
+`creation`
+==========
 
-To write
+Code to forward-model mock data for testing redshift estimation codes, including physical systematics.
 
-The `estimation` package
-========================
+`estimation`
+============
 
-To write
+Code to automatically execute arbitrary redshift estimation codes.
 
-The `validation` package
-========================
+The `evaluation`
+================
 
-To write
+Code to assess the performance of redshift estimation codes.
 
+
+
+RAIL will eventually also comprise a fourth package: summarization.
