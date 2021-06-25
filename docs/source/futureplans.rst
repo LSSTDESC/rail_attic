@@ -16,7 +16,7 @@ advancing the code along the way to project completion. They are scoped such tha
 
 * *RAIL gauge*: Investigate the impact of measurement errors (PSF, aperture photometry, flux calibration, etc.) on estimated photo-z posteriors by including their effects in the the forward model of the creation subpackage.
 
-* *DERAIL*: Investigate the impact of imperfect photo-z posterior estimation on a probe-specific (e.g. 3x2pt) cosmological parameter constraint by connecting the estimation subpackage to other DESC pipelines.
+* *DERAIL*: Investigate the impact of imperfect photo-z posterior estimation on a probe-specific (e.g. :math:`3\times2{\rm pt}`) cosmological parameter constraint by connecting the estimation subpackage to other DESC pipelines.
 
 * *RAIL line*: Assess the sensitivity of estimated photo-z posteriors to photometry impacted by emission lines by extending the creation subpackage's forward model.
 
