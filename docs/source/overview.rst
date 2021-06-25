@@ -22,10 +22,10 @@ Where possible, we wil use formats compatible with other LSST-DESC pipelines, in
 Code here will provide a script template for wrapping a machine learning code that we will run automatically on a variety of test sets blinded from those who submit scripts.
 We will have to make a decision about the acceptable output format(s) of redshift posteriors.
 
-`Structure`: Wrapped codes can be found as submodules of `rail.estimation.algos`.
+**Structure**: Wrapped codes can be found as submodules of `rail.estimation.algos`.
 Each must correspond to a config file in with any parameters the method needs, examples of which can be found in the `examples/configs` directory.
 
-`Usage`: In the `example` directory, execute `python main.py configs/randomPZ.yaml`.
+*Usage*: In the `example` directory, execute "python main.py configs/randomPZ.yaml".
 
 `Immediate next steps`: `base.yaml` should not be hardcoded anywhere and should instead appear only in `main.py`.
 `utils.py` is a placeholder and should be eliminated, and i/o functions should be migrated elsewhere.
