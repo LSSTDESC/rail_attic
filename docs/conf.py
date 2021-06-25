@@ -17,6 +17,8 @@ import subprocess
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
+# Use unittest mock module to shield some modules away from docs building.
+# This way one does not need to install them when dealing with the doc
 from unittest.mock import MagicMock
 
 MOCK_MODULES = ['qp', 'flexcode', 'flexcode.regression_models', 'flexcode.loss_functions']
@@ -83,7 +85,7 @@ language = 'en'
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'setup.rst',
-                    'source/index_body.rst', 'api/rail.rst', 'api/rail.modbackend.*']
+                    'source/index_body.rst', 'api/rail.rst']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
@@ -227,7 +229,7 @@ for entry in config:
         examplefiles += [entry]
 
 # -- Compile the examples into rst----------------------------------------
-outdir = '_compiled/'
+outdir = 'compiled-demos-examples/'
 nbconvert_opts = ['--to rst',
                   '--ExecutePreprocessor.kernel_name=python3',
                   # '--execute',
@@ -236,19 +238,6 @@ nbconvert_opts = ['--to rst',
 for demo in [*demofiles, *examplefiles]:
     com = ' '.join(['jupyter nbconvert']+nbconvert_opts+[demo])
     subprocess.run(com, shell=True)
-
-# -- Build index.html ----------------------------------------------------
-index_examples_toc = \
-""".. toctree::
-   :maxdepth: 1
-   :caption: Examples
-
-"""
-for example in examplefiles:
-    fname = ''.join(example.split('.')[:-1]).split('/')[-1]+'.rst'
-    index_examples_toc+= f"   {outdir}{fname}\n"
-
-# This is automatic
 
 index_demo_toc = \
 """
@@ -273,7 +262,7 @@ index_api_toc = \
 subprocess.run('cp source/index_body.rst index.rst', shell=True)
 with open('index.rst', 'a') as indexfile:
     indexfile.write(index_demo_toc)
-    indexfile.write(index_examples_toc)
+    # indexfile.write(index_examples_toc)
     indexfile.write(index_api_toc)
 
 # -- Set up the API table of contents ------------------------------------
