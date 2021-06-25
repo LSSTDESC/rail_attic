@@ -1,6 +1,6 @@
-**************
-Rapid overview
-**************
+********
+Overview
+********
 
 RAIL is the LSST-DESC framework for redshift assessment.
 There are three aspects to the RAIL approach: creation, estimation, and evaluation. 
