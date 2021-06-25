@@ -8,7 +8,7 @@ RAIL's purpose is to be the infrastructure enabling the PZ working group deliver
 aiming to guide the selection and implementation of redshift estimators in DESC pipelines.
 RAIL differs from previous plans for PZ pipeline infrastructure in that it is broken into stages,
 each corresponding to a manageable unit of infrastructure advancement, a specific question to answer with that code, and a guaranteed publication opportunity.
-RAIL uses `qp <https://github.com/LSSTDESC/qp>`_ as a back-end for handling univariate probability density functions (PDFs) such as photo-z posteriors or `n`(`z`) samples.
+RAIL uses `qp <https://github.com/LSSTDESC/qp>`_ as a back-end for handling univariate probability density functions (PDFs) such as photo-z posteriors or `n(z)` samples.
 
 The RAIL source code is publically available at https://github.com/LSSTDESC/RAIL.
 

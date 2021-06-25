@@ -61,7 +61,7 @@ Each must correspond to a config file in with any parameters the method needs, e
 **Immediate next steps**: `base.yaml` should not be hardcoded anywhere and should instead appear only in `main.py`.
 `utils.py` is a placeholder and should be eliminated, and i/o functions should be migrated elsewhere.
 There should be more examples of categories of nested config parameters in the `.yaml` files.
-The `rail.estimation` module needs documentation and tests ASAP.
+The `rail.estimation` module needs tests ASAP.
 
 **Future extensions**: It may not be possible to isolate some complex `degradation` effects in a shared training set,
 so future versions will require an additional script for each machine-learning-based code that executes a training step.
