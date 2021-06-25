@@ -27,7 +27,7 @@ An outline of the baseline RAIL is illustrated `here <https://docs.google.com/dr
 
 * at least two `Estimator` wrapped machine learning-based codes for estimating photo-z posteriors.
 
-* additional `Evaluator` metrics with feed-through access to the [qp](https://github.com/LSSTDESC/qp) metrics.
+* additional `Evaluator` metrics with feed-through access to the `qp <https://github.com/LSSTDESC/qp>`_ metrics.
 
 * end-to-end documented scripts that demonstrate a blinded experiment on NERSC.
 

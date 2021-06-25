@@ -3,7 +3,7 @@ Future plans
 ************
 
 RAIL's design aims to break up the PZ WG's pipeline responsibilities into smaller milestones that can be accomplished by individuals or small groups on short timescales, i.e. under a year.
-The next stages of RAIL development (tentative project codenames subject to change) are intended to be paper-able projects each of which addresses one or more SRM Deliverables by incrementally 
+The next stages of RAIL development (tentative project codenames subject to change) are intended to be paper-able projects, each of which addresses one or more SRM deliverables by incrementally 
 advancing the code along the way to project completion. They are scoped such that any can be executed in any order or even simultaneously.
 
 * *RAILyard*: Assess the performance of template-fitting codes by extending the creation subpackage to forward model templates.
@@ -20,4 +20,5 @@ advancing the code along the way to project completion. They are scoped such tha
 
 * *RAIL line*: Assess the sensitivity of estimated photo-z posteriors to photometry impacted by emission lines by extending the creation subpackage's forward model.
 
-Informal library of fun train-themed names for future projects/pipelines built with RAIL: `monoRAIL`, `tRAILblazer`, `tRAILmix`, `tRAILer`.
+Informal library of fun train-themed names for future projects/pipelines built with RAIL include: 
+`monoRAIL`, `tRAILblazer`, `tRAILmix`, `tRAILer`.
