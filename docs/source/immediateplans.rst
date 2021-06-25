@@ -6,7 +6,7 @@ This repo is home to a series of LSST-DESC projects aiming to quantify the impac
 An outline of the baseline RAIL is illustrated `here <https://docs.google.com/drawings/d/1or8xyBqLkpc_4_Cr-ROSA3F7fBm3RMRnRzytorw_FYM/edit?usp=sharing>`_.
 
 1. *Golden Spike*: Build the basic infrastructure for controlled experiments of forward-modeled photo-z posteriors
-================================================================================================================
+==================================================================================================================
 
 * a `rail.creation` subpackage that can generate true photo-z posteriors and mock photometry.
 
@@ -21,7 +21,7 @@ An outline of the baseline RAIL is illustrated `here <https://docs.google.com/dr
 * an LSST-DESC Note presenting the RAIL infrastructure.
 
 2. *RAILroad*: Quantify the impact of nonrepresentativity (imbalance and incompleteness) of a training set on estimated photo-z posteriors by multiple machine learning methods
-=================================================================================================================================================================================
+===============================================================================================================================================================================
 
 * parameter specifications for degrading an existing `Creator` to make an imperfect prior of the form of nonrepresentativity into the observed photometry.
 
