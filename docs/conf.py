@@ -131,14 +131,6 @@ html_sidebars = {
     ]
 }
 
-# Setting to false removes "Edit on GitHub" and revision number in readthedocs.
-# html_show_sourcelink = False
-
-html_context = {
-"display_github": False, # Add 'Edit on Github' link instead of 'View page source'
-"last_updated": True,
-"commit": False,
-}
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
