@@ -17,7 +17,7 @@ By pursuing the piecemeal development of RAIL, we aim to achieve the broad goals
 
 **Creation modules**: This code enables the generation of mock photometry corresponding to a fully self-consistent forward model of the joint probability space of redshift and photometry.
 
-**Creation Base design**: We will begin with a mock data set of galaxy redshifts and photometry, for example, the DC2 extragalactic catalog.
+**Creation base design**: We will begin with a mock data set of galaxy redshifts and photometry, for example, the DC2 extragalactic catalog.
 Because any existing data set is limited in number and coverage in the 6+1 dimensional space of redshifts and photometry,
 we will expand that mock data set into a continuous probability density in the space of redshifts and photometry.
 This process may be done using a GAN to augment the data until it fills out the space, followed by a smoothing or interpolation of that space.
