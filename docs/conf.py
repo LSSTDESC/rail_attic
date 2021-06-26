@@ -131,6 +131,9 @@ html_sidebars = {
     ]
 }
 
+# Setting to false removes "Edit on GitHub" and revision number in readthedocs.
+html_show_sourcelink = False
+
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
