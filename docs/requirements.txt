@@ -12,7 +12,7 @@ yml
 pyyaml
 pip
 corner
-tensorflow==2.2.0
+tensorflow==2.4.2
 tensorflow-probability==0.10.1
 jax==0.1.75
 jaxlib==0.1.52
