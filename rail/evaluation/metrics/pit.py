@@ -4,6 +4,7 @@ from scipy import stats
 import qp
 from rail.evaluation.evaluator import Evaluator
 from rail.evaluation.utils import stat_and_pval, stat_crit_sig
+import warnings
 
 default_quants = np.linspace(0, 1, 100)
 _pitMetaMetrics = {}
@@ -173,23 +174,23 @@ class PITAD(PITMeta):
 
         return stat_crit_sig(stat, crit_vals, sig_lev)
 
-# this KLD implementation is actually only valid for discrete distribution, won't work on a non-discrete grid
-# @PITMetaMetric
-# class PITKLD(PITMeta):
-#     """ Kullback-Leibler Divergence """
-#
-#     def __init__(self, pit):
-#         super().__init__(pit)
-#
-#     def evaluate(self, eval_grid=default_quants):
-#         """ Use scipy.stats.entropy to compute the Kullback-Leibler
-#         Divergence between the empirical PIT distribution and a
-#         theoretical uniform distribution between 0 and 1."""
-#         if pits is None:
-#             pits = PIT(self._pdfs, self._xvals, self._ztrue).evaluate()
-#         uniform_yvals = np.linspace(0., 1., len(pits))
-#         pit_pdf, _ = np.histogram(pits, bins=len(self._xvals))
-#         uniform_pdf, _ = np.histogram(uniform_yvals, bins=len(self._xvals))
-#
-#         self._metric = stats.entropy(pit_pdf, uniform_pdf)
-#         return self._metric
+@PITMetaMetric
+class PITKLD(PITMeta):
+    """ Kullback-Leibler Divergence """
+
+    def __init__(self, pit):
+        super().__init__(pit)
+
+    def evaluate(self, eval_grid=default_quants):
+        """ Use scipy.stats.entropy to compute the Kullback-Leibler
+        Divergence between the empirical PIT distribution and a
+        theoretical uniform distribution between 0 and 1."""
+        warnings.warn("This KLD implementation is based on scipy.stats.entropy, " +
+                      "therefore it uses a discrete distribution of PITs " +
+                      "(internally obtained from PIT object).")
+        pits = self._pit.samples
+        uniform_yvals = np.linspace(0., 1., len(pits))
+        pit_pdf, _ = np.histogram(pits, bins=eval_grid)
+        uniform_pdf, _ = np.histogram(uniform_yvals, bins=eval_grid)
+        kld_metric = stats.entropy(pit_pdf, uniform_pdf)
+        return stat_and_pval(kld_metric, None)
