@@ -7,10 +7,12 @@ from rail.evaluation.utils import stat_and_pval, stat_crit_sig
 
 default_quants = np.linspace(0, 1, 100)
 _pitMetaMetrics = {}
+
+
 def PITMetaMetric(cls):
     argspec = inspect.getargspec(cls.evaluate)
     if argspec.defaults is not None:
-        num_defaults=len(argspec.defaults)
+        num_defaults = len(argspec.defaults)
         kwargs = {var: val for var, val in zip(argspec.args[-num_defaults:], argspec.defaults)}
         _pitMetaMetrics.setdefault(cls, {})["default"] = kwargs
     return cls
@@ -18,6 +20,7 @@ def PITMetaMetric(cls):
 
 class PIT(Evaluator):
     """ Probability Integral Transform """
+
     def __init__(self, qp_ens, ztrue):
         """Class constructor"""
         super().__init__(qp_ens)
@@ -45,7 +48,6 @@ class PIT(Evaluator):
         # self.qq = _evaluate_qq(self._eval_grid)
         return pit, metamets
 
-
     # def _evaluate_qq(self):
     #     q_data = qp.convert(self._pit, 'quant', quants=self._eval_grid)
     #     return q_data
@@ -63,8 +65,10 @@ class PIT(Evaluator):
     #                                      savefig=savefig)
     #     return fig_filename
 
+
 class PITMeta():
     """ A superclass for metrics of the PIT"""
+
     def __init__(self, pit):
         """Class constructor.
         Parameters
@@ -77,7 +81,6 @@ class PITMeta():
     # they all seem to have a way to trim the ends, so maybe just bring those together here?
     # def _trim(self, pit_min=0., pit_max=1.):
     #
-
 
     def evaluate(self):
         """
@@ -94,6 +97,7 @@ class PITMeta():
 @PITMetaMetric
 class PITOutRate(PITMeta):
     """ Fraction of PIT outliers """
+
     def __init__(self, pit):
         super().__init__(pit)
 
@@ -101,6 +105,7 @@ class PITOutRate(PITMeta):
         """Compute fraction of PIT outliers"""
         out_area = self._pit.cdf(pit_min) + (1. - self._pit.cdf(pit_max))
         return out_area
+
 
 @PITMetaMetric
 class PITKS(PITMeta):
@@ -115,6 +120,7 @@ class PITKS(PITMeta):
         stat, pval = stats.kstest(self._pit.samples, 'uniform')
         return stat_and_pval(stat, pval)
 
+
 @PITMetaMetric
 class PITCvM(PITMeta):
     """ Cramer-von Mises statistic """
@@ -125,12 +131,16 @@ class PITCvM(PITMeta):
     def evaluate(self):
         """ Use scipy.stats.cramervonmises to compute the Cramer-von Mises statistic for
         the PIT values by comparing with a uniform distribution between 0 and 1. """
-        stat, pval = stats.cramervonmises(self._pit.samples, 'uniform')
-        return stat_and_pval(stat, pval)
+        #stat, pval = stats.cramervonmises(self._pit.samples, 'uniform')
+        cvm_stat_and_pval = stats.cramervonmises(self._pit.samples, 'uniform')
+        return stat_and_pval(cvm_stat_and_pval.statistic,
+                             cvm_stat_and_pval.pvalue)
+
 
 @PITMetaMetric
 class PITAD(PITMeta):
     """ Anderson-Darling statistic """
+
     def __init__(self, pit):
         super().__init__(pit)
 
