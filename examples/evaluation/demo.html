@@ -10,9 +10,9 @@
 
 <style type="text/css">
     pre { line-height: 125%; }
-td.linenos pre { color: #000000; background-color: #f0f0f0; padding-left: 5px; padding-right: 5px; }
-span.linenos { color: #000000; background-color: #f0f0f0; padding-left: 5px; padding-right: 5px; }
-td.linenos pre.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
 span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
 .highlight .hll { background-color: var(--jp-cell-editor-active-background) }
 .highlight { background: var(--jp-cell-editor-background); color: var(--jp-mirror-editor-variable-color) }
@@ -14260,10 +14260,10 @@ a.anchor-link {
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <h1 id="Demo:-RAIL-Evaluation">Demo: RAIL Evaluation<a class="anchor-link" href="#Demo:-RAIL-Evaluation">&#182;</a></h1><p>The purpose of this notebook is to demonstrate the application of the metrics scripts to be used on the photo-z PDF catalogs produced by the PZ working group. The first implementation of the <em>evaluation</em> module is based on the refactoring of the code used in <a href="https://arxiv.org/pdf/2001.03621.pdf">Schmidt et al. 2020</a>, available on Github repository <a href="https://github.com/LSSTDESC/PZDC1paper">PZDC1paper</a>.</p>
-<p>To run this notebook, you must install qp and have the notebook in the same directory as <code>metrics.py</code> and <code>utils.py</code>. You must also install some run-of-the-mill Python packages: numpy, scipy, matplotlib, and seaborn.</p>
+<p>To run this notebook, you must install qp and have the notebook in the same directory as <code>utils.py</code> (available in RAIL's examples directrory). You must also install some run-of-the-mill Python packages: numpy, scipy, matplotlib, and seaborn.</p>
 <h3 id="Contents">Contents<a class="anchor-link" href="#Contents">&#182;</a></h3><ul>
 <li><a href="#data">Data</a><ul>
-<li><a href="#fzboost">Run FZBoost</a></li>
+<li><a href="#fzboost">Photo-z Results</a></li>
 </ul>
 </li>
 <li><a href="#metrics">CDF-based metrics</a><ul>
@@ -14283,85 +14283,21 @@ a.anchor-link {
 </ul>
 
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[1]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">metrics</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">from</span> <span class="nn">utils</span> <span class="kn">import</span> <span class="n">read_pz_output</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">rail.evaluation.metrics.pit</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">rail.evaluation.metrics.cdeloss</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">rail.evaluation.main</span> <span class="kn">import</span> <span class="n">Summary</span>
+<span class="kn">from</span> <span class="nn">utils</span> <span class="kn">import</span> <span class="n">read_pz_output</span><span class="p">,</span> <span class="n">plot_pit_qq</span><span class="p">,</span> <span class="n">ks_plot</span>
+<span class="kn">import</span> <span class="nn">qp</span> 
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="o">%</span><span class="k">matplotlib</span> inline
 <span class="o">%</span><span class="k">reload_ext</span> autoreload
 <span class="o">%</span><span class="k">autoreload</span> 2
-</pre></div>
-
-     </div>
-</div>
-</div>
-</div>
-
-</div>
-<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<p><a class="anchor" id="data"></a></p>
-<h1 id="Data">Data<a class="anchor-link" href="#Data">&#182;</a></h1><p>To compute the photo-z metrics of a given test sample, it is necessary to read the output of a photo-z code containing galaxies' photo-z PDFs. Let's use the toy data available in <code>tests/data/</code> (<strong>test_dc2_training_9816.hdf5</strong> and <strong>test_dc2_validation_9816.hdf5</strong>) and the configuration file available in <code>examples/configs/FZBoost.yaml</code> to generate a small sample of photo-z PDFs using the <strong>FZBoost</strong> algorithm available on RAIL's <em>estimation</em> module.</p>
-
-</div>
-</div>
-<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<p><a class="anchor" id="fzboost"></a></p>
-<h3 id="Run-FZBoost">Run FZBoost<a class="anchor-link" href="#Run-FZBoost">&#182;</a></h3><p>Go to dir  <code>&lt;your_path&gt;/RAIL/examples/</code> and run the command:</p>
-<p><code>python main.py configs/FZBoost.yaml</code></p>
-<p>The photo-z output files (inputs for this notebook) will be writen at:</p>
-<p><code>&lt;your_path&gt;/RAIL/examples/results/FZBoost/test_FZBoost.hdf5</code>.</p>
-<p>Let's use the ancillary function <strong>read_pz_output</strong> from <code>utils.py</code> to facilitate the reading of all necessary data.</p>
-
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[2]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">my_path</span> <span class="o">=</span> <span class="s1">&#39;/Users/julia/github/RAIL&#39;</span> <span class="c1"># replace it by your path to RAIL&#39;s parent dir</span>
-<span class="n">pdfs_file</span> <span class="o">=</span>  <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">my_path</span><span class="p">,</span> <span class="s2">&quot;examples/results/FZBoost/test_FZBoost.hdf5&quot;</span><span class="p">)</span>
-<span class="n">ztrue_file</span> <span class="o">=</span>  <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">my_path</span><span class="p">,</span> <span class="s2">&quot;tests/data/test_dc2_validation_9816.hdf5&quot;</span><span class="p">)</span>
-<span class="n">pdfs</span><span class="p">,</span> <span class="n">zgrid</span><span class="p">,</span> <span class="n">ztrue</span><span class="p">,</span> <span class="n">photoz_mode</span> <span class="o">=</span> <span class="n">read_pz_output</span><span class="p">(</span><span class="n">pdfs_file</span><span class="p">,</span> <span class="n">ztrue_file</span><span class="p">)</span> <span class="c1"># all numpy arrays</span>
-</pre></div>
-
-     </div>
-</div>
-</div>
-</div>
-
-</div>
-<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<hr>
-<p><a class="anchor" id="metrics"></a></p>
-<h1 id="Metrics">Metrics<a class="anchor-link" href="#Metrics">&#182;</a></h1><p>All the metrics below are implemented as classes under a superclass-subclass structure in <code>metrics.py</code>. Let's explore them individually.</p>
-
-</div>
-</div>
-<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<p><a class="anchor" id="pit"></a></p>
-<h2 id="PIT">PIT<a class="anchor-link" href="#PIT">&#182;</a></h2><p>The Probability Integral Transform (PIT), is the Cumulative Distribution Function (CDF) of the photo-z PDF</p>
-$$ \mathrm{CDF}(f, q)\ =\ \int_{-\infty}^{q}\ f(z)\ dz $$<p>evaluated at the galaxy's true redshift for every galaxy $i$ in the catalog.</p>
-$$ \mathrm{PIT}(p_{i}(z);\ z_{i})\ =\ \int_{-\infty}^{z^{true}_{i}}\ p_{i}(z)\ dz $$<p></p>
-
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[3]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">pit</span> <span class="o">=</span> <span class="n">PIT</span><span class="p">(</span><span class="n">pdfs</span><span class="p">,</span> <span class="n">zgrid</span><span class="p">,</span> <span class="n">ztrue</span><span class="p">)</span>
-<span class="n">pit</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
 </pre></div>
 
      </div>
@@ -14377,7 +14313,290 @@ $$ \mathrm{PIT}(p_{i}(z);\ z_{i})\ =\ \int_{-\infty}^{z^{true}_{i}}\ p_{i}(z)\ d
 <div class="jp-OutputArea-child">
 
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[3]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
+<pre>Found classifier FZBoost
+Found classifier randomPZ
+Found classifier simpleNN
+Found classifier trainZ
+</pre>
+</div>
+</div>
+
+</div>
+
+</div>
+
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><a class="anchor" id="data"></a></p>
+<h1 id="Data">Data<a class="anchor-link" href="#Data">&#182;</a></h1><p>To compute the photo-z metrics of a given test sample, it is necessary to read the output of a photo-z code containing galaxies' photo-z PDFs. Let's use the toy data available in <code>tests/data/</code> (<strong>test_dc2_training_9816.hdf5</strong> and <strong>test_dc2_validation_9816.hdf5</strong>) and the configuration file available in <code>examples/configs/FZBoost.yaml</code> to generate a small sample of photo-z PDFs using the <strong>FZBoost</strong> algorithm available on RAIL's <em>estimation</em> module.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><a class="anchor" id="fzboost"></a></p>
+<h3 id="Photo-z-Results">Photo-z Results<a class="anchor-link" href="#Photo-z-Results">&#182;</a></h3><h4 id="Run-FZBoost">Run FZBoost<a class="anchor-link" href="#Run-FZBoost">&#182;</a></h4><p>Go to dir  <code>&lt;your_path&gt;/RAIL/examples/estimation/</code> and run the command:</p>
+<p><code>python main.py configs/FZBoost.yaml</code></p>
+<p>The photo-z output files (inputs for this notebook) will be writen at:</p>
+<p><code>&lt;your_path&gt;/RAIL/examples/estimation/results/FZBoost/test_FZBoost.hdf5</code>.</p>
+<p>Let's use the ancillary function <strong>read_pz_output</strong> to facilitate the reading of all necessary data.</p>
+
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[2]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">my_path</span> <span class="o">=</span> <span class="s1">&#39;/Users/julia/github/RAIL&#39;</span> <span class="c1"># replace it by your path to RAIL&#39;s parent dir</span>
+<span class="n">pdfs_file</span> <span class="o">=</span>  <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">my_path</span><span class="p">,</span> <span class="s2">&quot;examples/estimation/results/FZBoost/test_FZBoost.hdf5&quot;</span><span class="p">)</span>
+<span class="n">ztrue_file</span> <span class="o">=</span>  <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">my_path</span><span class="p">,</span> <span class="s2">&quot;tests/data/test_dc2_validation_9816.hdf5&quot;</span><span class="p">)</span>
+<span class="n">pdfs</span><span class="p">,</span> <span class="n">zgrid</span><span class="p">,</span> <span class="n">ztrue</span><span class="p">,</span> <span class="n">photoz_mode</span> <span class="o">=</span> <span class="n">read_pz_output</span><span class="p">(</span><span class="n">pdfs_file</span><span class="p">,</span> <span class="n">ztrue_file</span><span class="p">)</span> <span class="c1"># all numpy arrays</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>The inputs for the metrics shown above are the array of true (or spectroscopic) redshifts, and an ensemble of photo-z PDFs (a <code>qp.Ensemble</code> object).</p>
+
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[3]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">fzdata</span> <span class="o">=</span> <span class="n">qp</span><span class="o">.</span><span class="n">Ensemble</span><span class="p">(</span><span class="n">qp</span><span class="o">.</span><span class="n">interp</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">xvals</span><span class="o">=</span><span class="n">zgrid</span><span class="p">,</span> <span class="n">yvals</span><span class="o">=</span><span class="n">pdfs</span><span class="p">))</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<hr>
+<p><a class="anchor" id="metrics"></a></p>
+<h1 id="Metrics">Metrics<a class="anchor-link" href="#Metrics">&#182;</a></h1>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><a class="anchor" id="pit"></a></p>
+<h2 id="PIT">PIT<a class="anchor-link" href="#PIT">&#182;</a></h2><p>The Probability Integral Transform (PIT), is the Cumulative Distribution Function (CDF) of the photo-z PDF</p>
+$$ \mathrm{CDF}(f, q)\ =\ \int_{-\infty}^{q}\ f(z)\ dz $$<p>evaluated at the galaxy's true redshift for every galaxy $i$ in the catalog.</p>
+$$ \mathrm{PIT}(p_{i}(z);\ z_{i})\ =\ \int_{-\infty}^{z^{true}_{i}}\ p_{i}(z)\ dz $$<p></p>
+
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[4]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">pitobj</span> <span class="o">=</span> <span class="n">PIT</span><span class="p">(</span><span class="n">fzdata</span><span class="p">,</span> <span class="n">ztrue</span><span class="p">)</span>
+<span class="n">spl_ens</span><span class="p">,</span> <span class="n">metamets</span> <span class="o">=</span> <span class="n">pitobj</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr">
+<pre>/Users/julia/github/RAIL/rail/evaluation/metrics/pit.py:172: UserWarning: p-value floored: true value smaller than 0.001
+  ad_results = stats.anderson_ksamp([pits_clean, uniform_yvals])
+/Users/julia/github/RAIL/rail/evaluation/metrics/pit.py:189: UserWarning: This KLD implementation is based on scipy.stats.entropy, therefore it uses a discrete distribution of PITs (internally obtained from PIT object).
+  &#34;therefore it uses a discrete distribution of PITs &#34; +
+</pre>
+</div>
+</div>
+
+</div>
+
+</div>
+
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>The <em>evaluate</em> method od PIT class returns two objects, a spline for samples (a frozen distribution object), and a dictionary of meta metrics associated to PIT (to be detailed below).</p>
+
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[5]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">spl_ens</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[5]:</div>
+
+
+
+
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
+<pre>&lt;qp.pdf_gen.rv_frozen_rows at 0x7fa92646af10&gt;</pre>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[6]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">spl_ens</span><span class="o">.</span><span class="n">samples</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[6]:</div>
+
+
+
+
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
+<pre>array([0.1140265 , 0.35794342, 0.42871298, ..., 1.        , 0.85702247,
+       0.49560049])</pre>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[7]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">metamets</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[7]:</div>
+
+
+
+
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
+<pre>{(rail.evaluation.metrics.pit.PITOutRate, &#39;default&#39;): 0.00016060480817661022,
+ (rail.evaluation.metrics.pit.PITAD,
+  &#39;default&#39;): stat_crit_sig(statistic=88.00142575366617, critical_values=array([0.325, 1.226, 1.961, 2.718, 3.752, 4.592, 6.546]), significance_level=0.001),
+ (rail.evaluation.metrics.pit.PITKLD,
+  &#39;default&#39;): stat_and_pval(statistic=0.09179415534209365, p_value=None)}</pre>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><font size=5 color=red> Q:Why is only AD metric added automatically to metamets? Why not KS and CvM? </font></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>PIT values</p>
+
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[8]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">pit_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pitobj</span><span class="o">.</span><span class="n">_pit_samps</span><span class="p">)</span>
+<span class="n">pit_vals</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[8]:</div>
 
 
 
@@ -14396,38 +14615,17 @@ $$ \mathrm{PIT}(p_{i}(z);\ z_{i})\ =\ \int_{-\infty}^{z^{true}_{i}}\ p_{i}(z)\ d
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<p>Let's store the PIT values in a variable to be reused below. It will save time when computing other metrics that are based on the PIT.</p>
-
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[4]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">pits</span> <span class="o">=</span> <span class="n">pit</span><span class="o">.</span><span class="n">metric</span>
-</pre></div>
-
-     </div>
-</div>
-</div>
-</div>
-
-</div>
-<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <h3 id="PIT-outlier-rate">PIT outlier rate<a class="anchor-link" href="#PIT-outlier-rate">&#182;</a></h3><p>The PIT outlier rate is a global metric defined as the fraction of galaxies in the sample with extreme PIT values. The lower and upper limits for considering a PIT as outlier are optional parameters set at the Metrics instantiation (default values are: PIT $&lt;10^{-4}$ or PIT $&gt;0.9999$).</p>
 
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[5]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[9]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="o">%%time</span>
-<span class="n">pit_out_rate</span> <span class="o">=</span> <span class="n">PitOutRate</span><span class="p">(</span><span class="n">pdfs</span><span class="p">,</span> <span class="n">zgrid</span><span class="p">,</span> <span class="n">ztrue</span><span class="p">)</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PIT outlier rate of this sample: </span><span class="si">{</span><span class="n">pit_out_rate</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> 
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">pit_out_rate</span> <span class="o">=</span> <span class="n">PITOutRate</span><span class="p">(</span><span class="n">spl_ens</span><span class="p">)</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PIT outlier rate of this sample: </span><span class="si">{</span><span class="n">pit_out_rate</span><span class="si">:</span><span class="s2">.6f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> 
 </pre></div>
 
      </div>
@@ -14447,54 +14645,7 @@ $$ \mathrm{PIT}(p_{i}(z);\ z_{i})\ =\ \int_{-\infty}^{z^{true}_{i}}\ p_{i}(z)\ d
 
 
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
-<pre>PIT outlier rate of this sample: 0.0606
-CPU times: user 32.3 s, sys: 423 ms, total: 32.7 s
-Wall time: 33.4 s
-</pre>
-</div>
-</div>
-
-</div>
-
-</div>
-
-</div>
-<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<p>The PIT array can be passed as an optional input to the <em>evaluate</em> function, to speed up the calculation.</p>
-
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[6]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="o">%%time</span>
-<span class="n">pit_out_rate</span> <span class="o">=</span> <span class="n">PitOutRate</span><span class="p">(</span><span class="n">pdfs</span><span class="p">,</span> <span class="n">zgrid</span><span class="p">,</span> <span class="n">ztrue</span><span class="p">)</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">pits</span><span class="o">=</span><span class="n">pits</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PIT outlier rate of this sample: </span><span class="si">{</span><span class="n">pit_out_rate</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> 
-</pre></div>
-
-     </div>
-</div>
-</div>
-</div>
-
-<div class="jp-Cell-outputWrapper">
-
-
-<div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-
-
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
-<pre>PIT outlier rate of this sample: 0.0606
-CPU times: user 385 µs, sys: 228 µs, total: 613 µs
-Wall time: 594 µs
+<pre>PIT outlier rate of this sample: 0.000161
 </pre>
 </div>
 </div>
@@ -14525,10 +14676,10 @@ Wall time: 594 µs
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[7]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[10]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">pit</span><span class="o">.</span><span class="n">plot_pit_qq</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;PIT-QQ - toy data&quot;</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="s2">&quot;FZBoost&quot;</span><span class="p">,</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">plot_pit_qq</span><span class="p">(</span><span class="n">pdfs</span><span class="p">,</span> <span class="n">zgrid</span><span class="p">,</span> <span class="n">ztrue</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;PIT-QQ - toy data&quot;</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="s2">&quot;FZBoost&quot;</span><span class="p">,</span>
                 <span class="n">pit_out_rate</span><span class="o">=</span><span class="n">pit_out_rate</span><span class="p">,</span> <span class="n">savefig</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </pre></div>
 
@@ -14548,10 +14699,25 @@ Wall time: 594 µs
     <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 
 
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr">
+<pre>/Users/julia/github/RAIL/rail/evaluation/metrics/pit.py:172: UserWarning: p-value floored: true value smaller than 0.001
+  ad_results = stats.anderson_ksamp([pits_clean, uniform_yvals])
+/Users/julia/github/RAIL/rail/evaluation/metrics/pit.py:189: UserWarning: This KLD implementation is based on scipy.stats.entropy, therefore it uses a discrete distribution of PITs (internally obtained from PIT object).
+  &#34;therefore it uses a discrete distribution of PITs &#34; +
+</pre>
+</div>
+</div>
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
 
 
 <div class="jp-RenderedImage jp-OutputArea-output ">
-<img src="data:image/png;base64,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
+<img src="data:image/png;base64,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
 "
 >
 </div>
@@ -14583,134 +14749,31 @@ Wall time: 594 µs
 <h3 id="Kolmogorov-Smirnov">Kolmogorov-Smirnov<a class="anchor-link" href="#Kolmogorov-Smirnov">&#182;</a></h3><p>Let's start with the traditional Kolmogorov-Smirnov (KS) statistic test, which is the maximum difference between the empirical and the expected cumulative distributions of PIT values:</p>
 $$
 \mathrm{KS} \equiv \max_{PIT} \Big( \left| \ \mathrm{CDF} \small[ \hat{f}, z \small] - \mathrm{CDF} \small[ \tilde{f}, z \small] \  \right| \Big)
-$$<p>Where $\hat{f}$ is the PIT distribution and $\tilde{f}$ is U(0,1). Therefore, the smaller value of KS the closer the PIT distribution is to be uniform. The CDFs are calculated by qp.Ensamble CDF method.</p>
+$$<p>Where $\hat{f}$ is the PIT distribution and $\tilde{f}$ is U(0,1). Therefore, the smaller value of KS the closer the PIT distribution is to be uniform. The <code>evaluate</code> method of the PITKS class returns a named tuple with the statistic and p-value.</p>
 
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[8]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">ks</span> <span class="o">=</span> <span class="n">KS</span><span class="p">(</span><span class="n">pdfs</span><span class="p">,</span> <span class="n">zgrid</span><span class="p">,</span> <span class="n">ztrue</span><span class="p">)</span>
-<span class="n">ks</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">pits</span><span class="o">=</span><span class="n">pits</span><span class="p">)</span>
-</pre></div>
-
-     </div>
-</div>
-</div>
-</div>
-
-<div class="jp-Cell-outputWrapper">
-
-
-<div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[8]:</div>
-
-
-
-
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>(0.03696702749284975, 1.0248437261318777e-24)</pre>
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[9]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">ks</span><span class="o">.</span><span class="n">statistic</span>
-</pre></div>
-
-     </div>
-</div>
-</div>
-</div>
-
-<div class="jp-Cell-outputWrapper">
-
-
-<div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[9]:</div>
-
-
-
-
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>0.03696702749284975</pre>
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[10]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">ks</span><span class="o">.</span><span class="n">pvalue</span>
-</pre></div>
-
-     </div>
-</div>
-</div>
-</div>
-
-<div class="jp-Cell-outputWrapper">
-
-
-<div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[10]:</div>
-
-
-
-
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>1.0248437261318777e-24</pre>
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<p>As the parent class <code>Metric</code>, all metrics have a <strong>"metric"</strong> attribute. For the KS, it is the same as the <strong>statistic</strong> value.</p>
-
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[11]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">ks</span><span class="o">.</span><span class="n">metric</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">ksobj</span> <span class="o">=</span> <span class="n">PITKS</span><span class="p">(</span><span class="n">spl_ens</span><span class="p">)</span>
+<span class="n">ks_stat_and_pval</span> <span class="o">=</span> <span class="n">ksobj</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[12]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">ks_stat_and_pval</span>
 </pre></div>
 
      </div>
@@ -14726,13 +14789,13 @@ $$<p>Where $\hat{f}$ is the PIT distribution and $\tilde{f}$ is U(0,1). Therefor
 <div class="jp-OutputArea-child">
 
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[11]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[12]:</div>
 
 
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>0.03696702749284975</pre>
+<pre>stat_and_pval(statistic=0.03696702749284975, p_value=1.0248437261318777e-24)</pre>
 </div>
 
 </div>
@@ -14750,10 +14813,10 @@ $$<p>Where $\hat{f}$ is the PIT distribution and $\tilde{f}$ is U(0,1). Therefor
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[12]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[13]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">ks</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">ks_plot</span><span class="p">(</span><span class="n">pitobj</span><span class="p">)</span>
 </pre></div>
 
      </div>
@@ -14765,6 +14828,21 @@ $$<p>Where $\hat{f}$ is the PIT distribution and $\tilde{f}$ is U(0,1). Therefor
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr">
+<pre>/Users/julia/github/RAIL/rail/evaluation/metrics/pit.py:172: UserWarning: p-value floored: true value smaller than 0.001
+  ad_results = stats.anderson_ksamp([pits_clean, uniform_yvals])
+/Users/julia/github/RAIL/rail/evaluation/metrics/pit.py:189: UserWarning: This KLD implementation is based on scipy.stats.entropy, therefore it uses a discrete distribution of PITs (internally obtained from PIT object).
+  &#34;therefore it uses a discrete distribution of PITs &#34; +
+</pre>
+</div>
+</div>
 
 <div class="jp-OutputArea-child">
 
@@ -14789,10 +14867,10 @@ $$<p>Where $\hat{f}$ is the PIT distribution and $\tilde{f}$ is U(0,1). Therefor
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[13]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[14]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;KS metric of this sample: </span><span class="si">{</span><span class="n">ks</span><span class="o">.</span><span class="n">metric</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> 
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;KS metric of this sample: </span><span class="si">{</span><span class="n">ks_stat_and_pval</span><span class="o">.</span><span class="n">statistic</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> 
 </pre></div>
 
      </div>
@@ -14830,79 +14908,19 @@ $$ \mathrm{CvM}^2 \equiv \int_{-\infty}^{\infty} \Big( \mathrm{CDF} \small[ \hat
 <p>on the distribution of PIT values, which should be uniform if the PDFs are perfect.</p>
 
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[14]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">cvm</span> <span class="o">=</span> <span class="n">CvM</span><span class="p">(</span><span class="n">pdfs</span><span class="p">,</span> <span class="n">zgrid</span><span class="p">,</span> <span class="n">ztrue</span><span class="p">)</span>
-<span class="n">cvm</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">pits</span><span class="o">=</span><span class="n">pits</span><span class="p">)</span>
-</pre></div>
-
-     </div>
-</div>
-</div>
-</div>
-
-<div class="jp-Cell-outputWrapper">
-
-
-<div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[14]:</div>
-
-
-
-
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>(7.85582745163663, 1.6272709846276712e-09)</pre>
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[15]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">cvm</span><span class="o">.</span><span class="n">statistic</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">cvmobj</span> <span class="o">=</span> <span class="n">PITCvM</span><span class="p">(</span><span class="n">spl_ens</span><span class="p">)</span>
+<span class="n">cvm_stat_and_pval</span> <span class="o">=</span> <span class="n">cvmobj</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
 </pre></div>
 
      </div>
 </div>
 </div>
-</div>
-
-<div class="jp-Cell-outputWrapper">
-
-
-<div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[15]:</div>
-
-
-
-
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>7.85582745163663</pre>
-</div>
-
-</div>
-
-</div>
-
 </div>
 
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
@@ -14911,44 +14929,7 @@ $$ \mathrm{CvM}^2 \equiv \int_{-\infty}^{\infty} \Big( \mathrm{CDF} \small[ \hat
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[16]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">cvm</span><span class="o">.</span><span class="n">pvalue</span>
-</pre></div>
-
-     </div>
-</div>
-</div>
-</div>
-
-<div class="jp-Cell-outputWrapper">
-
-
-<div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[16]:</div>
-
-
-
-
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>1.6272709846276712e-09</pre>
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[17]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CvM metric of this sample: </span><span class="si">{</span><span class="n">cvm</span><span class="o">.</span><span class="n">metric</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> 
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CvM metric of this sample: </span><span class="si">{</span><span class="n">cvm_stat_and_pval</span><span class="o">.</span><span class="n">statistic</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> 
 </pre></div>
 
      </div>
@@ -14988,11 +14969,12 @@ $$ \mathrm{AD}^2 \equiv N_{tot} \int_{-\infty}^{\infty} \frac{\big( \mathrm{CDF}
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[18]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[17]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">ad</span> <span class="o">=</span> <span class="n">AD</span><span class="p">(</span><span class="n">pdfs</span><span class="p">,</span> <span class="n">zgrid</span><span class="p">,</span> <span class="n">ztrue</span><span class="p">)</span>
-<span class="n">ad</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">pits</span><span class="o">=</span><span class="n">pits</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">adobj</span> <span class="o">=</span> <span class="n">PITAD</span><span class="p">(</span><span class="n">spl_ens</span><span class="p">)</span>
+<span class="n">ad_stat_crit_sig</span> <span class="o">=</span> <span class="n">adobj</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
+<span class="n">ad_stat_crit_sig</span>
 </pre></div>
 
      </div>
@@ -15012,11 +14994,48 @@ $$ \mathrm{AD}^2 \equiv N_{tot} \int_{-\infty}^{\infty} \frac{\big( \mathrm{CDF}
 
 
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr">
-<pre>/Users/julia/github/RAIL/rail/evaluation/metrics.py:188: UserWarning: p-value floored: true value smaller than 0.001
+<pre>/Users/julia/github/RAIL/rail/evaluation/metrics/pit.py:172: UserWarning: p-value floored: true value smaller than 0.001
   ad_results = stats.anderson_ksamp([pits_clean, uniform_yvals])
 </pre>
 </div>
 </div>
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[17]:</div>
+
+
+
+
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
+<pre>stat_crit_sig(statistic=88.00142575366617, critical_values=array([0.325, 1.226, 1.961, 2.718, 3.752, 4.592, 6.546]), significance_level=0.001)</pre>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[18]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">ad_stat_crit_sig</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
 
 <div class="jp-OutputArea-child">
 
@@ -15027,9 +15046,7 @@ $$ \mathrm{AD}^2 \equiv N_{tot} \int_{-\infty}^{\infty} \frac{\big( \mathrm{CDF}
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>(88.00142575366617,
- array([0.325, 1.226, 1.961, 2.718, 3.752, 4.592, 6.546]),
- 0.001)</pre>
+<pre>stat_crit_sig(statistic=88.00142575366617, critical_values=array([0.325, 1.226, 1.961, 2.718, 3.752, 4.592, 6.546]), significance_level=0.001)</pre>
 </div>
 
 </div>
@@ -15044,118 +15061,7 @@ $$ \mathrm{AD}^2 \equiv N_{tot} \int_{-\infty}^{\infty} \frac{\big( \mathrm{CDF}
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[19]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">ad</span><span class="o">.</span><span class="n">statistic</span>
-</pre></div>
-
-     </div>
-</div>
-</div>
-</div>
-
-<div class="jp-Cell-outputWrapper">
-
-
-<div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[19]:</div>
-
-
-
-
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>88.00142575366617</pre>
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[20]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">ad</span><span class="o">.</span><span class="n">critical_values</span>
-</pre></div>
-
-     </div>
-</div>
-</div>
-</div>
-
-<div class="jp-Cell-outputWrapper">
-
-
-<div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[20]:</div>
-
-
-
-
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>array([0.325, 1.226, 1.961, 2.718, 3.752, 4.592, 6.546])</pre>
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[21]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">ad</span><span class="o">.</span><span class="n">significance_level</span>
-</pre></div>
-
-     </div>
-</div>
-</div>
-</div>
-
-<div class="jp-Cell-outputWrapper">
-
-
-<div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[21]:</div>
-
-
-
-
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>0.001</pre>
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[22]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;AD metric of this sample: </span><span class="si">{</span><span class="n">ad</span><span class="o">.</span><span class="n">metric</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> 
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;AD metric of this sample: </span><span class="si">{</span><span class="n">ad_stat_crit_sig</span><span class="o">.</span><span class="n">statistic</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> 
 </pre></div>
 
      </div>
@@ -15187,17 +15093,18 @@ $$ \mathrm{AD}^2 \equiv N_{tot} \int_{-\infty}^{\infty} \frac{\big( \mathrm{CDF}
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<p>It is possible to remove catastrophic outliers before calculating the integral for the sake of preserving numerical instability. For instance, Schmidt et al. computed the Anderson-Darling statistic within the interval (0.01,0.99).</p>
+<p>It is possible to remove catastrophic outliers before calculating the integral for the sake of preserving numerical instability. For instance, Schmidt et al. computed the Anderson-Darling statistic within the interval (0.01, 0.99).</p>
 
 </div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[23]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[20]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">ad</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">pits</span><span class="o">=</span><span class="n">pits</span><span class="p">,</span> <span class="n">ad_pit_min</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">ad_pit_max</span><span class="o">=</span><span class="mf">0.99</span><span class="p">)</span>
-<span class="n">ad</span><span class="o">.</span><span class="n">metric</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">ad_stat_crit_sig_cut</span> <span class="o">=</span> <span class="n">adobj</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">pit_min</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">pit_max</span><span class="o">=</span><span class="mf">0.99</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;AD metric of this sample: </span><span class="si">{</span><span class="n">ad_stat_crit_sig</span><span class="o">.</span><span class="n">statistic</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> 
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;AD metric for 0.01 &lt; PIT &lt; 0.99: </span><span class="si">{</span><span class="n">ad_stat_crit_sig_cut</span><span class="o">.</span><span class="n">statistic</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> 
 </pre></div>
 
      </div>
@@ -15218,22 +15125,10 @@ $$ \mathrm{AD}^2 \equiv N_{tot} \int_{-\infty}^{\infty} \frac{\big( \mathrm{CDF}
 
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
 <pre>1883 PITs removed from the sample.
+AD metric of this sample: 88.0014
+AD metric for 0.01 &lt; PIT &lt; 0.99: 76.5858
 </pre>
 </div>
-</div>
-
-<div class="jp-OutputArea-child">
-
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[23]:</div>
-
-
-
-
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>76.58584684553638</pre>
-</div>
-
 </div>
 
 </div>
@@ -15254,11 +15149,122 @@ $$ \mathrm{D}_{KL} = \int_{-\infty}^{\infty} \mathrm{CDF} \small[ \hat{f}, z \sm
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[21]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">kldobj</span> <span class="o">=</span> <span class="n">PITKLD</span><span class="p">(</span><span class="n">spl_ens</span><span class="p">)</span>
+<span class="n">kld_stat_and_pval</span> <span class="o">=</span> <span class="n">kldobj</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
+<span class="n">kld_stat_and_pval</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr">
+<pre>/Users/julia/github/RAIL/rail/evaluation/metrics/pit.py:189: UserWarning: This KLD implementation is based on scipy.stats.entropy, therefore it uses a discrete distribution of PITs (internally obtained from PIT object).
+  &#34;therefore it uses a discrete distribution of PITs &#34; +
+</pre>
+</div>
+</div>
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[21]:</div>
+
+
+
+
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
+<pre>stat_and_pval(statistic=0.09179415534209365, p_value=None)</pre>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[22]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CvM metric of this sample: </span><span class="si">{</span><span class="n">kld_stat_and_pval</span><span class="o">.</span><span class="n">statistic</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> 
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
+<pre>CvM metric of this sample: 0.0918
+</pre>
+</div>
+</div>
+
+</div>
+
+</div>
+
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><a class="anchor" id="cde_loss"></a></p>
+<h1 id="CDE-Loss">CDE Loss<a class="anchor-link" href="#CDE-Loss">&#182;</a></h1><p>In the absence of true photo-z posteriors, the metric used to evaluate individual PDFs is the <strong>Conditional Density Estimate (CDE) Loss</strong>, a metric analogue to the root-mean-squared-error:</p>
+$$ L(f, \hat{f}) \equiv  \int \int {\big(f(z | x) - \hat{f}(z | x) \big)}^{2} dzdP(x), $$<p></p>
+<p>where $f(z | x)$ is the true photo-z PDF and $\hat{f}(z | x)$ is the estimated PDF in terms of the photometry $x$. Since $f(z | x)$  is unknown, we estimate the <strong>CDE Loss</strong> as described in <a href="https://arxiv.org/abs/1704.08095">Izbicki &amp; Lee, 2017 (arXiv:1704.08095)</a>. :</p>
+$$ \mathrm{CDE} = \mathbb{E}\big(  \int{{\hat{f}(z | X)}^2 dz} \big) - 2{\mathbb{E}}_{X, Z}\big(\hat{f}(Z, X) \big) + K_{f},  $$<p>where the first term is the expectation value of photo-z posterior with respect to the marginal distribution of the covariates X, and the second term is the expectation value  with respect to the joint distribution of observables X and the space Z of all possible redshifts (in practice, the centroids of the PDF bins), and the third term is a constant depending on the true conditional densities $f(z | x)$.</p>
+
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[23]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">cdelossobj</span> <span class="o">=</span> <span class="n">CDELoss</span><span class="p">(</span><span class="n">fzdata</span><span class="p">,</span> <span class="n">zgrid</span><span class="p">,</span> <span class="n">ztrue</span><span class="p">)</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[24]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">kld</span> <span class="o">=</span> <span class="n">KLD</span><span class="p">(</span><span class="n">pdfs</span><span class="p">,</span> <span class="n">zgrid</span><span class="p">,</span> <span class="n">ztrue</span><span class="p">)</span>
-<span class="n">kld</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">pits</span><span class="o">=</span><span class="n">pits</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">cde_stat_and_pval</span> <span class="o">=</span> <span class="n">cdelossobj</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
+<span class="n">cde_stat_and_pval</span>
 </pre></div>
 
      </div>
@@ -15280,7 +15286,7 @@ $$ \mathrm{D}_{KL} = \int_{-\infty}^{\infty} \mathrm{CDF} \small[ \hat{f}, z \sm
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>0.14367326659088214</pre>
+<pre>stat_and_pval(statistic=6.022594953531476, p_value=None)</pre>
 </div>
 
 </div>
@@ -15295,106 +15301,7 @@ $$ \mathrm{D}_{KL} = \int_{-\infty}^{\infty} \mathrm{CDF} \small[ \hat{f}, z \sm
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[25]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">kld</span><span class="o">.</span><span class="n">metric</span>
-</pre></div>
-
-     </div>
-</div>
-</div>
-</div>
-
-<div class="jp-Cell-outputWrapper">
-
-
-<div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[25]:</div>
-
-
-
-
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>0.14367326659088214</pre>
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<p><a class="anchor" id="cde_loss"></a></p>
-<h1 id="CDE-Loss">CDE Loss<a class="anchor-link" href="#CDE-Loss">&#182;</a></h1><p>In the absence of true photo-z posteriors, the metric used to evaluate individual PDFs is the <strong>Conditional Density Estimate (CDE) Loss</strong>, a metric analogue to the root-mean-squared-error:</p>
-$$ L(f, \hat{f}) \equiv  \int \int {\big(f(z | x) - \hat{f}(z | x) \big)}^{2} dzdP(x), $$<p></p>
-<p>where $f(z | x)$ is the true photo-z PDF and $\hat{f}(z | x)$ is the estimated PDF in terms of the photometry $x$. Since $f(z | x)$  is unknown, we estimate the <strong>CDE Loss</strong> as described in <a href="https://arxiv.org/abs/1704.08095">Izbicki &amp; Lee, 2017 (arXiv:1704.08095)</a>. :</p>
-$$ \mathrm{CDE} = \mathbb{E}\big(  \int{{\hat{f}(z | X)}^2 dz} \big) - 2{\mathbb{E}}_{X, Z}\big(\hat{f}(Z, X) \big) + K_{f},  $$<p>where the first term is the expectation value of photo-z posterior with respect to the marginal distribution of the covariates X, and the second term is the expectation value  with respect to the joint distribution of observables X and the space Z of all possible redshifts (in practice, the centroids of the PDF bins), and the third term is a constant depending on the true conditional densities $f(z | x)$.</p>
-
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[26]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">cde_loss</span> <span class="o">=</span> <span class="n">CDE</span><span class="p">(</span><span class="n">pdfs</span><span class="p">,</span> <span class="n">zgrid</span><span class="p">,</span> <span class="n">ztrue</span><span class="p">)</span>
-</pre></div>
-
-     </div>
-</div>
-</div>
-</div>
-
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[27]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">cde_loss</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
-</pre></div>
-
-     </div>
-</div>
-</div>
-</div>
-
-<div class="jp-Cell-outputWrapper">
-
-
-<div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[27]:</div>
-
-
-
-
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>-6.7034302862135275</pre>
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[28]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">cde_loss</span> <span class="o">=</span> <span class="n">cde_loss</span><span class="o">.</span><span class="n">metric</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CDE loss of this sample: </span><span class="si">{</span><span class="n">cde_loss</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> 
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CDE loss of this sample: </span><span class="si">{</span><span class="n">cde_stat_and_pval</span><span class="o">.</span><span class="n">statistic</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> 
 </pre></div>
 
      </div>
@@ -15414,7 +15321,7 @@ $$ \mathrm{CDE} = \mathbb{E}\big(  \int{{\hat{f}(z | X)}^2 dz} \big) - 2{\mathbb
 
 
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
-<pre>CDE loss of this sample: -6.70
+<pre>CDE loss of this sample: 6.02
 </pre>
 </div>
 </div>
@@ -15429,20 +15336,14 @@ $$ \mathrm{CDE} = \mathbb{E}\big(  \int{{\hat{f}(z | X)}^2 dz} \big) - 2{\mathbb
 <p><a class="anchor" id="summary"></a></p>
 <h1 id="Summary">Summary<a class="anchor-link" href="#Summary">&#182;</a></h1>
 </div>
-</div>
-<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<p>All metrics can be calculated at once and presented in a table:</p>
-
-</div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[29]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[26]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">summary</span> <span class="o">=</span> <span class="n">Summary</span><span class="p">(</span><span class="n">pdfs</span><span class="p">,</span> <span class="n">zgrid</span><span class="p">,</span> <span class="n">ztrue</span><span class="p">)</span>
-<span class="n">summary</span><span class="o">.</span><span class="n">markdown_metrics_table</span><span class="p">(</span><span class="n">pits</span><span class="o">=</span><span class="n">pits</span><span class="p">)</span> <span class="c1">#, show_dc1=&quot;FlexZBoost&quot;) </span>
+<span class="n">summary</span><span class="o">.</span><span class="n">markdown_metrics_table</span><span class="p">(</span><span class="n">pitobj</span><span class="o">=</span><span class="n">pitobj</span><span class="p">)</span>
 </pre></div>
 
      </div>
@@ -15458,7 +15359,7 @@ $$ \mathrm{CDE} = \mathbb{E}\big(  \int{{\hat{f}(z | X)}^2 dz} \big) - 2{\mathbb
 <div class="jp-OutputArea-child">
 
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[29]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[26]:</div>
 
 
 
@@ -15472,7 +15373,7 @@ $$ \mathrm{CDE} = \mathbb{E}\big(  \int{{\hat{f}(z | X)}^2 dz} \big) - 2{\mathbb
 <tbody>
 <tr>
 <td> PIT out rate</td>
-<td style="text-align:right">0.0606 </td>
+<td style="text-align:right">0.0002 </td>
 </tr>
 <tr>
 <td>KS</td>
@@ -15488,11 +15389,11 @@ $$ \mathrm{CDE} = \mathbb{E}\big(  \int{{\hat{f}(z | X)}^2 dz} \big) - 2{\mathbb
 </tr>
 <tr>
 <td>CDE loss</td>
-<td style="text-align:right">-6.70 </td>
+<td style="text-align:right">6.02 </td>
 </tr>
 <tr>
 <td>KLD</td>
-<td style="text-align:right">0.1437      </td>
+<td style="text-align:right">0.0918      </td>
 </tr>
 </tbody>
 </table>
@@ -15503,6 +15404,20 @@ $$ \mathrm{CDE} = \mathbb{E}\big(  \int{{\hat{f}(z | X)}^2 dz} \big) - 2{\mathbb
 
 </div>
 
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[&nbsp;]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span> 
+</pre></div>
+
+     </div>
+</div>
+</div>
 </div>
 
 </div>
