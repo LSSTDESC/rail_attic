@@ -2,7 +2,7 @@ import sys
 
 import qp
 
-from rail.evaluation.plot_utils import *
+from examples.evaluation.utils import *
 from rail.evaluation.metrics.pit import *
 from rail.evaluation.metrics.cdeloss import *
 import time as t
