@@ -209,7 +209,7 @@ def plot_pit_qq(pdfs, zgrid, ztrue, bins=None, title=None, code=None,
         pitobj = PIT(fzdata, ztrue)
         spl_ens, metamets = pitobj.evaluate()
         pit_vals = np.array(pitobj._pit_samps)
-        pit_out_rate = PITOutRate(spl_ens).evaluate()[0][0]
+        pit_out_rate = PITOutRate(spl_ens).evaluate()
 
         try:
             y_uni = float(len(pit_vals)) / float(bins)

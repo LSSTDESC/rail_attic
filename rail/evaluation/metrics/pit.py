@@ -102,9 +102,9 @@ class PITOutRate(PITMeta):
     def __init__(self, pit):
         super().__init__(pit)
 
-    def evaluate(self, pit_min=0., pit_max=1.):
+    def evaluate(self, pit_min=0.0001, pit_max=0.9999):
         """Compute fraction of PIT outliers"""
-        out_area = self._pit.cdf(pit_min) + (1. - self._pit.cdf(pit_max))
+        out_area = (self._pit.cdf(pit_min) + (1. - self._pit.cdf(pit_max)))[0][0]
         return out_area
 
 
