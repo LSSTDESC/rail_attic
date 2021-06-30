@@ -21,21 +21,28 @@ class Summary:
         self._ad = None
         self._kld = None
         self._cde_loss = None
+        self._fzdata = qp.Ensemble(qp.interp, data=dict(xvals=xvals, yvals=pdfs))
 
-    def evaluate_all(self, pits=None):
-        if pits is None:
-            pits = PIT(self._pdfs, self._xvals, self._ztrue).evaluate()
-        self._pit_out_rate = PitOutRate(self._pdfs, self._xvals, self._ztrue).evaluate(pits=pits)
-        self._ks, _ = KS(self._pdfs, self._xvals, self._ztrue).evaluate(pits=pits)
-        self._cvm, _ = CvM(self._pdfs, self._xvals, self._ztrue).evaluate(pits=pits)
-        self._ad, _, _ = AD(self._pdfs, self._xvals, self._ztrue).evaluate(pits=pits)
-        self._kld = KLD(self._pdfs, self._xvals, self._ztrue).evaluate(pits=pits)
-        self._cde_loss = CDE(self._pdfs, self._xvals, self._ztrue).evaluate()
+    def evaluate_all(self, pitobj=None):
+        if pitobj is None:
+            pitobj = PIT(self._fzdata, self._ztrue)
+        spl_ens, metamets = pitobj.evaluate()
+        self._pit_out_rate = PITOutRate(spl_ens).evaluate()
+        ksobj = PITKS(spl_ens)
+        self._ks = ksobj.evaluate().statistic
+        cvmobj = PITCvM(spl_ens)
+        self._cvm = cvmobj.evaluate().statistic
+        adobj = PITAD(spl_ens)
+        self._ad = adobj.evaluate().statistic
+        kldobj = PITKLD(spl_ens)
+        self._kld = kldobj.evaluate().statistic
+        cdeobj = CDELoss(self._fzdata, self._xvals, self._ztrue)
+        self._cde_loss = cdeobj.evaluate().statistic
 
-    def markdown_metrics_table(self, show_dc1=None, pits=None):
-        self.evaluate_all(pits=pits)
+    def markdown_metrics_table(self, show_dc1=None, pitobj=None):
+        self.evaluate_all(pitobj=pitobj)
         if show_dc1:
-            dc1 = utils.DC1()
+            dc1 = DC1()
             if show_dc1 not in dc1.codes:
                 raise ValueError(f"{show_dc1} not in the list of codes from DC1: {dc1.codes}" )
             table = str("Metric|Value|DC1 reference value \n ---|---:|---: \n ")
@@ -55,8 +62,8 @@ class Summary:
             table += f"KLD          | {self._kld:11.4f}      \n"
         return Markdown(table)
 
-    def print_metrics_table(self, pits=None):
-        self.evaluate_all(pits=pits)
+    def print_metrics_table(self, pitobj=None):
+        self.evaluate_all(pitobj=pitobj)
         table = str(
             "   Metric    |    Value \n" +
             "-------------|-------------\n" +
@@ -116,17 +123,15 @@ def main(argv):
 
     print("Reading data...")
     pdfs, zgrid, ztrue, photoz_mode = read_pz_output(pdfs_file, ztrue_file)
-    pz_ensemble = qp.Ensemble(qp.interp, data=dict(xvals=zgrid, yvals=pdfs))
+    fzdata = qp.Ensemble(qp.interp, data=dict(xvals=zgrid, yvals=pdfs))
     print()
     print()
-    quit()
 
     print("Computing metrics...")
-    pit = PIT(pz_ensemble, ztrue)
-    pit.evaluate()
-    pits = pit.pit
+    pitobj = PIT(fzdata, ztrue)
+    spl_ens, metamets = pitobj.evaluate()
     summary = Summary(pdfs, zgrid, ztrue)
-    summary.print_metrics_table(pits=pits)
+    summary.print_metrics_table(pitobj=pitobj)
     print()
     print()
 
@@ -134,12 +139,13 @@ def main(argv):
     print("Making plots...")
     print()
     print()
-    pit_out_rate = PitOutRate(pdfs, zgrid, ztrue).evaluate(pits=pits)
-
-    fig_filename = pit.plot_pit_qq(pit_out_rate=pit_out_rate, code=code, savefig=True)
+    pit_out_rate = PITOutRate(spl_ens).evaluate()
+    fig_filename = plot_pit_qq(pdfs, zgrid, ztrue,
+                               pit_out_rate=pit_out_rate,
+                               code=code, savefig=True)
     print(f"PIT-QQ plot saved as:   {fig_filename}")
     print()
-    print ()
+    print()
 
     t1 = t.time()
     dt = t1 - t0
