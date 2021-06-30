@@ -254,10 +254,14 @@ def plot_pit_qq(pdfs, zgrid, ztrue, bins=None, title=None, code=None,
     return fig_filename
 
 
-def ks_plot(ks, n_quant=100):
+def ks_plot(pitobj, n_quant=100):
     """ KS test illustration.
     Ancillary function to be used by class KS."""
-    pits = ks._pits
+    #pits = ks._pits
+    spl_ens, metamets = pitobj.evaluate()
+    pits = np.array(pitobj._pit_samps)
+    ksobj = PITKS(spl_ens)
+    stat_and_pval = ksobj.evaluate()
     xvals = np.linspace(0., 1., n_quant)
     yvals = np.array([np.histogram(pits, bins=len(xvals))[0]])
     pit_cdf = Ensemble(interp, data=dict(xvals=xvals, yvals=yvals)).cdf(xvals)[0]
@@ -281,7 +285,7 @@ def ks_plot(ks, n_quant=100):
     plt.ylabel("CDF(PIT)")
     xtext = 0.63
     ytext = 0.03
-    plt.text(xtext, ytext, f"KS={ks.statistic:.4f}", fontsize=16)
+    plt.text(xtext, ytext, f"KS={stat_and_pval.statistic:.4f}", fontsize=16)
     plt.xlim(0, 1)
     plt.ylim(0, 1)
     plt.legend()
