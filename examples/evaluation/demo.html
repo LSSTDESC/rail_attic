@@ -14291,8 +14291,8 @@ a.anchor-link {
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">rail.evaluation.metrics.pit</span> <span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span> <span class="nn">rail.evaluation.metrics.cdeloss</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">from</span> <span class="nn">rail.evaluation.main</span> <span class="kn">import</span> <span class="n">Summary</span>
 <span class="kn">from</span> <span class="nn">utils</span> <span class="kn">import</span> <span class="n">read_pz_output</span><span class="p">,</span> <span class="n">plot_pit_qq</span><span class="p">,</span> <span class="n">ks_plot</span>
+<span class="kn">from</span> <span class="nn">main</span> <span class="kn">import</span> <span class="n">Summary</span>
 <span class="kn">import</span> <span class="nn">qp</span> 
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="o">%</span><span class="k">matplotlib</span> inline
@@ -14473,7 +14473,7 @@ $$ \mathrm{PIT}(p_{i}(z);\ z_{i})\ =\ \int_{-\infty}^{z^{true}_{i}}\ p_{i}(z)\ d
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>&lt;qp.pdf_gen.rv_frozen_rows at 0x7fa92646af10&gt;</pre>
+<pre>&lt;qp.pdf_gen.rv_frozen_rows at 0x7fd9ab557cd0&gt;</pre>
 </div>
 
 </div>
@@ -14561,12 +14561,6 @@ $$ \mathrm{PIT}(p_{i}(z);\ z_{i})\ =\ \int_{-\infty}^{z^{true}_{i}}\ p_{i}(z)\ d
 
 </div>
 
-</div>
-<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<p><font size=5 color=red> Q:Why is only AD metric added automatically to metamets? Why not KS and CvM? </font></p>
-
-</div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
@@ -15343,7 +15337,7 @@ $$ \mathrm{CDE} = \mathbb{E}\big(  \int{{\hat{f}(z | X)}^2 dz} \big) - 2{\mathbb
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">summary</span> <span class="o">=</span> <span class="n">Summary</span><span class="p">(</span><span class="n">pdfs</span><span class="p">,</span> <span class="n">zgrid</span><span class="p">,</span> <span class="n">ztrue</span><span class="p">)</span>
-<span class="n">summary</span><span class="o">.</span><span class="n">markdown_metrics_table</span><span class="p">(</span><span class="n">pitobj</span><span class="o">=</span><span class="n">pitobj</span><span class="p">)</span>
+<span class="n">summary</span><span class="o">.</span><span class="n">markdown_metrics_table</span><span class="p">(</span><span class="n">pitobj</span><span class="o">=</span><span class="n">pitobj</span><span class="p">)</span> <span class="c1"># pitobj as optional input to speed-up metrics evaluation</span>
 </pre></div>
 
      </div>
@@ -15406,18 +15400,80 @@ $$ \mathrm{CDE} = \mathbb{E}\big(  \int{{\hat{f}(z | X)}^2 dz} \big) - 2{\mathbb
 
 </div>
 
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[&nbsp;]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[27]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span> 
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">summary</span><span class="o">.</span><span class="n">markdown_metrics_table</span><span class="p">(</span><span class="n">pitobj</span><span class="o">=</span><span class="n">pitobj</span><span class="p">,</span> <span class="n">show_dc1</span><span class="o">=</span><span class="s2">&quot;FlexZBoost&quot;</span><span class="p">)</span>
 </pre></div>
 
      </div>
 </div>
 </div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[27]:</div>
+
+
+
+<div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/markdown">
+<table>
+<thead><tr>
+<th>Metric</th>
+<th style="text-align:right">Value</th>
+<th style="text-align:right">DC1 reference value </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> PIT out rate</td>
+<td style="text-align:right">0.0002</td>
+<td style="text-align:right">0.0202 </td>
+</tr>
+<tr>
+<td>KS</td>
+<td style="text-align:right">0.0370</td>
+<td style="text-align:right">0.0240 </td>
+</tr>
+<tr>
+<td>CvM</td>
+<td style="text-align:right">7.8558</td>
+<td style="text-align:right">68.8300 </td>
+</tr>
+<tr>
+<td>AD</td>
+<td style="text-align:right">88.0014</td>
+<td style="text-align:right">478.8000 </td>
+</tr>
+<tr>
+<td>KLD</td>
+<td style="text-align:right">0.0918</td>
+<td style="text-align:right">N/A  </td>
+</tr>
+<tr>
+<td>CDE loss</td>
+<td style="text-align:right">6.02</td>
+<td style="text-align:right">-10.60 </td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+</div>
+
+</div>
+
 </div>
 
 </div>
