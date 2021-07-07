@@ -1,4 +1,2 @@
-from .sample import Sample
-from .metrics import Metrics
-
-
+from .evaluator import Evaluator
+from .metrics import *

@@ -104,12 +104,11 @@ venv.bak/
 .mypy_cache/
 
 
-# MAC OS 
+# MAC OS
 .DS_Store
 
-# PyCharm 
+# PyCharm
 .idea
 
 # VSCode
 .vscode
-
