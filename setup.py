@@ -8,8 +8,12 @@ setup(
     author_email="aimalz@nyu.edu",
     packages=packages,
     package_data={
-        "": ["*.hdf5", "*.yaml"],
-        "tests": ["*.hdf5", "*.yaml"],
+        "": ["*.hdf5", "*.yaml", "*.sed", "*.res", "*.AB",
+             "*.list", "*.columns"],
+        "tests": ["*.hdf5", "*.yaml", "*.columns"],
+        "rail/estimation/data/SED": ["*.sed", "*.list"],
+        "rail/estimation/data/FILTER": ["*.res"],
+        "rail/estimation/data/AB": ["*.AB"],
     },
     include_package_data=True,
     license="BSD 3-Clause License",
@@ -32,6 +36,7 @@ setup(
                       'pyarrow',
                       'tables',
                       'astropy',
+                      'DESC_BPZ @ git+https://github.com/LSSTDESC/DESC_BPZ',
                       ],
     extras_require={
         'Full': ['sklearn', 'FlexCode[all]', 'pzflow',
