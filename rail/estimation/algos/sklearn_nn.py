@@ -12,12 +12,14 @@ from sklearn.preprocessing import StandardScaler
 from scipy.stats import norm
 from rail.estimation.estimator import Estimator as BaseEstimation
 from rail.estimation.utils import check_and_print_params
+import string
 import qp
 
 
 def_param = {'run_params': {'width': 0.05, 'zmin': 0.0,
                             'zmax': 3.0, 'nzbins': 301,
                             'max_iter': 500,
+                            'bands': 'ugrizy',
                             'inform_options': {'save_train': False,
                                                'load_model': False,
                                                'modelfile':
@@ -29,6 +31,7 @@ descrip_dict = {'width': "width (float): The ad hoc base width of the PDFs",
                 'zmin': "zmin (float): The minimum redshift of the z grid",
                 'zmax': "zmax (float): The maximum redshift of the z grid",
                 'nzbins': "nzbins (int): The number of points in the z grid",
+                'bands': "bands (str): bands to use in estimation",
                 'max_iter': "max_iter (int): max number of iterations while "
                 "training the neural net.  Too low a value will cause an "
                 "error to be printed (though the code will still work, just"
@@ -42,7 +45,7 @@ descrip_dict = {'width': "width (float): The ad hoc base width of the PDFs",
                 }
 
 
-def make_color_data(data_dict):
+def make_color_data(data_dict, bands):
     """
     make a dataset consisting of the i-band mag and the five colors
 
@@ -51,9 +54,8 @@ def make_color_data(data_dict):
     input_data: `ndarray` array of imag and 5 colors
     """
     input_data = data_dict['mag_i_lsst']
-    bands = ['u', 'g', 'r', 'i', 'z', 'y']
     # make colors and append to input data
-    for i in range(5):
+    for i in range(len(bands)-1):
         # replace the non-detect 99s with 28.0 just arbitrarily for now
         band1 = data_dict[f'mag_{bands[i]}_lsst']
         # band1err = data_dict[f'mag_err_{bands[i]}_lsst']
@@ -105,9 +107,12 @@ class simpleNN(BaseEstimation):
         self.width = inputs['width']
         self.zmin = inputs['zmin']
         self.zmax = inputs['zmax']
+        self.bands = inputs['bands']
         self.nzbins = inputs['nzbins']
         self.maxiter = inputs['max_iter']
         self.inform_options = inputs['inform_options']
+        if not all(c in string.ascii_letters for c in self.bands):
+            raise ValueError("'bands' option should be letters only (no spaces or commas etc)")
         if 'save_train' in inputs['inform_options']:
             try:
                 self.modelfile = self.inform_options['modelfile']
@@ -124,7 +129,7 @@ class simpleNN(BaseEstimation):
         """
         speczs = training_data['redshift']
         print("stacking some data...")
-        color_data = make_color_data(training_data)
+        color_data = make_color_data(training_data, self.bands)
         input_data = regularize_data(color_data)
         simplenn = sknn.MLPRegressor(hidden_layer_sizes=(12, 12),
                                      activation='tanh', solver='lbfgs',
@@ -137,7 +142,7 @@ class simpleNN(BaseEstimation):
                             protocol=pickle.HIGHEST_PROTOCOL)
 
     def estimate(self, test_data):
-        color_data = make_color_data(test_data)
+        color_data = make_color_data(test_data, self.bands)
         input_data = regularize_data(color_data)
         zmode = np.round(self.model.predict(input_data), 3)
         pdfs = []

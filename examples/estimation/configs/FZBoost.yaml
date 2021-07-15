@@ -4,6 +4,7 @@ run_params:
   zmin: 0.0
   zmax: 3.0
   nzbins: 301
+  bands: ugrizy
   trainfrac: 0.75
   bumpmin: 0.02
   bumpmax: 0.35

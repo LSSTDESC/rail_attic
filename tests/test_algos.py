@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import copy
 from rail.fileIO import iter_chunk_hdf5_data, load_training_data
 import pytest
 from rail.estimation.algos import randomPZ, sklearn_nn, flexzboost, trainZ
@@ -119,6 +120,19 @@ def test_train_pz():
     print(pz_dict['zmode'])
     assert np.isclose(pz_dict['zmode'], zb_expected).all()
     assert np.isclose(pz_dict['zmode'], rerun_pz_dict['zmode']).all()
+
+
+def test_catch_bad_bands():
+    params = copy.deepcopy(flexzboost.def_param)
+    params['run_params']['bands'] = 'u,g,r,i,z,y'
+    with pytest.raises(ValueError):
+      flexzboost.FZBoost(test_base_yaml, params)
+
+    params = copy.deepcopy(sklearn_nn.def_param)
+    params['run_params']['bands'] = 'u,g,r,i,z,y'
+    with pytest.raises(ValueError) as errinfo:
+      sklearn_nn.simpleNN(test_base_yaml, params)
+
 
 
 def test_bpz_lite():
