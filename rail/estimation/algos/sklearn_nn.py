@@ -12,6 +12,7 @@ from sklearn.preprocessing import StandardScaler
 from scipy.stats import norm
 from rail.estimation.estimator import Estimator as BaseEstimation
 from rail.estimation.utils import check_and_print_params
+import string
 import qp
 
 
@@ -110,6 +111,8 @@ class simpleNN(BaseEstimation):
         self.nzbins = inputs['nzbins']
         self.maxiter = inputs['max_iter']
         self.inform_options = inputs['inform_options']
+        if not all(c in string.ascii_letters for c in self.bands):
+            raise ValueError("'bands' option should be letters only (no spaces or commas etc)")
         if 'save_train' in inputs['inform_options']:
             try:
                 self.modelfile = self.inform_options['modelfile']

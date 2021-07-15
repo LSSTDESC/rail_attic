@@ -15,7 +15,7 @@ from flexcode.loss_functions import cde_loss
 # from numpy import inf
 from rail.estimation.estimator import Estimator as BaseEstimation
 from rail.estimation.utils import check_and_print_params
-
+import string
 
 def make_color_data(data_dict, bands):
     """
@@ -152,6 +152,10 @@ class FZBoost(BaseEstimation):
         self.basis_system = inputs['basis_system']
         self.regress_params = inputs['regression_params']
         self.inform_options = inputs['inform_options']
+
+        if not all(c in string.ascii_letters for c in self.bands):
+            raise ValueError("'bands' option should be letters only (no spaces or commas etc)")
+
         if 'save_train' in inputs['inform_options']:
             try:
                 self.modelfile = self.inform_options['modelfile']
