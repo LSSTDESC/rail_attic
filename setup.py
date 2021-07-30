@@ -16,6 +16,7 @@ creation_extras = ["pzflow"]
 estimation_extras = [
     "matplotlib",
     "pyarrow",
+    "pyyaml",
     "scipy>=1.5.2",
     "tables",
 ]
