@@ -19,10 +19,11 @@ Now to install RAIL, you need to:
 3. Run one of the following commands, depending on your use case:
 
     - If you are not developing RAIL and just want to install the package for use in some other project, you can run the command `pip install .[Full]`. This will download the entire RAIL package. 
-    If you only want to install a piece of RAIL, you can change the install option. E.g. to install only the Creation Module, run `pip install .[creation]`.
+    If you only want to install the dependencies for a piece of RAIL, you can change the install option. E.g. to install only the dependencies for the Creation or Estimation Module, run `pip install .[creation]` or `pip install .[estimation]` respectively.
     - If you are developing RAIL, you should install with the `-e` flag, i.e. `pip install -e .[Full]`. This means that any changes you make to the RAIL codebase will propagate to imports of RAIL in your scripts and notebooks.
 
-Once you have installed RAIL, you can import it in your scripts and notebooks like you would any other python package.
+Once you have installed RAIL, you can import the package (via `import rail`) in any of your scripts and notebooks.
+For examples demonstrating how to use the different pieces, see the notebooks in the `examples/` directory.
 
 
 ## Contributing
