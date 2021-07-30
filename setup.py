@@ -38,10 +38,14 @@ extras_require["estimation"] = estimation_extras + list(
 for key, values in estimation_codes.items():
     extras_require[key] = estimation_extras + values
 extras_require["evaluation"] = evaluation_extras
-extras_require["all"] = extras_require["full"] = extras_require["Full"] = (
-    extras_require["creation"]
-    + extras_require["estimation"]
-    + extras_require["evaluation"]
+extras_require["all"] = extras_require["full"] = extras_require["Full"] = list(
+    set(
+        (
+            extras_require["creation"]
+            + extras_require["estimation"]
+            + extras_require["evaluation"]
+        )
+    )
 )
 
 # load the version number as the variable __version__
