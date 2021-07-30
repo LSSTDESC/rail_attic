@@ -7,6 +7,24 @@ RAIL's purpose is to be the infrastructure enabling the PZ WG Deliverables in [t
 RAIL differs from previous plans for PZ pipeline infrastructure in that it is broken into stages, each corresponding to a manageable unit of infrastructure advancement, a specific question to answer with that code, and a guaranteed publication opportunity.
 RAIL uses [qp](https://github.com/LSSTDESC/qp) as a back-end for handling univariate probability density functions (PDFs) such as photo-z posteriors or n(z) samples.
 
+## Installation
+
+First, it is recommended that you create a new virtual environment for RAIL.
+For example, to create a virtual environment named "rail" that has the latest version of python and pip, run the command `conda create -n rail pip`.
+You can then run the command `conda activate rail` to activate this environment.
+
+Now to install RAIL, you need to:
+1. [Clone this repo](https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/cloning-a-repository-from-github/cloning-a-repository) to your local workspace.
+2. Change directories so that you are in the RAIL root directory.
+3. Run one of the following commands, depending on your use case:
+
+    - If you are not developing RAIL and just want to install the package for use in some other project, you can run the command `pip install .[Full]`. This will download the entire RAIL package. 
+    If you only want to install a piece of RAIL, you can change the install option. E.g. to install only the Creation Module, run `pip install .[creation]`.
+    - If you are developing RAIL, you should install with the `-e` flag, i.e. `pip install -e .[Full]`. This means that any changes you make to the RAIL codebase will propagate to imports of RAIL in your scripts and notebooks.
+
+Once you have installed RAIL, you can import it in your scripts and notebooks like you would any other python package.
+
+
 ## Contributing
 
 The RAIL repository uses an issue-branch-review workflow.
