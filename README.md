@@ -10,7 +10,7 @@ RAIL uses [qp](https://github.com/LSSTDESC/qp) as a back-end for handling univar
 ## Installation
 
 First, it is recommended that you create a new virtual environment for RAIL.
-For example, to create a virtual environment named "rail" that has the latest version of python and pip, run the command `conda create -n rail pip`.
+For example, to create a conda environment named "rail" that has the latest version of python and pip, run the command `conda create -n rail pip`.
 You can then run the command `conda activate rail` to activate this environment.
 
 Now to install RAIL, you need to:
