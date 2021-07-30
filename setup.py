@@ -50,8 +50,9 @@ extras_require["all"] = extras_require["full"] = extras_require["Full"] = list(
     )
 )
 
-# load the version number as the variable __version__
-exec(open("rail/version.py").read())
+# load the version number
+with open("rail/version.py") as f:
+    __version__ = f.read().replace('"', "").split("=")[1]
 
 # setup the rail package!
 setup(
