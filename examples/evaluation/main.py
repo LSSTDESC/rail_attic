@@ -27,14 +27,15 @@ class Summary:
         if pitobj is None:
             pitobj = PIT(self._fzdata, self._ztrue)
         spl_ens, metamets = pitobj.evaluate()
-        self._pit_out_rate = PITOutRate(spl_ens).evaluate()
-        ksobj = PITKS(spl_ens)
+        pit_vals = pitobj._pit_samps
+        self._pit_out_rate = PITOutRate(pit_vals, spl_ens).evaluate()
+        ksobj = PITKS(pit_vals, spl_ens)
         self._ks = ksobj.evaluate().statistic
-        cvmobj = PITCvM(spl_ens)
+        cvmobj = PITCvM(pit_vals, spl_ens)
         self._cvm = cvmobj.evaluate().statistic
-        adobj = PITAD(spl_ens)
+        adobj = PITAD(pit_vals, spl_ens)
         self._ad = adobj.evaluate().statistic
-        kldobj = PITKLD(spl_ens)
+        kldobj = PITKLD(pit_vals, spl_ens)
         self._kld = kldobj.evaluate().statistic
         cdeobj = CDELoss(self._fzdata, self._xvals, self._ztrue)
         self._cde_loss = cdeobj.evaluate().statistic
@@ -130,6 +131,7 @@ def main(argv):
     print("Computing metrics...")
     pitobj = PIT(fzdata, ztrue)
     spl_ens, metamets = pitobj.evaluate()
+    pit_vals = pitobj._pit_samps
     summary = Summary(pdfs, zgrid, ztrue)
     summary.print_metrics_table(pitobj=pitobj)
     print()
@@ -139,7 +141,7 @@ def main(argv):
     print("Making plots...")
     print()
     print()
-    pit_out_rate = PITOutRate(spl_ens).evaluate()
+    pit_out_rate = PITOutRate(pit_vals, spl_ens).evaluate()
     fig_filename = plot_pit_qq(pdfs, zgrid, ztrue,
                                pit_out_rate=pit_out_rate,
                                code=code, savefig=True)

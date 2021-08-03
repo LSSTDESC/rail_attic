@@ -209,7 +209,7 @@ def plot_pit_qq(pdfs, zgrid, ztrue, bins=None, title=None, code=None,
         pitobj = PIT(fzdata, ztrue)
         spl_ens, metamets = pitobj.evaluate()
         pit_vals = np.array(pitobj._pit_samps)
-        pit_out_rate = PITOutRate(spl_ens).evaluate()
+        pit_out_rate = PITOutRate(pit_vals, spl_ens).evaluate()
 
         try:
             y_uni = float(len(pit_vals)) / float(bins)
@@ -260,7 +260,7 @@ def ks_plot(pitobj, n_quant=100):
     #pits = ks._pits
     spl_ens, metamets = pitobj.evaluate()
     pits = np.array(pitobj._pit_samps)
-    ksobj = PITKS(spl_ens)
+    ksobj = PITKS(pits, spl_ens)
     stat_and_pval = ksobj.evaluate()
     xvals = np.linspace(0., 1., n_quant)
     yvals = np.array([np.histogram(pits, bins=len(xvals))[0]])

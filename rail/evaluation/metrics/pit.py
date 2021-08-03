@@ -33,16 +33,25 @@ class PIT(Evaluator):
         """Compute PIT array using qp.Ensemble class
         Notes
         -----
-        eval_grid shouldn't be necessary but new qp doesn't have a samples parameterization, only spline from KDE of samples
+        We will create a quantile Ensemble to store the PIT distribution, but also store the
+        full set of PIT values as ancillary data of the (single PDF) ensemble.  I think
+        the current metrics do not actually need the distribution, but we'll keep it here
+        in case future PIT metrics need to make use of it.
         """
-        pit = qp.spline_from_samples(xvals=eval_grid,
-                                     samples=np.atleast_2d(self._pit_samps))
-        pit.samples = self._pit_samps
+        n_pit = np.min([len(self._pit_samps), len(eval_grid)])
+        if n_pit < len(eval_grid):
+            eval_grid = np.linspace(0, 1, n_pit)
+        data_quants = np.quantile(self._pit_samps, eval_grid)
+        pit = qp.Ensemble(qp.quant, data=dict(quants=eval_grid, locs=np.atleast_2d(data_quants)))
+
+        #pit = qp.spline_from_samples(xvals=eval_grid,
+        #                             samples=np.atleast_2d(self._pit_samps))
+        #pit.samples = self._pit_samps
 
         if meta_options is not None:
             metamets = {}
             for cls, params in meta_options.items():
-                meta = cls(pit)
+                meta = cls(self._pit_samps, pit)
                 for name, kwargs in params.items():
                     metamets[(cls, name)] = meta.evaluate(**kwargs)
 
@@ -70,7 +79,7 @@ class PIT(Evaluator):
 class PITMeta():
     """ A superclass for metrics of the PIT"""
 
-    def __init__(self, pit):
+    def __init__(self, pit_vals, pit):
         """Class constructor.
         Parameters
         ----------
@@ -78,6 +87,7 @@ class PITMeta():
             PIT values
         """
         self._pit = pit
+        self._pit_vals = pit_vals
 
     # they all seem to have a way to trim the ends, so maybe just bring those together here?
     # def _trim(self, pit_min=0., pit_max=1.):
@@ -99,8 +109,8 @@ class PITMeta():
 class PITOutRate(PITMeta):
     """ Fraction of PIT outliers """
 
-    def __init__(self, pit):
-        super().__init__(pit)
+    def __init__(self, pit_vals, pit):
+        super().__init__(pit_vals, pit)
 
     def evaluate(self, pit_min=0.0001, pit_max=0.9999):
         """Compute fraction of PIT outliers"""
@@ -112,13 +122,13 @@ class PITOutRate(PITMeta):
 class PITKS(PITMeta):
     """ Kolmogorov-Smirnov test statistic """
 
-    def __init__(self, pit):
-        super().__init__(pit)
+    def __init__(self, pit_vals, pit):
+        super().__init__(pit_vals, pit)
 
     def evaluate(self):
         """ Use scipy.stats.kstest to compute the Kolmogorov-Smirnov test statistic for
         the PIT values by comparing with a uniform distribution between 0 and 1. """
-        stat, pval = stats.kstest(self._pit.samples, 'uniform')
+        stat, pval = stats.kstest(self._pit_vals, 'uniform')
         return stat_and_pval(stat, pval)
 
 
@@ -126,14 +136,14 @@ class PITKS(PITMeta):
 class PITCvM(PITMeta):
     """ Cramer-von Mises statistic """
 
-    def __init__(self, pit):
-        super().__init__(pit)
+    def __init__(self, pit_vals, pit):
+        super().__init__(pit_vals, pit)
 
     def evaluate(self):
         """ Use scipy.stats.cramervonmises to compute the Cramer-von Mises statistic for
         the PIT values by comparing with a uniform distribution between 0 and 1. """
-        #stat, pval = stats.cramervonmises(self._pit.samples, 'uniform')
-        cvm_stat_and_pval = stats.cramervonmises(self._pit.samples, 'uniform')
+        #stat, pval = stats.cramervonmises(self._pit_vals, 'uniform')
+        cvm_stat_and_pval = stats.cramervonmises(self._pit_vals, 'uniform')
         return stat_and_pval(cvm_stat_and_pval.statistic,
                              cvm_stat_and_pval.pvalue)
 
@@ -142,8 +152,8 @@ class PITCvM(PITMeta):
 class PITAD(PITMeta):
     """ Anderson-Darling statistic """
 
-    def __init__(self, pit):
-        super().__init__(pit)
+    def __init__(self, pit_vals, pit):
+        super().__init__(pit_vals, pit)
 
     def evaluate(self, pit_min=0., pit_max=1.):
         """ Use scipy.stats.anderson_ksamp to compute the Anderson-Darling statistic
@@ -162,7 +172,7 @@ class PITAD(PITMeta):
         -------
 
         """
-        pits = self._pit.samples
+        pits = self._pit_vals
         mask = (pits >= pit_min) & (pits <= pit_max)
         pits_clean = pits[mask]
         diff = len(pits) - len(pits_clean)
@@ -174,12 +184,13 @@ class PITAD(PITMeta):
 
         return stat_crit_sig(stat, crit_vals, sig_lev)
 
+
 @PITMetaMetric
 class PITKLD(PITMeta):
     """ Kullback-Leibler Divergence """
 
-    def __init__(self, pit):
-        super().__init__(pit)
+    def __init__(self, pit_vals, pit):
+        super().__init__(pit_vals, pit)
 
     def evaluate(self, eval_grid=default_quants):
         """ Use scipy.stats.entropy to compute the Kullback-Leibler
@@ -188,7 +199,7 @@ class PITKLD(PITMeta):
         warnings.warn("This KLD implementation is based on scipy.stats.entropy, " +
                       "therefore it uses a discrete distribution of PITs " +
                       "(internally obtained from PIT object).")
-        pits = self._pit.samples
+        pits = self._pit_vals
         uniform_yvals = np.linspace(0., 1., len(pits))
         pit_pdf, _ = np.histogram(pits, bins=eval_grid)
         uniform_pdf, _ = np.histogram(uniform_yvals, bins=eval_grid)
