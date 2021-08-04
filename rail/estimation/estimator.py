@@ -1,5 +1,5 @@
 import os
-from rail.estimation.utils import load_training_data, get_input_data_size_hdf5
+from rail.fileIO import get_input_data_size_hdf5
 import yaml
 import pickle
 import pprint
@@ -49,16 +49,15 @@ class Estimator(object):
             setattr(self, n, v)
         for attr in ['zmode', 'zgrid', 'pz_pdf']:
             setattr(self, attr, None)
-        self.trainfile = base_dict['trainfile']
         self.outpath = base_dict['outpath']
-        self.train_fmt = self.trainfile.split(".")[-1]
 
+        self.trainfile = base_dict['trainfile']
         self.groupname = base_dict['hdf5_groupname']
-        self.training_data = load_training_data(self.trainfile, self.train_fmt,
-                                                self.groupname)
         self.testfile = base_dict['testfile']
         self.num_rows = get_input_data_size_hdf5(self.testfile, self.groupname)
         self._chunk_size = base_dict['chunk_size']
+
+        self.output_format = base_dict['output_format']
 
         self.test_fmt = self.testfile.split(".")[-1]
         # self.test_data = load_data(self.testfile, self.test_fmt)
@@ -68,10 +67,14 @@ class Estimator(object):
 
         self.config_dict = config_dict
 
-    def inform(self):
+    def inform(self, training_data):
         """
         Prior settings and/or training algorithm for the individual
         photo-z method, should be implemented in the subclass
+        Input:
+        ------
+        training_data: dict
+          dictionary of the training data, *including* redshift
         """
         raise NotImplementedError
 
@@ -99,21 +102,21 @@ class Estimator(object):
 
     def estimate(self, input_data):
         """
-        The main run method for the photo-z, should be implemented in
-        the specific subclass
+        The main run method for the photo-z, should be implemented 
+        in the specific subclass.
 
-        Input:
-        ------
-        data:
+        Parameters
+        ----------
+        data : `dict`
           dictionary of all input data
 
-        Returns:
-        --------
-        pz_dict:
+        Returns
+        -------
+        pz_dict : `dict`
           dictionary of output photo-z params, must include zmode and
-          pdf note: zgrid will still be a class variable for now
-
-        should create photo-z estimates with set names, TBD
-        for demo will just be `z_mode`
+          pdf 
         """
+        # note: zgrid will still be a class variable for now
+        # should create photo-z estimates with set names, TBD
+        # for demo will just be `z_mode`
         raise NotImplementedError

@@ -1,0 +1,17 @@
+run_params:
+  class_name: BPZ_lite
+  run_name: BPZ_lite
+  zmin: 0.0
+  zmax: 3.0
+  dz: 0.01
+  columns_file: ./configs/test_bpz.columns
+  spectra_file: SED/CWWSB4.list
+  madau_reddening: no
+  bands: ugrizy
+  prior_band: i
+  prior_file: hdfn_gen
+  p_min: 0.005
+  gauss_kernel: 0.0
+  zp_errors: [0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
+  mag_err_min: 0.005
+  inform_options: {'save_train': False, 'load_model': False, 'modelfile': 'BPZpriormodel.out'}  

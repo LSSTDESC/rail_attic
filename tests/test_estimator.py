@@ -2,18 +2,21 @@ import pytest
 import os
 import numpy as np
 from rail.estimation.estimator import Estimator
-from rail.estimation.utils import write_output_file
+from rail.fileIO import write_output_file
 import yaml
+
 
 # this is temporary until unit test uses a definite test data set and creates
 # the yaml file on the fly
 
 test_base_yaml = 'tests/base.yaml'
 
+
 def test_init_with_dict():
     # test we can init with a dict we have already loaded
     d = yaml.safe_load(open(test_base_yaml))['base_config']
     _ = Estimator(d)
+
 
 def test_initialization():
     # test handling of an inexistent config input file
@@ -29,9 +32,10 @@ def test_loading():
 
 
 def test_train_not_implemented():
+    fakedata = {'u': 99., 'g': 99., 'r': 99.}
     with pytest.raises(NotImplementedError):
         instance = Estimator(base_config=test_base_yaml)
-        instance.inform()
+        instance.inform(fakedata)
 
 
 def test_estimate_not_implemented():

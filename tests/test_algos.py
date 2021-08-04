@@ -1,8 +1,10 @@
 import numpy as np
 import os
+import copy
+from rail.fileIO import iter_chunk_hdf5_data, load_training_data
 import pytest
-from rail.estimation.utils import iter_chunk_hdf5_data
 from rail.estimation.algos import randomPZ, sklearn_nn, flexzboost, trainZ
+from rail.estimation.algos import bpz_lite
 
 
 test_base_yaml = './tests/test.yaml'
@@ -18,9 +20,16 @@ def one_algo(single_estimator, single_input):
     """
 
     pz = single_estimator(test_base_yaml, single_input)
-    pz.inform()
+    trainfile = pz.trainfile
+    train_fmt = trainfile.split(".")[-1]
+    training_data = load_training_data(trainfile, train_fmt,
+                                       pz.groupname)
+    pz.inform_dict = single_input['run_params']['inform_options']
+    pz.inform(training_data)
     # set chunk size to pz.num_rows to ensure all run in one chunk
-    for _, end, data in iter_chunk_hdf5_data(pz.testfile, pz.num_rows,
+    oversize_rows = pz.num_rows + 4  # test proper chunking truncation
+    for _, end, data in iter_chunk_hdf5_data(pz.testfile,
+                                             oversize_rows,
                                              pz.hdf5_groupname):
         pz_dict = pz.estimate(data)
     assert end == pz.num_rows
@@ -31,6 +40,16 @@ def one_algo(single_estimator, single_input):
     for _, end, data in iter_chunk_hdf5_data(pz.testfile, pz.num_rows,
                                              pz.hdf5_groupname):
         rerun_pz_dict = pz.estimate(data)
+    pz.output_format = 'qp'
+    for _, end, data in iter_chunk_hdf5_data(pz.testfile,
+                                             pz.num_rows,
+                                             pz.hdf5_groupname):
+        _ = pz.estimate(data)
+    # add a test load for no config dict
+    # check that all keys are present
+    noconfig_pz = single_estimator(test_base_yaml)
+    for key in single_input['run_params'].keys():
+        assert key in noconfig_pz.config_dict['run_params']
     return pz_dict, rerun_pz_dict
 
 
@@ -52,7 +71,7 @@ def test_random_pz():
 
 def test_simple_nn():
     config_dict = {'run_params': {'width': 0.025, 'zmin': 0.0, 'zmax': 3.0,
-                                  'nzbins': 301,
+                                  'nzbins': 301, 'max_iter': 250,
                                   'inform_options': {'save_train': True,
                                                      'modelfile': 'model.tmp'}
                                   }}
@@ -98,6 +117,77 @@ def test_train_pz():
     pdf_expected[10:16] = [7, 23, 8, 23, 26, 13]
     pz_algo = trainZ.trainZ
     pz_dict, rerun_pz_dict = one_algo(pz_algo, config_dict)
+    print(pz_dict['zmode'])
+    assert np.isclose(pz_dict['zmode'], zb_expected).all()
+    assert np.isclose(pz_dict['zmode'], rerun_pz_dict['zmode']).all()
+
+
+def test_catch_bad_bands():
+    params = copy.deepcopy(flexzboost.def_param)
+    params['run_params']['bands'] = 'u,g,r,i,z,y'
+    with pytest.raises(ValueError):
+      flexzboost.FZBoost(test_base_yaml, params)
+
+    params = copy.deepcopy(sklearn_nn.def_param)
+    params['run_params']['bands'] = 'u,g,r,i,z,y'
+    with pytest.raises(ValueError) as errinfo:
+      sklearn_nn.simpleNN(test_base_yaml, params)
+
+
+
+def test_bpz_lite():
+    cdict = {'run_params': {'zmin': 0.0, 'zmax': 3.0,
+                            'dz': 0.01,
+                            'nzbins': 301,
+                            'data_path': None,
+                            'columns_file':
+                                "./examples/estimation/configs/test_bpz.columns",
+                            'spectra_file': "SED/CWWSB4.list",
+                            'madau_flag': 'no',
+                            'bands': 'ugrizy',
+                            'prior_band': 'i',
+                            'prior_file': 'hdfn_gen',
+                            'p_min': 0.005,
+                            'gauss_kernel': 0.0,
+                            'zp_errors':
+                                [0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+                            'mag_err_min': 0.005,
+                            'inform_options': {'save_train': True,
+                                               'modelfile': 'model.out'
+                                               }}}
+    zb_expected = np.array([0.18, 2.88, 0.14, 0.21, 2.97, 0.18, 0.23, 0.23,
+                            2.98, 2.92])
+    pz_algo = bpz_lite.BPZ_lite
+    pz_dict, rerun_pz_dict = one_algo(pz_algo, cdict)
+    print(pz_dict['zmode'])
+    assert np.isclose(pz_dict['zmode'], zb_expected).all()
+    assert np.isclose(pz_dict['zmode'], rerun_pz_dict['zmode']).all()
+
+
+def test_bpz_lite_wkernel_flatprior():
+    cdict = {'run_params': {'zmin': 0.0, 'zmax': 3.0,
+                            'dz': 0.01,
+                            'nzbins': 301,
+                            'data_path': None,
+                            'columns_file':
+                                "./examples/estimation/configs/test_bpz.columns",
+                            'spectra_file': "SED/CWWSB4.list",
+                            'madau_flag': 'no',
+                            'bands': 'ugrizy',
+                            'prior_band': 'i',
+                            'prior_file': 'flat',
+                            'p_min': 0.005,
+                            'gauss_kernel': 0.1,
+                            'zp_errors':
+                                [0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+                            'mag_err_min': 0.005,
+                            'inform_options': {'save_train': True,
+                                               'modelfile': 'model.out'
+                                               }}}
+    zb_expected = np.array([0.18, 2.88, 0.12, 0.15, 2.97, 2.78, 0.11, 0.19,
+                            2.98, 2.92])
+    pz_algo = bpz_lite.BPZ_lite
+    pz_dict, rerun_pz_dict = one_algo(pz_algo, cdict)
     print(pz_dict['zmode'])
     assert np.isclose(pz_dict['zmode'], zb_expected).all()
     assert np.isclose(pz_dict['zmode'], rerun_pz_dict['zmode']).all()

@@ -1,8 +1,11 @@
 import sys
 import os
 import yaml
-from rail.estimation.utils import initialize_writeout, iter_chunk_hdf5_data
-from rail.estimation.utils import write_out_chunk, finalize_writeout
+from rail.fileIO import load_training_data
+from rail.fileIO import initialize_writeout, iter_chunk_hdf5_data
+from rail.fileIO import write_out_chunk, finalize_writeout
+from rail.fileIO import write_qp_output_chunk, initialize_qp_output
+from rail.fileIO import qp_reformat_output
 from rail.estimation.estimator import Estimator
 
 
@@ -40,25 +43,47 @@ def main(argv):
         # note: specific options set in subclasss func def
         pz.load_pretrained_model()
     else:
-        pz.inform()
+        trainfile = pz.trainfile
+        train_fmt = trainfile.split(".")[-1]
+        training_data = load_training_data(trainfile,
+                                           train_fmt,
+                                           pz.groupname)
+        pz.inform(training_data)
 
     if 'run_name' in run_dict['run_params']:
         outfile = run_dict['run_params']['run_name'] + '.hdf5'
+        tmpfile = "temp_" + outfile
     else:
         outfile = 'output.hdf5'
 
+    if pz.output_format == 'qp':
+        tmploc = os.path.join(pz.outpath, name, tmpfile)
+        outfile = run_dict['run_params']['run_name'] + "_qp.hdf5"
     saveloc = os.path.join(pz.outpath, name, outfile)
 
-    outf = initialize_writeout(saveloc, pz.num_rows, pz.nzbins)
+    if pz.output_format == 'qp':
+        initialize_qp_output(saveloc)
+    else:
+        outf = initialize_writeout(saveloc, pz.num_rows, pz.nzbins)
 
-    for start, end, data in iter_chunk_hdf5_data(pz.testfile,
-                                                 pz._chunk_size,
-                                                 'photometry'):
-        pz_dict = pz.estimate(data)
-        write_out_chunk(outf, pz_dict, start, end)
+    for chunk, (start, end, data) in enumerate(iter_chunk_hdf5_data(pz.testfile,
+                                                                    pz._chunk_size,
+                                                                    'photometry')):
+        pz_data_chunk = pz.estimate(data)
+        if pz.output_format == 'qp':
+            write_qp_output_chunk(tmploc, saveloc, pz_data_chunk, chunk)
+        else:
+            write_out_chunk(outf, pz_data_chunk, start, end)
         print("writing " + name + f"[{start}:{end}]")
 
-    finalize_writeout(outf, pz.zgrid)
+    num_chunks = end // pz._chunk_size
+    if end % pz._chunk_size > 0:
+        num_chunks += 1
+
+    if pz.output_format == 'qp':
+        qp_reformat_output(tmploc, saveloc, num_chunks)
+    else:
+        finalize_writeout(outf, pz.zgrid)
 
     print("finished")
 
