@@ -39,7 +39,7 @@ class PIT(Evaluator):
         in case future PIT metrics need to make use of it.
         """
         n_pit = np.min([len(self._pit_samps), len(eval_grid)])
-        if n_pit < len(eval_grid):
+        if n_pit < len(eval_grid): #pragma: no cover
             eval_grid = np.linspace(0, 1, n_pit)
         data_quants = np.quantile(self._pit_samps, eval_grid)
         pit = qp.Ensemble(qp.quant, data=dict(quants=eval_grid, locs=np.atleast_2d(data_quants)))
@@ -93,7 +93,7 @@ class PITMeta():
     # def _trim(self, pit_min=0., pit_max=1.):
     #
 
-    def evaluate(self):
+    def evaluate(self): #pragma: no cover
         """
         Evaluates the metric a function of the truth and prediction
 

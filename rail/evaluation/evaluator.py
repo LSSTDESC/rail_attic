@@ -19,7 +19,7 @@ class Evaluator:
         self._qp_ens = qp_ens
 
 
-    def evaluate(self):
+    def evaluate(self): #pragma: no cover
         """
         Evaluates the metric a function of the truth and prediction
 
