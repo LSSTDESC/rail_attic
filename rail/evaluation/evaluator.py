@@ -2,7 +2,7 @@ import numpy as np
 from scipy import stats
 
 import qp
-from IPython.display import Markdown
+# from IPython.display import Markdown
 # from rail.evaluation.qp_metrics import KS, CvM
 
 
