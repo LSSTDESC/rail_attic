@@ -142,7 +142,6 @@ class PITCvM(PITMeta):
     def evaluate(self):
         """ Use scipy.stats.cramervonmises to compute the Cramer-von Mises statistic for
         the PIT values by comparing with a uniform distribution between 0 and 1. """
-        #stat, pval = stats.cramervonmises(self._pit_vals, 'uniform')
         cvm_stat_and_pval = stats.cramervonmises(self._pit_vals, 'uniform')
         return stat_and_pval(cvm_stat_and_pval.statistic,
                              cvm_stat_and_pval.pvalue)
@@ -184,24 +183,24 @@ class PITAD(PITMeta):
 
         return stat_crit_sig(stat, crit_vals, sig_lev)
 
-
-@PITMetaMetric
-class PITKLD(PITMeta):
-    """ Kullback-Leibler Divergence """
-
-    def __init__(self, pit_vals, pit):
-        super().__init__(pit_vals, pit)
-
-    def evaluate(self, eval_grid=default_quants):
-        """ Use scipy.stats.entropy to compute the Kullback-Leibler
-        Divergence between the empirical PIT distribution and a
-        theoretical uniform distribution between 0 and 1."""
-        warnings.warn("This KLD implementation is based on scipy.stats.entropy, " +
-                      "therefore it uses a discrete distribution of PITs " +
-                      "(internally obtained from PIT object).")
-        pits = self._pit_vals
-        uniform_yvals = np.linspace(0., 1., len(pits))
-        pit_pdf, _ = np.histogram(pits, bins=eval_grid)
-        uniform_pdf, _ = np.histogram(uniform_yvals, bins=eval_grid)
-        kld_metric = stats.entropy(pit_pdf, uniform_pdf)
-        return stat_and_pval(kld_metric, None)
+# comment out for now due to discrete approx
+#@PITMetaMetric
+#class PITKLD(PITMeta):
+#    """ Kullback-Leibler Divergence """
+#
+#    def __init__(self, pit_vals, pit):
+#        super().__init__(pit_vals, pit)
+#
+#    def evaluate(self, eval_grid=default_quants):
+#        """ Use scipy.stats.entropy to compute the Kullback-Leibler
+#        Divergence between the empirical PIT distribution and a
+#        theoretical uniform distribution between 0 and 1."""
+#        warnings.warn("This KLD implementation is based on scipy.stats.entropy, " +
+#                      "therefore it uses a discrete distribution of PITs " +
+#                      "(internally obtained from PIT object).")
+#        pits = self._pit_vals
+#        uniform_yvals = np.linspace(0., 1., len(pits))
+#        pit_pdf, _ = np.histogram(pits, bins=eval_grid)
+#        uniform_pdf, _ = np.histogram(uniform_yvals, bins=eval_grid)
+#        kld_metric = stats.entropy(pit_pdf, uniform_pdf)
+#        return stat_and_pval(kld_metric, None)
