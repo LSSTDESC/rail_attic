@@ -381,3 +381,9 @@ class BPZ_lite(Estimator):
         else:
             pz_dict = {'zmode': zmode, 'pz_pdf': pdfs}
             return pz_dict
+
+
+    def __setstate__(self, state):
+        # Set BPZDATAPATH when unpickling so state is restored
+        self.__dict__.update(state)
+        os.environ["BPZDATAPATH"] = self.data_path
