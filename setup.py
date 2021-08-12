@@ -30,7 +30,7 @@ setup(
         ],
     install_requires=['numpy',
                       'h5py',
-                      'scipy',
+                      'scipy>=1.6.0',
                       'pyyaml',
                       'pandas>=1.1',
                       'pyarrow',
