@@ -3,9 +3,6 @@ from rail.evaluation.evaluator import Evaluator
 from rail.evaluation.utils import stat_and_pval
 
 
-default_grid = np.linspace(0., 1., 100)
-
-
 class CDELoss(Evaluator):
     """ Conditional density loss """
     def __init__(self, qp_ens, zgrid, ztrue):
