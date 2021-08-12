@@ -1,6 +1,6 @@
 import numpy as np
-from rail.evaluation.metrics.pit import *
-from rail.evaluation.metrics.cdeloss import *
+from rail.evaluation.metrics.pit import PIT, PITOutRate, PITKS, PITCvM, PITAD
+from rail.evaluation.metrics.cdeloss import CDELoss
 import qp
 
 # values for metrics

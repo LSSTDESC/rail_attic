@@ -1,10 +1,3 @@
-import numpy as np
-from scipy import stats
-
-import qp
-# from IPython.display import Markdown
-# from rail.evaluation.qp_metrics import KS, CvM
-
 
 
 class Evaluator:
@@ -18,8 +11,7 @@ class Evaluator:
         """
         self._qp_ens = qp_ens
 
-
-    def evaluate(self): #pragma: no cover
+    def evaluate(self):  #pragma: no cover
         """
         Evaluates the metric a function of the truth and prediction
 
@@ -29,7 +21,6 @@ class Evaluator:
             value of the metric and statistics thereof
         """
         raise NotImplementedError
-
 
 
 # class CRPS(Evaluator):

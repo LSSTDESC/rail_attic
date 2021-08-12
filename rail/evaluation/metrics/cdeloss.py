@@ -1,12 +1,10 @@
-import inspect
 import numpy as np
-from scipy import stats
-import qp
 from rail.evaluation.evaluator import Evaluator
-from rail.evaluation.utils import stat_and_pval, stat_crit_sig
+from rail.evaluation.utils import stat_and_pval
 
 
 default_grid = np.linspace(0., 1., 100)
+
 
 class CDELoss(Evaluator):
     """ Conditional density loss """
@@ -25,7 +23,6 @@ class CDELoss(Evaluator):
 
         Notes
         -----
-        Double-check that this is doing the right thing and that the types work out. . .
         """
 
         # Calculate first term E[\int f*(z | X)^2 dz]
