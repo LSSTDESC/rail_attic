@@ -227,8 +227,11 @@ class BPZ_lite(Estimator):
         # Group the magnitudes and errors into one big array
         mags = np.array([data[f'mag_{b}_lsst'] for b in bands]).T
 
-        # Clip to min mag errors
-        np.clip(mag_errs, self.mag_err_min, 1e10, mag_errs)
+        # Clip to min mag errors.
+        # JZ: Changed the max value here to 20 as values in the lensfit
+        # catalog of ~ 200 were causing underflows below that turned into
+        # zero errors on the fluxes and then nans in the output
+        np.clip(mag_errs, self.mag_err_min, 20, mag_errs)
 
         # Convert to pseudo-fluxes
         flux = 10.0**(-0.4*mags)
@@ -261,6 +264,14 @@ class BPZ_lite(Estimator):
         add_err[seen] = ((zp_frac*flux)**2)[seen]
         add_err[unseen] = ((zp_frac*0.5*flux_err)**2)[unseen]
         flux_err = np.sqrt(flux_err**2 + add_err)
+
+        # Convert non-observed objects to have zero flux
+        # and enormous error, so that their likelihood will be
+        # flat. This follows what's done in the bpz script.
+        nonobserved = -99.
+        unobserved = np.isclose(mags, nonobserved)
+        flux[unobserved] = 0.0
+        flux_err[unobserved] = 1e108
 
         # Upate the input dictionary with new things we have calculated
         data['flux'] = flux
