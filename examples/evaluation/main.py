@@ -19,7 +19,6 @@ class Summary:
         self._ks = None
         self._cvm = None
         self._ad = None
-        self._kld = None
         self._cde_loss = None
         self._fzdata = qp.Ensemble(qp.interp, data=dict(xvals=xvals, yvals=pdfs))
 
@@ -35,8 +34,6 @@ class Summary:
         self._cvm = cvmobj.evaluate().statistic
         adobj = PITAD(pit_vals, spl_ens)
         self._ad = adobj.evaluate().statistic
-        kldobj = PITKLD(pit_vals, spl_ens)
-        self._kld = kldobj.evaluate().statistic
         cdeobj = CDELoss(self._fzdata, self._xvals, self._ztrue)
         self._cde_loss = cdeobj.evaluate().statistic
 
@@ -51,7 +48,6 @@ class Summary:
             table += f"KS           | {self._ks:11.4f}  |{dc1.results['KS'][show_dc1]:11.4f} \n"
             table += f"CvM          | {self._cvm:11.4f} |{dc1.results['CvM'][show_dc1]:11.4f} \n"
             table += f"AD           | {self._ad:11.4f}  |{dc1.results['AD'][show_dc1]:11.4f} \n"
-            table += f"KLD          | {self._kld:11.4f}      |  N/A  \n"
             table += f"CDE loss     | {self._cde_loss:11.2f} |{dc1.results['CDE loss'][show_dc1]:11.2f} \n"
         else:
             table = "Metric|Value \n ---|---: \n "
@@ -60,7 +56,6 @@ class Summary:
             table += f"CvM          | {self._cvm:11.4f} \n"
             table += f"AD           | {self._ad:11.4f}  \n"
             table += f"CDE loss     | {self._cde_loss:11.2f} \n"
-            table += f"KLD          | {self._kld:11.4f}      \n"
         return Markdown(table)
 
     def print_metrics_table(self, pitobj=None):
@@ -72,7 +67,6 @@ class Summary:
             f"KS           | {self._ks:11.4f}\n" +
             f"CvM          | {self._cvm:11.4f}\n" +
             f"AD           | {self._ad:11.4f}\n" +
-            f"KLD          | {self._kld:11.4f}\n" +
             f"CDE loss     | {self._cde_loss:11.4f}\n" )
         print(table)
 
