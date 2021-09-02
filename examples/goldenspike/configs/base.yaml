@@ -1,0 +1,8 @@
+base_config:
+  trainfile: ./fakefile.dat
+  testfile: ./testfakefile.hdf5
+  hdf5_groupname: None
+  chunk_size: 10000
+  configpath: ./configs
+  outpath: ./results
+  output_format: qp
