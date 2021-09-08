@@ -1,11 +1,11 @@
 import sys
 import os
 import yaml
-from rail.fileIO import load_training_data
-from rail.fileIO import initialize_writeout, iter_chunk_hdf5_data
-from rail.fileIO import write_out_chunk, finalize_writeout
-from rail.fileIO import write_qp_output_chunk, initialize_qp_output
-from rail.fileIO import qp_reformat_output
+#from rail.fileIO import initialize_writeout, iter_chunk_hdf5_data
+#from rail.fileIO import write_out_chunk, finalize_writeout
+#from rail.fileIO import write_qp_output_chunk, initialize_qp_output
+#from rail.fileIO import qp_reformat_output
+from tables_io import io
 from rail.estimation.estimator import Estimator
 
 
@@ -45,9 +45,9 @@ def main(argv):
     else:
         trainfile = pz.trainfile
         train_fmt = trainfile.split(".")[-1]
-        training_data = load_training_data(trainfile,
-                                           train_fmt,
-                                           pz.groupname)
+        training_data = io.read(trainfile,
+                                train_fmt,
+                                pz.groupname)
         pz.inform(training_data)
 
     if 'run_name' in run_dict['run_params']:

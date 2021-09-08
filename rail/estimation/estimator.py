@@ -1,5 +1,5 @@
 import os
-from rail.fileIO import get_input_data_size_hdf5
+from tables_io.ioUtils import getInputDataLengthHdf5
 import yaml
 import pickle
 import pprint
@@ -54,7 +54,7 @@ class Estimator(object):
         self.trainfile = base_dict['trainfile']
         self.groupname = base_dict['hdf5_groupname']
         self.testfile = base_dict['testfile']
-        self.num_rows = get_input_data_size_hdf5(self.testfile, self.groupname)
+        self.num_rows = getInputDataLengthHdf5(self.testfile, self.groupname)
         self._chunk_size = base_dict['chunk_size']
 
         self.output_format = base_dict['output_format']
