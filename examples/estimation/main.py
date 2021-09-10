@@ -1,10 +1,8 @@
 import sys
 import os
 import yaml
-#from rail.fileIO import initialize_writeout, iter_chunk_hdf5_data
-#from rail.fileIO import write_out_chunk, finalize_writeout
-#from rail.fileIO import write_qp_output_chunk, initialize_qp_output
-#from rail.fileIO import qp_reformat_output
+from rail.fileIO import write_qp_output_chunk, initialize_qp_output
+from rail.fileIO import qp_reformat_output
 from tables_io import io
 from rail.estimation.estimator import Estimator
 
@@ -46,8 +44,10 @@ def main(argv):
         trainfile = pz.trainfile
         train_fmt = trainfile.split(".")[-1]
         training_data = io.read(trainfile,
+                                None,
                                 train_fmt,
                                 pz.groupname)
+        print(f"keys: {training_data.keys()}")
         pz.inform(training_data)
 
     if 'run_name' in run_dict['run_params']:
@@ -64,16 +64,16 @@ def main(argv):
     if pz.output_format == 'qp':
         initialize_qp_output(saveloc)
     else:
-        outf = initialize_writeout(saveloc, pz.num_rows, pz.nzbins)
-
-    for chunk, (start, end, data) in enumerate(iter_chunk_hdf5_data(pz.testfile,
-                                                                    pz._chunk_size,
-                                                                    'photometry')):
+        _, outf = io.initializeHdf5Write(saveloc, None, zmode=((pz.num_rows,), 'f4'),
+                                         pz_pdf=((pz.num_rows, pz.nzbins), 'f4'))
+    for chunk, (start, end, data) in enumerate(io.iterHdf5ToDict(pz.testfile,
+                                                                 pz._chunk_size,
+                                                                 'photometry')):
         pz_data_chunk = pz.estimate(data)
         if pz.output_format == 'qp':
             write_qp_output_chunk(tmploc, saveloc, pz_data_chunk, chunk)
         else:
-            write_out_chunk(outf, pz_data_chunk, start, end)
+            io.writeDictToHdf5Chunk(outf, pz_data_chunk, start, end)
         print("writing " + name + f"[{start}:{end}]")
 
     num_chunks = end // pz._chunk_size
@@ -83,8 +83,7 @@ def main(argv):
     if pz.output_format == 'qp':
         qp_reformat_output(tmploc, saveloc, num_chunks)
     else:
-        finalize_writeout(outf, pz.zgrid)
-
+        io.finalizeHdf5Write(outf, zgrid=pz.zgrid)
     print("finished")
 
 
