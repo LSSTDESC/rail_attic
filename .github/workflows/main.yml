@@ -5,7 +5,7 @@ name: rail
 
 on:
   push:
-    branches: [ master ]
+    branches: [ issue/87/fileio ]
   pull_request:
     branches: [ master ]
 
