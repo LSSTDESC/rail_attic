@@ -46,8 +46,7 @@ def main(argv):
         training_data = io.read(trainfile,
                                 None,
                                 train_fmt,
-                                pz.groupname)
-        print(f"keys: {training_data.keys()}")
+                                )[pz.groupname]
         pz.inform(training_data)
 
     if 'run_name' in run_dict['run_params']:
