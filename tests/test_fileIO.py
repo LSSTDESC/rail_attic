@@ -43,10 +43,6 @@ def test_qp_existing_file_overwrite():
 
 def test_subdir_creation():
     testfile = "./FAKEDIR/test.hdf5"
-    initialize_writeout(testfile, 5, 5)
-    assert os.path.exists(testfile)
-    os.remove(testfile)
-    os.rmdir("FAKEDIR")
     # test dir creation of qp func as well
     initialize_qp_output(testfile)
     assert (os.path.exists("./FAKEDIR"))

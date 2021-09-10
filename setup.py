@@ -35,6 +35,7 @@ setup(
                       'pandas>=1.1',
                       'pyarrow',
                       'tables',
+                      'tables_io',
                       'astropy',
                       'DESC_BPZ @ git+https://github.com/LSSTDESC/DESC_BPZ',
                       ],
