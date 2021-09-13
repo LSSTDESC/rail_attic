@@ -66,22 +66,24 @@ class LineConfusion:
         """
 
         # convert to an array for easy manipulation
-        data, columns = data.values, data.columns
+        values, columns = data.values.copy(), data.columns.copy()
         # get the minimum redshift
         # if wrong_wavelen < true_wavelen, this is minimum the redshift for
         # which the confused redshift is still positive
-        zmin = self.true_wavelen / self.wrong_wavelen - 1
+        zmin = self.wrong_wavelen / self.true_wavelen - 1
         # select the random fraction of galaxies whose lines are confused
         rng = np.random.default_rng(seed)
         idx = rng.choice(
-            np.where(data[:, 0] > zmin)[0],
-            size=int(self.frac_wrong * data.shape[0]),
+            np.where(values[:, 0] > zmin)[0],
+            size=int(self.frac_wrong * values.shape[0]),
             replace=False,
         )
         # transform these redshifts
-        data[idx, 0] = (1 + data[idx, 0]) * self.wrong_wavelen / self.true_wavelen - 1
+        values[idx, 0] = (
+            1 + values[idx, 0]
+        ) * self.true_wavelen / self.wrong_wavelen - 1
         # return results in a data frame
-        return pd.DataFrame(data, columns=columns)
+        return pd.DataFrame(values, columns=columns)
 
 
 class InvRedshiftIncompleteness:
