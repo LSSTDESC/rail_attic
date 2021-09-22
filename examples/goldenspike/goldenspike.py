@@ -7,11 +7,12 @@ from rail.creation import Creator
 from rail.creation.degradation import InvRedshiftIncompleteness
 from rail.estimation.estimator import Estimator
 from rail.evaluation.metrics.pit import *
+import rail.evaluation.metrics.pointestimates as pe
 from rail.evaluation.metrics.cdeloss import CDELoss
 import tables_io
 import qp
 import spike_utils
-from eval_utils import ks_plot, plot_pit_qq, old_metrics, plot_point_est
+from eval_utils import ks_plot, plot_pit_qq, plot_point_est
 
 
 def main():
@@ -144,8 +145,11 @@ def main():
         pit_out_rate = PITOutRate(pit_vals, quant_ens).evaluate()
         print(f"PIT Outlier Rate for code {name}: {pit_out_rate}")
 
-        zmode = pz_data.mode(grid=zgrid)
-        sigma_iqr, bias, frac, sigma_mad = old_metrics(zmode, z_true)
+        z_mode = pz_data.mode(grid=zgrid)
+        sigma_iqr = pe.PointSigmaIQR(z_mode, z_true).evaluate()
+        bias = pe.PointBias(z_mode, z_true).evaluate()
+        frac = pe.PointOutlierRate(z_mode, z_true).evaluate()
+        sigma_mad = pe.PointSigmaMAD(z_mode, z_true).evaluate()
         print(f"sigma_IQR for {name}: {sigma_iqr}\nbias for {name}: {bias}")
         print(f"cat. outlier frac for {name}: {frac}")
 
@@ -153,7 +157,7 @@ def main():
         table += f" | {cvm_stat_and_pval.statistic:11.4f} | {cde_stat_and_pval.statistic:11.4f}"
         table += f" | {sigma_iqr:11.4f} | {bias:11.4f} | {frac:11.4f}\n"
         
-        plot_point_est(zmode, z_true, sigma_iqr, name,
+        plot_point_est(z_mode, z_true, sigma_iqr, name,
                    f"{figdir}/{name}_pointests.jpg")
 
         # pdfdata = pz_data.objdata()['yvals']

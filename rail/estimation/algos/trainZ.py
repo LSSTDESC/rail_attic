@@ -81,7 +81,7 @@ class trainZ(BaseEstimation):
         self.zmode = model.zmode
 
     def estimate(self, test_data):
-        test_size = len(test_data['id'])
+        test_size = len(test_data['mag_i_lsst'])
         zmode = np.repeat(self.zmode, test_size)
         if self.output_format == 'qp':
             qp_d = qp.Ensemble(qp.interp,
