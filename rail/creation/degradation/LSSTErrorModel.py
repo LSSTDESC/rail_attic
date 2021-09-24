@@ -2,9 +2,10 @@ from typing import Iterable, List, Tuple
 
 import numpy as np
 import pandas as pd
+from rail.creation.degradation import Degrader
 
 
-class LSSTErrorModel:
+class LSSTErrorModel(Degrader):
     """
     LSST Model for photometric errors.
 

@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
+from rail.creation.degradation import Degrader
 
 
-class BandCut:
+class BandCut(Degrader):
     """Degrader that applies a cut to the given columns."""
 
     def __init__(self, cuts: dict):
