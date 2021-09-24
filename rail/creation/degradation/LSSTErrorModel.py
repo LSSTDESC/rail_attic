@@ -1,3 +1,5 @@
+from typing import Iterable, List, Tuple
+
 import numpy as np
 import pandas as pd
 
@@ -37,10 +39,13 @@ class LSSTErrorModel:
         All parameters are optional. To see the default settings, do
         `LSSTErrorModel().default_settings()`
 
-        Note that the dictionary bandNames sets the list of bands for which
-        this model calculates photometric errors. By default, the LSST bands
-        are named "lsst_u", "lsst_g", "lsst_r", "lsst_i", "lsst_z", and "lsst_y".
-        You can set the bandNames dictionary to alias them differently.
+        Note that the dictionary bandNames sets the bands for which this model
+        calculates photometric errors. The dictionary keys are the band names
+        that the error model uses internally to search for parameters, and the
+        corresponding dictionary values are the band names as they appear in
+        your data set. By default, the LSST bands are named "lsst_u", "lsst_g",
+        "lsst_r", "lsst_i", "lsst_z", and "lsst_y". You can use the bandNames
+        dictionary to alias them differently.
 
         For example, if in your DataFrame, the bands are named u, g, r, i ,z, y,
         you can set bandNames = {"lsst_u": "u", "lsst_g": "g", ...},
@@ -67,7 +72,12 @@ class LSSTErrorModel:
         Parameters
         ----------
         bandNames : dict, optional
-            A dictionary of bands for which to calculate errors. Can be used to
+            A dictionary of bands for which to calculate errors. The dictioary
+            keys are the band names that the Error Model uses internally to
+            search for parameters, and the corresponding dictionary values
+            are the names of those bands as they appear in your data set.
+
+            Can be used to
             alias the default names of the LSST bands, or to add additional bands.
             See notes above.
         tvis : float, optional
@@ -191,7 +201,7 @@ class LSSTErrorModel:
             "airmass": 1.2,  # fiducial airmass (T2)
             "extendedSource": 0.0,  # constant added to m5 for extended sources
             "sigmaSys": 0.005,  # expected irreducible error, p26
-            "minMag": 35.0,  # dimmest allowed magnitude; dimmer mags set to 99
+            "minMag": 30.0,  # dimmest allowed magnitude; dimmer mags set to 99
             "m5": {},  # explicit list of m5 limiting magnitudes
             "Cm": {  # band dependent parameter (T2)
                 "lsst_u": 23.09,
@@ -275,6 +285,135 @@ class LSSTErrorModel:
                     f"in {key}, or explicity pass their 5-sigma limiting magnitudes "
                     "in m5."
                 )
+
+    def calculate_m5(self) -> dict:
+        """
+        Calculate the m5 limiting magnitudes,
+        using Eq. 6 from https://arxiv.org/abs/0805.2366
+
+        Note this is only done for the bands for which an m5 wasn't
+        explicitly passed.
+        """
+
+        # get the settings
+        settings = self.settings
+
+        # get the list of bands for which an m5 wasn't explicitly passed
+        bands = set(self.settings["bandNames"]) - set(self.settings["m5"])
+
+        # calculate the m5 limiting magnitudes using Eq. 6
+        m5 = {
+            band: settings["Cm"][band]
+            + 0.50 * (self.settings["msky"][band] - 21)
+            + 2.5 * np.log10(0.7 / settings["theta"][band])
+            + 1.25 * np.log10(settings["tvis"] / 30)
+            - settings["km"][band] * (settings["airmass"] - 1)
+            - settings["extendedSource"]
+            for band in bands
+        }
+
+        return m5
+
+    def getBandsAndNames(self, columns: Iterable[str]) -> Tuple[List[str], List[str]]:
+        """
+        Get the bands and bandNames that are present in the given data columns.
+        """
+
+        # get the list of bands present in the data
+        bandNames = list(set(self.settings["bandNames"].values()).intersection(columns))
+
+        # sort bandNames to be in the same order provided in settings["bandNames"]
+        bandNames = [
+            band for band in self.settings["bandNames"].values() if band in bandNames
+        ]
+
+        # get the internal names of the bands from bandNames
+        bands = [
+            {bandName: band for band, bandName in self.settings["bandNames"].items()}[
+                bandName
+            ]
+            for bandName in bandNames
+        ]
+
+        return bands, bandNames
+
+    def getMagError(self, mags: np.ndarray, bands: list) -> np.ndarray:
+        """
+        Calculate the magnitude errors using Eqs 4 and 5 from
+        https://arxiv.org/abs/0805.2366
+        """
+
+        # get the 5-sigma limiting magnitudes for these bands
+        m5 = np.array([self.m5[band] for band in bands])
+        # and the values for gamma
+        gamma = np.array([self.settings["gamma"][band] for band in bands])
+
+        # calculate x as defined in the paper
+        x = 10 ** (0.4 * (mags - m5))
+
+        # calculate the squared random error for a single visit
+        # Eq. 5 in https://arxiv.org/abs/0805.2366
+        sigmaRandSqSingleExp = (0.04 - gamma) * x + gamma * x ** 2
+
+        # calculate the random error for the stacked image
+        nVisYr = np.array([self.settings["nVisYr"][band] for band in bands])
+        nStackedObs = nVisYr * self.settings["nYrObs"]
+        sigmaRand = np.sqrt(sigmaRandSqSingleExp / nStackedObs)
+
+        # calculate total photometric errors
+        # Eq. 4 in https://arxiv.org/abs/0805.2366
+        sigma = np.sqrt(self.settings["sigmaSys"] ** 2 + sigmaRand ** 2)
+
+        return sigma
+
+    def __call__(self, data: pd.DataFrame, seed: int = None) -> pd.DataFrame:
+        """
+        Calculate errors for data, and save the results in a pandas DataFrame.
+        """
+
+        # get the bands and bandNames present in the data
+        bands, bandNames = self.getBandsAndNames(data.columns)
+
+        # get numpy array of magnitudes
+        mags = data[bandNames].to_numpy()
+
+        # calculate the magnitude error
+        magErrs = self.getMagError(mags, bands)
+
+        # convert mags to fluxes
+        fluxes = 10 ** (mags / -2.5)
+        fluxErrs = np.log(10) / 2.5 * fluxes * magErrs
+
+        # add Gaussian flux error
+        rng = np.random.default_rng(seed)
+        obsFluxes = rng.normal(loc=fluxes, scale=fluxErrs)
+
+        # only fluxes above minFlux will have observed magnitudes recorded
+        # everything else is marked as a non-detection
+        minFlux = 10 ** (self.settings["minMag"] / -2.5)
+        idx = np.where(obsFluxes > minFlux)
+
+        # convert fluxes back to magnitudes
+        obsMags = np.full(obsFluxes.shape, 99.0)
+        obsMags[idx] = -2.5 * np.log10(obsFluxes[idx])
+
+        # decorrelate the magnitude error
+        obsMagErrs = np.full(obsMags.shape, 99.0)
+        obsMagErrs[idx] = self.getMagError(obsMags, bands)[idx]
+
+        # save the observations in a DataFrame
+        obsData = data.copy()
+        obsData[bandNames] = obsMags
+        obsData[[band + "_err" for band in bandNames]] = obsMagErrs
+
+        # re-order columns so that the error columns come right after the
+        # respective magnitudes
+        columns = data.columns.tolist()
+        for band in bandNames:
+            columns.insert(columns.index(band) + 1, band + "_err")
+        obsData = obsData[columns]
+
+        return obsData
 
     def __repr__(self):
         """
@@ -379,101 +518,3 @@ class LSSTErrorModel:
             printMsg = printMsg[:-2] + "\n"
 
         return printMsg
-
-    def calculate_m5(self) -> dict:
-        """
-        Calculate the m5 limiting magnitudes,
-        using Eq. 6 from https://arxiv.org/abs/0805.2366
-
-        Note this is only done for the bands for which an m5 wasn't
-        explicitly passed.
-        """
-
-        # get the settings
-        settings = self.settings
-
-        # get the list of bands for which an m5 wasn't explicitly passed
-        bands = set(self.settings["bandNames"]) - set(self.settings["m5"])
-
-        # calculate the m5 limiting magnitudes using Eq. 6
-        m5 = {
-            settings["bandNames"][band]: settings["Cm"][band]
-            + 0.50 * (self.settings["msky"][band] - 21)
-            + 2.5 * np.log10(0.7 / settings["theta"][band])
-            + 1.25 * np.log10(settings["tvis"] / 30)
-            - settings["km"][band] * (settings["airmass"] - 1)
-            - settings["extendedSource"]
-            for band in bands
-        }
-
-        return m5
-
-    def getMagError(self, mags: np.ndarray, bands: list) -> np.ndarray:
-        """
-        Calculate the magnitude errors using Eqs 4 and 5 from
-        https://arxiv.org/abs/0805.2366
-        """
-
-        # get the 5-sigma limiting magnitudes for these bands
-        m5 = np.array([self.m5[band] for band in bands])
-        # and the values for gamma
-        gamma = np.array([self.settings["gamma"][band] for band in bands])
-
-        # calculate x as defined in the paper
-        x = 10 ** (0.4 * (mags - m5))
-
-        # calculate the squared random error for a single visit
-        # Eq. 5 in https://arxiv.org/abs/0805.2366
-        sigmaRandSqSingleExp = (0.04 - gamma) * x + gamma * x ** 2
-
-        # calculate the random error for the stacked image
-        nVisYr = np.array([self.settings["nVisYr"][band] for band in bands])
-        nStackedObs = nVisYr * self.settings["nYrObs"]
-        sigmaRand = np.sqrt(sigmaRandSqSingleExp / nStackedObs)
-
-        # calculate total photometric errors
-        # Eq. 4 in https://arxiv.org/abs/0805.2366
-        sigma = np.sqrt(self.settings["sigmaSys"] ** 2 + sigmaRand ** 2)
-
-        return sigma
-
-    def __call__(self, data: pd.DataFrame, seed: int = 0) -> pd.DataFrame:
-        """
-        Calculate errors for data, and save the results in a pandas DataFrame.
-        """
-
-        # get the list of bands present in the data
-        bands = list(
-            set(self.settings["bandNames"].values()).intersection(data.columns)
-        )
-
-        # get numpy array of magnitudes
-        mags = data[bands].to_numpy()
-
-        # calculate the magnitude error
-        magErrs = self.getMagError(mags, bands)
-
-        # convert mags to fluxes
-        fluxes = 10 ** (mags / -2.5)
-        fluxErrs = np.log(10) / 2.5 * fluxes * magErrs
-
-        # add Gaussian flux error
-        rng = np.random.default_rng(seed)
-        obsFluxes = rng.normal(loc=fluxes, scale=fluxErrs)
-
-        # convert fluxes back to magnitudes, protecting against tiny/negative fluxes
-        obsMags = np.where(
-            obsFluxes > 10 ** (self.settings["minMag"] / -2.5),
-            -2.5 * np.log10(obsFluxes),
-            99,
-        )
-
-        # decorrelate the magnitude error
-        obsMagErrs = self.getMagError(obsMags, bands)
-
-        # save the observations in a DataFrame
-        obsData = data.copy()
-        obsData[bands] = obsMags
-        obsData[[band + "_err" for band in bands]] = obsMagErrs
-
-        return obsData
