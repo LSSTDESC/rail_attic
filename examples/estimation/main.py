@@ -1,8 +1,6 @@
 import sys
 import os
 import yaml
-from rail.fileIO import write_qp_output_chunk, initialize_qp_output
-from rail.fileIO import qp_reformat_output
 from tables_io import io
 from rail.estimation.estimator import Estimator
 
@@ -60,17 +58,18 @@ def main(argv):
         outfile = run_dict['run_params']['run_name'] + "_qp.hdf5"
     saveloc = os.path.join(pz.outpath, name, outfile)
 
-    if pz.output_format == 'qp':
-        initialize_qp_output(saveloc)
-    else:
-        _, outf = io.initializeHdf5Write(saveloc, None, zmode=((pz.num_rows,), 'f4'),
-                                         pz_pdf=((pz.num_rows, pz.nzbins), 'f4'))
     for chunk, (start, end, data) in enumerate(io.iterHdf5ToDict(pz.testfile,
                                                                  pz._chunk_size,
                                                                  'photometry')):
         pz_data_chunk = pz.estimate(data)
+        if chunk == 0:
+            if pz.output_format == 'qp':
+                group, outf = pz_data_chunk.initializeHdf5Write(saveloc, pz.num_rows)
+            else:
+                _, outf = io.initializeHdf5Write(saveloc, None, zmode=((pz.num_rows,), 'f4'),
+                                                 pz_pdf=((pz.num_rows, pz.nzbins), 'f4'))
         if pz.output_format == 'qp':
-            write_qp_output_chunk(tmploc, saveloc, pz_data_chunk, chunk)
+            pz_data_chunk.writeHdf5Chunk(group, start, end)
         else:
             io.writeDictToHdf5Chunk(outf, pz_data_chunk, start, end)
         print("writing " + name + f"[{start}:{end}]")
@@ -80,7 +79,7 @@ def main(argv):
         num_chunks += 1
 
     if pz.output_format == 'qp':
-        qp_reformat_output(tmploc, saveloc, num_chunks)
+        pz_data_chunk.finalizeHdf5Write(outf)
     else:
         io.finalizeHdf5Write(outf, zgrid=pz.zgrid)
     print("finished")
