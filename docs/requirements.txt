@@ -12,3 +12,5 @@ yml
 pyyaml
 pip
 corner
+tables-io
+qp@git+https://github.com/LSSTDESC/qp
