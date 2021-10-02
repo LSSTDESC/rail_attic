@@ -12,15 +12,6 @@ from qp.ensemble import Ensemble
 from qp import interp
 
 
-def old_metrics(photoz, ztrue):
-    point = EvaluatePointStats(photoz, ztrue)
-    sigma_iqr = point.CalculateSigmaIQR()
-    bias = point.CalculateBias()
-    frac = point.CalculateOutlierRate()
-    sigma_mad = point.CalculateSigmaMAD()
-    return sigma_iqr, bias, frac, sigma_mad
-
-
 def plot_pit_qq(pdf_ens, ztrue, qbins=101, title=None, code=None,
                 show_pit=True, show_qq=True,
                 pit_out_rate=None, outdir="", savefig=False) -> str:
@@ -188,84 +179,3 @@ def plot_point_est(zpoint, z_true, sigma, code, outfile):
     plt.xlim(0,3)
     plt.ylim(0,3)
     plt.savefig(outfile, format='jpg')
-
-
-class EvaluatePointStats(object):
-    """Copied from PZDC1paper repo. Adapted to remove the cut based on magnitude."""
-
-    def __init__(self, pzvec, szvec):
-        """An object that takes in the vectors of the point photo-z
-        the spec-z, and the i-band magnitudes for calculating the
-        point statistics
-        Parameters:
-        pzvec: Numpy 1d array of the point photo-z values
-        szvec: Numpy 1d array of the spec-z values
-        magvec: Numpy 1d array of the i-band magnitudes
-        imagcut: float: i-band magnitude cut for the sample
-        Calculates:
-        ez_all: (pz-sz)/(1+sz), the quantity will be useful for calculating statistics
-        ez_magcut: ez sample trimmed with imagcut
-        """
-        self.pzs = pzvec
-        self.szs = szvec
-        ez = (pzvec - szvec) / (1. + szvec)
-        self.ez_all = ez
-
-    def CalculateSigmaIQR(self):
-        """Calculate the width of the e_z distribution
-        using the Interquartile range
-        Parameters:
-        imagcut: float: i-band magnitude cut for the sample
-        Returns:
-        sigma_IQR_all float: width of ez distribution for full sample
-        sigma_IQR_magcut float: width of ez distribution for magcut sample
-        """
-        x75, x25 = np.percentile(self.ez_all, [75., 25.])
-        iqr_all = x75 - x25
-        sigma_iqr_all = iqr_all / 1.349
-        self.sigma_iqr_all = sigma_iqr_all
-
-        return sigma_iqr_all
-
-    def CalculateBias(self):
-        """calculates the bias of the ez and ez_magcut samples.  In
-        keeping with the Science Book, this is just the median of the
-        ez values
-        Returns:
-        bias_all: median of the full ez sample
-        bias_magcut: median of the magcut ez sample
-        """
-        bias_all = np.median(self.ez_all)
-        return bias_all
-
-    def CalculateOutlierRate(self):
-        """Calculates the catastrophic outlier rate, defined in the
-        Science Book as the number of galaxies with ez larger than
-        max(0.06,3sigma).  This keeps the fraction reasonable when
-        sigma is very small.
-        Returns:
-        frac_all: fraction of catastrophic outliers for full sample
-        frac_magcut: fraction of catastrophic outliers for magcut
-        sample
-        """
-        num_all = len(self.ez_all)
-        threesig_all = 3.0 * self.sigma_iqr_all
-        cutcriterion_all = np.maximum(0.06, threesig_all)
-        mask_all = (self.ez_all > np.fabs(cutcriterion_all))
-        outlier_all = np.sum(mask_all)
-        frac_all = float(outlier_all) / float(num_all)
-        return frac_all
-
-    def CalculateSigmaMAD(self):
-        """Function to calculate median absolute deviation and sigma
-        based on MAD (just scaled up by 1.4826) for the full and
-        magnitude trimmed samples of ez values
-        Returns:
-        sigma_mad_all: sigma_MAD for full sample
-        sigma_mad_cut: sigma_MAD for the magnitude cut sample
-        """
-        tmpmed_all = np.median(self.ez_all)
-        tmpx_all = np.fabs(self.ez_all - tmpmed_all)
-        mad_all = np.median(tmpx_all)
-        sigma_mad_all = mad_all * 1.4826
-        return sigma_mad_all
