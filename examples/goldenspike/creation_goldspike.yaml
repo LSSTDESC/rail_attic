@@ -1,0 +1,30 @@
+# if has flow==True, read a pre-trained flow from `flow_file`
+has_flow: False
+flow_file: test_9816flow.pkl
+# if has_flow is false, script will grab data from a single healpix pixel (hpix)
+# and take only a fraction of that data to train a flow i.e. flowdata = data[::frac]
+use_local_data: True
+local_flow_data_file: data/test_flow_data.pq
+flow_columns: ['mag_u_lsst', 'mag_g_lsst', 'mag_r_lsst', 'mag_i_lsst', 'mag_z_lsst', 'mag_y_lsst', 'redshift']
+hpix: 9816
+frac: 40
+# if use_degrader, use theincompleteness degrader with pivot degrader_z_split
+use_degrader: True
+degrader_z_split: 1.0
+# number of test and train galaxies to generate from zmin<z<zmax with nzbins for pdf
+N_test_gals: 5000
+N_train_gals: 2000
+zmin: 0.0
+zmax: 3.0
+nzbins: 101
+# name of redshift column
+z_column: redshift
+# set to save true PDFs, to file `ensemble_file`
+save_ensemble: False
+ensemble_file: goldenspike_true_posteriors_qp.pq
+# Save the flow? If so, use `saved_flow_file`
+save_flow: True
+saved_flow_file: new_9816_flow.pkl
+# Creation photometry+redshift+errors files
+test_filename: test_data.parquet
+train_filename: train_data.parquet

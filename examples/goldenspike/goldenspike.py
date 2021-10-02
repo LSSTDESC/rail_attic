@@ -16,21 +16,29 @@ from eval_utils import ks_plot, plot_pit_qq, plot_point_est
 
 
 def main():
-    with open("golden_spike.yaml", 'r') as f:
-        configs = yaml.safe_load(f)
-
-    c_par = configs['creation']
-    est_par = configs['estimation']
-    eval_par = configs['evaluation']
+    with open("creation_goldspike.yaml", 'r') as f:
+        c_par = yaml.safe_load(f)
+    with open("estimation_goldspike.yaml", 'r') as f:
+        est_par = yaml.safe_load(f)
+    with open("evaluation_goldspike.yaml", 'r') as f:
+        eval_par = yaml.safe_load(f)
 
     ####CREATION
     if c_par['has_flow']:
         flow = Flow(file=c_par['flow_file'])
     else:
-        if 'creation_data' in c_par: 
-            datafile = c_par['creation_data']
-            data = pd.read_parquet(datafile)
+        if c_par['use_local_data']: 
+            datafile = c_par['local_flow_data_file']
+            print(f"constructing flow from file {datafile}")
+            raw_data = tables_io.io.read(datafile, tType=tables_io.types.PD_DATAFRAME)
+            # trim data to only columns wanted for pzflow training
+            flow_columns = c_par['flow_columns']
+            data = raw_data[flow_columns]
         else:
+            try: # check that GCRCatalogs installed
+                import GCRCatalogs
+            except ModuleNotFoundError:
+                raise ModuleNotFoundError("cannot import GCRCatalogs")
             hpix = c_par['hpix']
             frac = c_par['frac']
             data = spike_utils.grabdata(hpix, frac)

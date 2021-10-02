@@ -1,0 +1,63 @@
+base_yaml: ./configs/base.yaml
+#save all the pdfs for each code? Will be written to `results/estimation_results_base_[code]`
+save_pdfs: True
+estimation_results_base: goldspike_test
+#  name for metrics summary file
+results_file: goldenspike_metrics.txt
+# yaml config for each code we want to run:
+estimators:
+  BPZ_lite:
+    run_params:
+      class_name: BPZ_lite
+      run_name: BPZ_lite
+      zmin: 0.0
+      zmax: 3.0
+      dz: 0.01
+      columns_file: ./configs/test_bpz.columns
+      spectra_file: SED/CWWSB4.list
+      madau_reddening: no
+      bands: ugrizy
+      prior_band: i
+      prior_file: hdfn_gen
+      p_min: 0.005
+      gauss_kernel: 0.0
+      zp_errors: [0.03, 0.02, 0.02, 0.02, 0.02, 0.03]
+      mag_err_min: 0.005
+      inform_options:
+        save_train: False
+        load_model: False
+        modelfile: BPZpriormodel.out
+  FZBoost:
+    run_params:
+      class_name: FZBoost
+      run_name: FZBoost
+      zmin: 0.0
+      zmax: 3.0
+      nzbins: 301
+      trainfrac: 0.75
+      bumpmin: 0.02
+      bumpmax: 0.35
+      nbump: 20
+      sharpmin: 0.7
+      sharpmax: 2.1
+      nsharp: 15
+      max_basis: 35
+      basis_system: cosine
+      regression_params: 
+        max_depth: 8
+        objective: reg:squarederror
+      inform_options:
+        save_train: True 
+        load_model: False
+        modelfile: creation_trained_fzb_model.pkl
+  trainZ:
+    run_params:
+      class_name: trainZ
+      run_name: trainZ
+      zmin: 0.0
+      zmax: 3.0
+      nzbins: 301
+      inform_options:
+        save_train: False
+        load_model: False
+        modelfile: trainZmodel.pkl  
