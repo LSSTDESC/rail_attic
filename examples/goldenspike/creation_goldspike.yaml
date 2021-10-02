@@ -1,9 +1,9 @@
 # if has flow==True, read a pre-trained flow from `flow_file`
-has_flow: False
-flow_file: test_9816flow.pkl
+has_flow: True
+flow_file: data/pretrained_flow.pkl
 # if has_flow is false, script will grab data from a single healpix pixel (hpix)
 # and take only a fraction of that data to train a flow i.e. flowdata = data[::frac]
-use_local_data: True
+use_local_data: False
 local_flow_data_file: data/test_flow_data.pq
 flow_columns: ['mag_u_lsst', 'mag_g_lsst', 'mag_r_lsst', 'mag_i_lsst', 'mag_z_lsst', 'mag_y_lsst', 'redshift']
 hpix: 9816

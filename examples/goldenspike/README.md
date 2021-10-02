@@ -12,7 +12,7 @@ NOTE: could switch to grab these on command line rather than hardcoded names, as
 The major functionality of the creation module is to create mock data with which to test the set of estimators, which also produces "true" redshift posteriors for each mock galaxy.  There are three options for generating mock data: 1) starting with a pre-trained flow; 2) loading photometry+redshift data from file; 3) querying a healpix pixel from GCRCatalogs (if installed, so usually when running at NERSC).  
 
 ## Data used as input to RAIL Creator
-In `creation_goldspike.yaml` setting `has_flow: True` will read in the pre-trained flow from the pickle file specified with `flow_file`.  
+In `creation_goldspike.yaml` setting `has_flow: True` will read in the pre-trained flow from the pickle file specified with `flow_file`.  There is an existing pretrained flow that has been trained on a subset of data from True data from healpix pixel 9816 of cosmoDC2 in the data directory named `data/pretrained_flow.pkl` that can be used in this demo.
 
 If you instead wish to read in data from file, setting `use_local_dat: True will read in the photometry and redshift info from the file specified in `local_flow_data_file` (there is an example data file named `data/test_flow_data.pq` that will work as a default.  Note that you must set `flow_columns` to an array that includes only the columns that you wish to input into the flow, as extra columns may lead to lower quality fits, as the neural flow will spend time and coefficients trying to emulate the larger space that includes the extra columns.
 
