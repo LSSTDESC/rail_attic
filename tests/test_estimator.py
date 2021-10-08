@@ -2,9 +2,9 @@ import pytest
 import os
 import numpy as np
 from rail.estimation.estimator import Estimator
-from rail.fileIO import write_output_file
+from tables_io.ioUtils import initializeHdf5Write, writeDictToHdf5Chunk
+from tables_io.ioUtils import finalizeHdf5Write
 import yaml
-
 
 # this is temporary until unit test uses a definite test data set and creates
 # the yaml file on the fly
@@ -53,9 +53,12 @@ def test_writing(tmpdir):
     instance.saveloc = tmpdir.join("test.hdf5")
     instance.nzbins = len(instance.zgrid)
     test_dict = {'zmode': instance.zmode, 'pz_pdf': instance.pz_pdf}
-    write_output_file(instance.saveloc, instance.num_rows,
-                      instance.nzbins, test_dict, instance.zgrid)
-
+    group, fout = initializeHdf5Write(instance.saveloc, 'data',
+                                      zmode=((1,), 'f4'),
+                                      pz_pdf=((1, 5), 'f4'))
+    writeDictToHdf5Chunk(group, test_dict, 0, 1, zmode='zmode',
+                         pz_pdf='pz_pdf')
+    finalizeHdf5Write(fout, zgrid=instance.zgrid)
     assert os.path.exists(instance.saveloc)
 
 
