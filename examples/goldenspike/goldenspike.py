@@ -34,16 +34,7 @@ def main():
             # trim data to only columns wanted for pzflow training
             flow_columns = c_par['flow_columns']
             data = raw_data[flow_columns]
-        else:
-            try: # check that GCRCatalogs installed
-                import GCRCatalogs
-            except ModuleNotFoundError:
-                raise ModuleNotFoundError("cannot import GCRCatalogs")
-            hpix = c_par['hpix']
-            frac = c_par['frac']
-            data = spike_utils.grabdata(hpix, frac)
-        flow = spike_utils.generateflow(data)
-
+            flow = spike_utils.generateflow(data)
         if c_par['save_flow']:
             flow.save(c_par['saved_flow_file'])
         
