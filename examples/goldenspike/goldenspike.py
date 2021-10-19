@@ -1,4 +1,3 @@
-import importlib
 import astropy.table
 import numpy as np
 import yaml
@@ -28,7 +27,7 @@ def main():
     if c_par['has_flow']:
         flow = Flow(file=c_par['flow_file'])
     else:
-        if c_par['use_local_data']: 
+        if c_par['use_local_data']:
             datafile = c_par['local_flow_data_file']
             print(f"constructing flow from file {datafile}")
             raw_data = tables_io.io.read(datafile, tType=tables_io.types.PD_DATAFRAME)
@@ -38,7 +37,7 @@ def main():
             flow = spike_utils.generateflow(data)
         if c_par['save_flow']:
             flow.save(c_par['saved_flow_file'])
-        
+
     # creator for Test data
     creator = Creator(flow)
 
@@ -46,7 +45,7 @@ def main():
         try:
             deg_mod = getattr(rail.creation.degradation, c_par['degrader_name'])
             degrader = deg_mod(**c_par['degrader_args'])
-            print(f"using degrader {c_par['degrader_name']}") 
+            print(f"using degrader {c_par['degrader_name']}")
         except ModuleNotFoundError:
             raise ModuleNotFoundError(f" module {c_par['degrader_name']} not found!")
         degraded_creator = Creator(flow, degrader=degrader)
@@ -71,12 +70,11 @@ def main():
 
     # We need to add mag errors to our data, we can use the PhotoZDC1 package
     bands = ['u', 'g', 'r', 'i', 'z', 'y']
-    for dset in[test_data, train_data]:
+    for dset in [test_data, train_data]:
         for band in bands:
             tmperr = spike_utils.make_errors(dset[f'mag_{band}_lsst'],
                                              f'LSST{band}')
             dset[f'mag_err_{band}_lsst'] = tmperr
-
 
     # SAVE DATA TO FILE:
     test_data.to_parquet(c_par['test_filename'])
@@ -100,7 +98,7 @@ def main():
     for est_key in estimators:
         print(f"running estimator {est_key}")
         est_dict = estimators[est_key]
-          
+
         name = est_dict['run_params']['class_name']
         try:
             Estimator._find_subclass(name)
@@ -127,12 +125,12 @@ def main():
 
         print(f"finished estimation using code {name}")
 
-        #####Evaluation
+        # ####Evaluation
         # calculate PIT values, takes a qp ensemble and the true z's
         pitobj = PIT(pz_data, z_true)
         quant_ens, metamets = pitobj.evaluate()
         pit_vals = np.array(pitobj._pit_samps)
-        #KS
+        # KS
         ksobj = PITKS(pit_vals, quant_ens)
         ks_stat_and_pval = ksobj.evaluate()
         print(f"KS value for code {name}: {ks_stat_and_pval.statistic}")
@@ -164,17 +162,18 @@ def main():
         table += f" | {sigma_iqr:11.4f} | {bias:11.4f} | {frac:11.4f}\n"
         
         plot_point_est(z_mode, z_true, sigma_iqr, name,
-                   f"{figdir}/{name}_pointests.jpg")
+                       f"{figdir}/{name}_pointests.jpg")
 
         # pdfdata = pz_data.objdata()['yvals']
         # xzgrid = pz_data.metadata()['xvals']
-        
+
         plot_pit_qq(pz_data, z_true, qbins=101, title="PIT-QQ",
                     code=f"{name}", pit_out_rate=pit_out_rate, outdir='results',
                     savefig=True)
 
     with open(res_file, "w") as f:
         f.write(table)
+
 
 if __name__ == "__main__":
     main()
