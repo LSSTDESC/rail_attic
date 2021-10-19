@@ -1,14 +1,22 @@
 # if has flow==True, read a pre-trained flow from `flow_file`
-has_flow: False
+has_flow: True
 flow_file: data/pretrained_flow.pkl
 # if has_flow is false, you should set use_local_data to `True` and the data to
 # train the flow will be read in from a file specified in `local_flow_data`
-use_local_data: True
+use_local_data: False
 local_flow_data_file: data/test_flow_data.pq
 flow_columns: ['mag_u_lsst', 'mag_g_lsst', 'mag_r_lsst', 'mag_i_lsst', 'mag_z_lsst', 'mag_y_lsst', 'redshift']
 # if use_degrader, use theincompleteness degrader with pivot degrader_z_split
 use_degrader: True
-degrader_z_split: 1.0
+#Alternate degrader (comment out one!)
+#degrader_name: LineConfusion
+#degrader_args:
+#  true_wavelen: 5007.
+#  wrong_wavelen: 3727.
+#  frac_wrong: 0.05
+degrader_name: InvRedshiftIncompleteness
+degrader_args:
+  pivot_redshift: 1.0
 # number of test and train galaxies to generate from zmin<z<zmax with nzbins for pdf
 N_test_gals: 5000
 N_train_gals: 2000

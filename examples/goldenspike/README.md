@@ -20,7 +20,8 @@ In `creation_goldspike.yaml` setting `has_flow: True` will read in the pre-train
 If you instead wish to read in data from file, setting `use_local_data: True will read in the photometry and redshift info from the file specified in `local_flow_data_file` (there is an example data file named `data/test_flow_data.pq` that will work as a default.  Note that you must set `flow_columns` to an array that includes only the columns that you wish to input into the flow, as extra columns may lead to lower quality fits, as the neural flow will spend time and coefficients trying to emulate the larger space that includes the extra columns.
 
 Once the flow is created, you can choose whether to apply a degrader with the `use_degrader` option, if it is set to False then the same creator is used for both test and training data 
-**TODO**: switch to generic degrader and options dictionary
+The specific degrader to be used is specified by `degrader_name`, with the necessary keyword arguments listed in the dictionary defined by the `degrader_args` entry or entries.
+
 The script then creates training data (using the undegraded creator) and test data (using the degraded creator, if applied), you set the number of each generated with `N_test_gals` and `N_train_gals` in the yaml file.
 The "true posteriors" for each galaxy are evaluated on a grid, you set this grid with `zmin`, `zmax`, and `nzbins` in the yaml file, and set the name used for the redshift column using `z_column`.
 

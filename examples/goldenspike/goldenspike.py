@@ -1,10 +1,11 @@
+import importlib
 import astropy.table
 import numpy as np
 import yaml
 import matplotlib.pyplot as plt
 from pzflow import Flow
 from rail.creation import Creator
-from rail.creation.degradation import InvRedshiftIncompleteness
+import rail.creation.degradation
 from rail.estimation.estimator import Estimator
 from rail.evaluation.metrics.pit import *
 import rail.evaluation.metrics.pointestimates as pe
@@ -42,7 +43,13 @@ def main():
     creator = Creator(flow)
 
     if c_par['use_degrader']:
-        degraded_creator = Creator(flow, degrader=InvRedshiftIncompleteness(c_par['degrader_z_split']))
+        try:
+            deg_mod = getattr(rail.creation.degradation, c_par['degrader_name'])
+            degrader = deg_mod(**c_par['degrader_args'])
+            print(f"using degrader {c_par['degrader_name']}") 
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError(f" module {c_par['degrader_name']} not found!")
+        degraded_creator = Creator(flow, degrader=degrader)
     else:
         degraded_creator = creator
 
