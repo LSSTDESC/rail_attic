@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import copy
-from rail.fileIO import iter_chunk_hdf5_data, load_training_data
+from tables_io.ioUtils import readHdf5ToDict, iterHdf5ToDict
 import pytest
 from rail.estimation.algos import randomPZ, sklearn_nn, flexzboost, trainZ
 from rail.estimation.algos import bpz_lite
@@ -21,29 +21,26 @@ def one_algo(single_estimator, single_input):
 
     pz = single_estimator(test_base_yaml, single_input)
     trainfile = pz.trainfile
-    train_fmt = trainfile.split(".")[-1]
-    training_data = load_training_data(trainfile, train_fmt,
-                                       pz.groupname)
+    training_data = readHdf5ToDict(trainfile, pz.groupname)
     pz.inform_dict = single_input['run_params']['inform_options']
     pz.inform(training_data)
     # set chunk size to pz.num_rows to ensure all run in one chunk
     oversize_rows = pz.num_rows + 4  # test proper chunking truncation
-    for _, end, data in iter_chunk_hdf5_data(pz.testfile,
-                                             oversize_rows,
-                                             pz.hdf5_groupname):
+    for _, end, data in iterHdf5ToDict(pz.testfile,
+                                       oversize_rows,
+                                       pz.hdf5_groupname):
         pz_dict = pz.estimate(data)
     assert end == pz.num_rows
     xinputs = single_input['run_params']
     assert len(pz.zgrid) == np.int32(xinputs['nzbins'])
 
     pz.load_pretrained_model()
-    for _, end, data in iter_chunk_hdf5_data(pz.testfile, pz.num_rows,
-                                             pz.hdf5_groupname):
+    for _, end, data in iterHdf5ToDict(pz.testfile, pz.num_rows,
+                                       pz.hdf5_groupname):
         rerun_pz_dict = pz.estimate(data)
     pz.output_format = 'qp'
-    for _, end, data in iter_chunk_hdf5_data(pz.testfile,
-                                             pz.num_rows,
-                                             pz.hdf5_groupname):
+    for _, end, data in iterHdf5ToDict(pz.testfile, pz.num_rows,
+                                       pz.hdf5_groupname):
         _ = pz.estimate(data)
     # add a test load for no config dict
     # check that all keys are present
@@ -126,13 +123,12 @@ def test_catch_bad_bands():
     params = copy.deepcopy(flexzboost.def_param)
     params['run_params']['bands'] = 'u,g,r,i,z,y'
     with pytest.raises(ValueError):
-      flexzboost.FZBoost(test_base_yaml, params)
+        flexzboost.FZBoost(test_base_yaml, params)
 
     params = copy.deepcopy(sklearn_nn.def_param)
     params['run_params']['bands'] = 'u,g,r,i,z,y'
     with pytest.raises(ValueError) as errinfo:
-      sklearn_nn.simpleNN(test_base_yaml, params)
-
+        sklearn_nn.simpleNN(test_base_yaml, params)
 
 
 def test_bpz_lite():
