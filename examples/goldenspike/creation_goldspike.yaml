@@ -32,5 +32,6 @@ ensemble_file: goldenspike_true_posteriors_qp.pq
 save_flow: True
 saved_flow_file: new_9816_flow.pkl
 # Creation photometry+redshift+errors files
+saved_data_dir: creation_data
 test_filename: test_data.parquet
 train_filename: train_data.parquet

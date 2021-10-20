@@ -3,7 +3,6 @@ base_yaml: ./configs/base.yaml
 save_pdfs: True
 estimation_results_base: goldspike_test
 #  name for metrics summary file
-results_file: goldenspike_metrics.txt
 # yaml config for each code we want to run:
 estimators:
   BPZ_lite:

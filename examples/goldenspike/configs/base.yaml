@@ -4,5 +4,5 @@ base_config:
   hdf5_groupname: None
   chunk_size: 10000
   configpath: ./configs
-  outpath: ./results
+  outpath: ./estimation_results
   output_format: qp

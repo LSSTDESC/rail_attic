@@ -1,4 +1,4 @@
-import astropy.table
+import os
 import numpy as np
 import yaml
 import matplotlib.pyplot as plt
@@ -77,8 +77,11 @@ def main():
             dset[f'mag_err_{band}_lsst'] = tmperr
 
     # SAVE DATA TO FILE:
-    test_data.to_parquet(c_par['test_filename'])
-    train_data.to_parquet(c_par['train_filename'])
+    if not os.path.exists(c_par['saved_data_dir']):
+        print(f"directory {c_par['saved_data_dir']} doesn't exist, creating...")
+        os.makedirs(c_par['saved_data_dir'])
+    test_data.to_parquet(os.path.join(c_par['saved_data_dir'],c_par['test_filename']))
+    train_data.to_parquet(os.path.join(c_par['saved_data_dir'],c_par['train_filename']))
     # Prepare data to be used in estimation. Creation spits out Pandas dataframe
     # convert to dictionary of arrays.
     input_test = tables_io.convert(test_data, tables_io.types.NUMPY_DICT)
@@ -89,7 +92,11 @@ def main():
 
     # iterate through list of codes in config
     base_yaml = est_par['base_yaml']
-    res_file = est_par['results_file']
+    with open(base_yaml, "r") as f:
+        base_params = yaml.safe_load(f)
+    est_dir = base_params['base_config']['outpath']
+    if not os.path.exists(est_dir):
+        os.makedirs(est_dir)
     result_base = est_par['estimation_results_base']
     estimators = est_par['estimators']
     print("list of estimators:")
@@ -121,11 +128,16 @@ def main():
         #save data?
         if est_par['save_pdfs']:
             outfile = result_base + f"{name}.pq"
-            pz_data.write_to(outfile)
+            pz_data.write_to(os.path.join(est_dir, outfile))
 
         print(f"finished estimation using code {name}")
 
         # ####Evaluation
+        eval_dir = eval_par['evaluation_directory']
+        if not os.path.exists(eval_dir):
+            print(f"directory {eval_dir} doesn't exist, creating...")
+            os.makedirs(eval_dir)
+
         # calculate PIT values, takes a qp ensemble and the true z's
         pitobj = PIT(pz_data, z_true)
         quant_ens, metamets = pitobj.evaluate()
@@ -168,9 +180,10 @@ def main():
         # xzgrid = pz_data.metadata()['xvals']
 
         plot_pit_qq(pz_data, z_true, qbins=101, title="PIT-QQ",
-                    code=f"{name}", pit_out_rate=pit_out_rate, outdir='results',
+                    code=f"{name}", pit_out_rate=pit_out_rate, outdir=figdir,
                     savefig=True)
 
+    res_file = os.path.join(eval_dir, eval_par['results_file'])
     with open(res_file, "w") as f:
         f.write(table)
 
