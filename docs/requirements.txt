@@ -1,7 +1,6 @@
 jupyter
 jupyterlab
 numpy
-astropy
 sphinx
 matplotlib
 pandas
@@ -12,8 +11,5 @@ yml
 pyyaml
 pip
 corner
-tensorflow==2.2.0
-tensorflow-probability==0.10.1
-jax==0.1.75
-jaxlib==0.1.52
-flax==0.2.0
+tables-io
+qp@git+https://github.com/LSSTDESC/qp
