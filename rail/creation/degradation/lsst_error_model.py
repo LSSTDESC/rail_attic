@@ -1,3 +1,4 @@
+from numbers import Number
 from typing import Iterable, List, Tuple
 
 import numpy as np
@@ -29,7 +30,7 @@ class LSSTErrorModel(Degrader):
         airmass: float = None,
         extendedSource: float = None,
         sigmaSys: float = None,
-        minMag: float = None,
+        magLim: float = None,
         m5: dict = None,
         Cm: dict = None,
         msky: dict = None,
@@ -95,7 +96,7 @@ class LSSTErrorModel(Degrader):
             Constant to add to magnitudes of extended sources
         sigmaSys : float, optional
             The irreducible error of the system. Set's the minimum photometric error.
-        minMag : float, optional
+        magLim : float, optional
             The dimmest magnitude allowed. All dimmer magnitudes are set to 99.
         m5 : dict, optional
             A dictionary of 5-sigma limiting magnitudes. For any bands for which
@@ -130,8 +131,8 @@ class LSSTErrorModel(Degrader):
             self.settings["extendedSource"] = extendedSource
         if sigmaSys is not None:
             self.settings["sigmaSys"] = sigmaSys
-        if minMag is not None:
-            self.settings["minMag"] = minMag
+        if magLim is not None:
+            self.settings["magLim"] = magLim
         if Cm is not None:
             self.settings["Cm"] = Cm
         if msky is not None:
@@ -142,7 +143,8 @@ class LSSTErrorModel(Degrader):
             self.settings["km"] = km
         if m5 is not None:
             # make sure it's a dictionary
-            assert isinstance(m5, dict), "m5 must be a dictionary, or None."
+            if not isinstance(m5, dict):
+                raise TypeError("m5 must be a dictionary, or None.")
             # save m5
             self.settings["m5"] = m5
             # remove these bands from the dictionaries that hold information
@@ -152,10 +154,10 @@ class LSSTErrorModel(Degrader):
                     self.settings[key1].pop(key2, None)
 
         # validate the settings
-        self.validate_settings()
+        self._validate_settings()
 
         # calculate the 5-sigma limiting magnitudes using the settings
-        self.m5 = self.calculate_m5()
+        self.m5 = self._calculate_m5()
 
         # update the limiting magnitudes with any m5s passed
         if m5 is not None:
@@ -202,7 +204,7 @@ class LSSTErrorModel(Degrader):
             "airmass": 1.2,  # fiducial airmass (T2)
             "extendedSource": 0.0,  # constant added to m5 for extended sources
             "sigmaSys": 0.005,  # expected irreducible error, p26
-            "minMag": 30.0,  # dimmest allowed magnitude; dimmer mags set to 99
+            "magLim": 30.0,  # dimmest allowed magnitude; dimmer mags set to 99
             "m5": {},  # explicit list of m5 limiting magnitudes
             "Cm": {  # band dependent parameter (T2)
                 "lsst_u": 23.09,
@@ -238,7 +240,7 @@ class LSSTErrorModel(Degrader):
             },
         }
 
-    def validate_settings(self):
+    def _validate_settings(self):
         """
         Validate all the settings.
         """
@@ -250,44 +252,52 @@ class LSSTErrorModel(Degrader):
             "airmass",
             "extendedSource",
             "sigmaSys",
-            "minMag",
+            "magLim",
         ]:
-            # check they are floats
-            assert isinstance(self.settings[key], float), f"{key} must be a float."
+            # check they are numbers
+            # note we also make sure it's not a bool (which is a subclass of int)
+            if not isinstance(self.settings[key], Number) or isinstance(
+                self.settings[key], bool
+            ):
+                raise TypeError(f"{key} must be a number.")
             # check they are non-negative
-            if key != "minMag":
-                assert self.settings[key] >= 0, f"{key} must be non-negative."
+            if key != "magLim":
+                if self.settings[key] < 0:
+                    raise ValueError(f"{key} must be non-negative.")
 
         # check all the dictionaries
         for key in ["bandNames", "nVisYr", "gamma", "Cm", "msky", "theta", "km"]:
 
             # make sure they are dictionaries
-            assert isinstance(self.settings[key], dict), f"{key} must be a dictionary."
+            if not isinstance(self.settings[key], dict):
+                raise TypeError(f"{key} must be a dictionary.")
 
             # get the set of bands in bandNames that aren't in this dictionary
             missing = set(self.settings["bandNames"]) - set(self.settings[key])
 
             # nVisYr and gamma must have an entry for every band in bandNames
             if key == "nVisYr" or key == "gamma":
-                assert len(missing) == 0, (
-                    f"{key} must have an entry for every band in bandNames, "
-                    f"and is currently missing entries for {missing}."
-                )
+                if len(missing) > 0:
+                    raise ValueError(
+                        f"{key} must have an entry for every band in bandNames, "
+                        f"and is currently missing entries for {missing}."
+                    )
+
             # but for the other dictionaries...
             else:
-
                 # we dont need an entry for every band in bandNames, as long as
                 # the missing bands are listed in m5
                 missing -= set(self.settings["m5"])
 
-                assert len(missing) == 0, (
-                    "You haven't provided enough information to calculate limiting "
-                    f"magnitudes for {missing}. Please include entries for these bands "
-                    f"in {key}, or explicity pass their 5-sigma limiting magnitudes "
-                    "in m5."
-                )
+                if len(missing) > 0:
+                    raise ValueError(
+                        "You haven't provided enough information to calculate "
+                        f"limiting magnitudes for {missing}. Please include "
+                        f"entries for these bands in {key}, or explicitly pass "
+                        "their 5-sigma limiting magnitudes in m5."
+                    )
 
-    def calculate_m5(self) -> dict:
+    def _calculate_m5(self) -> dict:
         """
         Calculate the m5 limiting magnitudes,
         using Eq. 6 from https://arxiv.org/abs/0805.2366
@@ -301,6 +311,7 @@ class LSSTErrorModel(Degrader):
 
         # get the list of bands for which an m5 wasn't explicitly passed
         bands = set(self.settings["bandNames"]) - set(self.settings["m5"])
+        bands = [band for band in self.settings["bandNames"] if band in bands]
 
         # calculate the m5 limiting magnitudes using Eq. 6
         m5 = {
@@ -315,7 +326,7 @@ class LSSTErrorModel(Degrader):
 
         return m5
 
-    def getBandsAndNames(self, columns: Iterable[str]) -> Tuple[List[str], List[str]]:
+    def _getBandsAndNames(self, columns: Iterable[str]) -> Tuple[List[str], List[str]]:
         """
         Get the bands and bandNames that are present in the given data columns.
         """
@@ -338,7 +349,7 @@ class LSSTErrorModel(Degrader):
 
         return bands, bandNames
 
-    def getMagError(self, mags: np.ndarray, bands: list) -> np.ndarray:
+    def _getMagError(self, mags: np.ndarray, bands: list) -> np.ndarray:
         """
         Calculate the magnitude errors using Eqs 4 and 5 from
         https://arxiv.org/abs/0805.2366
@@ -373,13 +384,13 @@ class LSSTErrorModel(Degrader):
         """
 
         # get the bands and bandNames present in the data
-        bands, bandNames = self.getBandsAndNames(data.columns)
+        bands, bandNames = self._getBandsAndNames(data.columns)
 
         # get numpy array of magnitudes
         mags = data[bandNames].to_numpy()
 
         # calculate the magnitude error
-        magErrs = self.getMagError(mags, bands)
+        magErrs = self._getMagError(mags, bands)
 
         # convert mags to fluxes
         fluxes = 10 ** (mags / -2.5)
@@ -391,7 +402,7 @@ class LSSTErrorModel(Degrader):
 
         # only fluxes above minFlux will have observed magnitudes recorded
         # everything else is marked as a non-detection
-        minFlux = 10 ** (self.settings["minMag"] / -2.5)
+        minFlux = 10 ** (self.settings["magLim"] / -2.5)
         idx = np.where(obsFluxes > minFlux)
 
         # convert fluxes back to magnitudes
@@ -400,7 +411,7 @@ class LSSTErrorModel(Degrader):
 
         # decorrelate the magnitude error
         obsMagErrs = np.full(obsMags.shape, 99.0)
-        obsMagErrs[idx] = self.getMagError(obsMags, bands)[idx]
+        obsMagErrs[idx] = self._getMagError(obsMags, bands)[idx]
 
         # save the observations in a DataFrame
         obsData = data.copy()
@@ -452,7 +463,7 @@ class LSSTErrorModel(Degrader):
         printMsg += f"Extended source model: add {settings['extendedSource']}"
         printMsg += "mag to 5-sigma depth for point sources\n"
         # minimum magnitude
-        printMsg += f"Magnitudes dimmer than {settings['minMag']} are set to 99\n"
+        printMsg += f"Magnitudes dimmer than {settings['magLim']} are set to 99\n"
         # gamma
         printMsg += "gamma for each band:\n   "
         for i in [
@@ -474,7 +485,7 @@ class LSSTErrorModel(Degrader):
                 printMsg += i
             printMsg = printMsg[:-2] + "\n\n"
 
-        m5 = self.calculate_m5()
+        m5 = self._calculate_m5()
         if len(m5) > 0:
             # Calculated m5
             printMsg += "The following 5-sigma limiting mags are calculated using "

@@ -1,7 +1,7 @@
-import pytest
-from rail.creation.degradation import *
 import numpy as np
 import pandas as pd
+import pytest
+from rail.creation.degradation import *
 
 
 @pytest.fixture
@@ -93,3 +93,58 @@ def test_BandCut_returns_correct_shape(data):
 
 def test_BandCut_repr_is_string():
     assert isinstance(BandCut({}).__repr__(), str)
+
+
+@pytest.mark.parametrize(
+    "settings,error",
+    [
+        ({"m5": 1}, TypeError),
+        ({"tvis": False}, TypeError),
+        ({"nYrObs": False}, TypeError),
+        ({"airmass": False}, TypeError),
+        ({"extendedSource": False}, TypeError),
+        ({"sigmaSys": False}, TypeError),
+        ({"magLim": False}, TypeError),
+        ({"tvis": -1}, ValueError),
+        ({"nYrObs": -1}, ValueError),
+        ({"airmass": -1}, ValueError),
+        ({"extendedSource": -1}, ValueError),
+        ({"sigmaSys": -1}, ValueError),
+        ({"bandNames": False}, TypeError),
+        ({"nVisYr": False}, TypeError),
+        ({"gamma": False}, TypeError),
+        ({"Cm": False}, TypeError),
+        ({"msky": False}, TypeError),
+        ({"theta": False}, TypeError),
+        ({"km": False}, TypeError),
+        ({"nVisYr": {}}, ValueError),
+        ({"gamma": {}}, ValueError),
+        ({"Cm": {}}, ValueError),
+        ({"msky": {}}, ValueError),
+        ({"theta": {}}, ValueError),
+        ({"km": {}}, ValueError),
+    ],
+)
+def test_LSSTErrorModel_bad_inputs(settings, error):
+    with pytest.raises(error):
+        LSSTErrorModel(**settings)
+
+
+def test_LSSTErrorModel_returns_correct_shape(data):
+    bandNames = {f"lsst_{b}": b for b in "ugrizy"}
+    degrader = LSSTErrorModel(bandNames=bandNames)
+    degraded_data = degrader(data)
+    assert degraded_data.shape == (data.shape[0], 2 * data.shape[1] - 1)
+
+
+def test_LSSTErrorModel_magLim(data):
+    bandNames = {f"lsst_{b}": b for b in "ugrizy"}
+    magLim = 27
+    degrader = LSSTErrorModel(bandNames=bandNames, magLim=magLim)
+    degraded_data = degrader(data)
+    degraded_mags = degraded_data[bandNames.values()].to_numpy()
+    assert degraded_mags[degraded_mags < 99].max() < magLim
+
+
+def test_LSSTErrorModel_repr_is_string():
+    assert isinstance(LSSTErrorModel().__repr__(), str)
