@@ -52,7 +52,9 @@ class BandCut(Degrader):
                     raise ValueError(
                         f"The max for {band} must be greater than the min."
                     )
+                # if all of these checks passed, save the cuts
                 self.cuts[band] = (cut[0], cut[1])
+            # if the cut isn't a number or iterable, it's the wrong type
             else:
                 raise TypeError(bad_cut_msg)
 
