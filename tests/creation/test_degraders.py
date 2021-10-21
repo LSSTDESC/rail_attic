@@ -130,21 +130,40 @@ def test_LSSTErrorModel_bad_inputs(settings, error):
         LSSTErrorModel(**settings)
 
 
+# I will test with and without an explicit list of m5's
 def test_LSSTErrorModel_returns_correct_shape(data):
+
     bandNames = {f"lsst_{b}": b for b in "ugrizy"}
+
     degrader = LSSTErrorModel(bandNames=bandNames)
     degraded_data = degrader(data)
     assert degraded_data.shape == (data.shape[0], 2 * data.shape[1] - 1)
 
+    m5 = {"lsst_u": 23}
+    degrader = LSSTErrorModel(bandNames=bandNames, m5=m5)
+    degraded_data = degrader(data)
+    assert degraded_data.shape == (data.shape[0], 2 * data.shape[1] - 1)
 
+
+# I will test with and without an explicit list of m5's
 def test_LSSTErrorModel_magLim(data):
     bandNames = {f"lsst_{b}": b for b in "ugrizy"}
     magLim = 27
+
     degrader = LSSTErrorModel(bandNames=bandNames, magLim=magLim)
+    degraded_data = degrader(data)
+    degraded_mags = degraded_data[bandNames.values()].to_numpy()
+    assert degraded_mags[degraded_mags < 99].max() < magLim
+
+    m5 = {"lsst_u": 23}
+    degrader = LSSTErrorModel(bandNames=bandNames, magLim=magLim, m5=m5)
     degraded_data = degrader(data)
     degraded_mags = degraded_data[bandNames.values()].to_numpy()
     assert degraded_mags[degraded_mags < 99].max() < magLim
 
 
 def test_LSSTErrorModel_repr_is_string():
-    assert isinstance(LSSTErrorModel().__repr__(), str)
+    # I will pass an explicit m5 to make sure the if statements checking
+    # for explicit m5's are triggered during the test
+    m5 = {"lsst_u": 23}
+    assert isinstance(LSSTErrorModel(m5=m5).__repr__(), str)

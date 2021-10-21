@@ -481,6 +481,7 @@ class LSSTErrorModel(Degrader):
             for i in [
                 f"{bandName}: {settings['m5'][band]}, "
                 for band, bandName in settings["bandNames"].items()
+                if band in settings["m5"]
             ]:
                 printMsg += i
             printMsg = printMsg[:-2] + "\n\n"
