@@ -6,6 +6,7 @@ import pandas as pd
 
 @pytest.fixture
 def data():
+    np.random.seed(0)
     x = np.random.normal(loc=26, scale=1, size=(100, 7))
     x[:, 0] = np.linspace(0, 2, x.shape[0])
     x = pd.DataFrame(x, columns=["redshift", "u", "g", "r", "i", "z", "y"])
@@ -61,3 +62,34 @@ def test_random_seed(degrader, data):
     degraded_data1 = degrader(data, seed=0)
     degraded_data2 = degrader(data, seed=0)
     assert np.allclose(degraded_data1.values, degraded_data2.values)
+
+
+@pytest.mark.parametrize(
+    "cuts,error",
+    [
+        (1, TypeError),
+        ({"u": "cut"}, TypeError),
+        ({"u": dict()}, TypeError),
+        ({"u": [1, 2, 3]}, ValueError),
+        ({"u": [1, "max"]}, TypeError),
+        ({"u": [2, 1]}, ValueError),
+        ({"u": TypeError}, TypeError),
+    ],
+)
+def test_BandCut_bad_inputs(cuts, error):
+    with pytest.raises(error):
+        BandCut(cuts)
+
+
+def test_BandCut_returns_correct_shape(data):
+    cuts = {
+        "u": 0,
+        "y": (1, 2),
+    }
+    degrader = BandCut(cuts)
+    degraded_data = degrader(data)
+    assert degraded_data.shape == data.query("u < 0 & y > 1 & y < 2").shape
+
+
+def test_BandCut_repr_is_string():
+    assert isinstance(BandCut({}).__repr__(), str)

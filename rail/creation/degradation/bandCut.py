@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from rail.creation.degradation import Degrader
+from numbers import Number
 
 
 class BandCut(Degrader):
@@ -22,7 +23,8 @@ class BandCut(Degrader):
         """
 
         # check that cuts is a dictionary
-        assert isinstance(cuts, dict), "cuts must be a dictionary."
+        if not isinstance(cuts, dict):
+            raise TypeError("cuts must be a dictionary.")
 
         # validate all the cuts and standardize format in dictionary
         self.cuts = dict()
@@ -30,15 +32,29 @@ class BandCut(Degrader):
             bad_cut_msg = (
                 f"Cut for {band} must be a number or an iterable of (min, max)"
             )
-            if isinstance(cut, float) or isinstance(cut, int):
+            # if single number is provided, save that as the maximum
+            if isinstance(cut, Number):
                 self.cuts[band] = (-np.inf, cut)
-            elif hasattr(cut, "__iter__") and not isinstance(cut, str):
-                assert len(cut) == 2, bad_cut_msg
+            # else, if it's an iterable...
+            elif hasattr(cut, "__iter__"):
+                # if the iterable is a string or dict, raise error
+                if isinstance(cut, str) or isinstance(cut, dict):
+                    raise TypeError(bad_cut_msg)
+                # if the length of the iterable isn't 2, raise error
+                if len(cut) != 2:
+                    raise ValueError(bad_cut_msg)
+                # check that both of the cut values are a number
                 for c in cut:
-                    assert isinstance(c, float) or isinstance(c, int), bad_cut_msg
+                    if not isinstance(c, Number):
+                        raise TypeError(bad_cut_msg)
+                # check that the cuts are (min, max)
+                if cut[0] > cut[1]:
+                    raise ValueError(
+                        f"The max for {band} must be greater than the min."
+                    )
                 self.cuts[band] = (cut[0], cut[1])
             else:
-                raise ValueError(bad_cut_msg)
+                raise TypeError(bad_cut_msg)
 
     def __call__(self, data: pd.DataFrame, seed: int = None) -> pd.DataFrame:
 
