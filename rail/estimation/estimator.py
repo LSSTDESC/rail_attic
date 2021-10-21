@@ -53,8 +53,6 @@ class Estimator(object):
 
         self.trainfile = base_dict['trainfile']
         self.groupname = base_dict['hdf5_groupname']
-        if self.groupname == 'None':
-            self.groupname = None
         self.testfile = base_dict['testfile']
         self.num_rows = getInputDataLengthHdf5(self.testfile, self.groupname)
         self._chunk_size = base_dict['chunk_size']
