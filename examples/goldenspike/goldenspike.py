@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import yaml
+import pandas as pd
 import matplotlib.pyplot as plt
 from pzflow import Flow
 from rail.creation import Creator
@@ -183,6 +184,13 @@ def main():
                     code=f"{name}", pit_out_rate=pit_out_rate, outdir=figdir,
                     savefig=True)
 
+        if eval_par['save_pit_mode_vals']:
+            pit_file = os.path.join(eval_dir, f"{name}_pit_mode_values.pq")
+            pitdict = {'pit': pit_vals, 'photoz_mode': z_mode}
+            pit_df = pd.DataFrame(pitdict)
+            tables_io.io.write(pit_df, pit_file)
+            
+            
     res_file = os.path.join(eval_dir, eval_par['results_file'])
     with open(res_file, "w") as f:
         f.write(table)
