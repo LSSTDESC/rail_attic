@@ -4,7 +4,8 @@ from rail.evaluation.metrics.cdeloss import CDELoss
 import rail.evaluation.metrics.pointestimates as pe
 import qp
 
-# metric values for specific test ensemble
+
+# values for metrics
 OUTRATE = 0.0
 KSVAL = 0.367384
 CVMVAL = 20.63155
