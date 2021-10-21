@@ -1,7 +1,7 @@
 base_config:
   trainfile: ./fakefile.dat
   testfile: ./testfakefile.hdf5
-  hdf5_groupname: None
+  hdf5_groupname: null #yaml uses null for None!
   chunk_size: 10000
   configpath: ./configs
   outpath: ./estimation_results
