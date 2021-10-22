@@ -10,7 +10,8 @@ class LSSTErrorModel(Degrader):
     """
     LSST Model for photometric errors.
 
-    Implements the error model from https://arxiv.org/abs/0805.2366
+    Implements the error model from the LSST Overview Paper:
+    https://arxiv.org/abs/0805.2366
 
     Instantiated as a class object, then used as a callable.
     Takes a pandas DataFrame as input.
@@ -37,7 +38,9 @@ class LSSTErrorModel(Degrader):
         theta: dict = None,
         km: dict = None,
     ):
-        """
+        """Error model from the LSST Overview Paper:
+        https://arxiv.org/abs/0805.2366
+
         All parameters are optional. To see the default settings, do
         `LSSTErrorModel().default_settings()`
 
@@ -93,7 +96,12 @@ class LSSTErrorModel(Degrader):
         airmass : float, optional
             The fiducial airmass
         extendedSource : float, optional
-            Constant to add to magnitudes of extended sources
+            Constant to add to magnitudes of extended sources.
+            The error model is designed to emulated magnitude errors for point
+            sources. This constant provides a zeroth order correction accounting
+            for the fact that extended sources have larger uncertainties. Note
+            this is only meant to account for small, slightly extended sources.
+            For typical LSST galaxies, this may be of order ~0.3.
         sigmaSys : float, optional
             The irreducible error of the system. Set's the minimum photometric error.
         magLim : float, optional
