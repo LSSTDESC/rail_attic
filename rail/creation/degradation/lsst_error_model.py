@@ -97,7 +97,7 @@ class LSSTErrorModel(Degrader):
             The fiducial airmass
         extendedSource : float, optional
             Constant to add to magnitudes of extended sources.
-            The error model is designed to emulated magnitude errors for point
+            The error model is designed to emulate magnitude errors for point
             sources. This constant provides a zeroth order correction accounting
             for the fact that extended sources have larger uncertainties. Note
             this is only meant to account for small, slightly extended sources.
