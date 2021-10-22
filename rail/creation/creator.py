@@ -19,8 +19,8 @@ class Creator:
             Object defining a redshift probability distribution.
             Must have sample, log_prob and get_posterior methods (see engine.py)
         degrader: callable, optional
-            A function or other callable that degrades the generated sample.
-            Must take a pandas DataFrame and a seed number, and return a
+            A Degrader, function, or other callable that degrades the generated
+            sample. Must take a pandas DataFrame and a seed int, and return a
             pandas DataFrame representing the degraded sample.
         info: any, optional
             Additional information desired to be stored with the instance

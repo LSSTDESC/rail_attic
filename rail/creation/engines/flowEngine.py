@@ -27,6 +27,7 @@ class FlowEngine(Engine):
             Number of samples to draw
         seed : int, optional
             sets the random seed for drawing samples
+
         Returns
         -------
         outputs : pd.DataFrame
@@ -45,10 +46,13 @@ class FlowEngine(Engine):
             Name of the column for which the posterior is calculated.
         grid : np.ndarray
             Grid over which the posterior is calculated.
+        **kwargs
+            Any other keyword arguments to pass to pzflow.flow.posterior.
+            For the options, see the pzflow documentation.
 
         Returns
         -------
         np.ndarray
             Array of posteriors, of shape (data.shape[0], grid.size).
         """
-        return self.flow.posterior(data, column=column, grid=grid)
+        return self.flow.posterior(data, column=column, grid=grid, **kwargs)

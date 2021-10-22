@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
+from rail.creation.degradation import Degrader
 
 
-class LineConfusion:
+class LineConfusion(Degrader):
     """Degrader that simulates emission line confusion.
 
     Example: degrader = LineConfusion(true_wavelen=3727,
@@ -86,7 +87,7 @@ class LineConfusion:
         return pd.DataFrame(values, columns=columns)
 
 
-class InvRedshiftIncompleteness:
+class InvRedshiftIncompleteness(Degrader):
     """Degrader that simulates incompleteness with a selection function
     inversely proportional to redshift.
 

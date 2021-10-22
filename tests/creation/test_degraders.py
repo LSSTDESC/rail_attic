@@ -1,11 +1,12 @@
-import pytest
-from rail.creation.degradation import *
 import numpy as np
 import pandas as pd
+import pytest
+from rail.creation.degradation import *
 
 
 @pytest.fixture
 def data():
+    np.random.seed(0)
     x = np.random.normal(loc=26, scale=1, size=(100, 7))
     x[:, 0] = np.linspace(0, 2, x.shape[0])
     x = pd.DataFrame(x, columns=["redshift", "u", "g", "r", "i", "z", "y"])
@@ -61,3 +62,109 @@ def test_random_seed(degrader, data):
     degraded_data1 = degrader(data, seed=0)
     degraded_data2 = degrader(data, seed=0)
     assert np.allclose(degraded_data1.values, degraded_data2.values)
+
+
+@pytest.mark.parametrize(
+    "cuts,error",
+    [
+        (1, TypeError),
+        ({"u": "cut"}, TypeError),
+        ({"u": dict()}, TypeError),
+        ({"u": [1, 2, 3]}, ValueError),
+        ({"u": [1, "max"]}, TypeError),
+        ({"u": [2, 1]}, ValueError),
+        ({"u": TypeError}, TypeError),
+    ],
+)
+def test_BandCut_bad_inputs(cuts, error):
+    with pytest.raises(error):
+        BandCut(cuts)
+
+
+def test_BandCut_returns_correct_shape(data):
+    cuts = {
+        "u": 0,
+        "y": (1, 2),
+    }
+    degrader = BandCut(cuts)
+    degraded_data = degrader(data)
+    assert degraded_data.shape == data.query("u < 0 & y > 1 & y < 2").shape
+
+
+def test_BandCut_repr_is_string():
+    assert isinstance(BandCut({}).__repr__(), str)
+
+
+@pytest.mark.parametrize(
+    "settings,error",
+    [
+        ({"m5": 1}, TypeError),
+        ({"tvis": False}, TypeError),
+        ({"nYrObs": False}, TypeError),
+        ({"airmass": False}, TypeError),
+        ({"extendedSource": False}, TypeError),
+        ({"sigmaSys": False}, TypeError),
+        ({"magLim": False}, TypeError),
+        ({"ndFlag": False}, TypeError),
+        ({"tvis": -1}, ValueError),
+        ({"nYrObs": -1}, ValueError),
+        ({"airmass": -1}, ValueError),
+        ({"extendedSource": -1}, ValueError),
+        ({"sigmaSys": -1}, ValueError),
+        ({"bandNames": False}, TypeError),
+        ({"nVisYr": False}, TypeError),
+        ({"gamma": False}, TypeError),
+        ({"Cm": False}, TypeError),
+        ({"msky": False}, TypeError),
+        ({"theta": False}, TypeError),
+        ({"km": False}, TypeError),
+        ({"nVisYr": {}}, ValueError),
+        ({"gamma": {}}, ValueError),
+        ({"Cm": {}}, ValueError),
+        ({"msky": {}}, ValueError),
+        ({"theta": {}}, ValueError),
+        ({"km": {}}, ValueError),
+    ],
+)
+def test_LSSTErrorModel_bad_inputs(settings, error):
+    with pytest.raises(error):
+        LSSTErrorModel(**settings)
+
+
+# I will test with and without an explicit list of m5's
+def test_LSSTErrorModel_returns_correct_shape(data):
+
+    bandNames = {f"lsst_{b}": b for b in "ugrizy"}
+
+    degrader = LSSTErrorModel(bandNames=bandNames)
+    degraded_data = degrader(data)
+    assert degraded_data.shape == (data.shape[0], 2 * data.shape[1] - 1)
+
+    m5 = {"lsst_u": 23}
+    degrader = LSSTErrorModel(bandNames=bandNames, m5=m5)
+    degraded_data = degrader(data)
+    assert degraded_data.shape == (data.shape[0], 2 * data.shape[1] - 1)
+
+
+# I will test with and without an explicit list of m5's
+def test_LSSTErrorModel_magLim(data):
+    bandNames = {f"lsst_{b}": b for b in "ugrizy"}
+    magLim = 27
+
+    degrader = LSSTErrorModel(bandNames=bandNames, magLim=magLim)
+    degraded_data = degrader(data)
+    degraded_mags = degraded_data[bandNames.values()].to_numpy()
+    assert degraded_mags[degraded_mags < 99].max() < magLim
+
+    m5 = {"lsst_u": 23}
+    degrader = LSSTErrorModel(bandNames=bandNames, magLim=magLim, m5=m5)
+    degraded_data = degrader(data)
+    degraded_mags = degraded_data[bandNames.values()].to_numpy()
+    assert degraded_mags[degraded_mags < 99].max() < magLim
+
+
+def test_LSSTErrorModel_repr_is_string():
+    # I will pass an explicit m5 to make sure the if statements checking
+    # for explicit m5's are triggered during the test
+    m5 = {"lsst_u": 23}
+    assert isinstance(LSSTErrorModel(m5=m5).__repr__(), str)
