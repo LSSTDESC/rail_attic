@@ -105,7 +105,7 @@ def test_BandCut_repr_is_string():
         ({"extendedSource": False}, TypeError),
         ({"sigmaSys": False}, TypeError),
         ({"magLim": False}, TypeError),
-        ({"nd_flag": False}, TypeError),
+        ({"ndFlag": False}, TypeError),
         ({"tvis": -1}, ValueError),
         ({"nYrObs": -1}, ValueError),
         ({"airmass": -1}, ValueError),
