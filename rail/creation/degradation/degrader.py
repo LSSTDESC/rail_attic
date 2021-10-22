@@ -5,6 +5,7 @@
 # seed, and returns a pandas DataFrame
 
 from abc import ABC, abstractmethod
+
 import pandas as pd
 
 

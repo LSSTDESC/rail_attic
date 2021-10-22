@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
+import qp
+from rail.creation.degradation import Degrader
 from rail.creation.engines import Engine
-from typing import Callable
 
 
 class Creator:
@@ -11,7 +12,7 @@ class Creator:
     generator, with an optional degrader applied.
     """
 
-    def __init__(self, engine: Engine, degrader: Callable = None, info: dict = None):
+    def __init__(self, engine: Engine, degrader: Degrader = None, info: dict = None):
         """
         Parameters
         ----------
@@ -30,7 +31,7 @@ class Creator:
         self.degrader = degrader
         self.info = info
 
-    def get_posterior(self, data: pd.DataFrame, column: str, grid: np.ndarray):
+    def get_posterior(self, data: pd.DataFrame, column: str, **kwargs) -> qp.Ensemble:
         """Calculate the posterior of the given column over the values in grid.
 
         Parameters
@@ -39,23 +40,21 @@ class Creator:
             Pandas dataframe of the data on which the posteriors are conditioned.
         column : str
             Name of the column for which the posterior is calculated.
-        grid : np.ndarray
-            Grid over which the posterior is calculated.
+        kwargs
+            Keyword arguments to pass to the engine get_posterior method
 
         Returns
         -------
-        np.ndarray
-            Array of posteriors, of shape (data.shape[0], grid.size).
+        qp.Ensemble
+            A qp.Ensemble of pdfs
         """
-        return self.engine.get_posterior(data, column, grid)
+        return self.engine.get_posterior(data, column, **kwargs)
 
     def sample(
         self,
         n_samples: int,
         seed: int = None,
-        include_pdf: bool = False,
-        pz_grid: np.ndarray = None,
-    ):
+    ) -> pd.DataFrame:
         """Draws n_samples from the engine
 
         Parameters
@@ -64,41 +63,25 @@ class Creator:
             Number of samples to draw
         seed : int, optional
             sets the random seed for drawing samples
-        include_pdf : boolean, optional
-            If True, redshift posteriors are returned for each galaxy.
-            The posteriors are saved in the column pz_pdf, and the
-            redshift grid saved as df.attrs['pz_grid'].
-        pz_grid : np.array, default=np.arange(0, 2.02, 0.02)
-            The grid over which to calculate the redshift posteriors.
 
         Returns
         -------
         outputs : pd.DataFrame
-            samples from model, containing photometry, true redshift, and
-            redshift posterior PDF's if requested.
-
-        Notes
-        -----
-        Output posterior format is currently hardcoded to grid evaluations but could be integrated with qp.
-        We will probably change the output format to dovetail with the evaluation module when ready.
+            samples from the model
         """
-
-        if include_pdf is True and pz_grid is None:
-            pz_grid = np.arange(0, 2.02, 0.02)
-
         rng = np.random.default_rng(seed)
 
         # get samples
-        outputs = self.engine.sample(n_samples, seed=seed)
+        outputs = self.engine.sample(n_samples, seed=rng.integers(1e18))
 
         if self.degrader is not None:
-            # degrade sample
-            outputs = self.degrader(outputs, seed=seed)
-            # calculate fraction that survives the cut
+            # degrade the sample
+            outputs = self.degrader(outputs, seed=rng.integers(1e18))
+            # calculate the fraction that survives the cut
             selected_frac = len(outputs) / n_samples
             # draw more samples and degrade until we have enough samples
             while len(outputs) < n_samples:
-                # estimate how many extras to draw
+                # estimate how many extra galaxies to draw
                 n_supplement = int(1.1 / selected_frac * (n_samples - len(outputs)))
                 # draw new samples and apply cut
                 new_sample = self.engine.sample(n_supplement, seed=rng.integers(1e18))
@@ -106,12 +89,6 @@ class Creator:
                 # add these to the larger set
                 outputs = pd.concat((outputs, new_sample), ignore_index=True)
             # cut out the extras
-            outputs = outputs[:n_samples]
-
-        # calculate posteriors
-        if include_pdf:
-            posteriors = self.get_posterior(outputs, column="redshift", grid=pz_grid)
-            outputs.attrs["pz_grid"] = pz_grid
-            outputs["pz_pdf"] = list(posteriors)
+            outputs = outputs.iloc[:n_samples, :]
 
         return outputs
