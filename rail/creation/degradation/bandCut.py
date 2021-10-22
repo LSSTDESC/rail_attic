@@ -1,11 +1,16 @@
+from numbers import Number
+
 import numpy as np
 import pandas as pd
 from rail.creation.degradation import Degrader
-from numbers import Number
 
 
 class BandCut(Degrader):
-    """Degrader that applies a cut to the given columns."""
+    """Degrader that applies a cut to the given columns.
+
+    Note if a galaxy fails any of the cuts on any one of its columns, that
+    galaxy is removed from the sample.
+    """
 
     def __init__(self, cuts: dict):
         """
@@ -13,7 +18,7 @@ class BandCut(Degrader):
         ----------
         cuts : dict
             A dictionary of cuts to make on the data.
-            They keys should be the names of columns you wish to make cuts on.
+            The keys should be the names of columns you wish to make cuts on.
             The values should be either:
                 - a number, which is the maximum value. I.e. if the dictionary
                 contains "i": 25, then values of i > 25 are cut from the sample.
