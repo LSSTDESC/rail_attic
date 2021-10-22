@@ -32,6 +32,7 @@ class LSSTErrorModel(Degrader):
         extendedSource: float = None,
         sigmaSys: float = None,
         magLim: float = None,
+        ndFlag: float = None,
         m5: dict = None,
         Cm: dict = None,
         msky: dict = None,
@@ -105,7 +106,10 @@ class LSSTErrorModel(Degrader):
         sigmaSys : float, optional
             The irreducible error of the system. Set's the minimum photometric error.
         magLim : float, optional
-            The dimmest magnitude allowed. All dimmer magnitudes are set to 99.
+            The dimmest magnitude allowed. All dimmer magnitudes are set to ndFlag.
+        ndFlag : float, optional
+            The flag for non-detections. All magnitudes greater than magLim (and
+            their corresponding errors) will be set to this value.
         m5 : dict, optional
             A dictionary of 5-sigma limiting magnitudes. For any bands for which
             you pass a value in m5, this will be the 5-sigma limiting magnitude
@@ -141,6 +145,8 @@ class LSSTErrorModel(Degrader):
             self.settings["sigmaSys"] = sigmaSys
         if magLim is not None:
             self.settings["magLim"] = magLim
+        if ndFlag is not None:
+            self.settings["ndFlag"] = ndFlag
         if Cm is not None:
             self.settings["Cm"] = Cm
         if msky is not None:
@@ -212,7 +218,8 @@ class LSSTErrorModel(Degrader):
             "airmass": 1.2,  # fiducial airmass (T2)
             "extendedSource": 0.0,  # constant added to m5 for extended sources
             "sigmaSys": 0.005,  # expected irreducible error, p26
-            "magLim": 30.0,  # dimmest allowed magnitude; dimmer mags set to 99
+            "magLim": 30.0,  # dimmest allowed magnitude; dimmer mags set to ndFlag
+            "ndFlag": np.nan,  # flag for non-detections (all mags > magLim)
             "m5": {},  # explicit list of m5 limiting magnitudes
             "Cm": {  # band dependent parameter (T2)
                 "lsst_u": 23.09,
@@ -253,7 +260,7 @@ class LSSTErrorModel(Degrader):
         Validate all the settings.
         """
 
-        # check all the floats
+        # check all the numbers
         for key in [
             "tvis",
             "nYrObs",
@@ -261,15 +268,25 @@ class LSSTErrorModel(Degrader):
             "extendedSource",
             "sigmaSys",
             "magLim",
+            "ndFlag",
         ]:
             # check they are numbers
-            # note we also make sure it's not a bool (which is a subclass of int)
-            if not isinstance(self.settings[key], Number) or isinstance(
-                self.settings[key], bool
-            ):
-                raise TypeError(f"{key} must be a number.")
-            # check they are non-negative
-            if key != "magLim":
+            # note we also check if they're bools and np.nan's because these
+            # are both technically numbers
+            is_number = isinstance(self.settings[key], Number)
+            is_bool = isinstance(self.settings[key], bool)
+            is_nan = np.isnan(self.settings[key])
+            # ndFlag can be np.nan
+            if key == "ndFlag":
+                if not (is_number or is_nan) or is_bool:
+                    raise TypeError(f"{key} must be a number or NaN.")
+            # the others cannot
+            else:
+                if not is_number or is_nan or is_bool:
+                    raise TypeError(f"{key} must be a number.")
+            # if they are numbers, check that they are non-negative
+            # except for magLim and ndFlag, which can be
+            if key != "magLim" and key != "ndFlag":
                 if self.settings[key] < 0:
                     raise ValueError(f"{key} must be non-negative.")
 
@@ -414,11 +431,11 @@ class LSSTErrorModel(Degrader):
         idx = np.where(obsFluxes > minFlux)
 
         # convert fluxes back to magnitudes
-        obsMags = np.full(obsFluxes.shape, 99.0)
+        obsMags = np.full(obsFluxes.shape, self.settings["ndFlag"])
         obsMags[idx] = -2.5 * np.log10(obsFluxes[idx])
 
         # decorrelate the magnitude error
-        obsMagErrs = np.full(obsMags.shape, 99.0)
+        obsMagErrs = np.full(obsMags.shape, self.settings["ndFlag"])
         obsMagErrs[idx] = self._getMagError(obsMags, bands)[idx]
 
         # save the observations in a DataFrame
@@ -471,7 +488,8 @@ class LSSTErrorModel(Degrader):
         printMsg += f"Extended source model: add {settings['extendedSource']}"
         printMsg += "mag to 5-sigma depth for point sources\n"
         # minimum magnitude
-        printMsg += f"Magnitudes dimmer than {settings['magLim']} are set to 99\n"
+        printMsg += f"Magnitudes dimmer than {settings['magLim']} are "
+        printMsg += f"set to {settings['ndFlag']}\n"
         # gamma
         printMsg += "gamma for each band:\n   "
         for i in [
