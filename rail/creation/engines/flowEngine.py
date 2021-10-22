@@ -43,9 +43,9 @@ class FlowEngine(Engine):
         data: pd.DataFrame,
         column: str,
         grid: np.ndarray,
-        marg_rules: dict = None,
         err_samples: int = None,
         seed: int = None,
+        marg_rules: dict = None,
         batch_size: int = None,
         nan_to_zero: bool = True,
     ) -> qp.Ensemble:
@@ -63,6 +63,14 @@ class FlowEngine(Engine):
             whether or not this column is present in `data` is irrelevant.
         grid : np.ndarray
             Grid over which the posterior is calculated.
+        err_samples : int, optional
+            Number of samples from the error distribution to average over for
+            the posterior calculation. If provided, Gaussian errors are assumed,
+            and method will look for error columns in `inputs`. Error columns
+            must end in `_err`. E.g. the error column for the variable `u` must
+            be `u_err`. Zero error assumed for any missing error columns.
+        seed: int, optional
+            Random seed for drawing samples from the error distribution.
         marg_rules : dict, optional
             Dictionary with rules for marginalizing over missing variables.
             The dictionary must contain the key "flag", which gives the flag
@@ -75,14 +83,6 @@ class FlowEngine(Engine):
             the variable. E.g. {"y": lambda row: np.linspace(0, row["x"], 10)}.
             Note: the callable for a given name must *always* return an array
             of the same length, regardless of the input row.
-        err_samples : int, optional
-            Number of samples from the error distribution to average over for
-            the posterior calculation. If provided, Gaussian errors are assumed,
-            and method will look for error columns in `inputs`. Error columns
-            must end in `_err`. E.g. the error column for the variable `u` must
-            be `u_err`. Zero error assumed for any missing error columns.
-        seed: int, optional
-            Random seed for drawing samples from the error distribution.
         batch_size: int, default=None
             Size of batches in which to calculate posteriors. If None, all
             posteriors are calculated simultaneously. This is faster, but
@@ -99,9 +99,9 @@ class FlowEngine(Engine):
             inputs=data,
             column=column,
             grid=grid,
-            marg_rules=marg_rules,
             err_samples=err_samples,
             seed=seed,
+            marg_rules=marg_rules,
             batch_size=batch_size,
             nan_to_zero=nan_to_zero,
         )

@@ -1,3 +1,5 @@
+from typing import Callable, Union
+
 import numpy as np
 import pandas as pd
 import qp
@@ -12,7 +14,12 @@ class Creator:
     generator, with an optional degrader applied.
     """
 
-    def __init__(self, engine: Engine, degrader: Degrader = None, info: dict = None):
+    def __init__(
+        self,
+        engine: Engine,
+        degrader: Union[Degrader, Callable] = None,
+        info: dict = None,
+    ):
         """
         Parameters
         ----------
