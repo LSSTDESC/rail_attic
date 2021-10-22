@@ -1,6 +1,7 @@
 # this is a subclass of Engine that wraps a pzflow Flow so that it can
 # be used as the engine of a Creator object.
 
+import numpy as np
 import pandas as pd
 import qp
 from rail.creation.engines import Engine
