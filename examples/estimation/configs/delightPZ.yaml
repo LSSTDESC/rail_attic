@@ -1,0 +1,76 @@
+##########################################################################################
+#
+# RAIL configuration file for delightPZ module
+#
+# Steering Delight from RAIL
+# Used on Vera C. Rubin LSST only estimation
+#
+# Author        : Sylvie Dagoret-Campagne
+# Affiliation   : IJCLab/IN2P3/CNRS/France
+# Creation date : March 2021
+# Last update   : May 8th 2021
+#
+############################################################################################
+run_params:
+  class_name: delightPZ
+  run_name: test_delightPZ
+#------------------------------------------------
+# redshift range and binning for delight
+# dlght_ prepend means a parameter used by Delight
+#------------------------------------------------
+  dlght_redshiftMin: 0.01
+  dlght_redshiftMax: 3.01
+  dlght_redshiftNumBinsGPpred: 300
+  dlght_redshiftBinSize: 0.01
+  dlght_redshiftDisBinSize: 0.2
+#-----------------------------------------------
+# Delight input data (Filters and SED templates), note Delight will write inside this directory
+# example recommended:
+# - DC2 mode : dlght_inputdata: "./tmp/delight_indata"
+# - tutorial mode : dlght_inputdata: "./tmpsim/delight_indata"
+#----------------------------------------------
+  dlght_inputdata: "./tmp/delight_indata"
+#---------------------------------------
+# temporary directory for delight work
+# example recommended:
+# - DC2 mode : tempdir: "./tmp" and tempdatadir: "./tmp/delight_data"
+# - tutorial mode : tempdir: "./tmpsim" and tempdatadir: "./tmpsim/delight_data"
+#---------------------------------------
+  tempdir: "./tmp"
+  tempdatadir: "./tmp/delight_data"
+#----------------------------------------
+# delight configuration file filename
+#----------------------------------------
+  delightparamfile: "parametersTest.cfg"
+#------------------------------------------------------------------------
+# Running mode
+# tutorial mode :
+#   - True  : activate internal flux simulation
+#   - False : activate use of DC2 datasets for training and Validation
+#-----------------------------------------------------------------------
+  dlght_tutorialmode: False
+#------------------------------------------------------------------------
+# Filtering of training and Validation dataset
+# according flux SNR
+#-------------------------------------------------------------------------
+  flag_filter_training: True
+  snr_cut_training: 5
+  flag_filter_validation: True
+  snr_cut_validation: 3
+#-----------------------------------------------------------------------
+# Special run
+# Should not be used
+#-------------------------------------------------------------------------
+  dlght_calibrateTemplateMixturePrior: False
+#-------------------------------------------------------------------------
+# Delight hyper-parameters that must be optimized
+#---------------------------------------------------------------------------
+  zPriorSigma: 0.2
+  ellPriorSigma: 0.5
+  fluxLuminosityNorm: 1.0
+  alpha_C: 1.0e3
+  V_C: 0.1
+  alpha_L: 1.0e2
+  V_L: 0.1
+  lineWidthSigma: 20
+
