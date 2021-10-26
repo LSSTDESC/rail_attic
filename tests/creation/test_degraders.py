@@ -1,3 +1,4 @@
+from typing import Type
 import numpy as np
 import pandas as pd
 import pytest
@@ -124,6 +125,16 @@ def test_BandCut_repr_is_string():
         ({"msky": {}}, ValueError),
         ({"theta": {}}, ValueError),
         ({"km": {}}, ValueError),
+        ({"nVisYr": {f"lsst_{b}": False for b in "ugrizy"}}, TypeError),
+        ({"gamma": {f"lsst_{b}": False for b in "ugrizy"}}, TypeError),
+        ({"Cm": {f"lsst_{b}": False for b in "ugrizy"}}, TypeError),
+        ({"msky": {f"lsst_{b}": False for b in "ugrizy"}}, TypeError),
+        ({"theta": {f"lsst_{b}": False for b in "ugrizy"}}, TypeError),
+        ({"km": {f"lsst_{b}": False for b in "ugrizy"}}, TypeError),
+        ({"nVisYr": {f"lsst_{b}": -1 for b in "ugrizy"}}, ValueError),
+        ({"gamma": {f"lsst_{b}": -1 for b in "ugrizy"}}, ValueError),
+        ({"theta": {f"lsst_{b}": -1 for b in "ugrizy"}}, ValueError),
+        ({"km": {f"lsst_{b}": -1 for b in "ugrizy"}}, ValueError),
     ],
 )
 def test_LSSTErrorModel_bad_inputs(settings, error):

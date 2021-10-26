@@ -290,12 +290,34 @@ class LSSTErrorModel(Degrader):
                 if self.settings[key] < 0:
                     raise ValueError(f"{key} must be non-negative.")
 
-        # check all the dictionaries
-        for key in ["bandNames", "nVisYr", "gamma", "Cm", "msky", "theta", "km"]:
+        # make sure bandNames is a dictionary
+        if not isinstance(self.settings["bandNames"], dict):
+            raise TypeError(
+                "bandNames must be a dictionary where the keys are the names "
+                "of the bands as used internally by the error model, and the "
+                "values are the names of the bands as present in your data set."
+            )
+
+        # check all the other dictionaries
+        for key in ["nVisYr", "gamma", "Cm", "msky", "theta", "km"]:
 
             # make sure they are dictionaries
             if not isinstance(self.settings[key], dict):
                 raise TypeError(f"{key} must be a dictionary.")
+
+            # check the values in the dictionary
+            for subkey, val in self.settings[key].items():
+
+                # check that it's a number
+                is_number = isinstance(val, Number)
+                is_bool = isinstance(val, bool)
+                if not is_number or is_bool:
+                    raise TypeError(f"{key}['{subkey}'] must be a number.")
+
+                # for certain dictionaries, check that the numbers are positive
+                if key not in ["Cm", "msky"]:
+                    if val < 0:
+                        raise ValueError(f"{key}['{subkey}'] must be positive.")
 
             # get the set of bands in bandNames that aren't in this dictionary
             missing = set(self.settings["bandNames"]) - set(self.settings[key])
@@ -310,8 +332,8 @@ class LSSTErrorModel(Degrader):
 
             # but for the other dictionaries...
             else:
-                # we dont need an entry for every band in bandNames, as long as
-                # the missing bands are listed in m5
+                # we don't need an entry for every band in bandNames, as long
+                # as the missing bands are listed in m5
                 missing -= set(self.settings["m5"])
 
                 if len(missing) > 0:
@@ -431,11 +453,11 @@ class LSSTErrorModel(Degrader):
         idx = np.where(obsFluxes > minFlux)
 
         # convert fluxes back to magnitudes
-        obsMags = np.full(obsFluxes.shape, self.settings["ndFlag"])
+        obsMags = np.full(obsFluxes.shape, self.settings["ndFlag"], dtype=float)
         obsMags[idx] = -2.5 * np.log10(obsFluxes[idx])
 
         # decorrelate the magnitude error
-        obsMagErrs = np.full(obsMags.shape, self.settings["ndFlag"])
+        obsMagErrs = np.full(obsMags.shape, self.settings["ndFlag"], dtype=float)
         obsMagErrs[idx] = self._getMagError(obsMags, bands)[idx]
 
         # save the observations in a DataFrame
