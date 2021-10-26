@@ -91,7 +91,7 @@ class Creator:
             outputs = self.degrader(outputs, seed=rng.integers(max_seed))
 
             # calculate the fraction that survives the cut
-            selected_frac = len(outputs) / n_samples
+            selected_frac = np.clip(len(outputs) / n_samples, 0.55, 1)
 
             # draw more samples and degrade until we have enough samples
             while len(outputs) < n_samples:
