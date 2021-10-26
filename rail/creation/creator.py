@@ -38,7 +38,9 @@ class Creator:
         self.degrader = degrader
         self.info = info
 
-    def get_posterior(self, data: pd.DataFrame, column: str, **kwargs) -> qp.Ensemble:
+    def get_posterior(
+        self, data: pd.DataFrame, column: str = "redshift", **kwargs
+    ) -> qp.Ensemble:
         """Calculate the posterior of the given column over the values in grid.
 
         Parameters
