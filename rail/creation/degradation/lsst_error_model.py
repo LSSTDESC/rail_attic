@@ -408,7 +408,7 @@ class LSSTErrorModel(Degrader):
         gamma = np.array([self.settings["gamma"][band] for band in bands])
 
         # calculate x as defined in the paper
-        x = 10 ** (0.4 * (mags - m5))
+        x = 10 ** (0.4 * np.subtract(mags, m5))
 
         # calculate the squared random error for a single visit
         # Eq. 5 in https://arxiv.org/abs/0805.2366

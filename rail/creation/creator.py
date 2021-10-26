@@ -78,25 +78,35 @@ class Creator:
         outputs : pd.DataFrame
             samples from the model
         """
-        rng = np.random.default_rng(seed)
 
         # get samples
-        outputs = self.engine.sample(n_samples, seed=rng.integers(1e18))
+        outputs = self.engine.sample(n_samples, seed=seed)
 
         if self.degrader is not None:
+            # setup an rng to generate new seeds from
+            rng = np.random.default_rng(seed)
+            max_seed = int(1e18)
+
             # degrade the sample
-            outputs = self.degrader(outputs, seed=rng.integers(1e18))
+            outputs = self.degrader(outputs, seed=rng.integers(max_seed))
+
             # calculate the fraction that survives the cut
             selected_frac = len(outputs) / n_samples
+
             # draw more samples and degrade until we have enough samples
             while len(outputs) < n_samples:
                 # estimate how many extra galaxies to draw
                 n_supplement = int(1.1 / selected_frac * (n_samples - len(outputs)))
+
                 # draw new samples and apply cut
-                new_sample = self.engine.sample(n_supplement, seed=rng.integers(1e18))
-                new_sample = self.degrader(new_sample, seed=rng.integers(1e18))
+                new_sample = self.engine.sample(
+                    n_supplement, seed=rng.integers(max_seed)
+                )
+                new_sample = self.degrader(new_sample, seed=rng.integers(max_seed))
+
                 # add these to the larger set
                 outputs = pd.concat((outputs, new_sample), ignore_index=True)
+
             # cut out the extras
             outputs = outputs.iloc[:n_samples, :]
 
