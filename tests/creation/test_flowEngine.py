@@ -10,12 +10,12 @@ def test_flowengine_sample():
     seed = 0
 
     flow = get_example_flow()
-    flow_samples = flow.sample(n_samples, seed=seed).to_numpy()
+    flow_samples = flow.sample(n_samples, seed=seed)
 
     flowEng = FlowEngine(flow)
-    flowEng_samples = flowEng.sample(n_samples, seed=seed).to_numpy()
+    flowEng_samples = flowEng.sample(n_samples, seed=seed)
 
-    assert np.allclose(flow_samples, flowEng_samples)
+    assert flow_samples.equals(flowEng_samples)
 
 
 def test_flowengine_pz_estimate():
