@@ -75,34 +75,62 @@ coloredlogs.install(level='DEBUG', logger=logger,fmt='%(asctime)s,%(msecs)03d %(
 
 
 
-def_param = {'run_params': {'rand_width': 0.025, 'rand_zmin': 0.0,
-                            'rand_zmax': 3.0, 'nzbins': 301,
-                            'inform_options': {'save_train': False,
-                                               'load_model': False,
-                                               'modelfile':
-                                               'randommodel.pkl'
-                                               }}}
+def_param = dict(run_params = dict(dlght_redshiftMin=0.01,
+                                   dlght_redshiftMax=3.01,
+                                   dlght_redshiftNumBinsGPpred = 301,
+                                   nzbins = 301,
+                                   dlght_redshiftBinSize = 0.01,
+                                   dlght_redshiftDisBinSize = 0.2,
+                                   tempdir = "./examples/estimation/tmp",
+                                   tempdatadir = "./examples/estimation/tmp/delight_data",
+                                   delightparamfile = "parametersTest.cfg",
+                                   dlght_tutorialmode = False,
+                                   flag_filter_training = True,
+                                   snr_cut_training = 5,
+                                   flag_filter_validation = True,
+                                   snr_cut_validation = 3,
+                                   dlght_calibrateTemplateMixturePrior = False,
+                                   dlght_inputdata = "./examples/estimation/tmp/delight_indata",
+                                   zPriorSigma = 0.2,
+                                   ellPriorSigma = 0.5,
+                                   fluxLuminosityNorm = 1.0,
+                                   alpha_C = 1.0e3,
+                                   V_C = 0.1,
+                                   alpha_L = 1.0e2,
+                                   V_L = 0.1,
+                                   lineWidthSigma = 20,
+                                   inform_options = dict(save_train = False,
+                                                         load_model = False,
+                                                         modelfile = 'model.out'),
+                                   
+))
 
 
-desc_dict = {'rand_width': "rand_width (float): ad hock width of PDF",
-             'rand_zmin': "rand_zmin (float): min value for z grid",
-             'rand_zmax': "rand_zmax (float): max value for z grid",
-             'nzbins': "nzbins (int): number of z bins",
-             'inform_options': "inform_options: (dict): a "
-             "dictionary of options for loading and storing of "
-             "the pretrained model.  This includes:\n "
-             "modelfile:(str) the filename to save or load a "
-             "trained model from.\n save_train:(bool) boolean to "
-             "set whether to save a trained model.\n "
-             "load_model:(bool): boolean to set whether to "
-             "load a trained model from filename modelfile"
-             }
-
-
-
-
-
-
+desc_dict = dict(dlght_redshiftMin = "min redshift",
+                 dlght_redshiftMax = "max redshift",
+                 dlght_redshiftNumBinsGPpred = "num bins",
+                 dlght_redshiftDisBinSize = "???",
+                 dlght_redshiftBinSize = "bad, shouldn't be here",
+                 nzbins = "num bins",
+                 tempdir = "temp dir",
+                 tempdatadir = "temp data dir",
+                 delightparamfile = "param file",
+                 dlght_tutorialmode = "bool: run in tutorial mode",
+                 flag_filter_training = "bool: ?",
+                 snr_cut_training = "SNR training cut",
+                 flag_filter_validation = "bool: ?",
+                 snr_cut_validation = "SNR val cut",
+                 dlght_calibrateTemplateMixturePrior = "bool, ?",
+                 dlght_inputdata = "data dir",
+                 zPriorSigma = "prior thing",
+                 ellPriorSigma = "prior thing",
+                 fluxLuminosityNorm = "prior thing",
+                 alpha_C = "prior thing",
+                 V_C = "prior thing",
+                 alpha_L = "prior thing",
+                 V_L = "prior thing",
+                 lineWidthSigma = "prior thing",
+                 inform_options = "inform options")
 
 
 class delightPZ(BaseEstimation):
@@ -125,10 +153,13 @@ class delightPZ(BaseEstimation):
 
         inputs = self.config_dict['run_params']
 
-        self.width = inputs['dlght_redshiftBinSize']
         self.zmin = inputs['dlght_redshiftMin']
+        if self.zmin <= 0.:
+            raise ValueError("zmin must be greater than zero!"
+                             + "set dlght_redshiftMin accordingly")
         self.zmax = inputs['dlght_redshiftMax']
-        self.nzbins = int((self.zmax-self.zmin)/self.width)
+        self.nzbins = inputs['dlght_redshiftNumBinsGPpred']
+        self.width = (self.zmax - self.zmin)/float(self.nzbins)
 
         # temporary directories for Delight temprary file
         self.tempdir = inputs['tempdir']
