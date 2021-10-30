@@ -20,12 +20,11 @@ coloredlogs.install(level='DEBUG', logger=logger,fmt='%(asctime)s,%(msecs)03d %(
 
 def getDelightRedshiftEstimation(configfilename,chunknum,nsize,index_sel):
     """
-    zmode,widths = getDelightRedshiftEstimation(delightparamfilechunk,self.chunknum,nsize,indexes_sel)
+    zmode, PDFs = getDelightRedshiftEstimation(delightparamfilechunk,self.chunknum,nsize,indexes_sel)
 
     input args:
       - nsize : size of arrays to return
       - index_sel : indexes in final arays of processed redshits by delight
-
 
     :return:
     """
@@ -35,7 +34,6 @@ def getDelightRedshiftEstimation(configfilename,chunknum,nsize,index_sel):
 
     # initialize arrays to be returned
     zmode  = np.full(nsize, fill_value=-1,dtype=np.float)
-    widths = np.full(nsize, fill_value=-1, dtype=np.float)
 
     params = parseParamFile(configfilename, verbose=False)
 
@@ -47,7 +45,9 @@ def getDelightRedshiftEstimation(configfilename,chunknum,nsize,index_sel):
     # nz is the number of redshifts
     pdfs = np.loadtxt(params['redshiftpdfFile'])
     pdfs /= np.trapz(pdfs, x=redshiftGrid, axis=1)[:, None]
-
+    nzbins = len(redshiftGrid)
+    full_pdfs = np.zeros([nsize, nzbins])
+    full_pdfs[index_sel] = pdfs
 
     # find the index of the redshift where there is the mode
     # the following arrays have size m
@@ -59,15 +59,10 @@ def getDelightRedshiftEstimation(configfilename,chunknum,nsize,index_sel):
     # array of zshift (z-zmode) :  of size (m x nz)
     zshifts_of_mode = redshiftGrid[np.newaxis,:]-redshifts_of_zmode[:,np.newaxis]
 
-    # array of variances
-    variance_of_z = np.average(zshifts_of_mode**2,axis=1,weights=pdfs)
-
-
     # copy only the processed redshifts and widths into the final arrays of size nsize
     # for RAIL
     zmode[index_sel] = redshifts_of_zmode
-    widths[index_sel] = np.sqrt(variance_of_z)*(1.0 + redshifts_of_zmode)
 
 
-    return zmode,widths
+    return zmode, full_pdfs
 

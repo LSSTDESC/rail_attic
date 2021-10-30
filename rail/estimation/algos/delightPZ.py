@@ -158,9 +158,10 @@ class delightPZ(BaseEstimation):
             raise ValueError("zmin must be greater than zero!"
                              + "set dlght_redshiftMin accordingly")
         self.zmax = inputs['dlght_redshiftMax']
-        self.nzbins = inputs['dlght_redshiftNumBinsGPpred']
-        self.width = (self.zmax - self.zmin)/float(self.nzbins)
-
+        self.width = inputs['dlght_redshiftBinSize']
+        self.zgrid = np.arange(self.zmin, self.zmax, self.width) # this is how createGrids defines the grid
+        self.nzbins = len(self.zgrid)
+        
         # temporary directories for Delight temprary file
         self.tempdir = inputs['tempdir']
         self.tempdatadir = inputs['tempdatadir']
@@ -391,28 +392,24 @@ class delightPZ(BaseEstimation):
             d = test_data['mag_i_lsst']
 
         numzs = len(d)
-        self.zgrid = np.linspace(self.zmin, self.zmax, self.nzbins)
-
 
         if self.tutorialmode:
             # fill creazy values (simulation not send to rail)
-            zmode = np.round(np.random.uniform(self.zmax, self.zmax, numzs), 3)
-            widths = self.width * (1.0 + zmode)
+            zmode = np.round(np.random.uniform(self.zmin, self.zmax, numzs), 3)
+            pdfs = np.zeros([numzs, len(self.zgrid)])
+            for i in range(numzs):
+                pdfs[i] = (norm.pdf(self.zgrid, zmode[i], self.width * (1 + zmode[i])))
 
         else:
-            zmode,widths = \
+            zmode, pdfs = \
             getDelightRedshiftEstimation(delightparamfilechunk,self.chunknum,numzs,indexes_sel)
             zmode = np.round(zmode,3)
 
 
-        for i in range(numzs):
-            pdf.append(norm.pdf(self.zgrid, zmode[i], widths[i]))
         if self.output_format == 'qp':
-            qp_d = qp.Ensemble(qp.stats.norm, data=dict(loc=zmode,
-                                                        scale=widths))
+            qp_d = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid,
+                                                    yvals=pdfs))
             return qp_d
         else:
-
-            pz_dict = {'zmode': zmode, 'pz_pdf': pdf}
-
+            pz_dict = {'zmode': zmode, 'pz_pdf': pdfs}
             return pz_dict
