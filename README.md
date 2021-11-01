@@ -22,9 +22,11 @@ Now to install RAIL, you need to:
     If you only want to install the dependencies for a piece of RAIL, you can change the install option. E.g. to install only the dependencies for the Creation Module or the Estimation Module, run `pip install .[creation]` or `pip install .[estimation]` respectively. For other install options, look at the keys for the `extras_require` dictionary at the top of `setup.py`.
     - If you are developing RAIL, you should install with the `-e` flag, e.g. `pip install -e .[all]`. This means that any changes you make to the RAIL codebase will propagate to imports of RAIL in your scripts and notebooks.
 
+Note the Creation Module depends on pzflow, which has an optional GPU-compatible installation.
+For instructions, see the [pzflow Github repo](https://github.com/jfcrenshaw/pzflow/).
+
 Once you have installed RAIL, you can import the package (via `import rail`) in any of your scripts and notebooks.
 For examples demonstrating how to use the different pieces, see the notebooks in the `examples/` directory.
-
 
 ## Contributing
 
