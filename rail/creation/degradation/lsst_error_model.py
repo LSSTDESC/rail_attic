@@ -474,7 +474,7 @@ class LSSTErrorModel(Degrader):
 
         return obsData
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         """
         Define how the model is represented and printed.
         """

@@ -77,7 +77,7 @@ class BandCut(Degrader):
 
         return data.query(query)
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         printMsg = "Degrader that applies the following cuts to a pandas DataFrame:\n"
         printMsg += "{column: (min, max), ...}\n"
         printMsg += self.cuts.__str__()

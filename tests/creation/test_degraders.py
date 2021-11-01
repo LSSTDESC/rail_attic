@@ -103,13 +103,6 @@ def test_BandCut_returns_correct_shape(data):
     assert degraded_data.shape == data.query("u < 0 & y > 1 & y < 2").shape
 
 
-def test_BandCut_repr_is_string():
-    """Check that __repr__ returns a string
-    This just helps us get to 100% test coverage
-    """
-    assert isinstance(BandCut({}).__repr__(), str)
-
-
 @pytest.mark.parametrize(
     "settings,error",
     [
@@ -182,17 +175,6 @@ def test_LSSTErrorModel_magLim(m5, data):
     degraded_mags = degraded_data[bandNames.values()].to_numpy()
 
     assert degraded_mags[~np.isnan(degraded_mags)].max() < magLim
-
-
-def test_LSSTErrorModel_repr_is_string():
-    """Check that __repr__ returns a string
-    This just helps us get to 100% test coverage
-    """
-
-    # I will pass an explicit m5 to make sure the if statements checking
-    # for explicit m5's are triggered during the test
-    m5 = {"lsst_u": 23}
-    assert isinstance(LSSTErrorModel(m5=m5).__repr__(), str)
 
 
 @pytest.mark.parametrize(
