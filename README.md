@@ -23,6 +23,12 @@ Now to install RAIL, you need to:
     - If you are developing RAIL, you should install with the `-e` flag, e.g. `pip install -e .[all]`. This means that any changes you make to the RAIL codebase will propagate to imports of RAIL in your scripts and notebooks.
 
 On some systems that are slightly out of date, e.g. an older version of python's `setuptools`, there can be some problems installing packages hosted on GitHub rather than PyPi.  We recommend that you update your system; however, some users have still reported problems with installation of subpackages necessary for `FZBoost` and `bpz_lite`.  If this occurs, try the following procedure:
+
+If all of the estimation algorithms are listed as `not avaialble` there may have been a problem installing `qp`.  Try:
+- cd to a directory where you wish to clone qp and run `git clone https://github.com/LSSTDESC/qp.git`
+- cd to the qp directory and run `python setup.py install`
+- cd to the directory where you cloned RAIL, and reinstall with `pip install .[all]`
+
 For FZBoost:
 - install `xgboost` with the command `pip install xgboost==0.90.0`
 - install FlexCode with `pip install FlexCode[all]
