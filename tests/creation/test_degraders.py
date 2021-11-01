@@ -83,20 +83,20 @@ def test_InvRedshiftIncompleteness_returns_correct_shape(data):
         ({"u": TypeError}, TypeError),
     ],
 )
-def test_BandCut_bad_params(cuts, error):
+def test_QuantityCut_bad_params(cuts, error):
     """Test bad parameters that should return Type and Value errors"""
     with pytest.raises(error):
-        BandCut(cuts)
+        QuantityCut(cuts)
 
 
-def test_BandCut_returns_correct_shape(data):
-    """Make sure BandCut is returning the correct shape"""
+def test_QuantityCut_returns_correct_shape(data):
+    """Make sure QuantityCut is returning the correct shape"""
 
     cuts = {
         "u": 0,
         "y": (1, 2),
     }
-    degrader = BandCut(cuts)
+    degrader = QuantityCut(cuts)
 
     degraded_data = degrader(data)
 
