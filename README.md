@@ -18,9 +18,12 @@ Now to install RAIL, you need to:
 2. Change directories so that you are in the RAIL root directory.
 3. Run one of the following commands, depending on your use case:
 
-    - If you are not developing RAIL and just want to install the package for use in some other project, you can run the command `pip install .[all]` (Note: if you are using zsh, e.g. on a Mac, you will need to instead run `pip install '.[all]'`). This will download the entire RAIL package. 
-    If you only want to install the dependencies for a piece of RAIL, you can change the install option. E.g. to install only the dependencies for the Creation Module, run `pip install .[creation]` or `pip install .[estimation]` respectively. For other install options, look at the keys for the `extras_require` dictionary at the top of `setup.py`.
+    - If you are not developing RAIL and just want to install the package for use in some other project, you can run the command `pip install .[all]`. This will download the entire RAIL package. 
+    If you only want to install the dependencies for a piece of RAIL, you can change the install option. E.g. to install only the dependencies for the Creation Module or the Estimation Module, run `pip install .[creation]` or `pip install .[estimation]` respectively. For other install options, look at the keys for the `extras_require` dictionary at the top of `setup.py`.
     - If you are developing RAIL, you should install with the `-e` flag, e.g. `pip install -e .[all]`. This means that any changes you make to the RAIL codebase will propagate to imports of RAIL in your scripts and notebooks.
+
+Note the Creation Module depends on pzflow, which has an optional GPU-compatible installation.
+For instructions, see the [pzflow Github repo](https://github.com/jfcrenshaw/pzflow/).
 
 On some systems that are slightly out of date, e.g. an older version of python's `setuptools`, there can be some problems installing packages hosted on GitHub rather than PyPi.  We recommend that you update your system; however, some users have still reported problems with installation of subpackages necessary for `FZBoost` and `bpz_lite`.  If this occurs, try the following procedure:
 
@@ -41,7 +44,6 @@ For bpz_lite:
 
 Once you have installed RAIL, you can import the package (via `import rail`) in any of your scripts and notebooks.
 For examples demonstrating how to use the different pieces, see the notebooks in the `examples/` directory.
-
 
 ## Contributing
 
