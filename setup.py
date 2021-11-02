@@ -29,7 +29,7 @@ estimation_codes = {
 }
 
 # dependencies for the Evaluation module
-evaluation_extras = []
+evaluation_extras = ["seaborn"]
 
 
 # compile the extras_require dictionary
