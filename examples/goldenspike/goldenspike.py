@@ -74,7 +74,7 @@ def main():
     for dset in [test_data, train_data]:
         for band in bands:
             tmperr = spike_utils.make_errors(dset[f'mag_{band}_lsst'],
-                                             f'LSST{band}')
+                                             f'lsst_{band}')
             dset[f'mag_err_{band}_lsst'] = tmperr
 
     # SAVE DATA TO FILE:
