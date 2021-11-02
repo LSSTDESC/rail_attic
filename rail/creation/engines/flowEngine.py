@@ -83,6 +83,11 @@ class FlowEngine(Engine):
             the variable. E.g. {"y": lambda row: np.linspace(0, row["x"], 10)}.
             Note: the callable for a given name must *always* return an array
             of the same length, regardless of the input row.
+            DEFAULT: the default marg_rules dict is
+                {
+                    "flag": np.nan,
+                    "u": np.linspace(25, 31, 10),
+                }
         batch_size: int, default=None
             Size of batches in which to calculate posteriors. If None, all
             posteriors are calculated simultaneously. This is faster, but
@@ -95,6 +100,9 @@ class FlowEngine(Engine):
         qp.Ensemble
             A qp.Ensemble of pdfs, linearly interpolated on the grid
         """
+        if marg_rules is None:
+            marg_rules = {"flag": np.nan, "u": lambda row: np.linspace(25, 31, 10)}
+
         pdfs = self.flow.posterior(
             inputs=data,
             column=column,
@@ -105,4 +113,5 @@ class FlowEngine(Engine):
             batch_size=batch_size,
             nan_to_zero=nan_to_zero,
         )
+
         return qp.Ensemble(qp.interp, data={"xvals": grid, "yvals": pdfs})
