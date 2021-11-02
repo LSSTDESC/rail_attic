@@ -19,12 +19,31 @@ Now to install RAIL, you need to:
 3. Run one of the following commands, depending on your use case:
 
     - If you are not developing RAIL and just want to install the package for use in some other project, you can run the command `pip install .[all]`. This will download the entire RAIL package. 
-    If you only want to install the dependencies for a piece of RAIL, you can change the install option. E.g. to install only the dependencies for the Creation Module, run `pip install .[creation]` or `pip install .[estimation]` respectively. For other install options, look at the keys for the `extras_require` dictionary at the top of `setup.py`.
+    If you only want to install the dependencies for a piece of RAIL, you can change the install option. E.g. to install only the dependencies for the Creation Module or the Estimation Module, run `pip install .[creation]` or `pip install .[estimation]` respectively. For other install options, look at the keys for the `extras_require` dictionary at the top of `setup.py`.
     - If you are developing RAIL, you should install with the `-e` flag, e.g. `pip install -e .[all]`. This means that any changes you make to the RAIL codebase will propagate to imports of RAIL in your scripts and notebooks.
+
+Note the Creation Module depends on pzflow, which has an optional GPU-compatible installation.
+For instructions, see the [pzflow Github repo](https://github.com/jfcrenshaw/pzflow/).
+
+On some systems that are slightly out of date, e.g. an older version of python's `setuptools`, there can be some problems installing packages hosted on GitHub rather than PyPi.  We recommend that you update your system; however, some users have still reported problems with installation of subpackages necessary for `FZBoost` and `bpz_lite`.  If this occurs, try the following procedure:
+
+If all of the estimation algorithms are listed as `not avaialble` there may have been a problem installing `qp`.  Try:
+- cd to a directory where you wish to clone qp and run `git clone https://github.com/LSSTDESC/qp.git`
+- cd to the qp directory and run `python setup.py install`
+- cd to the directory where you cloned RAIL, and reinstall with `pip install .[all]`, or `pip install '.[all]'` if using zsh
+
+For FZBoost:
+- install `xgboost` with the command `pip install xgboost==0.90.0`
+- install FlexCode with `pip install FlexCode[all]
+- ensure that you are in the directory where you cloned RAIL, and reinstall with `pip install .[all]`, or `pip install '.[all]'` if using zsh
+
+For bpz_lite:
+- cd to a directory where you wish to clone the DESC_BPZ package and run `git clone https://github.com/LSSTDESC/DESC_BPZ.git`
+- cd to the DESC_BPZ directory and run `python setup.py install` (add `--user` if you are on a shared system such as NERSC)
+- cd to the directory where you cloned RAIL, and reinstall with `pip install .[all]`, or `pip install '.[all]'` if using zsh
 
 Once you have installed RAIL, you can import the package (via `import rail`) in any of your scripts and notebooks.
 For examples demonstrating how to use the different pieces, see the notebooks in the `examples/` directory.
-
 
 ## Contributing
 

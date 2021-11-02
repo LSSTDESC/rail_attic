@@ -5,8 +5,9 @@
 # wrap whatever object you want for Creator.
 
 from abc import ABC, abstractmethod
+
 import pandas as pd
-import numpy as np
+import qp
 
 
 class Engine(ABC):
@@ -18,5 +19,5 @@ class Engine(ABC):
         """Return a random sample of the distribution with size n_samples."""
 
     @abstractmethod
-    def get_posterior(self, data: pd.DataFrame, column: str, grid: np.ndarray, **kwargs) -> np.ndarray:
+    def get_posterior(self, data: pd.DataFrame, column: str, **kwargs) -> qp.Ensemble:
         """Return posteriors for the given column over the values in grid."""
