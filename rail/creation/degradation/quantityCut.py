@@ -5,7 +5,7 @@ import pandas as pd
 from rail.creation.degradation import Degrader
 
 
-class BandCut(Degrader):
+class QuantityCut(Degrader):
     """Degrader that applies a cut to the given columns.
 
     Note if a galaxy fails any of the cuts on any one of its columns, that
@@ -33,13 +33,13 @@ class BandCut(Degrader):
 
         # validate all the cuts and standardize format in dictionary
         self.cuts = dict()
-        for band, cut in cuts.items():
+        for quantity, cut in cuts.items():
             bad_cut_msg = (
-                f"Cut for {band} must be a number or an iterable of (min, max)"
+                f"Cut for {quantity} must be a number or an iterable of (min, max)"
             )
             # if single number is provided, save that as the maximum
             if isinstance(cut, Number):
-                self.cuts[band] = (-np.inf, cut)
+                self.cuts[quantity] = (-np.inf, cut)
             # else, if it's an iterable...
             elif hasattr(cut, "__iter__"):
                 # if the iterable is a string or dict, raise error
@@ -55,10 +55,10 @@ class BandCut(Degrader):
                 # check that the cuts are (min, max)
                 if cut[0] > cut[1]:
                     raise ValueError(
-                        f"The max for {band} must be greater than the min."
+                        f"The max for {quantity} must be greater than the min."
                     )
                 # if all of these checks passed, save the cuts
-                self.cuts[band] = (cut[0], cut[1])
+                self.cuts[quantity] = (cut[0], cut[1])
             # if the cut isn't a number or iterable, it's the wrong type
             else:
                 raise TypeError(bad_cut_msg)
@@ -77,7 +77,7 @@ class BandCut(Degrader):
 
         return data.query(query)
 
-    def __repr__(self):
+    def __repr__(self):  # pragma: no cover
         printMsg = "Degrader that applies the following cuts to a pandas DataFrame:\n"
         printMsg += "{column: (min, max), ...}\n"
         printMsg += self.cuts.__str__()

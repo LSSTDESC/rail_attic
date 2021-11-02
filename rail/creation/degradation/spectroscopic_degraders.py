@@ -68,10 +68,12 @@ class LineConfusion(Degrader):
 
         # convert to an array for easy manipulation
         values, columns = data.values.copy(), data.columns.copy()
+
         # get the minimum redshift
         # if wrong_wavelen < true_wavelen, this is minimum the redshift for
         # which the confused redshift is still positive
         zmin = self.wrong_wavelen / self.true_wavelen - 1
+
         # select the random fraction of galaxies whose lines are confused
         rng = np.random.default_rng(seed)
         idx = rng.choice(
@@ -79,10 +81,12 @@ class LineConfusion(Degrader):
             size=int(self.frac_wrong * values.shape[0]),
             replace=False,
         )
+
         # transform these redshifts
         values[idx, 0] = (
             1 + values[idx, 0]
         ) * self.true_wavelen / self.wrong_wavelen - 1
+
         # return results in a data frame
         return pd.DataFrame(values, columns=columns)
 
@@ -126,7 +130,9 @@ class InvRedshiftIncompleteness(Degrader):
 
         # calculate survival probability for each galaxy
         survival_prob = np.clip(self.pivot_redshift / data["redshift"], 0, 1)
+
         # probabalistically drop galaxies from the data set
         rng = np.random.default_rng(seed)
-        idx = np.where(rng.random(size=data.shape[0]) <= survival_prob)
-        return data.iloc[idx]
+        mask = rng.random(size=data.shape[0]) <= survival_prob
+
+        return data[mask]
