@@ -1,5 +1,5 @@
 from numbers import Number
-from typing import Iterable, List, Tuple
+from typing import Iterable, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -12,9 +12,14 @@ class LSSTErrorModel(Degrader):
 
     Implements the error model from the LSST Overview Paper:
     https://arxiv.org/abs/0805.2366
+    Note however that this paper gives the high SNR approximation.
+    By default, this model uses the more accurate version of the error model
+    where Eq. 5 = (N/S)^2, in flux, and the error is Gaussian in flux space.
+    There is a flag allowing you to use the high SNR approximation instead.
+    See the __init__ docstring.
 
-    Instantiated as a class object, then used as a callable.
-    Takes a pandas DataFrame as input.
+    Create an instance by calling the class, then use the instance as a
+    callable on pandas DataFrames.
 
     Example usage:
     errModel = LSSTErrorModel()
@@ -38,6 +43,7 @@ class LSSTErrorModel(Degrader):
         msky: dict = None,
         theta: dict = None,
         km: dict = None,
+        highSNR: bool = None,
     ):
         """Error model from the LSST Overview Paper:
         https://arxiv.org/abs/0805.2366
@@ -45,16 +51,19 @@ class LSSTErrorModel(Degrader):
         All parameters are optional. To see the default settings, do
         `LSSTErrorModel().default_settings()`
 
+        By default, this model uses the more accurate version of the error
+        model. See the explanations in the class docstring and the description
+        for highSNR below.
+
         Note that the dictionary bandNames sets the bands for which this model
         calculates photometric errors. The dictionary keys are the band names
         that the error model uses internally to search for parameters, and the
         corresponding dictionary values are the band names as they appear in
-        your data set. By default, the LSST bands are named "lsst_u", "lsst_g",
-        "lsst_r", "lsst_i", "lsst_z", and "lsst_y". You can use the bandNames
-        dictionary to alias them differently.
+        your data set. By default, the LSST bands are named "u", "g", "r", "i",
+        "z", and "y". You can use the bandNames dictionary to alias them differently.
 
-        For example, if in your DataFrame, the bands are named u, g, r, i ,z, y,
-        you can set bandNames = {"lsst_u": "u", "lsst_g": "g", ...},
+        For example, if in your DataFrame, the bands are named lsst_u, lsst_g, etc.
+        you can set bandNames = {"u": "lsst_u", "g": "lsst_g", ...},
         and the error model will work automatically.
 
         You can also add other bands to bandNames. For example, if you want to
@@ -104,7 +113,8 @@ class LSSTErrorModel(Degrader):
             this is only meant to account for small, slightly extended sources.
             For typical LSST galaxies, this may be of order ~0.3.
         sigmaSys : float, optional
-            The irreducible error of the system. Set's the minimum photometric error.
+            The irreducible error of the system in AB magnitudes.
+            Set's the minimum photometric error.
         magLim : float, optional
             The dimmest magnitude allowed. All dimmer magnitudes are set to ndFlag.
         ndFlag : float, optional
@@ -123,6 +133,12 @@ class LSSTErrorModel(Degrader):
             Median zenith seeing FWHM (in arcseconds) for each band
         km : dict, optional
             Atmospheric extinction in each band
+        highSNR : bool, default=False
+            Sets whether you use the high SNR approximation given in the LSST
+            Overview Paper. If False, then Eq. 5 from the LSST Error Model is
+            used to calculate (N/S)^2 in flux, and errors are Gaussian in flux
+            space. If True, then Eq. 5 is used to calculate the squared error
+            in magnitude space, and errors are Gaussian in magnitude space.
         """
 
         # update the settings
@@ -166,6 +182,8 @@ class LSSTErrorModel(Degrader):
             for key1 in ["Cm", "msky", "theta", "km"]:
                 for key2 in m5:
                     self.settings[key1].pop(key2, None)
+        if highSNR is not None:
+            self.settings["highSNR"] = highSNR
 
         # validate the settings
         self._validate_settings()
@@ -190,30 +208,30 @@ class LSSTErrorModel(Degrader):
         """
         return {
             "bandNames": {  # provided so you can alias the names of the bands
-                "lsst_u": "lsst_u",
-                "lsst_g": "lsst_g",
-                "lsst_r": "lsst_r",
-                "lsst_i": "lsst_i",
-                "lsst_z": "lsst_z",
-                "lsst_y": "lsst_y",
+                "u": "u",
+                "g": "g",
+                "r": "r",
+                "i": "i",
+                "z": "z",
+                "y": "y",
             },
             "tvis": 30.0,  # exposure time for a single visit in seconds, p12
             "nYrObs": 10.0,  # number of years of observations
             "nVisYr": {  # mean number of visits per year in each filter (T1)
-                "lsst_u": 5.6,
-                "lsst_g": 8.0,
-                "lsst_r": 18.4,
-                "lsst_i": 18.4,
-                "lsst_z": 16.0,
-                "lsst_y": 16.0,
+                "u": 5.6,
+                "g": 8.0,
+                "r": 18.4,
+                "i": 18.4,
+                "z": 16.0,
+                "y": 16.0,
             },
             "gamma": {  # band dependent parameter (T2)
-                "lsst_u": 0.038,
-                "lsst_g": 0.039,
-                "lsst_r": 0.039,
-                "lsst_i": 0.039,
-                "lsst_z": 0.039,
-                "lsst_y": 0.039,
+                "u": 0.038,
+                "g": 0.039,
+                "r": 0.039,
+                "i": 0.039,
+                "z": 0.039,
+                "y": 0.039,
             },
             "airmass": 1.2,  # fiducial airmass (T2)
             "extendedSource": 0.0,  # constant added to m5 for extended sources
@@ -222,43 +240,48 @@ class LSSTErrorModel(Degrader):
             "ndFlag": np.nan,  # flag for non-detections (all mags > magLim)
             "m5": {},  # explicit list of m5 limiting magnitudes
             "Cm": {  # band dependent parameter (T2)
-                "lsst_u": 23.09,
-                "lsst_g": 24.42,
-                "lsst_r": 24.44,
-                "lsst_i": 24.32,
-                "lsst_z": 24.16,
-                "lsst_y": 23.73,
+                "u": 23.09,
+                "g": 24.42,
+                "r": 24.44,
+                "i": 24.32,
+                "z": 24.16,
+                "y": 23.73,
             },
             "msky": {  # median zenith sky brightness at Cerro Pachon (T2)
-                "lsst_u": 22.99,
-                "lsst_g": 22.26,
-                "lsst_r": 21.20,
-                "lsst_i": 20.48,
-                "lsst_z": 19.60,
-                "lsst_y": 18.61,
+                "u": 22.99,
+                "g": 22.26,
+                "r": 21.20,
+                "i": 20.48,
+                "z": 19.60,
+                "y": 18.61,
             },
             "theta": {  # median zenith seeing FWHM, arcseconds (T2)
-                "lsst_u": 0.81,
-                "lsst_g": 0.77,
-                "lsst_r": 0.73,
-                "lsst_i": 0.71,
-                "lsst_z": 0.69,
-                "lsst_y": 0.68,
+                "u": 0.81,
+                "g": 0.77,
+                "r": 0.73,
+                "i": 0.71,
+                "z": 0.69,
+                "y": 0.68,
             },
             "km": {  # atmospheric extinction (T2)
-                "lsst_u": 0.491,
-                "lsst_g": 0.213,
-                "lsst_r": 0.126,
-                "lsst_i": 0.096,
-                "lsst_z": 0.069,
-                "lsst_y": 0.170,
+                "u": 0.491,
+                "g": 0.213,
+                "r": 0.126,
+                "i": 0.096,
+                "z": 0.069,
+                "y": 0.170,
             },
+            "highSNR": False,
         }
 
     def _validate_settings(self):
         """
         Validate all the settings.
         """
+
+        # check that highSNR is boolean
+        if not isinstance(self.settings["highSNR"], bool):
+            raise TypeError("highSNR must be boolean.")
 
         # check all the numbers
         for key in [
@@ -297,6 +320,15 @@ class LSSTErrorModel(Degrader):
                 "of the bands as used internally by the error model, and the "
                 "values are the names of the bands as present in your data set."
             )
+
+        # remove unnecessary keys from all setting dictionaries
+        for key, val in self.settings.items():
+            if isinstance(val, dict):
+                self.settings[key] = {
+                    band: val[band]
+                    for band in self.settings["bandNames"]
+                    if band in val
+                }
 
         # check all the other dictionaries
         for key in ["nVisYr", "gamma", "Cm", "msky", "theta", "km"]:
@@ -373,7 +405,9 @@ class LSSTErrorModel(Degrader):
 
         return m5
 
-    def _getBandsAndNames(self, columns: Iterable[str]) -> Tuple[List[str], List[str]]:
+    def _get_bands_and_names(
+        self, columns: Iterable[str]
+    ) -> Tuple[List[str], List[str]]:
         """
         Get the bands and bandNames that are present in the given data columns.
         """
@@ -396,9 +430,8 @@ class LSSTErrorModel(Degrader):
 
         return bands, bandNames
 
-    def _getMagError(self, mags: np.ndarray, bands: list) -> np.ndarray:
-        """
-        Calculate the magnitude errors using Eqs 4 and 5 from
+    def _get_NSR(self, mags: np.ndarray, bands: list) -> np.ndarray:
+        """Calculate the noise-to-signal ratio using Eqs 4 and 5 from
         https://arxiv.org/abs/0805.2366
         """
 
@@ -410,20 +443,70 @@ class LSSTErrorModel(Degrader):
         # calculate x as defined in the paper
         x = 10 ** (0.4 * np.subtract(mags, m5))
 
-        # calculate the squared random error for a single visit
+        # calculate the squared NSR for a single visit
         # Eq. 5 in https://arxiv.org/abs/0805.2366
-        sigmaRandSqSingleExp = (0.04 - gamma) * x + gamma * x ** 2
+        nsrRandSqSingleExp = (0.04 - gamma) * x + gamma * x ** 2
 
-        # calculate the random error for the stacked image
+        # calculate the random NSR for the stacked image
         nVisYr = np.array([self.settings["nVisYr"][band] for band in bands])
         nStackedObs = nVisYr * self.settings["nYrObs"]
-        sigmaRand = np.sqrt(sigmaRandSqSingleExp / nStackedObs)
+        nsrRand = np.sqrt(nsrRandSqSingleExp / nStackedObs)
 
-        # calculate total photometric errors
-        # Eq. 4 in https://arxiv.org/abs/0805.2366
-        sigma = np.sqrt(self.settings["sigmaSys"] ** 2 + sigmaRand ** 2)
+        # get the irreducible system NSR
+        if self.settings["highSNR"]:
+            nsrSys = self.settings["sigmaSys"]
+        else:
+            nsrSys = 10 ** (self.settings["sigmaSys"] / 2.5) - 1
 
-        return sigma
+        # calculate the total NSR
+        nsr = np.sqrt(nsrRand ** 2 + nsrSys ** 2)
+
+        return nsr
+
+    def _get_obs_and_errs(
+        self,
+        mags: np.ndarray,
+        bands: list,
+        seed: Optional[int],
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """Return observed magnitudes and magnitude errors."""
+
+        rng = np.random.default_rng(seed)
+
+        # get the NSR for all the galaxies
+        nsr = self._get_NSR(mags, bands)
+
+        if self.settings["highSNR"]:
+            # in the high SNR approximation, mag err ~ nsr, and we can
+            # model errors as Gaussian in magnitude space
+
+            # calculate observed magnitudes
+            obsMags = rng.normal(loc=mags, scale=nsr)
+
+            # decorrelate the magnitude errors from the true magnitudes
+            obsMagErrs = self._get_NSR(obsMags, bands)
+
+        else:
+            # in the more accurate error model, we acknowledge err != nsr,
+            # and we model errors as Gaussian in flux space
+
+            # calculate observed magnitudes
+            fluxes = 10 ** (mags / -2.5)
+            obsFluxes = fluxes * (1 + rng.normal(scale=nsr))
+            obsFluxes = np.clip(obsFluxes, 0, None)
+            with np.errstate(divide="ignore"):
+                obsMags = -2.5 * np.log10(obsFluxes)
+
+            # decorrelate the magnitude errors from the true magnitudes
+            obsMagNSR = self._get_NSR(obsMags, bands)
+            obsMagErrs = 2.5 * np.log10(1 + obsMagNSR)
+
+        # flag magnitudes beyond magLim as non-detections
+        idx = np.where(obsMags > self.settings["magLim"])
+        obsMags[idx] = self.settings["ndFlag"]
+        obsMagErrs[idx] = self.settings["ndFlag"]
+
+        return obsMags, obsMagErrs
 
     def __call__(self, data: pd.DataFrame, seed: int = None) -> pd.DataFrame:
         """
@@ -431,34 +514,13 @@ class LSSTErrorModel(Degrader):
         """
 
         # get the bands and bandNames present in the data
-        bands, bandNames = self._getBandsAndNames(data.columns)
+        bands, bandNames = self._get_bands_and_names(data.columns)
 
         # get numpy array of magnitudes
         mags = data[bandNames].to_numpy()
 
-        # calculate the magnitude error
-        magErrs = self._getMagError(mags, bands)
-
-        # convert mags to fluxes
-        fluxes = 10 ** (mags / -2.5)
-        fluxErrs = np.log(10) / 2.5 * fluxes * magErrs
-
-        # add Gaussian flux error
-        rng = np.random.default_rng(seed)
-        obsFluxes = rng.normal(loc=fluxes, scale=fluxErrs)
-
-        # only fluxes above minFlux will have observed magnitudes recorded
-        # everything else is marked as a non-detection
-        minFlux = 10 ** (self.settings["magLim"] / -2.5)
-        idx = np.where(obsFluxes > minFlux)
-
-        # convert fluxes back to magnitudes
-        obsMags = np.full(obsFluxes.shape, self.settings["ndFlag"], dtype=float)
-        obsMags[idx] = -2.5 * np.log10(obsFluxes[idx])
-
-        # decorrelate the magnitude error
-        obsMagErrs = np.full(obsMags.shape, self.settings["ndFlag"], dtype=float)
-        obsMagErrs[idx] = self._getMagError(obsMags, bands)[idx]
+        # get observed magnitudes and magnitude errors
+        obsMags, obsMagErrs = self._get_obs_and_errs(mags, bands, seed)
 
         # save the observations in a DataFrame
         obsData = data.copy()
@@ -486,9 +548,13 @@ class LSSTErrorModel(Degrader):
 
         # list all bands
         printMsg += f"Model for bands: "
-        for band in settings["bandNames"].values():
-            printMsg += band + ", "
-        printMsg = printMsg[:-2] + "\n\n"
+        printMsg += ", ".join(settings["bandNames"].values()) + "\n"
+
+        # print whether using the high SNR approximation
+        if self.settings["highSNR"]:
+            printMsg += "Using the high SNR approximation\n\n"
+        else:
+            printMsg += "\n"
 
         # exposure time
         printMsg += f"Exposure time = {settings['tvis']} s\n"
@@ -496,12 +562,15 @@ class LSSTErrorModel(Degrader):
         printMsg += f"Number of years of observations = {settings['nYrObs']}\n"
         # mean visits per year
         printMsg += "Mean visits per year per band:\n   "
-        for i in [
-            f"{bandName}: {settings['nVisYr'][band]}, "
-            for band, bandName in settings["bandNames"].items()
-        ]:
-            printMsg += i
-        printMsg = printMsg[:-2] + "\n"
+        printMsg += (
+            ", ".join(
+                [
+                    f"{bandName}: {settings['nVisYr'][band]}"
+                    for band, bandName in settings["bandNames"].items()
+                ]
+            )
+            + "\n"
+        )
         # airmass
         printMsg += f"Airmass = {settings['airmass']}\n"
         # irreducible error
@@ -514,68 +583,89 @@ class LSSTErrorModel(Degrader):
         printMsg += f"set to {settings['ndFlag']}\n"
         # gamma
         printMsg += "gamma for each band:\n   "
-        for i in [
-            f"{bandName}: {settings['gamma'][band]}, "
-            for band, bandName in settings["bandNames"].items()
-        ]:
-            printMsg += i
-        printMsg = printMsg[:-2] + "\n\n"
+        printMsg += (
+            ", ".join(
+                [
+                    f"{bandName}: {settings['gamma'][band]}"
+                    for band, bandName in settings["bandNames"].items()
+                ]
+            )
+            + "\n\n"
+        )
 
         # explicit m5
         if len(settings["m5"]) > 0:
             printMsg += (
                 "The following 5-sigma limiting mags were explicitly passed:\n   "
             )
-            for i in [
-                f"{bandName}: {settings['m5'][band]}, "
-                for band, bandName in settings["bandNames"].items()
-                if band in settings["m5"]
-            ]:
-                printMsg += i
-            printMsg = printMsg[:-2] + "\n\n"
+            printMsg += (
+                ", ".join(
+                    [
+                        f"{bandName}: {settings['m5'][band]}"
+                        for band, bandName in settings["bandNames"].items()
+                        if band in settings["m5"]
+                    ]
+                )
+                + "\n\n"
+            )
 
         m5 = self._calculate_m5()
         if len(m5) > 0:
             # Calculated m5
             printMsg += "The following 5-sigma limiting mags are calculated using "
             printMsg += "the parameters that follow them:\n   "
-            for i in [
-                f"{settings['bandNames'][band]}: {val:.2f}, "
-                for band, val in m5.items()
-            ]:
-                printMsg += i
-            printMsg = printMsg[:-2] + "\n"
+            printMsg += (
+                ", ".join(
+                    [
+                        f"{settings['bandNames'][band]}: {val:.2f}"
+                        for band, val in m5.items()
+                    ]
+                )
+                + "\n"
+            )
             # Cm
             printMsg += "Cm for each band:\n   "
-            for i in [
-                f"{settings['bandNames'][band]}: {val}, "
-                for band, val in settings["Cm"].items()
-            ]:
-                printMsg += i
-            printMsg = printMsg[:-2] + "\n"
+            printMsg += (
+                ", ".join(
+                    [
+                        f"{settings['bandNames'][band]}: {val}"
+                        for band, val in settings["Cm"].items()
+                    ]
+                )
+                + "\n"
+            )
             # msky
             printMsg += "Median zenith sky brightness in each band:\n   "
-            for i in [
-                f"{settings['bandNames'][band]}: {val}, "
-                for band, val in settings["msky"].items()
-            ]:
-                printMsg += i
-            printMsg = printMsg[:-2] + "\n"
+            printMsg += (
+                ", ".join(
+                    [
+                        f"{settings['bandNames'][band]}: {val}"
+                        for band, val in settings["msky"].items()
+                    ]
+                )
+                + "\n"
+            )
             # theta
             printMsg += "Median zenith seeing FWHM (in arcseconds) for each band:\n   "
-            for i in [
-                f"{settings['bandNames'][band]}: {val}, "
-                for band, val in settings["theta"].items()
-            ]:
-                printMsg += i
-            printMsg = printMsg[:-2] + "\n"
+            printMsg += (
+                ", ".join(
+                    [
+                        f"{settings['bandNames'][band]}: {val}"
+                        for band, val in settings["theta"].items()
+                    ]
+                )
+                + "\n"
+            )
             # km
             printMsg += "Extinction coefficient for each band:\n   "
-            for i in [
-                f"{settings['bandNames'][band]}: {val}, "
-                for band, val in settings["km"].items()
-            ]:
-                printMsg += i
-            printMsg = printMsg[:-2] + "\n"
+            printMsg += (
+                ", ".join(
+                    [
+                        f"{settings['bandNames'][band]}: {val}"
+                        for band, val in settings["km"].items()
+                    ]
+                )
+                + "\n"
+            )
 
         return printMsg
