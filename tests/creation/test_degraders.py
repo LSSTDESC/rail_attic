@@ -114,6 +114,7 @@ def test_QuantityCut_returns_correct_shape(data):
         ({"sigmaSys": False}, TypeError),
         ({"magLim": False}, TypeError),
         ({"ndFlag": False}, TypeError),
+        ({"highSNRapprox": 0}, TypeError),
         ({"tvis": -1}, ValueError),
         ({"nYrObs": -1}, ValueError),
         ({"airmass": -1}, ValueError),
@@ -132,16 +133,16 @@ def test_QuantityCut_returns_correct_shape(data):
         ({"msky": {}}, ValueError),
         ({"theta": {}}, ValueError),
         ({"km": {}}, ValueError),
-        ({"nVisYr": {f"lsst_{b}": False for b in "ugrizy"}}, TypeError),
-        ({"gamma": {f"lsst_{b}": False for b in "ugrizy"}}, TypeError),
-        ({"Cm": {f"lsst_{b}": False for b in "ugrizy"}}, TypeError),
-        ({"msky": {f"lsst_{b}": False for b in "ugrizy"}}, TypeError),
-        ({"theta": {f"lsst_{b}": False for b in "ugrizy"}}, TypeError),
-        ({"km": {f"lsst_{b}": False for b in "ugrizy"}}, TypeError),
-        ({"nVisYr": {f"lsst_{b}": -1 for b in "ugrizy"}}, ValueError),
-        ({"gamma": {f"lsst_{b}": -1 for b in "ugrizy"}}, ValueError),
-        ({"theta": {f"lsst_{b}": -1 for b in "ugrizy"}}, ValueError),
-        ({"km": {f"lsst_{b}": -1 for b in "ugrizy"}}, ValueError),
+        ({"nVisYr": {f"{b}": False for b in "ugrizy"}}, TypeError),
+        ({"gamma": {f"{b}": False for b in "ugrizy"}}, TypeError),
+        ({"Cm": {f"{b}": False for b in "ugrizy"}}, TypeError),
+        ({"msky": {f"{b}": False for b in "ugrizy"}}, TypeError),
+        ({"theta": {f"{b}": False for b in "ugrizy"}}, TypeError),
+        ({"km": {f"{b}": False for b in "ugrizy"}}, TypeError),
+        ({"nVisYr": {f"{b}": -1 for b in "ugrizy"}}, ValueError),
+        ({"gamma": {f"{b}": -1 for b in "ugrizy"}}, ValueError),
+        ({"theta": {f"{b}": -1 for b in "ugrizy"}}, ValueError),
+        ({"km": {f"{b}": -1 for b in "ugrizy"}}, ValueError),
     ],
 )
 def test_LSSTErrorModel_bad_params(settings, error):
@@ -150,29 +151,29 @@ def test_LSSTErrorModel_bad_params(settings, error):
         LSSTErrorModel(**settings)
 
 
-@pytest.mark.parametrize("m5", [{}, {"lsst_u": 23}])
-def test_LSSTErrorModel_returns_correct_shape(m5, data):
+@pytest.mark.parametrize("m5,highSNRapprox", [({}, False), ({"u": 23}, True)])
+def test_LSSTErrorModel_returns_correct_shape(m5, highSNRapprox, data):
     """Test that the LSSTErrorModel returns the correct shape"""
 
-    bandNames = {f"lsst_{b}": b for b in "ugrizy"}
-    degrader = LSSTErrorModel(bandNames=bandNames, m5=m5)
+    degrader = LSSTErrorModel(m5=m5, highSNRapprox=highSNRapprox)
 
     degraded_data = degrader(data)
 
     assert degraded_data.shape == (data.shape[0], 2 * data.shape[1] - 1)
 
 
-@pytest.mark.parametrize("m5", [{}, {"lsst_u": 23}])
-def test_LSSTErrorModel_magLim(m5, data):
+@pytest.mark.parametrize("m5,highSNRapprox", [({}, False), ({"u": 23}, True)])
+def test_LSSTErrorModel_magLim(m5, highSNRapprox, data):
     """Test that no mags are above magLim"""
 
-    bandNames = {f"lsst_{b}": b for b in "ugrizy"}
     magLim = 27
     ndFlag = np.nan
-    degrader = LSSTErrorModel(bandNames=bandNames, magLim=magLim, ndFlag=ndFlag, m5=m5)
+    degrader = LSSTErrorModel(
+        magLim=magLim, ndFlag=ndFlag, m5=m5, highSNRapprox=highSNRapprox
+    )
 
     degraded_data = degrader(data)
-    degraded_mags = degraded_data[bandNames.values()].to_numpy()
+    degraded_mags = degraded_data.iloc[:, 1:].to_numpy()
 
     assert degraded_mags[~np.isnan(degraded_mags)].max() < magLim
 
@@ -182,7 +183,8 @@ def test_LSSTErrorModel_magLim(m5, data):
     [
         LineConfusion(100, 200, 0.01),
         InvRedshiftIncompleteness(1),
-        LSSTErrorModel(bandNames={f"lsst_{b}": b for b in "ugrizy"}),
+        LSSTErrorModel(),
+        LSSTErrorModel(highSNRapprox=True),
     ],
 )
 def test_random_seed(degrader, data):
