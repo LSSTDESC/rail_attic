@@ -17,7 +17,7 @@ z_column: redshift
 #info for LSST Error Model, needed for the creator for both test and train data
 LSSTErrorModel_params:
   ndFlag: 99.0
-  highSNR: True
+  highSNR: False
   bandNames:
     u: mag_u_lsst
     g: mag_g_lsst
@@ -31,7 +31,6 @@ LSSTErrorModel_params:
   msky: {'u': 22.99, 'g': 22.26, 'r': 21.20, 'i': 20.48, 'z': 19.60, 'y': 18.61}
   theta: {'u': 0.081, 'g': 0.77, 'r': 0.73, 'i': 0.71, 'z': 0.69, 'y': 0.68}
   km: {'u': 0.491, 'g': 0.213, 'r': 0.126, 'i': 0.096, 'z': 0.069, 'y': 0.170}
-
 #information on degraders to apply
 use_degraders: True
 degrader_seed: 0
@@ -50,7 +49,6 @@ rename_cols:
   mag_i_lsst_err: mag_err_i_lsst
   mag_z_lsst_err: mag_err_z_lsst
   mag_y_lsst_err: mag_err_y_lsst
-  
 # set to save true PDFs, to file `ensemble_file`
 save_ensemble: False
 ensemble_file: goldenspike_true_posteriors_qp.pq
