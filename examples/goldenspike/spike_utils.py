@@ -1,8 +1,8 @@
 import numpy as np
-from rail.creation.degradation.lsst_error_model import LSSTErrorModel
 import pandas as pd
 from pzflow import Flow
 from pzflow.bijectors import Chain, ColorTransform, InvSoftplus, StandardScaler, RollingSplineCoupling
+
 
 def transformdata(df):
     tmpdict = {}
