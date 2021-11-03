@@ -185,6 +185,15 @@ class LSSTErrorModel(Degrader):
         if highSNR is not None:
             self.settings["highSNR"] = highSNR
 
+        # remove unnecessary keys from all setting dictionaries
+        for key, val in self.settings.items():
+            if isinstance(val, dict):
+                self.settings[key] = {
+                    band: val[band]
+                    for band in self.settings["bandNames"]
+                    if band in val
+                }
+
         # validate the settings
         self._validate_settings()
 
