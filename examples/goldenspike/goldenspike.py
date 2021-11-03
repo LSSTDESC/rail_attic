@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from pzflow import Flow
 from rail.creation import Creator
 import rail.creation.degradation
+from rail.creation.degradation.lsst_error_model import LSSTErrorModel
 from rail.estimation.estimator import Estimator
 from rail.evaluation.metrics.pit import *
 import rail.evaluation.metrics.pointestimates as pe
@@ -39,25 +40,38 @@ def main():
         if c_par['save_flow']:
             flow.save(c_par['saved_flow_file'])
 
+    # we need magnitude errors for both the test and train data, so we will
+    # make an LSSTErrorModel degrader to apply in our truth Creator:
+    err_params = c_par['LSSTErrorModel_params']
+    err_degrader = LSSTErrorModel(**err_params)
+    
     # creator for Test data
-    creator = Creator(flow)
-
-    if c_par['use_degrader']:
-        try:
-            deg_mod = getattr(rail.creation.degradation, c_par['degrader_name'])
-            degrader = deg_mod(**c_par['degrader_args'])
-            print(f"using degrader {c_par['degrader_name']}")
-        except ModuleNotFoundError:
-            raise ModuleNotFoundError(f" module {c_par['degrader_name']} not found!")
-        degraded_creator = Creator(flow, degrader=degrader)
-    else:
-        degraded_creator = creator
+    creator = Creator(flow, degrader=err_degrader)
 
     # create samples for both test and train
     # if use_degrader is False then data is generated from the same ensemble
     test_data = creator.sample(c_par['N_test_gals'])
     z_true = test_data['redshift']
-    train_data = degraded_creator.sample(c_par['N_train_gals'])
+    train_data = creator.sample(c_par['N_train_gals'])
+    
+    if c_par['use_degraders']:
+        seed = c_par['degrader_seed']
+        degraders = c_par['degraders']
+        for degr in degraders:
+            try:
+                degrader = getattr(rail.creation.degradation, degr)
+                deg_dict = degraders[degr]
+                print(f"using degrader {degr}")
+            except ModuleNotFoundError:
+                raise ModuleNotFoundError(f" module {degr} not found!")
+            #degraded_creator = Creator(flow, degrader=degrader)
+            train_data = degrader(**deg_dict)(train_data, seed)
+
+    # KLUDGE: in estimation we've been using e.g. mag_u_lsst and mag_err_u_lsst
+    # Will rename the columns by hand to test
+    rename_dict = c_par['rename_cols']
+    train_data.rename(columns=rename_dict, inplace=True)
+    test_data.rename(columns=rename_dict, inplace=True)
 
     # create redshift posteriors for each of the sample galaxies in the test sample
     zgrid = np.linspace(c_par['zmin'], c_par['zmax'], c_par['nzbins'])
@@ -67,15 +81,6 @@ def main():
     if c_par['save_ensemble']:
         test_ens.write_to(c_par['ensemble_file'])
 
-    print("created test data and ensembles, calculating magnitude errors...")
-
-    # We need to add mag errors to our data, we can use the PhotoZDC1 package
-    bands = ['u', 'g', 'r', 'i', 'z', 'y']
-    for dset in [test_data, train_data]:
-        for band in bands:
-            tmperr = spike_utils.make_errors(dset[f'mag_{band}_lsst'],
-                                             f'lsst_{band}')
-            dset[f'mag_err_{band}_lsst'] = tmperr
 
     # SAVE DATA TO FILE:
     if not os.path.exists(c_par['saved_data_dir']):
