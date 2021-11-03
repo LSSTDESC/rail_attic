@@ -4,16 +4,6 @@ import pandas as pd
 from pzflow import Flow
 from pzflow.bijectors import Chain, ColorTransform, InvSoftplus, StandardScaler, RollingSplineCoupling
 
-
-def make_errors(mags, band):
-    errmod = LSSTErrorModel()
-    errmod.default_settings()
-    if not isinstance(band, list):
-        band = [band]
-    magerr = errmod._getMagError(mags, band)
-    return magerr
-
-
 def transformdata(df):
     tmpdict = {}
     tmpdict['redshift'] = df['redshift']
