@@ -114,7 +114,7 @@ def test_QuantityCut_returns_correct_shape(data):
         ({"sigmaSys": False}, TypeError),
         ({"magLim": False}, TypeError),
         ({"ndFlag": False}, TypeError),
-        ({"highSNRapprox": 0}, TypeError),
+        ({"highSNR": 0}, TypeError),
         ({"tvis": -1}, ValueError),
         ({"nYrObs": -1}, ValueError),
         ({"airmass": -1}, ValueError),
@@ -151,26 +151,24 @@ def test_LSSTErrorModel_bad_params(settings, error):
         LSSTErrorModel(**settings)
 
 
-@pytest.mark.parametrize("m5,highSNRapprox", [({}, False), ({"u": 23}, True)])
-def test_LSSTErrorModel_returns_correct_shape(m5, highSNRapprox, data):
+@pytest.mark.parametrize("m5,highSNR", [({}, False), ({"u": 23}, True)])
+def test_LSSTErrorModel_returns_correct_shape(m5, highSNR, data):
     """Test that the LSSTErrorModel returns the correct shape"""
 
-    degrader = LSSTErrorModel(m5=m5, highSNRapprox=highSNRapprox)
+    degrader = LSSTErrorModel(m5=m5, highSNR=highSNR)
 
     degraded_data = degrader(data)
 
     assert degraded_data.shape == (data.shape[0], 2 * data.shape[1] - 1)
 
 
-@pytest.mark.parametrize("m5,highSNRapprox", [({}, False), ({"u": 23}, True)])
-def test_LSSTErrorModel_magLim(m5, highSNRapprox, data):
+@pytest.mark.parametrize("m5,highSNR", [({}, False), ({"u": 23}, True)])
+def test_LSSTErrorModel_magLim(m5, highSNR, data):
     """Test that no mags are above magLim"""
 
     magLim = 27
     ndFlag = np.nan
-    degrader = LSSTErrorModel(
-        magLim=magLim, ndFlag=ndFlag, m5=m5, highSNRapprox=highSNRapprox
-    )
+    degrader = LSSTErrorModel(magLim=magLim, ndFlag=ndFlag, m5=m5, highSNR=highSNR)
 
     degraded_data = degrader(data)
     degraded_mags = degraded_data.iloc[:, 1:].to_numpy()
@@ -184,7 +182,7 @@ def test_LSSTErrorModel_magLim(m5, highSNRapprox, data):
         LineConfusion(100, 200, 0.01),
         InvRedshiftIncompleteness(1),
         LSSTErrorModel(),
-        LSSTErrorModel(highSNRapprox=True),
+        LSSTErrorModel(highSNR=True),
     ],
 )
 def test_random_seed(degrader, data):

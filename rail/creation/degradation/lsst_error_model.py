@@ -43,7 +43,7 @@ class LSSTErrorModel(Degrader):
         msky: dict = None,
         theta: dict = None,
         km: dict = None,
-        highSNRapprox: bool = None,
+        highSNR: bool = None,
     ):
         """Error model from the LSST Overview Paper:
         https://arxiv.org/abs/0805.2366
@@ -53,7 +53,7 @@ class LSSTErrorModel(Degrader):
 
         By default, this model uses the more accurate version of the error
         model. See the explanations in the class docstring and the description
-        for highSNRapprox below.
+        for highSNR below.
 
         Note that the dictionary bandNames sets the bands for which this model
         calculates photometric errors. The dictionary keys are the band names
@@ -133,7 +133,7 @@ class LSSTErrorModel(Degrader):
             Median zenith seeing FWHM (in arcseconds) for each band
         km : dict, optional
             Atmospheric extinction in each band
-        highSNRapprox : bool, default=False
+        highSNR : bool, default=False
             Sets whether you use the high SNR approximation given in the LSST
             Overview Paper. If False, then Eq. 5 from the LSST Error Model is
             used to calculate (N/S)^2 in flux, and errors are Gaussian in flux
@@ -182,8 +182,8 @@ class LSSTErrorModel(Degrader):
             for key1 in ["Cm", "msky", "theta", "km"]:
                 for key2 in m5:
                     self.settings[key1].pop(key2, None)
-        if highSNRapprox is not None:
-            self.settings["highSNRapprox"] = highSNRapprox
+        if highSNR is not None:
+            self.settings["highSNR"] = highSNR
 
         # validate the settings
         self._validate_settings()
@@ -271,7 +271,7 @@ class LSSTErrorModel(Degrader):
                 "z": 0.069,
                 "y": 0.170,
             },
-            "highSNRapprox": False,
+            "highSNR": False,
         }
 
     def _validate_settings(self):
@@ -279,9 +279,9 @@ class LSSTErrorModel(Degrader):
         Validate all the settings.
         """
 
-        # check that highSNRapprox is boolean
-        if not isinstance(self.settings["highSNRapprox"], bool):
-            raise TypeError("highSNRapprox must be boolean.")
+        # check that highSNR is boolean
+        if not isinstance(self.settings["highSNR"], bool):
+            raise TypeError("highSNR must be boolean.")
 
         # check all the numbers
         for key in [
@@ -444,7 +444,7 @@ class LSSTErrorModel(Degrader):
         nsrRand = np.sqrt(nsrRandSqSingleExp / nStackedObs)
 
         # get the irreducible system NSR
-        if self.settings["highSNRapprox"]:
+        if self.settings["highSNR"]:
             nsrSys = self.settings["sigmaSys"]
         else:
             nsrSys = 10 ** (self.settings["sigmaSys"] / 2.5) - 1
@@ -454,7 +454,7 @@ class LSSTErrorModel(Degrader):
 
         return nsr
 
-    def _get_obsMags_and_obsMagErrs(
+    def _get_obs_and_errs(
         self,
         mags: np.ndarray,
         bands: list,
@@ -467,8 +467,8 @@ class LSSTErrorModel(Degrader):
         # get the NSR for all the galaxies
         nsr = self._get_NSR(mags, bands)
 
-        if self.settings["highSNRapprox"]:
-            # in the high SNR approximation, err ~ nsr, and we can
+        if self.settings["highSNR"]:
+            # in the high SNR approximation, mag err ~ nsr, and we can
             # model errors as Gaussian in magnitude space
 
             # calculate observed magnitudes
@@ -484,6 +484,7 @@ class LSSTErrorModel(Degrader):
             # calculate observed magnitudes
             fluxes = 10 ** (mags / -2.5)
             obsFluxes = fluxes * (1 + rng.normal(scale=nsr))
+            obsFluxes = np.clip(obsFluxes, 0, None)
             with np.errstate(divide="ignore"):
                 obsMags = -2.5 * np.log10(obsFluxes)
 
@@ -510,7 +511,7 @@ class LSSTErrorModel(Degrader):
         mags = data[bandNames].to_numpy()
 
         # get observed magnitudes and magnitude errors
-        obsMags, obsMagErrs = self._get_obsMags_and_obsMagErrs(mags, bands, seed)
+        obsMags, obsMagErrs = self._get_obs_and_errs(mags, bands, seed)
 
         # save the observations in a DataFrame
         obsData = data.copy()
@@ -538,12 +539,10 @@ class LSSTErrorModel(Degrader):
 
         # list all bands
         printMsg += f"Model for bands: "
-        for band in settings["bandNames"].values():
-            printMsg += band + ", "
-        printMsg = printMsg[:-2] + "\n"
+        printMsg += ", ".join(settings["bandNames"].values()) + "\n"
 
         # print whether using the high SNR approximation
-        if self.settings["highSNRapprox"]:
+        if self.settings["highSNR"]:
             printMsg += "Using the high SNR approximation\n\n"
         else:
             printMsg += "\n"
@@ -554,12 +553,15 @@ class LSSTErrorModel(Degrader):
         printMsg += f"Number of years of observations = {settings['nYrObs']}\n"
         # mean visits per year
         printMsg += "Mean visits per year per band:\n   "
-        for i in [
-            f"{bandName}: {settings['nVisYr'][band]}, "
-            for band, bandName in settings["bandNames"].items()
-        ]:
-            printMsg += i
-        printMsg = printMsg[:-2] + "\n"
+        printMsg += (
+            ", ".join(
+                [
+                    f"{bandName}: {settings['nVisYr'][band]}"
+                    for band, bandName in settings["bandNames"].items()
+                ]
+            )
+            + "\n"
+        )
         # airmass
         printMsg += f"Airmass = {settings['airmass']}\n"
         # irreducible error
@@ -572,68 +574,89 @@ class LSSTErrorModel(Degrader):
         printMsg += f"set to {settings['ndFlag']}\n"
         # gamma
         printMsg += "gamma for each band:\n   "
-        for i in [
-            f"{bandName}: {settings['gamma'][band]}, "
-            for band, bandName in settings["bandNames"].items()
-        ]:
-            printMsg += i
-        printMsg = printMsg[:-2] + "\n\n"
+        printMsg += (
+            ", ".join(
+                [
+                    f"{bandName}: {settings['gamma'][band]}"
+                    for band, bandName in settings["bandNames"].items()
+                ]
+            )
+            + "\n\n"
+        )
 
         # explicit m5
         if len(settings["m5"]) > 0:
             printMsg += (
                 "The following 5-sigma limiting mags were explicitly passed:\n   "
             )
-            for i in [
-                f"{bandName}: {settings['m5'][band]}, "
-                for band, bandName in settings["bandNames"].items()
-                if band in settings["m5"]
-            ]:
-                printMsg += i
-            printMsg = printMsg[:-2] + "\n\n"
+            printMsg += (
+                ", ".join(
+                    [
+                        f"{bandName}: {settings['m5'][band]}"
+                        for band, bandName in settings["bandNames"].items()
+                        if band in settings["m5"]
+                    ]
+                )
+                + "\n\n"
+            )
 
         m5 = self._calculate_m5()
         if len(m5) > 0:
             # Calculated m5
             printMsg += "The following 5-sigma limiting mags are calculated using "
             printMsg += "the parameters that follow them:\n   "
-            for i in [
-                f"{settings['bandNames'][band]}: {val:.2f}, "
-                for band, val in m5.items()
-            ]:
-                printMsg += i
-            printMsg = printMsg[:-2] + "\n"
+            printMsg += (
+                ", ".join(
+                    [
+                        f"{settings['bandNames'][band]}: {val:.2f}"
+                        for band, val in m5.items()
+                    ]
+                )
+                + "\n"
+            )
             # Cm
             printMsg += "Cm for each band:\n   "
-            for i in [
-                f"{settings['bandNames'][band]}: {val}, "
-                for band, val in settings["Cm"].items()
-            ]:
-                printMsg += i
-            printMsg = printMsg[:-2] + "\n"
+            printMsg += (
+                ", ".join(
+                    [
+                        f"{settings['bandNames'][band]}: {val}"
+                        for band, val in settings["Cm"].items()
+                    ]
+                )
+                + "\n"
+            )
             # msky
             printMsg += "Median zenith sky brightness in each band:\n   "
-            for i in [
-                f"{settings['bandNames'][band]}: {val}, "
-                for band, val in settings["msky"].items()
-            ]:
-                printMsg += i
-            printMsg = printMsg[:-2] + "\n"
+            printMsg += (
+                ", ".join(
+                    [
+                        f"{settings['bandNames'][band]}: {val}"
+                        for band, val in settings["msky"].items()
+                    ]
+                )
+                + "\n"
+            )
             # theta
             printMsg += "Median zenith seeing FWHM (in arcseconds) for each band:\n   "
-            for i in [
-                f"{settings['bandNames'][band]}: {val}, "
-                for band, val in settings["theta"].items()
-            ]:
-                printMsg += i
-            printMsg = printMsg[:-2] + "\n"
+            printMsg += (
+                ", ".join(
+                    [
+                        f"{settings['bandNames'][band]}: {val}"
+                        for band, val in settings["theta"].items()
+                    ]
+                )
+                + "\n"
+            )
             # km
             printMsg += "Extinction coefficient for each band:\n   "
-            for i in [
-                f"{settings['bandNames'][band]}: {val}, "
-                for band, val in settings["km"].items()
-            ]:
-                printMsg += i
-            printMsg = printMsg[:-2] + "\n"
+            printMsg += (
+                ", ".join(
+                    [
+                        f"{settings['bandNames'][band]}: {val}"
+                        for band, val in settings["km"].items()
+                    ]
+                )
+                + "\n"
+            )
 
         return printMsg
