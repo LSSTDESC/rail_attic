@@ -376,7 +376,7 @@ class LSSTErrorModel(Degrader):
 
     def _calculate_m5(self) -> dict:
         """
-        Calculate the m5 limiting magnitudes,
+        Calculate the single-visit m5 limiting magnitudes,
         using Eq. 6 from https://arxiv.org/abs/0805.2366
 
         Note this is only done for the bands for which an m5 wasn't

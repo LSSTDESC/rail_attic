@@ -180,11 +180,18 @@ def test_LSSTErrorModel_magLim(m5, highSNR, data):
 def test_LSSTErrorModel_get_limiting_mags(highSNR):
 
     degrader = LSSTErrorModel(highSNR=highSNR)
+
     # make sure that the 1-sigma single-visit limiting mags match
     assert np.allclose(
         list(degrader.get_limiting_mags().values()),
         list(degrader._all_m5.values()),
         rtol=1e-4,
+    )
+
+    # make sure the coadded mags are deeper
+    assert np.all(
+        np.array(list(degrader.get_limiting_mags(coadded=True).values()))
+        > np.array(list(degrader.get_limiting_mags(coadded=False).values()))
     )
 
 
