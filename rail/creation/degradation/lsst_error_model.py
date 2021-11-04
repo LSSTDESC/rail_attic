@@ -74,7 +74,7 @@ class LSSTErrorModel(Degrader):
         IMPORTANT: For every band in bandNames, you must provide:
             - nVisYr
             - gamma
-            - the 5-sigma limiting magnitude. You can do this either by
+            - the single-visit 5-sigma limiting magnitude. You can do this either by
                 (1) explicitly providing it in the m5 dictionary, or
                 (2) by adding the corresponding parameters to Cm, msky, theta,
                 and km, in which case the limiting magnitude will be calculated
@@ -87,14 +87,12 @@ class LSSTErrorModel(Degrader):
         Parameters
         ----------
         bandNames : dict, optional
-            A dictionary of bands for which to calculate errors. The dictioary
+            A dictionary of bands for which to calculate errors. The dictionary
             keys are the band names that the Error Model uses internally to
             search for parameters, and the corresponding dictionary values
             are the names of those bands as they appear in your data set.
-
-            Can be used to
-            alias the default names of the LSST bands, or to add additional bands.
-            See notes above.
+            Can be used to alias the default names of the LSST bands, or to add
+            additional bands. See notes above.
         tvis : float, optional
             Exposure time for a single visit
         nYrObs : float, optional
@@ -121,10 +119,10 @@ class LSSTErrorModel(Degrader):
             The flag for non-detections. All magnitudes greater than magLim (and
             their corresponding errors) will be set to this value.
         m5 : dict, optional
-            A dictionary of 5-sigma limiting magnitudes. For any bands for which
-            you pass a value in m5, this will be the 5-sigma limiting magnitude
-            used, and any values for that band in Cm, msky, theta, and km will
-            be ignored.
+            A dictionary of single visit 5-sigma limiting magnitudes. For any
+            bands for which you pass a value in m5, this will be the 5-sigma
+            limiting magnitude used, and any values for that band in Cm, msky,
+            theta, and km will be ignored.
         Cm : dict, optional
             A band dependent parameter defined in the LSST Overview Paper
         msky : dict, optional
@@ -188,12 +186,12 @@ class LSSTErrorModel(Degrader):
         # validate the settings
         self._validate_settings()
 
-        # calculate the 5-sigma limiting magnitudes using the settings
-        self.m5 = self._calculate_m5()
+        # calculate the single-visit 5-sigma limiting magnitudes using the settings
+        self._all_m5 = self._calculate_m5()
 
         # update the limiting magnitudes with any m5s passed
         if m5 is not None:
-            self.m5.update(m5)
+            self._all_m5.update(m5)
 
     def default_settings(self):
         """
@@ -378,7 +376,7 @@ class LSSTErrorModel(Degrader):
 
     def _calculate_m5(self) -> dict:
         """
-        Calculate the m5 limiting magnitudes,
+        Calculate the single-visit m5 limiting magnitudes,
         using Eq. 6 from https://arxiv.org/abs/0805.2366
 
         Note this is only done for the bands for which an m5 wasn't
@@ -436,7 +434,7 @@ class LSSTErrorModel(Degrader):
         """
 
         # get the 5-sigma limiting magnitudes for these bands
-        m5 = np.array([self.m5[band] for band in bands])
+        m5 = np.array([self._all_m5[band] for band in bands])
         # and the values for gamma
         gamma = np.array([self.settings["gamma"][band] for band in bands])
 
@@ -498,8 +496,8 @@ class LSSTErrorModel(Degrader):
                 obsMags = -2.5 * np.log10(obsFluxes)
 
             # decorrelate the magnitude errors from the true magnitudes
-            obsMagNSR = self._get_NSR(obsMags, bands)
-            obsMagErrs = 2.5 * np.log10(1 + obsMagNSR)
+            obsFluxNSR = self._get_NSR(obsMags, bands)
+            obsMagErrs = 2.5 * np.log10(1 + obsFluxNSR)
 
         # flag magnitudes beyond magLim as non-detections
         idx = np.where(obsMags > self.settings["magLim"])
@@ -535,6 +533,68 @@ class LSSTErrorModel(Degrader):
         obsData = obsData[columns]
 
         return obsData
+
+    def get_limiting_mags(
+        self,
+        Nsigma: float = 5,
+        coadded: bool = False,
+    ) -> dict:
+        """Return the limiting magnitudes for all bands.
+
+        Note this method essentially reverse engineers the _get_NSR() method
+        so that we calculate what magnitude results in NSR = 1/Nsigma.
+        (NSR is noise-to-signal ratio; NSR = 1/SNR)
+
+        Parameters
+        ----------
+        Nsigma : float, default=5
+            Sets which limiting magnitude to return, e.g. Nsigma = 1 returns
+            the 1-sigma limiting magnitude. In other words, Nsigma is equal
+            to the signal-to-noise ratio (SNR) of the limiting magnitudes.
+        coadded : bool, default=False
+            Whether to return the limiting magnitudes for a single visit,
+            or for a coadded image.
+        """
+
+        # get the bands and bandNames
+        bands, bandNames = self._get_bands_and_names(
+            self.settings["bandNames"].values()
+        )
+        # get the 5-sigma limiting magnitudes for these bands
+        m5 = np.array([self._all_m5[band] for band in bands])
+
+        # and the values for gamma
+        gamma = np.array([self.settings["gamma"][band] for band in bands])
+
+        # get the number of exposures
+        if coadded:
+            nVisYr = np.array([self.settings["nVisYr"][band] for band in bands])
+            nStackedObs = nVisYr * self.settings["nYrObs"]
+        else:
+            nStackedObs = 1
+
+        # get the irreducible system error
+        if self.settings["highSNR"]:
+            nsrSys = self.settings["sigmaSys"]
+        else:
+            nsrSys = 10 ** (self.settings["sigmaSys"] / 2.5) - 1
+
+        # calculate the square of the random NSR that a single exposure must have
+        nsrRandSqSingleExp = (1 / Nsigma ** 2 - nsrSys ** 2) * nStackedObs
+
+        # calculate the value of x that corresponds to this NSR
+        # note this is just the quadratic equation,
+        # applied to NSR^2 = (0.04 - gamma) * x + gamma * x^2
+        x = (
+            (gamma - 0.04)
+            + np.sqrt((gamma - 0.04) ** 2 + 4 * gamma * nsrRandSqSingleExp)
+        ) / (2 * gamma)
+
+        # convert x to a limiting magnitude
+        limiting_mags = m5 + 2.5 * np.log10(x)
+
+        # return as a dictionary
+        return {bandName: mag for bandName, mag in zip(bandNames, limiting_mags)}
 
     def __repr__(self):  # pragma: no cover
         """
@@ -576,8 +636,9 @@ class LSSTErrorModel(Degrader):
         # irreducible error
         printMsg += f"Irreducible system error = {settings['sigmaSys']}\n"
         # extended sources
-        printMsg += f"Extended source model: add {settings['extendedSource']}"
-        printMsg += "mag to 5-sigma depth for point sources\n"
+        if settings["extendedSource"] > 0:
+            printMsg += f"Extended source model: add {settings['extendedSource']}"
+            printMsg += "mag to 5-sigma depth for point sources\n"
         # minimum magnitude
         printMsg += f"Magnitudes dimmer than {settings['magLim']} are "
         printMsg += f"set to {settings['ndFlag']}\n"
@@ -593,11 +654,24 @@ class LSSTErrorModel(Degrader):
             + "\n\n"
         )
 
+        # coadded m5's
+        printMsg += "The coadded 5-sigma limiting magnitudes are:\n"
+        printMsg += (
+            ", ".join(
+                [
+                    f"{bandName}: {limiting_mag:.2f}"
+                    for bandName, limiting_mag in self.get_limiting_mags(
+                        coadded=True
+                    ).items()
+                ]
+            )
+            + "\n\n"
+        )
+
         # explicit m5
         if len(settings["m5"]) > 0:
-            printMsg += (
-                "The following 5-sigma limiting mags were explicitly passed:\n   "
-            )
+            printMsg += "The following single-visit 5-sigma limiting magnitudes "
+            printMsg += "were explicitly passed:\n   "
             printMsg += (
                 ", ".join(
                     [
@@ -612,8 +686,8 @@ class LSSTErrorModel(Degrader):
         m5 = self._calculate_m5()
         if len(m5) > 0:
             # Calculated m5
-            printMsg += "The following 5-sigma limiting mags are calculated using "
-            printMsg += "the parameters that follow them:\n   "
+            printMsg += "The following single-visit 5-sigma limiting magnitudes are\n"
+            printMsg += "calculated using the parameters that follow them:\n   "
             printMsg += (
                 ", ".join(
                     [
