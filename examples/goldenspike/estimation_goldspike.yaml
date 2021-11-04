@@ -19,7 +19,7 @@ estimators:
       prior_band: i
       prior_file: hdfn_gen
       p_min: 0.005
-      gauss_kernel: 0.0
+      gauss_kernel: 0.06
       zp_errors: [0.03, 0.02, 0.02, 0.02, 0.02, 0.03]
       mag_err_min: 0.005
       inform_options:

@@ -43,10 +43,9 @@ def main():
     # make an LSSTErrorModel degrader to apply in our truth Creator:
     err_params = c_par['LSSTErrorModel_params']
     err_degrader = LSSTErrorModel(**err_params)
-    m5vals = err_degrader._calculate_m5()
-    nyrobs = err_degrader.settings['nYrObs']
-    nvisyr = err_degrader.settings['nVisYr']
-
+    # calculate one sigma limiting mags to use later for non-detections
+    onesig_lims = err_degrader.get_limiting_mags(Nsigma=1, coadded=True)
+    
     # creator for Test data
     creator = Creator(flow, degrader=err_degrader)
 
@@ -75,14 +74,12 @@ def main():
     train_data.rename(columns=rename_dict, inplace=True)
     test_data.rename(columns=rename_dict, inplace=True)
 
-    # ANOTHER KLUDGE: this time to put 1 sigma error in mag column
+    # ANOTHER KLUDGE: this time to put 1 sigma error in mag_err column
     # for non-detections, as expected by BPZ, FZBoost.
-    # comment out for now
-    # for data in [train_data, test_data]:
-    #     for band in ['u', 'g', 'r', 'i', 'z', 'y']:
-    #         mask = (np.isclose(data[f'mag_{band}_lsst'], 99.0))
-    #         m1coadd_val= m5vals[band] + 2.5 * np.log10(np.sqrt(nvisyr[band] * nyrobs)) + 1.7474
-    #         data[f'mag_err_{band}_lsst'][mask] = m1coadd_val
+    for data in [train_data, test_data]:
+        for band in ['u', 'g', 'r', 'i', 'z', 'y']:
+            mask = (np.isclose(data[f'mag_{band}_lsst'], 99.0))
+            data[f'mag_err_{band}_lsst'][mask] = onesig_lims[f'mag_{band}_lsst']
                                                              
     # create redshift posteriors for each of the sample galaxies in the test sample
     zgrid = np.linspace(c_par['zmin'], c_par['zmax'], c_par['nzbins'])
