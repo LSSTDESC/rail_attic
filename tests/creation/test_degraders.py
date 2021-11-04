@@ -181,7 +181,7 @@ def test_LSSTErrorModel_get_limiting_mags(highSNR):
 
     degrader = LSSTErrorModel(highSNR=highSNR)
 
-    # make sure that the 1-sigma single-visit limiting mags match
+    # make sure that the 5-sigma single-visit limiting mags match
     assert np.allclose(
         list(degrader.get_limiting_mags().values()),
         list(degrader._all_m5.values()),
@@ -193,6 +193,13 @@ def test_LSSTErrorModel_get_limiting_mags(highSNR):
         np.array(list(degrader.get_limiting_mags(coadded=True).values()))
         > np.array(list(degrader.get_limiting_mags(coadded=False).values()))
     )
+
+    # test that _get_NSR is the inverse of get_limiting_mags(coadded=True)
+    for SNR in [1, 5, 10, 100]:
+        limiting_mags = degrader.get_limiting_mags(Nsigma=SNR, coadded=True)
+        limiting_mags = np.array(list(limiting_mags.values()))
+        NSR = degrader._get_NSR(limiting_mags, degrader.settings["bandNames"].keys())
+        assert np.allclose(1 / NSR, SNR)
 
 
 @pytest.mark.parametrize(

@@ -562,8 +562,10 @@ class LSSTErrorModel(Degrader):
         )
         # get the 5-sigma limiting magnitudes for these bands
         m5 = np.array([self._all_m5[band] for band in bands])
+
         # and the values for gamma
         gamma = np.array([self.settings["gamma"][band] for band in bands])
+
         # get the number of exposures
         if coadded:
             nVisYr = np.array([self.settings["nVisYr"][band] for band in bands])
@@ -575,17 +577,20 @@ class LSSTErrorModel(Degrader):
         if self.settings["highSNR"]:
             nsrSys = self.settings["sigmaSys"]
         else:
-            nsrSys = 100 ** (self.settings["sigmaSys"] / 2.5) - 1
+            nsrSys = 10 ** (self.settings["sigmaSys"] / 2.5) - 1
 
-        # calculate the square of the NSR that a single exposure must have
-        nsr2 = (1 / Nsigma ** 2 - nsrSys ** 2) * nStackedObs
+        # calculate the square of the random NSR that a single exposure must have
+        nsrRandSqSingleExp = (1 / Nsigma ** 2 - nsrSys ** 2) * nStackedObs
 
-        # calculate x as defined in the paper
-        x = ((gamma - 0.04) + np.sqrt((gamma - 0.04) ** 2 + 4 * gamma * nsr2)) / (
-            2 * gamma
-        )
+        # calculate the value of x that corresponds to this NSR
+        # note this is just the quadratic equation,
+        # applied to NSR^2 = (0.04 - gamma) * x + gamma * x^2
+        x = (
+            (gamma - 0.04)
+            + np.sqrt((gamma - 0.04) ** 2 + 4 * gamma * nsrRandSqSingleExp)
+        ) / (2 * gamma)
 
-        # calculate the limiting magnitudes
+        # convert x to a limiting magnitude
         limiting_mags = m5 + 2.5 * np.log10(x)
 
         # return as a dictionary
