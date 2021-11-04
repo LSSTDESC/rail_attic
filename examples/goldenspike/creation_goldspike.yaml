@@ -36,11 +36,13 @@ use_degraders: True
 degrader_seed: 0
 degraders:
   InvRedshiftIncompleteness:
-      pivot_redshift: 1.0
+    pivot_redshift: 1.0
   LineConfusion:
-      true_wavelen: 5007.
-      wrong_wavelen: 3727.
-      frac_wrong: 0.05
+    true_wavelen: 5007.
+    wrong_wavelen: 3727.
+    frac_wrong: 0.05
+  QuantityCut:
+    cuts: {'mag_i_lsst': 25.3}
 #kludge rename of columns
 rename_cols:
   mag_u_lsst_err: mag_err_u_lsst
