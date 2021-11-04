@@ -176,6 +176,18 @@ def test_LSSTErrorModel_magLim(m5, highSNR, data):
     assert degraded_mags[~np.isnan(degraded_mags)].max() < magLim
 
 
+@pytest.mark.parametrize("highSNR", [False, True])
+def test_LSSTErrorModel_get_limiting_mags(highSNR):
+
+    degrader = LSSTErrorModel(highSNR=highSNR)
+    # make sure that the 1-sigma single-visit limiting mags match
+    assert np.allclose(
+        list(degrader.get_limiting_mags().values()),
+        list(degrader._all_m5.values()),
+        rtol=1e-4,
+    )
+
+
 @pytest.mark.parametrize(
     "degrader",
     [
