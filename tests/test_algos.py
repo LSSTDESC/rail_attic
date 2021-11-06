@@ -127,7 +127,7 @@ def test_pzflow():
                                                            modelfile="PZflowPDF.pkl")
                                        )
                        )
-    zb_expected = np.array([0.15, 0.14, 0.15, 0.14, 0.16, 0.12, 0.15, 0.14, 0.13, 0.12])
+    zb_expected = np.array([0.15, 0.14, 0.14, 0.14, 0.11, 0.14, 0.15, 0.14, 0.12, 0.11])
     pz_algo = pzflow.PZFlowPDF
     pz_dict, rerun_pz_dict = one_algo(pz_algo, config_dict)
     assert np.isclose(pz_dict['zmode'], zb_expected).all()
