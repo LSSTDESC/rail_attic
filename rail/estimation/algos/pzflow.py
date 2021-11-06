@@ -63,7 +63,7 @@ def_param = dict(run_params=dict(zmin=0.0,
                                  soft_sharpness=10,
                                  soft_idx_col=0,
                                  redshift_column_name='redshift',
-                                 num_training_epochs=200,
+                                 num_training_epochs=50,
                                  inform_options=dict(save_train=True,
                                                      load_model=False,
                                                      modelfile="PZflowPDF.pkl")

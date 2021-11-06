@@ -121,13 +121,13 @@ def test_pzflow():
                                        soft_sharpness=10,
                                        soft_idx_col=0,
                                        redshift_column_name='redshift',
-                                       num_training_epochs=200,
+                                       num_training_epochs=50,
                                        inform_options=dict(save_train=True,
                                                            load_model=False,
                                                            modelfile="PZflowPDF.pkl")
                                        )
                        )
-    zb_expected = np.array([0.15, 0.15, 0.14, 0.12, 0.16, 0.11, 0.15, 0.12, 0.13, 0.11])
+    zb_expected = np.array([0.15, 0.14, 0.15, 0.14, 0.16, 0.12, 0.15, 0.14, 0.13, 0.12])
     pz_algo = pzflow.PZFlowPDF
     pz_dict, rerun_pz_dict = one_algo(pz_algo, config_dict)
     assert np.isclose(pz_dict['zmode'], zb_expected).all()
