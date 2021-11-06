@@ -4,6 +4,7 @@ run_params:
   zmin: 0.0
   zmax: 3.0
   nzbins: 301
+  flow_seed: 0
   ref_column_name: mag_i_lsst
   column_names: ['mag_u_lsst', 'mag_g_lsst', 'mag_r_lsst', 'mag_i_lsst', 'mag_z_lsst', 'mag_y_lsst']
   mag_limits:

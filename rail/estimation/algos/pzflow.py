@@ -57,6 +57,7 @@ def_maglims = dict(mag_u_lsst=27.79,
 def_param = dict(run_params=dict(zmin=0.0,
                                  zmax=3.0,
                                  nzbins=301,
+                                 flow_seed = 0,
                                  ref_column_name='mag_i_lsst',
                                  column_names=refcols,
                                  mag_limits=def_maglims,
@@ -73,6 +74,7 @@ def_param = dict(run_params=dict(zmin=0.0,
 desc_dict = dict(zmin="min z",
                  zmax="max_z",
                  nzbins="num z bins",
+                 flow_seed = "seed for flow",
                  ref_column_name="name for reference column",
                  column_names="column names to be used in flow",
                  mag_limits="1 sigma mag limits",
@@ -109,6 +111,7 @@ class PZFlowPDF(BaseEstimation):
         self.zmin = inputs['zmin']
         self.zmax = inputs['zmax']
         self.nzbins = inputs['nzbins']
+        self.flow_seed = inputs['flow_seed']
         self.refcol = inputs['ref_column_name']
         self.col_names = inputs['column_names']
         self.maglims = inputs['mag_limits']
@@ -146,7 +149,7 @@ class PZFlowPDF(BaseEstimation):
             StandardScaler(col_means, col_stds),
             RollingSplineCoupling(nlayers),
         )
-        model = Flow(flowdf.columns, bijector)
+        model = Flow(flowdf.columns, bijector, seed=self.flow_seed)
         _ = model.train(flowdf[self.usecols], epochs=self.trainepochs,
                         verbose=True)
         self.model = model

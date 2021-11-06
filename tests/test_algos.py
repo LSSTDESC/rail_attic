@@ -115,6 +115,7 @@ def test_pzflow():
     config_dict = dict(run_params=dict(zmin=0.0,
                                        zmax=3.0,
                                        nzbins=301,
+                                       flow_seed=0,
                                        ref_column_name='mag_i_lsst',
                                        column_names=refcols,
                                        mag_limits=def_maglims,
@@ -127,7 +128,8 @@ def test_pzflow():
                                                            modelfile="PZflowPDF.pkl")
                                        )
                        )
-    zb_expected = np.array([0.15, 0.14, 0.14, 0.14, 0.11, 0.14, 0.15, 0.14, 0.12, 0.11])
+    # zb_expected = np.array([0.15, 0.14, 0.14, 0.14, 0.11, 0.14, 0.15, 0.14, 0.12, 0.11])
+    zb_expected = np.array([0.15, 0.14, 0.15, 0.14, 0.16, 0.12, 0.15, 0.14, 0.13, 0.12])
     pz_algo = pzflow.PZFlowPDF
     pz_dict, rerun_pz_dict = one_algo(pz_algo, config_dict)
     assert np.isclose(pz_dict['zmode'], zb_expected).all()
