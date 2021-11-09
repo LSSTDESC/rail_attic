@@ -1,3 +1,6 @@
+# if run estimation is true, run as normal, if False, Evaluation will try to
+# load results from previous estimation run using these parameters
+run_estimation: True
 base_yaml: ./configs/base.yaml
 #save all the pdfs for each code? Will be written to `results/estimation_results_base_[code]`
 save_pdfs: True

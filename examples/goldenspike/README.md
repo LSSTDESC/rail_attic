@@ -4,8 +4,10 @@
 
 You must have RAIL and all dependencies installed locally in order to run goldenspike.  Follow the instructions on the main RAIL page (run `pip install .[all]`) in order to install `creation`, `estimation`, and `evaluation` RAIL packages.  In addition, if you will need either a pre-trained pzflow object or a local set of data with which to train the RAIL/creation creator that will create your mock data.  Note that there are both an example flow (`pretrained_flow.pkl`) and a small test set of data (`test_flow_data.pq`) available in the `RAIL/examples/goldenspike/data` subdirectory.
 
-The main script is `goldenspike.py` which reads is controlled by the many options in three yaml files, one for each major stage: `creation_goldspike.yaml`, `estimation_goldspike.yaml`, and `evaluation_goldspike.yaml`.  Below we will go through some of the features of each stage:
-NOTE: could switch to grab these on command line rather than hardcoded names, ask others for preference.
+The main script is `goldenspike.py` which reads is controlled by the many options in three yaml files, one for each major stage: `creation_goldspike.yaml`, `estimation_goldspike.yaml`, and `evaluation_goldspike.yaml`. Note that the first parameter listed in each yaml file controls whether or not that stage is run.  That is, there are three parameters, one each per yaml file, `run_creation, `run_estimation`, and `run_evaluation`, if set to True, the corresponding section of the script is run.  If set to False, then the script will look for intermediate files created in a previous run of the script.  This enables users to run e.g. only the `estimation` stage if data from a previous run of `creation` is already on disk, or just the  `evaluation` stage if `estimation` was run previously.  
+
+Below we will go through some of the features of each stage:
+**NOTE**: could switch to grab these on command line rather than hardcoded names, ask others for preference.
 
 ## Running the script
 After you have adjusted all parameters in the three yaml files, run from the command line with `python goldenspike.py`.  For some details on how to set up the parameters, continue reading for a description of the options available in the yaml files that control the script.

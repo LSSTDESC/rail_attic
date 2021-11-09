@@ -1,3 +1,4 @@
+run_evaluation: True
 evaluation_directory: ./evaluation_results
 results_file: goldenspike_metrics.txt
 figure_directory: ./evaluation_results/
