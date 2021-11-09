@@ -4,10 +4,6 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from rail.evaluation.metrics.pit import *
-#from metrics import *
-from IPython.display import Markdown
-import h5py
-import os
 from qp.ensemble import Ensemble
 from qp import interp
 
@@ -61,13 +57,12 @@ def plot_pit_qq(pdf_ens, ztrue, qbins=101, title=None, code=None,
     gs = gridspec.GridSpec(2, 1, height_ratios=[3, 1])
     ax0 = plt.subplot(gs[0])
 
-    #fzdata = qp.Ensemble(qp.interp, data=dict(xvals=zgrid, yvals=pdfs))
     pitobj = PIT(pdf_ens, ztrue)
     spl_ens, metamets = pitobj.evaluate()
     pit_vals = np.array(pitobj._pit_samps)
     pit_out_rate = PITOutRate(pit_vals, spl_ens).evaluate()
 
-    ##################                                                                                                                     
+    # #################
     q_theory = np.linspace(0., 1., qbins)
     q_data = np.quantile(pit_vals, q_theory)
     qq_vec = (q_theory, q_data)
@@ -162,9 +157,9 @@ def ks_plot(pitobj, n_quant=100, savefig=True, figname='default_ksplot.jpg'):
     plt.tight_layout()
     if savefig:
         plt.savefig(figname, format='jpg')
-    
+
 def plot_point_est(zpoint, z_true, sigma, code, outfile):
-    fig = plt.figure()
+    plt.figure()
     plt.scatter(z_true, zpoint, s=1, c='k', alpha=0.7)
     plt.xlabel("redshift", fontsize=18)
     plt.ylabel("point photo-z", fontsize=18)
@@ -173,9 +168,9 @@ def plot_point_est(zpoint, z_true, sigma, code, outfile):
     upper_h = 3.0 + 3.0*(sigma)
     lower_l = -1.*sigma
     lower_h = 3.0 - 3.0*(sigma)
-    plt.plot([0.,3.],[upper_l,upper_h],c='r',lw=1,linestyle='--')
-    plt.plot([0.,3.],[lower_l,lower_h],c='r',lw=1,linestyle='--')
+    plt.plot([0., 3.],[upper_l, upper_h], c='r', lw=1, linestyle='--')
+    plt.plot([0., 3.],[lower_l, lower_h], c='r', lw=1, linestyle='--')
     plt.title(f"point estimate for {code}", fontsize=18)
-    plt.xlim(0,3)
-    plt.ylim(0,3)
+    plt.xlim(0, 3)
+    plt.ylim(0, 3)
     plt.savefig(outfile, format='jpg')

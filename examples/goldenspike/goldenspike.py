@@ -96,8 +96,12 @@ def main():
         # convert to ordered dict for either write to file or use by Estimation
         input_test = tables_io.convert(test_data, tables_io.types.NUMPY_DICT)
         input_train = tables_io.convert(train_data, tables_io.types.NUMPY_DICT)
-        tables_io.io.write(input_test, os.path.join(c_par['saved_data_dir'], c_par['test_filename']), fmt='hdf5')
-        tables_io.io.write(input_train, os.path.join(c_par['saved_data_dir'], c_par['train_filename']), fmt='hdf5')
+        tables_io.io.write(input_test,
+                           os.path.join(c_par['saved_data_dir'],
+                                        c_par['test_filename']), fmt='hdf5')
+        tables_io.io.write(input_train,
+                           os.path.join(c_par['saved_data_dir'],
+                                        c_par['train_filename']), fmt='hdf5')
 
     # ####Estimation
 
