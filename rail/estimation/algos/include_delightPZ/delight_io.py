@@ -14,6 +14,7 @@ def parseParamFile(fileName, verbose=True, catFilesNeeded=True):
     Parser for configuration inputtype parameter files,
     see examples for details. A bunch of them ar parsed.
     """
+    print(f"\n\n\n using configfile: {fileName}")
     config = configparser.ConfigParser()
     if not os.path.isfile(fileName):
         raise Exception(fileName+' : file not found')
@@ -36,8 +37,33 @@ def parseParamFile(fileName, verbose=True, catFilesNeeded=True):
         raise Exception(params['bands_directory']+' is not a valid directory')
     params['bandNames'] = config.get('Bands', 'Names').split(' ')
 
+    key= 'numCoefs'
+    if key in config['Bands']:
+        params['numCoefs'] = config.getint('Bands', 'numCoefs')
+    else:
+        params['numCoefs'] = 7
+
+    if 'bands_verbose' in  config['Bands']:
+        params['bands_verbose'] = config.getboolean('Bands','bands_verbose')
+    else:
+        params['bands_verbose'] = False
+
+    if 'bands_debug' in config['Bands']:
+        params['bands_debug'] = config.getboolean('Bands', 'bands_debug')
+    else:
+        params['bands_debug'] = False
+
+    if 'bands_makeplots' in config['Bands']:
+        params['bands_makeplots'] = config.getboolean('Bands', 'bands_makeplots')
+    else:
+        params['bands_makeplots'] = False
+        
     # Parsing Templates
     params['templates_directory'] = config.get('Templates', 'directory')
+    params['sed_fmt'] = config.get('Templates', 'sed_fmt')
+    if config.get('Templates', 'sed_fmt') is None:
+        print("sed_fmt not found! Setting default!")
+        params['sed_fmt'] = 'sed'
     params['lambdaRef'] = config.getfloat('Templates', 'lambdaRef')
     params['templates_names'] = config.get('Templates', 'names').split(' ')
     params['p_t']\

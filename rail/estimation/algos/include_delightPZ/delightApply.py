@@ -2,7 +2,8 @@
 import sys
 from mpi4py import MPI
 import numpy as np
-from delight.io import *
+#from delight.io import *
+from rail.estimation.algos.include_delightPZ.delight_io import *
 from delight.utils import *
 from delight.photoz_gp import PhotozGP
 from delight.photoz_kernels import Photoz_mean_function, Photoz_kernel

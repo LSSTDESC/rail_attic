@@ -63,7 +63,6 @@ from scipy.stats import norm
 from rail.estimation.estimator import Estimator as BaseEstimation
 from rail.estimation.utils import check_and_print_params
 import qp
-import pprint
 
 
 
@@ -83,6 +82,12 @@ def_param = dict(run_params = dict(dlght_redshiftMin=0.01,
                                    dlght_redshiftDisBinSize = 0.2,
                                    tempdir = "./examples/estimation/tmp",
                                    tempdatadir = "./examples/estimation/tmp/delight_data",
+                                   sed_path = "./rail/estimation/data/SED",
+                                   sed_name_list = "El_B2004a Sbc_B2004a Scd_B2004a SB3_B2004a SB2_B2004a Im_B2004a ssp_25Myr_z008 ssp_5Myr_z008",
+                                   sed_fmt = "sed",
+                                   prior_t_list = "0.27 0.26 0.25 0.069 0.021 0.11 0.0061 0.0079",
+                                   prior_zt_list = "0.23 0.39 0.33 0.31 1.1 0.34 1.2 0.14",
+                                   lambda_ref = 4500.,
                                    delightparamfile = "parametersTest.cfg",
                                    dlght_tutorialmode = False,
                                    flag_filter_training = True,
@@ -114,6 +119,12 @@ desc_dict = dict(dlght_redshiftMin = "min redshift",
                  nzbins = "num bins",
                  tempdir = "temp dir",
                  tempdatadir = "temp data dir",
+                 sed_path = "path to seds",
+                 sed_name_list = "String with list of all SED names, with no file extension",
+                 sed_fmt = "file extension of SED files (withough the '.', e.g dat or sed",
+                 prior_t_list = "String of numbers specifying prior type fracs MUST BE SAME LENGTH AS NUM_FILTS",
+                 prior_zt_list = "string of numbers for redshift prior, MUST BE SAME LENGTH AS NUM_FILTS",
+                 lambda_ref = "reference wavelength",
                  delightparamfile = "param file",
                  dlght_tutorialmode = "bool: run in tutorial mode",
                  flag_filter_training = "bool: ?",
@@ -180,6 +191,13 @@ class delightPZ(BaseEstimation):
         self.flag_filter_validation = inputs["flag_filter_validation"]
         self.snr_cut_validation = inputs["snr_cut_validation"]
 
+        self.sed_path = inputs['sed_path']
+        self.sed_name_list = inputs['sed_name_list']
+        self.sed_fmt = inputs['sed_fmt']
+        self.prior_t_list = inputs['prior_t_list']
+        self.prior_zt_list = inputs['prior_zt_list']
+        self.lambda_ref = inputs['lambda_ref']
+        
 
         # counter on the chunk validation dataset
         self.chunknum=0
@@ -198,13 +216,8 @@ class delightPZ(BaseEstimation):
 
     def inform(self, training_data):
         """
-          this is delightPZ, so does nothing
+          this is delightPZ
         """
-        print("I don't need to train!!!")
-        pprint.pprint(training_data)
-        
-        
-        
         
         msg = " INFORM "
         logger.info(msg)
@@ -316,7 +329,7 @@ class delightPZ(BaseEstimation):
 
     def estimate(self, test_data):
         
-        
+        print("\n\n\n Starting estimation...\n\n\n")
         self.chunknum += 1
 
         msg = " ESTIMATE : chunk number {} ".format(self.chunknum)
@@ -350,7 +363,7 @@ class delightPZ(BaseEstimation):
             logger.info(msg)
 
             # Generate a new parameter file for delight this chunk
-            paramfile_txt=makeConfigParamChunk(basedelight_datapath, self.inputs, self.chunknum)
+            paramfile_txt=makeConfigParam(basedelight_datapath, self.inputs, self.chunknum)
 
             # generate the config-parameter filename from chunk number
             delightparamfile=self.delightparamfile

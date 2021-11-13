@@ -13,11 +13,10 @@ import os
 import numpy as np
 from functools import reduce
 
-import pprint
-
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
-from delight.io import *
+from rail.estimation.algos.include_delightPZ.delight_io import *
+#from delight.io import *
 from delight.utils import *
 
 import coloredlogs
@@ -678,13 +677,13 @@ def convertDESCcatTrainData(configfilename,descatalogdata,flag_filter=True,snr_c
     # produce a numpy array
     #magdata = group_entries(f)
     
-    logger.debug("--- descatalogdata : ---")
-    pprint.pprint(descatalogdata)
+    #logger.debug("--- descatalogdata : ---")
+    #pprint.pprint(descatalogdata)
     
     magdata = group_entries(descatalogdata)
     
-    logger.debug("--- magdata : ---")
-    pprint.pprint(magdata)
+    #logger.debug("--- magdata : ---")
+    #pprint.pprint(magdata)
    
 
     # remember the number of entries

@@ -14,7 +14,8 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 
 
-from delight.io import *
+from rail.estimation.algos.include_delightPZ.delight_io import *
+# from delight.io import *
 from delight.utils import *
 
 import coloredlogs
@@ -43,13 +44,17 @@ def processSEDs(configfilename):
 
     # decode the parameters
     params = parseParamFile(configfilename, verbose=False, catFilesNeeded=False)
+    print(f"configfilename: {configfilename}")
+    print("\n\n\n\n\n\nFULL LIST OF PARAMS:")
+    print(params)
     bandNames = params['bandNames']
     dir_seds = params['templates_directory']
     dir_filters = params['bands_directory']
     lambdaRef = params['lambdaRef']
     sed_names = params['templates_names']
-    fmt = '.dat'
-
+    #fmt = '.dat'
+    sed_fmt = params['sed_fmt']
+    
     # Luminosity Distnace
     DL = approx_DL()
 
@@ -60,7 +65,9 @@ def processSEDs(configfilename):
     # Loop over SEDs
     # create a file per SED of all possible flux in band
     for sed_name in sed_names:
-        seddata = np.genfromtxt(dir_seds + '/' + sed_name + fmt)
+        tmpsedname = sed_name + "." + sed_fmt
+        path_to_sed = os.path.join(dir_seds, tmpsedname)
+        seddata = np.genfromtxt(path_to_sed)
         seddata[:, 1] *= seddata[:, 0] # SDC : multiply luminosity by wl ?
         # SDC: OK if luminosity is in wl bins ! To be checked !!!!
         ref = np.interp(lambdaRef, seddata[:, 0], seddata[:, 1])
@@ -94,7 +101,8 @@ def processSEDs(configfilename):
                 f_mod[iz, jf] = np.trapz(ysed * yf_z, x=xf_z) / norm
                 f_mod[iz, jf] *= opz**2. / DL(redshiftGrid[iz])**2. / (4*np.pi)
         # for each SED, save the flux at each redshift (along row) for each
-        np.savetxt(dir_seds + '/' + sed_name + '_fluxredshiftmod.txt', f_mod)
+        tmpoutpath = os.path.join(dir_seds, sed_name + '_fluxredshiftmod.txt')
+        np.savetxt(tmpoutpath, f_mod)
 
 
 #-----------------------------------------------------------------------------------------

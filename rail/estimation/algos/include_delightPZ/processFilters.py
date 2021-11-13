@@ -12,8 +12,8 @@ from scipy.interpolate import interp1d
 from scipy.optimize import leastsq
 
 from delight.utils import *
-from delight.io import *
-#from rail.estimation.algos.include_delightPZ.delight_io import *
+#from delight.io import *
+from rail.estimation.algos.include_delightPZ.delight_io import *
 
 import coloredlogs
 import logging
