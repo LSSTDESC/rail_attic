@@ -73,23 +73,34 @@ def makeConfigParam(path,inputs_rail, chunknum = None):
 """
 
     # 2) Filter Section
-    paramfile_txt += "\n"
-    paramfile_txt += \
+    if inputs_rail == None:
+        paramfile_txt += "\n"
+        paramfile_txt += \
 """
 [Bands]
 names: lsst_u lsst_g lsst_r lsst_i lsst_z lsst_y
 """
 
-    paramfile_txt += "directory: " + os.path.join(path, 'FILTERS')
+        paramfile_txt += "directory: " + os.path.join(path, 'FILTERS')
 
-    paramfile_txt +=  \
+        paramfile_txt +=  \
 """
+bands_fmt: res
 numCoefs: 15
 bands_verbose: True
 bands_debug: True
 bands_makeplots: False
 """
-
+    else:
+        paramfile_txt += "\n[Bands]\n"
+        paramfile_txt += f"names: {inputs_rail['bands_names']}\n"
+        paramfile_txt += f"directory: {inputs_rail['bands_path']}\n"
+        paramfile_txt += f"bands_fmt: {inputs_rail['bands_fmt']}\n"
+        paramfile_txt += f"numCoefs: {inputs_rail['bands_numcoefs']}\n"
+        paramfile_txt += f"bands_verbose: {inputs_rail['bands_verbose']}\n"
+        paramfile_txt += f"bands_debug: {inputs_rail['bands_debug']}\n"
+        paramfile_txt += f"bands_makeplots: {inputs_rail['bands_makeplots']}\n"
+        
     # 3) Template Section
     if inputs_rail == None:
         paramfile_txt +=  \
@@ -154,34 +165,35 @@ catFile: data_lsst/galaxies-fluxredshifts.txt
 """
     else:
         thepath = inputs_rail["tempdatadir"]
-        paramfile_txt += "catFile: " + os.path.join(thepath, 'galaxies-fluxredshifts.txt')
+        paramfile_txt += "catFile: " + os.path.join(thepath, 'galaxies-fluxredshifts.txt') + '\n'
 
-    paramfile_txt +=  \
+    if inputs_rail == None:
+        paramfile_txt += \
 """
 bandOrder: lsst_u lsst_u_var lsst_g lsst_g_var lsst_r lsst_r_var lsst_i lsst_i_var lsst_z lsst_z_var lsst_y lsst_y_var redshift
 referenceBand: lsst_i
 extraFracFluxError: 1e-4
-"""
+crossValidate: False
+crossValidationBandOrder: _ _ _ _ lsst_r lsst_r_var _ _ _ _ _ _
+"""                
+    else:
+        paramfile_txt += f"bandOrder: {inputs_rail['train_refbandorder']}\n"
+        paramfile_txt += f"referenceBand: {inputs_rail['train_refband']}\n"
+        paramfile_txt += f"extraFracFluxError: {inputs_rail['train_fracfluxerr']}\n"
+        paramfile_txt += f"crossValidate: {inputs_rail['train_xvalidate']}\n"
+        paramfile_txt += f"crossValidationBandOrder: {inputs_rail['train_xvalbandorder']}\n"
 
     if inputs_rail == None:
-        paramfile_txt +=  \
-"""
-paramFile: data_lsst/galaxies-gpparams.txt
-"""
+        paramfile_txt += "paramFile: data_lsst/galaxies-gpparams.txt\n"
     else:
         thepath = inputs_rail["tempdatadir"]
-        paramfile_txt += "paramFile: " + os.path.join(thepath, 'galaxies-gpparams.txt')
-
-
-    paramfile_txt +=  \
-"""
-crossValidate: False
-"""
+        paramfile_txt += "paramFile: " + os.path.join(thepath, 'galaxies-gpparams.txt') + '\n'
 
     if inputs_rail == None:
         paramfile_txt +=  \
 """
 CVfile: data_lsst/galaxies-gpCV.txt
+
 """
     else:
         thepath = inputs_rail["tempdatadir"]
@@ -189,8 +201,8 @@ CVfile: data_lsst/galaxies-gpCV.txt
 
     paramfile_txt +=  \
 """
-crossValidationBandOrder: _ _ _ _ lsst_r lsst_r_var _ _ _ _ _ _
 numChunks: 1
+
 """
 
     # 6) Estimation Section
@@ -205,19 +217,25 @@ numChunks: 1
         paramfile_txt +=  \
 """
 catFile: data_lsst/galaxies-fluxredshifts2.txt
+
 """
     else:
         thepath = inputs_rail["tempdatadir"]
         if chunknum is None:
-            paramfile_txt += "catFile: " + os.path.join(thepath, 'galaxies-fluxredshifts2.txt')
+            paramfile_txt += "catFile: " + os.path.join(thepath, 'galaxies-fluxredshifts2.txt' + '\n')
         else:
-            paramfile_txt += "catFile: " + os.path.join(thepath, f'galaxies-fluxredshifts2_{chunknum}.txt')
-    paramfile_txt +=  \
+            paramfile_txt += "catFile: " + os.path.join(thepath, f'galaxies-fluxredshifts2_{chunknum}.txt' + '\n')
+    if inputs_rail == None:
+        paramfile_txt +=  \
 """
 bandOrder: lsst_u lsst_u_var lsst_g lsst_g_var lsst_r lsst_r_var lsst_i lsst_i_var lsst_z lsst_z_var lsst_y lsst_y_var redshift
 referenceBand: lsst_r
 extraFracFluxError: 1e-4
 """
+    else:
+        paramfile_txt += f"bandOrder: {inputs_rail['target_refbandorder']}\n"
+        paramfile_txt += f"referenceBand: {inputs_rail['target_refband']}\n"
+        paramfile_txt += f"extraFracFluxError: {inputs_rail['target_fracfluxerr']}\n"
 
     if inputs_rail == None:
         paramfile_txt +=  \

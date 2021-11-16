@@ -49,7 +49,8 @@ def processFilters(configfilename):
     bandNames = params['bandNames']
     make_plots= params['bands_makeplots']
 
-    fmt = '.res'
+    # fmt = '.res'
+    fmt = '.' + params['bands_fmt']
     max_redshift = params['redshiftMax']  # for plotting purposes
     root = params['bands_directory']
 

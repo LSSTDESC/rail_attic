@@ -80,6 +80,13 @@ def_param = dict(run_params = dict(dlght_redshiftMin=0.01,
                                    nzbins = 301,
                                    dlght_redshiftBinSize = 0.01,
                                    dlght_redshiftDisBinSize = 0.2,
+                                   bands_names = "DC2LSST_u DC2LSST_g DC2LSST_r DC2LSST_i DC2LSST_z DC2LSST_y",
+                                   bands_path = "./rail/estimation/data/FILTER",
+                                   bands_fmt = "res",
+                                   bands_numcoefs = 15,
+                                   bands_verbose = True,
+                                   bands_makeplots = False,
+                                   bands_debug = True,
                                    tempdir = "./examples/estimation/tmp",
                                    tempdatadir = "./examples/estimation/tmp/delight_data",
                                    sed_path = "./rail/estimation/data/SED",
@@ -88,6 +95,14 @@ def_param = dict(run_params = dict(dlght_redshiftMin=0.01,
                                    prior_t_list = "0.27 0.26 0.25 0.069 0.021 0.11 0.0061 0.0079",
                                    prior_zt_list = "0.23 0.39 0.33 0.31 1.1 0.34 1.2 0.14",
                                    lambda_ref = 4500.,
+                                   train_refbandorder = "DC2LSST_u DC2LSST_u_var DC2LSST_g DC2LSST_g_var DC2LSST_r DC2LSST_r_var DC2LSST_i DC2LSST_i_var DC2LSST_z DC2LSST_z_var DC2LSST_y DC2LSST_y_var redshift",
+                                   train_refband = "DC2LSST_i",
+                                   train_fracfluxerr = 1.e-4,
+                                   train_xvalidate = False,
+                                   train_xvalbandorder = "_ _ _ _ DC2LSST_r DC2LSST_r_var _ _ _ _ _ _",
+                                   target_refbandorder = "DC2LSST_u DC2LSST_u_var DC2LSST_g DC2LSST_g_var DC2LSST_r DC2LSST_r_var DC2LSST_i DC2LSST_i_var DC2LSST_z DC2LSST_z_var DC2LSST_y DC2LSST_y_var redshift",
+                                   target_refband = "DC2LSST_r",
+                                   target_fracfluxerr = 1.e-4,
                                    delightparamfile = "parametersTest.cfg",
                                    dlght_tutorialmode = False,
                                    flag_filter_training = True,
@@ -117,6 +132,13 @@ desc_dict = dict(dlght_redshiftMin = "min redshift",
                  dlght_redshiftDisBinSize = "???",
                  dlght_redshiftBinSize = "bad, shouldn't be here",
                  nzbins = "num bins",
+                 bands_names = "string with list of Filter names",
+                 bands_path = "string specifying path to filter directory",
+                 bands_fmt = "string giving the file extension of the filters, not including the '.'",
+                 bands_numcoefs = "integer specifying number of coefs in approximation of filter",
+                 bands_verbose = "boolean filter verbosity",
+                 bands_makeplots = "boolean for whether to make plot showing approximate filters",
+                 bands_debug = "boolean debug flag for filters",
                  tempdir = "temp dir",
                  tempdatadir = "temp data dir",
                  sed_path = "path to seds",
@@ -125,6 +147,14 @@ desc_dict = dict(dlght_redshiftMin = "min redshift",
                  prior_t_list = "String of numbers specifying prior type fracs MUST BE SAME LENGTH AS NUMBER OF SEDS",
                  prior_zt_list = "string of numbers for redshift prior, MUST BE SAME LENGTH AS NUMBER OF SEDS",
                  lambda_ref = "reference wavelength",
+                 train_refbandorder = "order of bands in training?",
+                 train_refband = "string name of ref band",
+                 train_fracfluxerr = "float: frac err to add to flux?",
+                 train_xvalidate = "bool: cross validate flag",
+                 train_xvalbandorder = "Str: cols to use in cross validation?",
+                 target_refbandorder = "Str: order of reference bands for target data?",
+                 target_refband = "Str: the reference band for the taret data?",
+                 target_fracfluxerr = "float: extra fractional error to add to target fluxes?",
                  delightparamfile = "param file",
                  dlght_tutorialmode = "bool: run in tutorial mode",
                  flag_filter_training = "bool: ?",
@@ -176,6 +206,8 @@ class delightPZ(BaseEstimation):
         # temporary directories for Delight temprary file
         self.tempdir = inputs['tempdir']
         self.tempdatadir = inputs['tempdatadir']
+        self.sed_path = inputs['sed_path']
+        self.bands_path = inputs['bands_path']
         # name of delight configuration file
         self.delightparamfile=inputs["delightparamfile"]
         self.delightparamfile = os.path.join(self.tempdir, self.delightparamfile)
@@ -275,21 +307,28 @@ class delightPZ(BaseEstimation):
         # For the moment, there is no automatic installation inside RAIL
         # These must be installed by the user, later these will be copied from Delight installation automatically
 
-        if not os.path.exists(self.delightindata):
-            msg = " No Delight input data in dir  " + self.delightindata
-            logger.error(msg)
+        #if not os.path.exists(self.delightindata):
+        #    msg = " No Delight input data in dir  " + self.delightindata
+        #    logger.error(msg)
+        #    exit(-1)
+
+        #SUBDIRs = ['BROWN_SEDs', 'CWW_SEDs', 'FILTERS']
+
+        #for subdir in SUBDIRs:
+        #    theinpath=os.path.join(self.delightindata,subdir)
+        #    if not os.path.exists(theinpath):
+        #        msg = " No Delight input data in dir  " + theinpath
+        #        logger.error(msg)
+        #        exit(-1)
+        if not os.path.exists(self.sed_path):
+            msg = " No Delight SED data in dir " + self.sed_path
+            logerr.error(msg)
+            exit(-1)
+        if not os.path.exists(self.bands_path):
+            msg = " No Delight FILTER data in dir " + self.bands_path
+            logerr.error(msg)
             exit(-1)
 
-        SUBDIRs = ['BROWN_SEDs', 'CWW_SEDs', 'FILTERS']
-
-        for subdir in SUBDIRs:
-            theinpath=os.path.join(self.delightindata,subdir)
-            if not os.path.exists(theinpath):
-                msg = " No Delight input data in dir  " + theinpath
-                logger.error(msg)
-                exit(-1)
-                
-                
         # Initialisation of Delight with 1) Filters 2) SED to get Flux-redshift model 
 
         # Build LSST filter model

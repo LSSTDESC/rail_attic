@@ -43,6 +43,11 @@ def parseParamFile(fileName, verbose=True, catFilesNeeded=True):
     else:
         params['numCoefs'] = 7
 
+    if 'bands_fmt' in config['Bands']:
+        params['bands_fmt'] = config.get('Bands', 'bands_fmt')
+    else:
+        params['bands_fmt'] = 'res'
+        
     if 'bands_verbose' in  config['Bands']:
         params['bands_verbose'] = config.getboolean('Bands','bands_verbose')
     else:
