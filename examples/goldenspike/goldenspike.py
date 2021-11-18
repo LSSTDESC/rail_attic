@@ -129,6 +129,8 @@ def main():
     table = "Code        | PIT outrate |     KS      |     CvM     |  CDE loss   |    sigma    |    bias     | fout \n"
     for est_key in estimators:
         if est_par['run_estimation']:
+            est_train_data = input_train.copy()
+            est_test_data = input_test.copy()
             print(f"running estimator {est_key}")
             est_dict = estimators[est_key]
 
@@ -146,10 +148,10 @@ def main():
                 # note: specific options set in subclasss func def
                 pz.load_pretrained_model()
             else:
-                pz.inform(input_train)  # train on training data
+                pz.inform(est_train_data)  # train on training data
 
             # don't bother with iterator for now, just run the entire chunk
-            pz_data = pz.estimate(input_test)
+            pz_data = pz.estimate(est_test_data)
 
             # save data?
             if est_par['save_pdfs']:
