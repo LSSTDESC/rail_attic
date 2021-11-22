@@ -48,12 +48,21 @@ def computemeanstd(df):
 
 def_bands = ['u', 'g', 'r', 'i', 'z', 'y']
 refcols = [f"mag_{band}_lsst" for band in def_bands]
+allcols = refcols.copy()
+for band in def_bands:
+    allcols.append(f"mag_{band}_lsst_err")
 def_maglims = dict(mag_u_lsst=27.79,
                    mag_g_lsst=29.04,
                    mag_r_lsst=29.06,
                    mag_i_lsst=28.62,
                    mag_z_lsst=27.98,
                    mag_y_lsst=27.05)
+def_errornames=dict(mag_err_u_lsst="mag_u_lsst_err",
+                    mag_err_g_lsst="mag_g_lsst_err",
+                    mag_err_r_lsst="mag_r_lsst_err",
+                    mag_err_i_lsst="mag_i_lsst_err",
+                    mag_err_z_lsst="mag_z_lsst_err",
+                    mag_err_y_lsst="mag_y_lsst_err")
 def_param = dict(run_params=dict(zmin=0.0,
                                  zmax=3.0,
                                  nzbins=301,
@@ -61,6 +70,9 @@ def_param = dict(run_params=dict(zmin=0.0,
                                  ref_column_name='mag_i_lsst',
                                  column_names=refcols,
                                  mag_limits=def_maglims,
+                                 include_mag_errors=False,
+                                 error_names_dict=def_errornames,
+                                 n_error_samples=1000,
                                  soft_sharpness=10,
                                  soft_idx_col=0,
                                  redshift_column_name='redshift',
@@ -78,6 +90,9 @@ desc_dict = dict(zmin="min z",
                  ref_column_name="name for reference column",
                  column_names="column names to be used in flow",
                  mag_limits="1 sigma mag limits",
+                 include_mag_errors="Boolean flag on whether to marginalize over mag errors (NOTE: much slower on CPU!",
+                 error_names_dict="dictionary to rename error columns",
+                 n_error_samples="int: number of error samples in marginalization",
                  soft_sharpness="sharpening paremeter for SoftPlus",
                  soft_idx_col="index column for SoftPlus",
                  redshift_column_name="name of redshift column",
@@ -115,14 +130,23 @@ class PZFlowPDF(BaseEstimation):
         self.refcol = inputs['ref_column_name']
         self.col_names = inputs['column_names']
         self.maglims = inputs['mag_limits']
+        self.incl_errors = inputs['include_mag_errors'],
+        self.error_names_dict = inputs['error_names_dict']
+        self.n_error_samples = inputs['n_error_samples']
         self.sharpness = inputs['soft_sharpness']
         self.idx_col = inputs['soft_idx_col']
         self.redshiftname = inputs['redshift_column_name']
         self.trainepochs = inputs['num_training_epochs']
         self.inform_options = inputs['inform_options']
         usecols = self.col_names.copy()
+        allcols = usecols.copy()
+        if self.incl_errors: #only include errors if option set
+            for item in self.error_names_dict:
+                allcols.append(self.error_names_dict[item])
         usecols.append(self.redshiftname)
+        allcols.append(self.redshiftname)
         self.usecols = usecols
+        self.allcols = allcols
 
     def inform(self, training_data):
         """
@@ -130,6 +154,9 @@ class PZFlowPDF(BaseEstimation):
         This is mostly based off of the pzflow example notebook
         """
         input_df = pd.DataFrame(training_data)
+        if self.incl_errors:
+            # rename the error columns to end in _err!
+            input_df.rename(columns=self.error_names_dict, inplace=True)
 
         flowdf = input_df[self.usecols]
         # replace nondetects
@@ -174,14 +201,22 @@ class PZFlowPDF(BaseEstimation):
         """
         # flow expects dataframe
         test_df = pd.DataFrame(test_data)
-        flow_df = test_df[self.usecols]
+        print(f"will I include magnitude errors? {self.incl_errors}")
+        if self.incl_errors:
+            # rename the error columns to end in _err!
+            test_df.rename(columns=self.error_names_dict, inplace=True)
+        flow_df = test_df[self.allcols]
         # replace nondetects
         for col in self.col_names:
             flow_df.loc[np.isclose(flow_df[col], 99.), col] = self.maglims[col]
 
         self.zgrid = np.linspace(self.zmin, self.zmax, self.nzbins)
-        pdfs = self.model.posterior(flow_df, column=self.redshiftname,
-                                    grid=self.zgrid)
+        if self.incl_errors:
+            pdfs = self.model.posterior(flow_df, column=self.redshiftname,
+                                        grid=self.zgrid, err_samples=self.n_error_samples)
+        else:
+            pdfs = self.model.posterior(flow_df, column=self.redshiftname,
+                                        grid=self.zgrid)
         if self.output_format == 'qp':
             qp_distn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid,
                                                         yvals=pdfs))
