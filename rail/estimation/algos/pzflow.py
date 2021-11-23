@@ -66,7 +66,7 @@ def_errornames=dict(mag_err_u_lsst="mag_u_lsst_err",
 def_param = dict(run_params=dict(zmin=0.0,
                                  zmax=3.0,
                                  nzbins=301,
-                                 flow_seed = 0,
+                                 flow_seed=0,
                                  ref_column_name='mag_i_lsst',
                                  column_names=refcols,
                                  mag_limits=def_maglims,
@@ -86,7 +86,7 @@ def_param = dict(run_params=dict(zmin=0.0,
 desc_dict = dict(zmin="min z",
                  zmax="max_z",
                  nzbins="num z bins",
-                 flow_seed = "seed for flow",
+                 flow_seed="seed for flow",
                  ref_column_name="name for reference column",
                  column_names="column names to be used in flow",
                  mag_limits="1 sigma mag limits",
@@ -140,7 +140,7 @@ class PZFlowPDF(BaseEstimation):
         self.inform_options = inputs['inform_options']
         usecols = self.col_names.copy()
         allcols = usecols.copy()
-        if self.incl_errors: #only include errors if option set
+        if self.incl_errors:  # only include errors if option set
             for item in self.error_names_dict:
                 allcols.append(self.error_names_dict[item])
         usecols.append(self.redshiftname)
@@ -153,7 +153,7 @@ class PZFlowPDF(BaseEstimation):
         train a flow based on the training data
         This is mostly based off of the pzflow example notebook
         """
-        input_df = pd.DataFrame(training_data) 
+        input_df = pd.DataFrame(training_data)
         flowdf = input_df[self.usecols]
         # replace nondetects
         # will fancy this up later with a flow to sample from truth

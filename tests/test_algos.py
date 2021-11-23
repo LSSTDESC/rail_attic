@@ -145,6 +145,7 @@ def test_pzflow():
     # assert np.isclose(pz_dict['zmode'], zb_expected).all()
     assert np.isclose(pz_dict['zmode'], rerun_pz_dict['zmode']).all()
 
+
 def test_train_pz():
     config_dict = {'run_params': {'zmin': 0.0,
                                   'zmax': 3.0, 'nzbins': 301,
