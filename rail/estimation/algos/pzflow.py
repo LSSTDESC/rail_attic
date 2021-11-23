@@ -153,11 +153,7 @@ class PZFlowPDF(BaseEstimation):
         train a flow based on the training data
         This is mostly based off of the pzflow example notebook
         """
-        input_df = pd.DataFrame(training_data)
-        if self.incl_errors:
-            # rename the error columns to end in _err!
-            input_df.rename(columns=self.error_names_dict, inplace=True)
-
+        input_df = pd.DataFrame(training_data) 
         flowdf = input_df[self.usecols]
         # replace nondetects
         # will fancy this up later with a flow to sample from truth
@@ -166,7 +162,6 @@ class PZFlowPDF(BaseEstimation):
 
         # compute means and stddevs for StandardScalar transform
         col_means, col_stds = computemeanstd(flowdf)
-
         ref_idx = flowdf.columns.get_loc(self.refcol)
         mag_idx = [flowdf.columns.get_loc(col) for col in self.col_names]
         nlayers = flowdf.shape[1]
@@ -206,8 +201,15 @@ class PZFlowPDF(BaseEstimation):
             test_df.rename(columns=self.error_names_dict, inplace=True)
         flow_df = test_df[self.allcols]
         # replace nondetects
-        for col in self.col_names:
-            flow_df.loc[np.isclose(flow_df[col], 99.), col] = self.maglims[col]
+        if self.incl_errors:
+            err_names = list(self.error_names_dict.values())
+            for col, err_col in zip(self.col_names, err_names):
+                # set error to 0.7525 for 1 sigma detection 2.5log10(2) = .75257
+                flow_df.loc[np.isclose(flow_df[col], 99.), err_col] = 0.75257
+                flow_df.loc[np.isclose(flow_df[col], 99.), col] = self.maglims[col]
+        else:
+            for col in self.col_names:
+                flow_df.loc[np.isclose(flow_df[col], 99.), col] = self.maglims[col]
 
         self.zgrid = np.linspace(self.zmin, self.zmax, self.nzbins)
         if self.incl_errors:
