@@ -1,6 +1,6 @@
 ## Available Estimators
 
-There are multiple estimators available for use with RAIL, this README gives a brief description of each and documents the configuration parameters necessary to run each algorithm as defined in config dictionary that is passed in when the algorithm is instantiated.  Example configuration files can be found in `rail/examples/estimation/configs` for each algorithm.
+There are multiple estimators available for use with RAIL, this README gives a brief description of each and documents the configuration parameters necessary to run each algorithm as defined in config dictionary that is passed in when the algorithm is instantiated.  Example configuration files can be found in `rail/examples/estimation/configs` for each algorithm.  One way to quickly get started on running an estimator is to use the `main.py` script located in `rail/examples/estimation` with `python main.py [configs/specific_code_config.yaml] [specific_base_params.yaml]`.  See the README in `examples/estimation` for more details.
 
 # Common configuration parameters
 Nearly all of the codes require some basic config parameters to define how the redshifts are stored, how a trained model/prior is named/loaded/saved, etc..., we will list a few of these parameters below:
