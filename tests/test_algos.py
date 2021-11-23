@@ -112,6 +112,12 @@ def test_pzflow():
                        mag_i_lsst=28.62,
                        mag_z_lsst=27.98,
                        mag_y_lsst=27.05)
+    def_errnames = dict(mag_err_u_lsst="mag_u_lsst_err",
+                        mag_err_g_lsst="mag_g_lsst_err",
+                        mag_err_r_lsst="mag_r_lsst_err",
+                        mag_err_i_lsst="mag_i_lsst_err",
+                        mag_err_z_lsst="mag_z_lsst_err",
+                        mag_err_y_lsst="mag_y_lsst_err")
     config_dict = dict(run_params=dict(zmin=0.0,
                                        zmax=3.0,
                                        nzbins=301,
@@ -119,6 +125,9 @@ def test_pzflow():
                                        ref_column_name='mag_i_lsst',
                                        column_names=refcols,
                                        mag_limits=def_maglims,
+                                       include_mag_errors=False,
+                                       error_names_dict=def_errnames,
+                                       n_error_samples=3,
                                        soft_sharpness=10,
                                        soft_idx_col=0,
                                        redshift_column_name='redshift',

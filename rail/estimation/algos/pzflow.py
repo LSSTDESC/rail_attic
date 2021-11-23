@@ -130,7 +130,7 @@ class PZFlowPDF(BaseEstimation):
         self.refcol = inputs['ref_column_name']
         self.col_names = inputs['column_names']
         self.maglims = inputs['mag_limits']
-        self.incl_errors = inputs['include_mag_errors'],
+        self.incl_errors = inputs['include_mag_errors']
         self.error_names_dict = inputs['error_names_dict']
         self.n_error_samples = inputs['n_error_samples']
         self.sharpness = inputs['soft_sharpness']
@@ -201,7 +201,6 @@ class PZFlowPDF(BaseEstimation):
         """
         # flow expects dataframe
         test_df = pd.DataFrame(test_data)
-        print(f"will I include magnitude errors? {self.incl_errors}")
         if self.incl_errors:
             # rename the error columns to end in _err!
             test_df.rename(columns=self.error_names_dict, inplace=True)
