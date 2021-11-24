@@ -5,7 +5,7 @@ name: rail
 
 on:
   push:
-    branches: [ issue/94/pzflow-estimator ]
+    branches: [ master ]
   pull_request:
     branches: [ master ]
 
