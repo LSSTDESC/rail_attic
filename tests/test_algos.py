@@ -103,7 +103,13 @@ def test_flexzboost():
     os.remove('model.tmp')
 
 
-def test_pzflow():
+@pytest.mark.parametrize(
+    "inputs",
+    [(False),
+     (True)
+     ],
+)
+def test_pzflow(inputs):
     def_bands = ['u', 'g', 'r', 'i', 'z', 'y']
     refcols = [f"mag_{band}_lsst" for band in def_bands]
     def_maglims = dict(mag_u_lsst=27.79,
@@ -125,7 +131,7 @@ def test_pzflow():
                                        ref_column_name='mag_i_lsst',
                                        column_names=refcols,
                                        mag_limits=def_maglims,
-                                       include_mag_errors=False,
+                                       include_mag_errors=inputs,
                                        error_names_dict=def_errnames,
                                        n_error_samples=3,
                                        soft_sharpness=10,
@@ -137,7 +143,7 @@ def test_pzflow():
                                                            modelfile="PZflowPDF.pkl")
                                        )
                        )
-    zb_expected = np.array([0.15, 0.14, 0.14, 0.14, 0.11, 0.14, 0.15, 0.14, 0.12, 0.11])
+    # zb_expected = np.array([0.15, 0.14, 0.14, 0.14, 0.11, 0.14, 0.15, 0.14, 0.12, 0.11])
     pz_algo = pzflow.PZFlowPDF
     pz_dict, rerun_pz_dict = one_algo(pz_algo, config_dict)
     # temporarily remove comparison to "expected" values, as we are getting
