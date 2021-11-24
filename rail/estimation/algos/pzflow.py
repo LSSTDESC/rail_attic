@@ -181,7 +181,7 @@ class PZFlowPDF(BaseEstimation):
     def load_pretrained_model(self):
         try:
             modelfile = self.inform_options['modelfile']
-        except KeyError:
+        except KeyError: #pragma: no cover
             print("inform_options['modelfile'] not specified, exiting!")
             raise KeyError("inform_options['modelfile'] not found!")
         try:
