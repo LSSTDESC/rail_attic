@@ -213,10 +213,10 @@ class PZFlowPDF(BaseEstimation):
 
         self.zgrid = np.linspace(self.zmin, self.zmax, self.nzbins)
         if self.incl_errors:
-            pdfs = self.model.posterior(flow_df, column=self.redshiftname,
+            pdfs = self.model.posterior(flow_df, column=self.redshiftname, seed=self.flow_seed,
                                         grid=self.zgrid, err_samples=self.n_error_samples)
         else:
-            pdfs = self.model.posterior(flow_df, column=self.redshiftname,
+            pdfs = self.model.posterior(flow_df, column=self.redshiftname, seed=self.flow_seed,
                                         grid=self.zgrid)
         if self.output_format == 'qp':
             qp_distn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid,
