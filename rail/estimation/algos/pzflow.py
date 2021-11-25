@@ -187,7 +187,7 @@ class PZFlowPDF(BaseEstimation):
         try:
             self.model = Flow(file=modelfile)
             print(f"success in loading {modelfile}")
-        except FileNotFoundError:
+        except FileNotFoundError: #pragma: no cover
             raise FileNotFoundError(f"File {modelfile} not found!")
 
     def estimate(self, test_data):
