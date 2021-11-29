@@ -4,7 +4,7 @@ import copy
 from tables_io.ioUtils import readHdf5ToDict, iterHdf5ToDict
 import pytest
 from rail.estimation.algos import randomPZ, sklearn_nn, flexzboost, trainZ
-from rail.estimation.algos import bpz_lite
+from rail.estimation.algos import bpz_lite, pzflow
 
 
 test_base_yaml = './tests/test.yaml'
@@ -101,6 +101,55 @@ def test_flexzboost():
     assert np.isclose(pz_dict['zmode'], zb_expected).all()
     assert np.isclose(pz_dict['zmode'], rerun_pz_dict['zmode']).all()
     os.remove('model.tmp')
+
+
+@pytest.mark.parametrize(
+    "inputs, zb_expected",
+    [(False, [0.15, 0.14, 0.11, 0.14, 0.12, 0.14, 0.15, 0.16, 0.11, 0.12]),
+     (True, [0.15, 0.14, 0.15, 0.14, 0.12, 0.14, 0.15, 0.12, 0.13, 0.11]),
+     ],
+)
+def test_pzflow(inputs, zb_expected):
+    def_bands = ['u', 'g', 'r', 'i', 'z', 'y']
+    refcols = [f"mag_{band}_lsst" for band in def_bands]
+    def_maglims = dict(mag_u_lsst=27.79,
+                       mag_g_lsst=29.04,
+                       mag_r_lsst=29.06,
+                       mag_i_lsst=28.62,
+                       mag_z_lsst=27.98,
+                       mag_y_lsst=27.05)
+    def_errnames = dict(mag_err_u_lsst="mag_u_lsst_err",
+                        mag_err_g_lsst="mag_g_lsst_err",
+                        mag_err_r_lsst="mag_r_lsst_err",
+                        mag_err_i_lsst="mag_i_lsst_err",
+                        mag_err_z_lsst="mag_z_lsst_err",
+                        mag_err_y_lsst="mag_y_lsst_err")
+    config_dict = dict(run_params=dict(zmin=0.0,
+                                       zmax=3.0,
+                                       nzbins=301,
+                                       flow_seed=0,
+                                       ref_column_name='mag_i_lsst',
+                                       column_names=refcols,
+                                       mag_limits=def_maglims,
+                                       include_mag_errors=inputs,
+                                       error_names_dict=def_errnames,
+                                       n_error_samples=3,
+                                       soft_sharpness=10,
+                                       soft_idx_col=0,
+                                       redshift_column_name='redshift',
+                                       num_training_epochs=50,
+                                       inform_options=dict(save_train=True,
+                                                           load_model=False,
+                                                           modelfile="PZflowPDF.pkl")
+                                       )
+                       )
+    # zb_expected = np.array([0.15, 0.14, 0.11, 0.14, 0.12, 0.14, 0.15, 0.16, 0.11, 0.12])
+    pz_algo = pzflow.PZFlowPDF
+    pz_dict, rerun_pz_dict = one_algo(pz_algo, config_dict)
+    # temporarily remove comparison to "expected" values, as we are getting
+    # slightly different answers for python3.7 vs python3.8 for some reason
+    assert np.isclose(pz_dict['zmode'], zb_expected, atol=0.05).all()
+    assert np.isclose(pz_dict['zmode'], rerun_pz_dict['zmode'], atol=0.05).all()
 
 
 def test_train_pz():

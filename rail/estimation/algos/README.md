@@ -68,6 +68,31 @@ parameters needed to run FlexZBoost:
 
 - `objective`: string that names the objective function used within xgboost.  This is needed to replace a change in the name in updated versions of xgboost, and should be set to "reg:squarederror".
 
+# PZFlowPDF
+PZFlowPDF implements an estimator using the [pzflow](https://github.com/jfcrenshaw/pzflow) package (which is extensively used in RAIL/creation).  The training data is used to train a normalizing flow, which can then provide a posterior estimate of redshift.  The base flow trains the flow using only one magnitude and adjacent colors, however there is an option, `include_mag_errors` that will marginalize over the supplied magnitude error by drawing N samples from the magnitude error distribution (assumed Gaussian for now) where N is given by the `n_error_samples` config option.  Note that marginalizing over the magnitude errors via sampling does come with an increase in computational cost.  The full list of parameter options for PZFlowPDF are:
+
+- `flow_seed`: int, seed to feed into the flow to set random number generation
+
+- `ref_column_name`: string, name of the magnitude column to be used by the flow (other magnitude columms will be converted to colors)
+
+- `column_names`: names for the other magnitude columns, in addition to `ref_column_name`
+
+- `mag_limits`: dict, dictionary with the magnitude column names, where each entry contains a float specifying the 1 sigma magnitude limit in that band.  "Non-detections" will be replaced with the 1 sigma magnitude limit, and a magnitude error of 0.75257.
+
+- `include_mag_errors`: Bool, sets whether to sample N samples (given by `n_error_samples`) from the magnitude error distribution in order to margninalize over the effect of the magnitude errors
+
+- `error_names_dict`: dictionary containing the names of the magnitude columns as keys and names of corresponding magnitude error columns as values.  This is needed to keep the magnitude error columns separate from the magntidues, but still tracked properly internal to the code.
+
+- `n_error_samples`: integer, the number of samples to draw from each magnitude error distribution when marginalizing
+
+- `soft_sharpness`: integer, sets softness for flow
+
+- `soft_idx_col`: integer, column index
+
+- `redshift_column_name`: string, the name of the redshift column in the input file
+
+- `num_training_epochs`: int, the number of iteration steps during the loss minimization when training the flow
+
 # randomPZ
 randomPZ is not a real photo-z code, it is a placeholder demo code used to demonstrate the overall structure that an estimator subclass should have. It assigns a random redshift and outputs a simple Gaussian at random for each PDF.  But, for completion the parameters necessary are:
 - `rand_with`: bin width of redshift grid.
