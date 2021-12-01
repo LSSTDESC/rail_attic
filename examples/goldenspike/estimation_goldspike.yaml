@@ -80,6 +80,15 @@ estimators:
         mag_i_lsst: 28.62
         mag_z_lsst: 27.98
         mag_y_lsst: 27.05
+      include_mag_errors: True
+      error_names_dict:
+        mag_err_u_lsst: "mag_u_lsst_err"
+        mag_err_g_lsst: "mag_g_lsst_err"
+        mag_err_r_lsst: "mag_r_lsst_err"
+        mag_err_i_lsst: "mag_i_lsst_err"
+        mag_err_z_lsst: "mag_z_lsst_err"
+        mag_err_y_lsst: "mag_y_lsst_err"
+      n_error_samples: 3
       soft_sharpness: 10
       soft_idx_col: 0
       redshift_column_name: redshift
