@@ -1,0 +1,44 @@
+#this workflow installs pipreqs, uses it in order to build a requirements.txt file, and pushes the new reqs.txt to docs/requirements.txt for the documentation.
+#pipreqs should crawl the code and find all dependencies, however, it sometimes chokes with packages where the pypi name differs from the package name, and on packages that are on github rather than pypi
+#
+
+name: buildreqs
+
+on:
+  push:
+    branches: [ u/sschmidt23/autoreq ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+  
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install .[Full]
+        pip install git+https://github.com/LSSTDESC/qp.git
+        
+
+    - name: automatically make docs/requirements
+      run: |
+        pip install pipreqs
+        git config --global user.name 'GitHub Action'
+        git config --global user.email "actions@github.com"
+        git rm --cached ./docs/requirements.txt
+        pipreqs . --mode no-pin --force --savepath ./docs/requirements.txt
+        git add ./docs/requirements.txt
+        git commit --allow-empty -m "update docs/requirements.txt"
+        git push -u origin HEAD
+
