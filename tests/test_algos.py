@@ -4,7 +4,7 @@ import copy
 from tables_io.ioUtils import readHdf5ToDict, iterHdf5ToDict
 import pytest
 from rail.estimation.algos import randomPZ, sklearn_nn, flexzboost, trainZ
-from rail.estimation.algos import bpz_lite, pzflow
+from rail.estimation.algos import bpz_lite, pzflow, knnpz
 
 
 test_base_yaml = './tests/test.yaml'
@@ -167,6 +167,43 @@ def test_train_pz():
     assert np.isclose(pz_dict['zmode'], zb_expected).all()
     assert np.isclose(pz_dict['zmode'], rerun_pz_dict['zmode']).all()
 
+
+def test_KNearNeigh():
+    def_bands = ['u', 'g', 'r', 'i', 'z', 'y']
+    refcols = [f"mag_{band}_lsst" for band in def_bands]
+    def_maglims = dict(mag_u_lsst=27.79,
+                       mag_g_lsst=29.04,
+                       mag_r_lsst=29.06,
+                       mag_i_lsst=28.62,
+                       mag_z_lsst=27.98,
+                       mag_y_lsst=27.05)
+    config_dict = dict(run_params=dict(zmin=0.0,
+                                       zmax=3.0,
+                                       nzbins=301,
+                                       trainfrac=0.75,
+                                       ref_column_name='mag_i_lsst',
+                                       column_names=refcols,
+                                       mag_limits=def_maglims,
+                                       sigma_grid_min=0.02,
+                                       sigma_grid_max=0.03,
+                                       ngrid_sigma=2,
+                                       leaf_size=2,
+                                       nneigh_min=2,
+                                       nneigh_max=3,
+                                       redshift_column_name='redshift',
+                                       inform_options=dict(save_train=True,
+                                                           load_model=False,
+                                                           modelfile="KNearNeighPDF.pkl")
+                                       )
+                       )
+    zb_expected = np.array([0.13, 0.14, 0.13, 0.13, 0.11, 0.15, 0.13, 0.14,
+                            0.11, 0.12])
+    pz_algo = knnpz.KNearNeighPDF
+    pz_dict, rerun_pz_dict = one_algo(pz_algo, config_dict)
+    assert np.isclose(pz_dict['zmode'], zb_expected).all()
+    assert np.isclose(pz_dict['zmode'], rerun_pz_dict['zmode']).all()
+    os.remove('KNearNeighPDF.pkl')
+    
 
 def test_catch_bad_bands():
     params = copy.deepcopy(flexzboost.def_param)
