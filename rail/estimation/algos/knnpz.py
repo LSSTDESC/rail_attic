@@ -120,24 +120,15 @@ class KNearNeighPDF(BaseEstimation):
         return coldata
 
     def makepdf(self, dists, ids, szs, sigma):
-        weights = np.full_like(dists, 0.0)
-        means = np.full_like(dists, 0.0)
-        sigmas = np.full_like(dists, 0.0)
-        norms = np.zeros(len(dists))
+        sigmas = np.full_like(dists, sigma)
+        weights = 1./dists
+        norms = np.sum(weights, axis=1)
+        means = szs[ids]
 
-        for i, (idx, distx) in enumerate(zip(ids, dists)):
-            for j, (idy, disty) in enumerate(zip(idx, distx)):
-                weights[i, j] = 1./disty
-                norms[i] += weights[i, j]
-                means[i, j] = szs[idy]
-                # I tried different modifications to sigma, but a single sigma works best
-                sigmas[i, j] = sigma  # *(1.+means[i, j])#*np.sqrt(weights[i, j])
-            # need to normalize weights to sum to 1!
-            weights[i, :] /= norms[i]
-        tmpz = []
-        tmpd = dists[0]
-        for idg in tmpd:
-            tmpz.append(1./idg)
+        for i, norm in enumerate(norms):
+            # normalize weights to sum to one
+            weights[i, :] /= norm
+
         pdfs = qp.Ensemble(qp.mixmod, data=dict(means=means, stds=sigmas, weights=weights))
         return pdfs
 
