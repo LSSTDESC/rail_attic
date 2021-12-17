@@ -68,6 +68,32 @@ parameters needed to run FlexZBoost:
 
 - `objective`: string that names the objective function used within xgboost.  This is needed to replace a change in the name in updated versions of xgboost, and should be set to "reg:squarederror".
 
+# KNearNeighPDF
+KNearNeighPDF is a very fast, very simple K nearest neighbor estimator.  It ignores photometric errors for the sake of speed, and uses only a single magnitude band and all colors to build a KD-tree, then finds K nearest neighbors and constructs a PDF based on those neighbors with Gaussians where the height of each Gaussian is set by the Euclidean distance in magnitude/color space, and the width of the Gaussian is a free parameter *sigma*.  Best fit values for sigma and K (the number of neighbors) can be optimized by searching a grid of these two parameters and minimizing the CDELoss for a portion of the training data reserved via the `trainfrac` value in the config file.  
+In the config file the input training data is split into training and validation, keeping `trainfrac` to construct a KD-tree, and the remainder used as a validation set to compute the CDE loss.  The parameter values that are optimized over are set for sigma via: `sigma_grid_min`, `sigma_grid_max`, `ngrid_sigma`, (i.e. np.linspace(sigma_grid_min, sigma_grid_max, ngrid_sigma); and, for how many Neighbors, K, `nneigh_min`, and `nneigh_max` (e.g. range(nneigh_min, nneigh_max).  The combination of K and sigma with the minimal loss are stored and used for the final computation, and the final KD-tree is remade using the full training data set.
+The  parameter options for KNearNeighPDF are:
+
+-`trainfrac`: float, the fraction of training data used to construct the KD-tree, the remainder used to set best sigma and best K in the loss optimization described above.
+
+-`column_names`: arrat if strings, the column names to be used in NN as named in the input dictionary of data.
+
+-`ref_column_name`: string, name of the magnitude column to be used by the flow (other magnitude columms will be converted to colors).
+
+-`redshift_column_name`: str, name of redshift column
+
+- `mag_limits`: dict, dictionary with the magnitude column names, where each entry contains a float specifying the 1 sigma magnitude limit in that band.  "Non-detections" will be replaced with the 1 sigma magnitude limit, and a magnitude error of 0.75257.
+
+-`sigma_grid_min`: float, minimum value of sigma for grid check
+
+-`sigma_grid_max`: float, maximum value of sigma for grid check
+
+-`leaf_size`: int, min leaf size for KDTree
+
+-`nneigh_min`: int, min number of near neighbors to use for PDF fit
+
+-`nneigh_max`: int, max number of near neighbors to use ofr PDF fit
+
+
 # PZFlowPDF
 PZFlowPDF implements an estimator using the [pzflow](https://github.com/jfcrenshaw/pzflow) package (which is extensively used in RAIL/creation).  The training data is used to train a normalizing flow, which can then provide a posterior estimate of redshift.  The base flow trains the flow using only one magnitude and adjacent colors, however there is an option, `include_mag_errors` that will marginalize over the supplied magnitude error by drawing N samples from the magnitude error distribution (assumed Gaussian for now) where N is given by the `n_error_samples` config option.  Note that marginalizing over the magnitude errors via sampling does come with an increase in computational cost.  The full list of parameter options for PZFlowPDF are:
 

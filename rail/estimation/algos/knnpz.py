@@ -60,7 +60,6 @@ desc_dict = dict(zmin="min z",
                  leaf_size="int, min leaf size for KDTree",
                  nneigh_min="int, min number of near neighbors to use for PDF fit",
                  nneigh_max="int, max number of near neighbors to use ofr PDF fit",
-                 soft_idx_col="index column for SoftPlus",
                  redshift_column_name="name of redshift column",
                  inform_options="inform options"
                  )
