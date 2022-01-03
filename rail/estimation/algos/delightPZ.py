@@ -322,11 +322,11 @@ class delightPZ(BaseEstimation):
         #        exit(-1)
         if not os.path.exists(self.sed_path):
             msg = " No Delight SED data in dir " + self.sed_path
-            logerr.error(msg)
+            logger.error(msg)
             exit(-1)
         if not os.path.exists(self.bands_path):
             msg = " No Delight FILTER data in dir " + self.bands_path
-            logerr.error(msg)
+            logger.error(msg)
             exit(-1)
 
         # Initialisation of Delight with 1) Filters 2) SED to get Flux-redshift model 
