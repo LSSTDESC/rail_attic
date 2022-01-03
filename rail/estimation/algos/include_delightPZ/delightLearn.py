@@ -7,7 +7,7 @@
 #  - find the normalisation of the flux and the best galaxy type
 ############################################################################################################################
 import sys
-from mpi4py import MPI
+#from mpi4py import MPI
 import numpy as np
 #from delight.io import *
 from rail.estimation.algos.include_delightPZ.delight_io import *
@@ -30,9 +30,11 @@ def delightLearn(configfilename):
     """
 
 
-    comm = MPI.COMM_WORLD
-    threadNum = comm.Get_rank()
-    numThreads = comm.Get_size()
+    #comm = MPI.COMM_WORLD
+    #threadNum = comm.Get_rank()
+    #numThreads = comm.Get_size()
+    threadNum = 0
+    numThreads = 1
 
     #parse arguments
 
@@ -59,7 +61,7 @@ def delightLearn(configfilename):
     lastLine = int(min(numObjectsTraining,(threadNum + 1) * numObjectsTraining / numThreads))
     numLines = lastLine - firstLine
 
-    comm.Barrier()
+    #comm.Barrier()
     msg ='Thread ' +  str(threadNum) + ' , analyzes lines ' + str(firstLine) + ' , to ' + str(lastLine)
     logger.info(msg)
 
@@ -123,7 +125,7 @@ def delightLearn(configfilename):
 
 
     # use MPI to get the totals
-    comm.Barrier()
+    #comm.Barrier()
     if threadNum == 0:
         reducedData = np.zeros((numObjectsTraining, numCol))
     else:
@@ -131,16 +133,18 @@ def delightLearn(configfilename):
 
     if crossValidate:
         chi2sGlobal = np.zeros_like(chi2sLocal)
-        comm.Allreduce(chi2sLocal, chi2sGlobal, op=MPI.SUM)
-        comm.Barrier()
+        #comm.Allreduce(chi2sLocal, chi2sGlobal, op=MPI.SUM)
+        #comm.Barrier()
+        chi2sGlobal = chi2sLocal
 
     firstLines = [int(k*numObjectsTraining/numThreads) for k in range(numThreads)]
     lastLines = [int(min(numObjectsTraining, (k+1)*numObjectsTraining/numThreads)) for k in range(numThreads)]
     sendcounts = tuple([(lastLines[k] - firstLines[k]) * numCol for k in range(numThreads)])
     displacements = tuple([firstLines[k] * numCol for k in range(numThreads)])
 
-    comm.Gatherv(localData, [reducedData, sendcounts, displacements, MPI.DOUBLE])
-    comm.Barrier()
+    #comm.Gatherv(localData, [reducedData, sendcounts, displacements, MPI.DOUBLE])
+    reducedData = localData
+    #comm.Barrier()
 
     # parameters for the GP process on traniing data are transfered to reduced data and saved in file
     #'training_paramFile'

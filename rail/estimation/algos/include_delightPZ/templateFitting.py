@@ -8,7 +8,7 @@
 #
 ######################################################################################
 import sys
-from mpi4py import MPI
+#from mpi4py import MPI
 import numpy as np
 from scipy.interpolate import interp1d
 
@@ -39,9 +39,11 @@ def templateFitting(configfilename):
     """
     print(f"\n\n\n\n Templatefitting: using configfile:{configfilename}")
     
-    comm = MPI.COMM_WORLD
-    threadNum = comm.Get_rank()
-    numThreads = comm.Get_size()
+    #comm = MPI.COMM_WORLD
+    #threadNum = comm.Get_rank()
+    #numThreads = comm.Get_size()
+    threadNum = 0
+    numThreads = 1
 
     if threadNum == 0:
         logger.info("--- TEMPLATE FITTING ---")
@@ -98,7 +100,7 @@ def templateFitting(configfilename):
         msg='Number of Target Objects ' + str(numObjectsTarget)
         logger.info(msg)
 
-    comm.Barrier()
+    #comm.Barrier()
 
     msg= 'Thread ' + str(threadNum) + ' , analyzes lines ' + str(firstLine) +  ' , to ' +  str(lastLine)
     logger.info(msg)
@@ -160,7 +162,7 @@ def templateFitting(configfilename):
         if localPDFs[loc, :].sum() > 0:
             localMetrics[loc, :] = computeMetrics(z, redshiftGrid,localPDFs[loc, :],params['confidenceLevels'])
 
-    comm.Barrier()
+    #comm.Barrier()
     if threadNum == 0:
         globalPDFs = np.zeros((numObjectsTarget, numZ))
         globalMetrics = np.zeros((numObjectsTarget, numMetrics))
@@ -174,13 +176,16 @@ def templateFitting(configfilename):
 
     sendcounts = tuple([numLines[k] * numZ for k in range(numThreads)])
     displacements = tuple([firstLines[k] * numZ for k in range(numThreads)])
-    comm.Gatherv(localPDFs,[globalPDFs, sendcounts, displacements, MPI.DOUBLE])
+    #comm.Gatherv(localPDFs,[globalPDFs, sendcounts, displacements, MPI.DOUBLE])
+    globalPDFs = localPDFs
+
 
     sendcounts = tuple([numLines[k] * numMetrics for k in range(numThreads)])
     displacements = tuple([firstLines[k] * numMetrics for k in range(numThreads)])
-    comm.Gatherv(localMetrics,[globalMetrics, sendcounts, displacements, MPI.DOUBLE])
+    #comm.Gatherv(localMetrics,[globalMetrics, sendcounts, displacements, MPI.DOUBLE])
+    globalMetrics = localMetrics 
 
-    comm.Barrier()
+    #comm.Barrier()
 
     if threadNum == 0:
         fmt = '%.2e'

@@ -1,6 +1,6 @@
 
 import sys
-from mpi4py import MPI
+#from mpi4py import MPI
 import numpy as np
 #from delight.io import *
 from rail.estimation.algos.include_delightPZ.delight_io import *
@@ -27,9 +27,12 @@ def delightApply(configfilename):
     """
 
 
-    comm = MPI.COMM_WORLD
-    threadNum = comm.Get_rank()
-    numThreads = comm.Get_size()
+    #comm = MPI.COMM_WORLD
+    #threadNum = comm.Get_rank()
+    #numThreads = comm.Get_size()
+    threadNum = 0
+    numThreads = 1
+
 
 
     params = parseParamFile(configfilename, verbose=False)
@@ -77,7 +80,7 @@ def delightApply(configfilename):
         msg='Number of Target Objects ' + str(numObjectsTarget)
         logger.info(msg)
 
-    comm.Barrier()
+    #comm.Barrier()
 
     msg= 'Thread '+ str(threadNum) + ' , analyzes lines ' +  str(firstLine) + ' to ' + str( lastLine)
     logger.info(msg)
@@ -202,7 +205,7 @@ def delightApply(configfilename):
             fC.close()
             fCI.close()
 
-    comm.Barrier()
+    #comm.Barrier()
 
     if threadNum == 0:
         globalPDFs = np.zeros((numObjectsTarget, numZ))
@@ -221,19 +224,23 @@ def delightApply(configfilename):
 
     sendcounts = tuple([numLines[k] * numZ for k in range(numThreads)])
     displacements = tuple([firstLines[k] * numZ for k in range(numThreads)])
-    comm.Gatherv(localPDFs,[globalPDFs, sendcounts, displacements, MPI.DOUBLE])
+    #comm.Gatherv(localPDFs,[globalPDFs, sendcounts, displacements, MPI.DOUBLE])
+    globalPDFs = localPDFs
+
 
     sendcounts = tuple([numLines[k] * Ncompress for k in range(numThreads)])
     displacements = tuple([firstLines[k] * Ncompress for k in range(numThreads)])
-    comm.Gatherv(localCompressIndices,[globalCompressIndices, sendcounts, displacements, MPI.LONG])
-    comm.Gatherv(localCompEvidences,[globalCompEvidences, sendcounts, displacements, MPI.DOUBLE])
-    comm.Barrier()
+    #comm.Gatherv(localCompressIndices,[globalCompressIndices, sendcounts, displacements, MPI.LONG])
+    #comm.Gatherv(localCompEvidences,[globalCompEvidences, sendcounts, displacements, MPI.DOUBLE])
+    globalCompressIndices = localCompressIndices
+    globalCompEvidences = localCompEvidences
+    #comm.Barrier()
 
     sendcounts = tuple([numLines[k] * numMetrics for k in range(numThreads)])
     displacements = tuple([firstLines[k] * numMetrics for k in range(numThreads)])
-    comm.Gatherv(localMetrics,[globalMetrics, sendcounts, displacements, MPI.DOUBLE])
-
-    comm.Barrier()
+    #comm.Gatherv(localMetrics,[globalMetrics, sendcounts, displacements, MPI.DOUBLE])
+    globalMetrics = localMetrics
+    #comm.Barrier()
 
     if threadNum == 0:
         fmt = '%.2e'
