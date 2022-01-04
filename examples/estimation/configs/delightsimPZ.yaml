@@ -7,8 +7,8 @@
 #
 # Author        : Sylvie Dagoret-Campagne
 # Affiliation   : IJCLab/IN2P3/CNRS/France
-# Creation date : March 2021
-# Last update   : May 8th 2021
+# Creation date : January 4th 2022
+# Last update   : January 4th 2022
 #
 ############################################################################################
 run_params:
@@ -20,7 +20,7 @@ run_params:
 #------------------------------------------------
   dlght_redshiftMin: 0.01
   dlght_redshiftMax: 3.01
-  dlght_redshiftNumBinsGPpred: 300
+  dlght_redshiftNumBinsGPpred: 301
   dlght_redshiftBinSize: 0.01
   dlght_redshiftDisBinSize: 0.2
 #-----------------------------------------------
@@ -38,6 +38,34 @@ run_params:
 #---------------------------------------
   tempdir: "./tmpsim"
   tempdatadir: "./tmpsim/delight_data"
+#---------------------------------------
+# new stuff added Nov 2021
+#---------------------------------------
+# FOR FILTERS:
+  bands_names: "DC2LSST_u DC2LSST_g DC2LSST_r DC2LSST_i DC2LSST_z DC2LSST_y"
+  bands_path: "../../rail/estimation/data/FILTER"
+  bands_fmt: "res"
+  bands_numcoefs: 15
+  bands_verbose: True
+  bands_makeplots: False
+  bands_debug: True
+# FOR SEDS:
+  sed_path: "../../rail/estimation/data/SED"
+  sed_name_list: "El_B2004a Sbc_B2004a Scd_B2004a SB3_B2004a SB2_B2004a Im_B2004a ssp_25Myr_z008 ssp_5Myr_z008"
+  sed_fmt: "sed"
+  prior_t_list: "0.27 0.26 0.25 0.069 0.021 0.11 0.0061 0.0079"
+  prior_zt_list: "0.23 0.39 0.33 0.31 1.1 0.34 1.2 0.14"
+  lambda_ref: 4500.
+# Training stuff
+  train_refbandorder: "DC2LSST_u DC2LSST_u_var DC2LSST_g DC2LSST_g_var DC2LSST_r DC2LSST_r_var DC2LSST_i DC2LSST_i_var DC2LSST_z DC2LSST_z_var DC2LSST_y DC2LSST_y_var redshift"
+  train_refband: DC2LSST_i
+  train_fracfluxerr: 1.e-4
+  train_xvalidate: False
+  train_xvalbandorder: "_ _ _ _ DC2LSST_r DC2LSST_r_var _ _ _ _ _ _"
+# Target stuff
+  target_refbandorder: "DC2LSST_u DC2LSST_u_var DC2LSST_g DC2LSST_g_var DC2LSST_r DC2LSST_r_var DC2LSST_i DC2LSST_i_var DC2LSST_z DC2LSST_z_var DC2LSST_y DC2LSST_y_var redshift"
+  target_refband: DC2LSST_r
+  target_fracfluxerr: 1.e-4
 #----------------------------------------
 # delight configuration file filename
 #----------------------------------------
