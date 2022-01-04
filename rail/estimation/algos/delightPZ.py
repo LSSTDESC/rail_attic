@@ -15,6 +15,8 @@
 import numpy as np
 from scipy.stats import norm
 from rail.estimation.estimator import Estimator as BaseEstimation
+from rail.estimation.utils import check_and_print_params
+import qp
 
 import os
 import errno
@@ -55,21 +57,6 @@ logger = logging.getLogger(__name__)
 coloredlogs.install(level='DEBUG', logger=logger,fmt='%(asctime)s,%(msecs)03d %(programname)s %(name)s[%(process)d] %(levelname)s %(message)s')
 
 
-
-
-
-import numpy as np
-from scipy.stats import norm
-from rail.estimation.estimator import Estimator as BaseEstimation
-from rail.estimation.utils import check_and_print_params
-import qp
-
-
-
-# Create a logger object.
-logger = logging.getLogger(__name__)
-
-coloredlogs.install(level='DEBUG', logger=logger,fmt='%(asctime)s,%(msecs)03d %(programname)s %(name)s[%(process)d] %(levelname)s %(message)s')
 
 
 
