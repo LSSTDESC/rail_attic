@@ -15,6 +15,7 @@ creation_extras = ["pzflow"]
 
 # dependencies required for all estimators in the Estimation module
 estimation_extras = [
+    "coloredlogs",
     "matplotlib",
     "pyarrow",
     "pyyaml",
