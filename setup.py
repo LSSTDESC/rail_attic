@@ -15,7 +15,6 @@ creation_extras = ["pzflow"]
 
 # dependencies required for all estimators in the Estimation module
 estimation_extras = [
-    "coloredlogs",
     "matplotlib",
     "pyarrow",
     "pyyaml",
@@ -27,6 +26,10 @@ estimation_codes = {
     "bpz": ["DESC_BPZ @ git+https://github.com/LSSTDESC/DESC_BPZ"],
     "flex": ["FlexCode[all]"],
     "NN": ["sklearn"],
+    "delightPZ": [
+        "coloredlogs",
+        "delight @ git+git+https://github.com/LSSTDESC/Delight",
+        ]
 }
 
 # dependencies for the Evaluation module
