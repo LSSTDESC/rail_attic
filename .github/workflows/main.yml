@@ -23,9 +23,7 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: checkout and Install Delight with Cython setup
-      uses: actions/checkout@v2
-      
+    - name: Install Delight with Cython setup
       run: |
         python -m pip install --upgrade pip
         python -m pip install cython numpy pytest pylint scipy matplotlib coveralls astropy pycodestyle sphinx
