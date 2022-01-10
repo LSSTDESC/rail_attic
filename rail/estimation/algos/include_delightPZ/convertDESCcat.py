@@ -16,17 +16,11 @@ from functools import reduce
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 from rail.estimation.algos.include_delightPZ.delight_io import *
-#from delight.io import *
 from delight.utils import *
-
+from tables_io import io
 import coloredlogs
 import logging
-
 import h5py
-
-#from interfaces.rail.utils  import load_training_data, get_input_data_size_hdf5,load_raw_hdf5_data
-#from rail.estimation.utils  import load_training_data, get_input_data_size_hdf5,load_raw_hdf5_data
-from rail.estimation.algos.include_delightPZ.utils import load_training_data, get_input_data_size_hdf5,load_raw_hdf5_data
 
 logger = logging.getLogger(__name__)
 coloredlogs.install(level='DEBUG', logger=logger,fmt='%(asctime)s,%(msecs)03d %(programname)s, %(name)s[%(process)d] %(levelname)s %(message)s')
@@ -359,8 +353,8 @@ def convertDESCcat(configfilename,desctraincatalogfile,desctargetcatalogfile,\
     msg="read DESC hdf5 training file {} ".format(desctraincatalogfile)
     logger.debug(msg)
 
-    f = load_raw_hdf5_data(desctraincatalogfile, groupname='photometry')
-
+    f = io.readHdf5ToDict(desctraincatalogfile, groupname='photometry')
+    
     # produce a numpy array
     magdata = group_entries(f)
 
@@ -507,7 +501,7 @@ def convertDESCcat(configfilename,desctraincatalogfile,desctargetcatalogfile,\
     msg = "read DESC hdf5 validation file {} ".format(desctargetcatalogfile)
     logger.debug(msg)
 
-    f = load_raw_hdf5_data(desctargetcatalogfile, groupname='photometry')
+    f = io.readHdf5ToDict(desctargetcatalogfile, groupname='photometry')
 
     # produce a numpy array
     magdata = group_entries(f)
@@ -665,26 +659,6 @@ def convertDESCcatTrainData(configfilename,descatalogdata,flag_filter=True,snr_c
         flux_multiplicative_factor = 2.22e10
     else:
         flux_multiplicative_factor = 1
-
-
-
-    # 1) DESC catalog data
-    # msg="read DESC hdf5 training data "
-    # logger.debug(msg)
-
-    #f = load_raw_hdf5_data(desctraincatalogfile, groupname='photometry')
-
-    # produce a numpy array
-    #magdata = group_entries(f)
-    
-    #logger.debug("--- descatalogdata : ---")
-    #pprint.pprint(descatalogdata)
-    
-    magdata = group_entries(descatalogdata)
-    
-    #logger.debug("--- magdata : ---")
-    #pprint.pprint(magdata)
-   
 
     # remember the number of entries
     Nin = magdata.shape[0]
@@ -862,7 +836,7 @@ def convertDESCcatTargetFile(configfilename,desctargetcatalogfile,flag_filter=Tr
     msg = "read DESC hdf5 validation file {} ".format(desctargetcatalogfile)
     logger.debug(msg)
 
-    f = load_raw_hdf5_data(desctargetcatalogfile, groupname='photometry')
+    f = io.readHdf5ToDict(desctargetcatalogfile, groupname='photometry')
 
     # produce a numpy array
     magdata = group_entries(f)
