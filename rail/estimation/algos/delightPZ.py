@@ -182,7 +182,7 @@ class delightPZ(BaseEstimation):
         inputs = self.config_dict['run_params']
 
         self.zmin = inputs['dlght_redshiftMin']
-        if self.zmin <= 0.:
+        if self.zmin <= 0.:  # pragma: no cover
             raise ValueError("zmin must be greater than zero!"
                              + "set dlght_redshiftMin accordingly")
         self.zmax = inputs['dlght_redshiftMax']
@@ -203,7 +203,7 @@ class delightPZ(BaseEstimation):
 
         # Choice of the running mode
         self.tutorialmode = inputs["dlght_tutorialmode"]
-        self.tutorialpasseval = False  # onmy one chunk for simulation
+        self.tutorialpasseval = False  # only one chunk for simulation
         # for standard mode with DC2 dataset
         self.flag_filter_training = inputs["flag_filter_training"]
         self.snr_cut_training = inputs["snr_cut_training"]
@@ -249,7 +249,7 @@ class delightPZ(BaseEstimation):
         try:
             if not os.path.exists(self.tempdir):
                 os.makedirs(self.tempdir)
-        except OSError as e:
+        except OSError as e:  # pragma: no cover
             if e.errno != errno.EEXIST:
                 msg = "error creating file "+self.tempdir
                 logger.error(msg)
@@ -258,7 +258,7 @@ class delightPZ(BaseEstimation):
         try:
             if not os.path.exists(self.tempdatadir):
                 os.makedirs(self.tempdatadir)
-        except OSError as e:
+        except OSError as e:  # pragma: no cover
             if e.errno != errno.EEXIST:
                 msg = "error creating file " + self.tempdatadir
                 logger.error(msg)
@@ -307,11 +307,11 @@ class delightPZ(BaseEstimation):
         #        msg = " No Delight input data in dir  " + theinpath
         #        logger.error(msg)
         #        exit(-1)
-        if not os.path.exists(self.sed_path):
+        if not os.path.exists(self.sed_path):  # pragma: no cover
             msg = " No Delight SED data in dir " + self.sed_path
             logger.error(msg)
             exit(-1)
-        if not os.path.exists(self.bands_path):
+        if not os.path.exists(self.bands_path):  # pragma: no cover
             msg = " No Delight FILTER data in dir " + self.bands_path
             logger.error(msg)
             exit(-1)
