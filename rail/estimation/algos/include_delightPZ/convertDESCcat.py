@@ -660,6 +660,8 @@ def convertDESCcatTrainData(configfilename,descatalogdata,flag_filter=True,snr_c
     else:
         flux_multiplicative_factor = 1
 
+    magdata = group_entries(descatalogdata)
+    
     # remember the number of entries
     Nin = magdata.shape[0]
     msg = "Number of objects = {} , in  training dataset".format(Nin)
