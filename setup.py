@@ -2,7 +2,6 @@ from setuptools import setup, find_namespace_packages
 
 # basic dependencies for all RAIL modules
 install_requires = [
-    "astropy",
     "h5py",
     "numpy",
     "pandas>=1.1",
@@ -34,7 +33,7 @@ estimation_codes = {
 }
 
 # dependencies for the Evaluation module
-evaluation_extras = []
+evaluation_extras = ["seaborn"]
 
 
 # compile the extras_require dictionary

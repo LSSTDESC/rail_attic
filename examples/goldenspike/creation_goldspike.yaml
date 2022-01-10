@@ -1,0 +1,65 @@
+# if run_creation is True, runs the creation stage, if False skips this section
+run_creation: True
+# if has flow==True, read a pre-trained flow from `flow_file`
+has_flow: True
+flow_file: data/pretrained_flow.pkl
+# if has_flow is false, you should set use_local_data to `True` and the data to
+# train the flow will be read in from a file specified in `local_flow_data`
+use_local_data: False
+local_flow_data_file: data/test_flow_data.pq
+flow_columns: ['mag_u_lsst', 'mag_g_lsst', 'mag_r_lsst', 'mag_i_lsst', 'mag_z_lsst', 'mag_y_lsst', 'redshift']
+# number of test and train galaxies to generate from zmin<z<zmax with nzbins for pdf
+N_test_gals: 5000
+N_train_gals: 2000
+zmin: 0.0
+zmax: 3.0
+nzbins: 101
+# name of redshift column
+z_column: redshift
+#info for LSST Error Model, needed for the creator for both test and train data
+LSSTErrorModel_params:
+  ndFlag: 99.0
+  highSNR: False
+  bandNames:
+    u: mag_u_lsst
+    g: mag_g_lsst
+    r: mag_r_lsst
+    i: mag_i_lsst
+    z: mag_z_lsst
+    y: mag_y_lsst
+  nVisYr: {'u': 5.6, 'g': 8.0, 'r': 18.4, 'i': 18.4, 'z': 16.0, 'y': 16.0}
+  gamma: {'u': 0.038, 'g': 0.039, 'r': 0.039, 'i': 0.039, 'z': 0.039, 'y': 0.039}
+  Cm: {'u': 23.09, 'g': 24.42, 'r': 24.44, 'i': 24.32, 'z': 24.16, 'y': 23.73}
+  msky: {'u': 22.99, 'g': 22.26, 'r': 21.20, 'i': 20.48, 'z': 19.60, 'y': 18.61}
+  theta: {'u': 0.81, 'g': 0.77, 'r': 0.73, 'i': 0.71, 'z': 0.69, 'y': 0.68}
+  km: {'u': 0.491, 'g': 0.213, 'r': 0.126, 'i': 0.096, 'z': 0.069, 'y': 0.170}
+#information on degraders to apply
+use_degraders: True
+degrader_seed: 0
+degraders:
+  InvRedshiftIncompleteness:
+    pivot_redshift: 1.0
+  LineConfusion:
+    true_wavelen: 5007.
+    wrong_wavelen: 3727.
+    frac_wrong: 0.05
+  QuantityCut:
+    cuts: {'mag_i_lsst': 25.3}
+#kludge rename of columns
+rename_cols:
+  mag_u_lsst_err: mag_err_u_lsst
+  mag_g_lsst_err: mag_err_g_lsst
+  mag_r_lsst_err: mag_err_r_lsst
+  mag_i_lsst_err: mag_err_i_lsst
+  mag_z_lsst_err: mag_err_z_lsst
+  mag_y_lsst_err: mag_err_y_lsst
+# set to save true PDFs, to file `ensemble_file`
+save_ensemble: False
+ensemble_file: goldenspike_true_posteriors_qp.pq
+# Save the flow? If so, use `saved_flow_file`
+save_flow: True
+saved_flow_file: new_9816_flow.pkl
+# Creation photometry+redshift+errors files
+saved_data_dir: creation_data
+test_filename: test_data
+train_filename: train_data

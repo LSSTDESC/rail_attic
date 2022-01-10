@@ -1,7 +1,6 @@
 jupyter
 jupyterlab
 numpy
-astropy
 sphinx
 matplotlib
 pandas
@@ -14,3 +13,4 @@ pip
 corner
 tables-io
 qp@git+https://github.com/LSSTDESC/qp
+pzflow
