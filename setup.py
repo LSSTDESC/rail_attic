@@ -27,6 +27,11 @@ estimation_codes = {
     "bpz": ["DESC_BPZ @ git+https://github.com/LSSTDESC/DESC_BPZ"],
     "flex": ["FlexCode[all]"],
     "NN": ["sklearn"],
+    "delightPZ": [
+        "coloredlogs",
+        "cython",
+        "delight @ git+https://github.com/LSSTDESC/Delight",
+        ]
 }
 
 # dependencies for the Evaluation module

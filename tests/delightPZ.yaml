@@ -19,7 +19,7 @@ run_params:
 # dlght_ prepend means a parameter used by Delight
 #------------------------------------------------
   dlght_redshiftMin: 0.01
-  dlght_redshiftMax: 3.01
+  dlght_redshiftMax: 3.011
   dlght_redshiftNumBinsGPpred: 301
   dlght_redshiftBinSize: 0.01
   dlght_redshiftDisBinSize: 0.2
