@@ -20,6 +20,7 @@ estimation_extras = [
     "pyyaml",
     "scipy>=1.5.2",
     "tables",
+    "coloredlogs",
 ]
 # dependencies for specific estimators in the Estimation module
 estimation_codes = {
