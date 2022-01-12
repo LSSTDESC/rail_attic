@@ -27,7 +27,10 @@ estimation_codes = {
     "NN": ["sklearn"],
     "delightPZ": [
         "coloredlogs",
+        "corner",
         "cython",
+        "emcee",
+        "mpi4py",
         "delight @ git+https://github.com/LSSTDESC/Delight",
         ]
 }
