@@ -41,7 +41,7 @@ from rail.estimation.algos.include_delightPZ.delightLearn import delightLearn
 from rail.estimation.algos.include_delightPZ.delightApply import delightApply
 
 # other
-#from rail.estimation.algos.include_delightPZ.calibrateTemplateMixturePriors import *
+from rail.estimation.algos.include_delightPZ.calibrateTemplateMixturePriors import *
 from rail.estimation.algos.include_delightPZ.getDelightRedshiftEstimation import *
 
 # Create a logger object.
