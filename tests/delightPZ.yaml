@@ -48,7 +48,8 @@ run_params:
 #   - True  : activate internal flux simulation
 #   - False : activate use of DC2 datasets for training and Validation
 #-----------------------------------------------------------------------
-  dlght_tutorialmode: False
+# remove tutorial mode!
+#  dlght_tutorialmode: False
 #------------------------------------------------------------------------
 # Filtering of training and Validation dataset
 # according flux SNR
