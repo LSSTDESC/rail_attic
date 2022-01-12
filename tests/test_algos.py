@@ -169,19 +169,12 @@ def test_train_pz():
     assert np.isclose(pz_dict['zmode'], zb_expected).all()
     assert np.isclose(pz_dict['zmode'], rerun_pz_dict['zmode']).all()
 
-@pytest.mark.parametrize(
-    "inputs, zb_expected",
-    [(False, np.array([0.18, 0.01, -1., -1., 0.01, -1., -1., -1., 0.01, 0.01])),
-     (True, np.array([0.18, 0.01, -1., -1., 0.01, -1., -1., -1., 0.01, 0.01])),
-     ],
-)
-def test_delight(inputs, zb_expected):
+def test_delight():
     with open("./tests/delightPZ.yaml", "r") as f:
         config_dict=yaml.safe_load(f)
-    config_dict['dlght_tutorialmode'] = inputs
     pz_algo = delightPZ.delightPZ
     pz_dict, rerun_pz_dict = one_algo(pz_algo, config_dict)
-    # zb_expected = np.array([0.18, 0.01, -1., -1., 0.01, -1., -1., -1., 0.01, 0.01])
+    zb_expected = np.array([0.18, 0.01, -1., -1., 0.01, -1., -1., -1., 0.01, 0.01])
     assert np.isclose(pz_dict['zmode'], zb_expected, atol=0.03).all()
     assert np.isclose(pz_dict['zmode'], rerun_pz_dict['zmode']).all()
     
