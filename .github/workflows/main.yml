@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         python-version: [3.7, 3.8]
-        mpi: [openmpi]
+        mpi: [ openmpi ]
     steps:
     - uses: actions/checkout@v2
     - name: set up MPI
