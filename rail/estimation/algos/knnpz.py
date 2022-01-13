@@ -31,6 +31,7 @@ def_param = dict(run_params=dict(zmin=0.0,
                                  zmax=3.0,
                                  nzbins=301,
                                  trainfrac=0.75,
+                                 random_seed=87,
                                  ref_column_name='mag_i_lsst',
                                  column_names=refcols,
                                  mag_limits=def_maglims,
@@ -51,6 +52,7 @@ desc_dict = dict(zmin="min z",
                  zmax="max_z",
                  nzbins="num z bins",
                  trainfrac="fraction of training data used to make tree, rest used to set best sigma",
+                 random_seed="int, random seed for reproducibility",
                  ref_column_name="name for reference column",
                  column_names="column names to be used in NN, *ASSUMED TO BE IN INCREASING WL ORDER!*",
                  mag_limits="1 sigma mag limits",
@@ -92,6 +94,7 @@ class KNearNeighPDF(BaseEstimation):
         self.nzbins = inputs['nzbins']
         self.zgrid = np.linspace(self.zmin, self.zmax, self.nzbins)
         self.trainfrac = inputs['trainfrac']
+        self.seed = inputs['random_seed']
         self.refcol = inputs['ref_column_name']
         self.col_names = inputs['column_names']
         self.maglims = inputs['mag_limits']
@@ -145,6 +148,7 @@ class KNearNeighPDF(BaseEstimation):
         self.trainszs = np.array(knndf[self.redshiftname])
         colordata = self.computecolordata(knndf)
         nobs = colordata.shape[0]
+        np.random.seed(self.seed)  # set seed for reproducibility
         perm = np.random.permutation(nobs)
         ntrain = round(nobs * self.trainfrac)
         xtrain_data = colordata[perm[:ntrain]]

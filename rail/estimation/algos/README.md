@@ -70,12 +70,14 @@ parameters needed to run FlexZBoost:
 
 # KNearNeighPDF
 KNearNeighPDF is a very fast, very simple K nearest neighbor estimator.  It ignores photometric errors for the sake of speed, and uses only a single magnitude band and all colors to build a KD-tree, then finds K nearest neighbors and constructs a PDF based on those neighbors with Gaussians where the height of each Gaussian is set by the Euclidean distance in magnitude/color space, and the width of the Gaussian is a free parameter *sigma*.  Best fit values for sigma and K (the number of neighbors) can be optimized by searching a grid of these two parameters and minimizing the CDELoss for a portion of the training data reserved via the `trainfrac` value in the config file.  
-In the config file the input training data is split into training and validation, keeping `trainfrac` to construct a KD-tree, and the remainder used as a validation set to compute the CDE loss.  The parameter values that are optimized over are set for sigma via: `sigma_grid_min`, `sigma_grid_max`, `ngrid_sigma`, (i.e. np.linspace(sigma_grid_min, sigma_grid_max, ngrid_sigma); and, for how many Neighbors, K, `nneigh_min`, and `nneigh_max` (i.e. range(nneigh_min, nneigh_max).  The combination of K and sigma with the minimal loss are stored and used for the final computation, and the final KD-tree is remade using the full training data set.
+In the config file the input training data is split into training and validation, keeping `trainfrac` to construct a KD-tree, and the remainder used as a validation set to compute the CDE loss.  The parameter values that are optimized over are set for sigma via: `sigma_grid_min`, `sigma_grid_max`, `ngrid_sigma`, (i.e. np.linspace(sigma_grid_min, sigma_grid_max, ngrid_sigma); and, for how many Neighbors, K, `nneigh_min`, and `nneigh_max` (i.e. range(nneigh_min, nneigh_max+1).  The combination of K and sigma with the minimal loss are stored and used for the final computation, and the final KD-tree is remade using the full training data set.
 The  parameter options for KNearNeighPDF are:
 
 -`trainfrac`: float, the fraction of training data used to construct the KD-tree, the remainder used to set best sigma and best K in the loss optimization described above.
 
--`column_names`: arrat if strings, the column names to be used in NN as named in the input dictionary of data.
+-`random_seed`: int, integer to set the numpy random seed for reproducibility
+
+-`column_names`: array if strings, the column names to be used in NN as named in the input dictionary of data.
 
 -`ref_column_name`: string, name of the magnitude column to be used by the flow (other magnitude columms will be converted to colors).
 

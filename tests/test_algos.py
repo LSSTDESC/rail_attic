@@ -181,6 +181,7 @@ def test_KNearNeigh():
                                        zmax=3.0,
                                        nzbins=301,
                                        trainfrac=0.75,
+                                       random_seed=87,
                                        ref_column_name='mag_i_lsst',
                                        column_names=refcols,
                                        mag_limits=def_maglims,
