@@ -117,19 +117,16 @@ class KNearNeighPDF(BaseEstimation):
         for k in range(nbands):
             newdict[f'x{k}'] = df[self.col_names[k]] - df[self.col_names[k+1]]
         newdf = pd.DataFrame(newdict)
-        coldata = newdf.values
+        coldata = newdf.to_numpy()
 
         return coldata
 
     def makepdf(self, dists, ids, szs, sigma):
         sigmas = np.full_like(dists, sigma)
         weights = 1./dists
+        weights /= weights.sum(axis=1, keepdims=True)
         norms = np.sum(weights, axis=1)
         means = szs[ids]
-
-        for i, norm in enumerate(norms):
-            # normalize weights to sum to one
-            weights[i, :] /= norm
 
         pdfs = qp.Ensemble(qp.mixmod, data=dict(means=means, stds=sigmas, weights=weights))
         return pdfs
@@ -220,8 +217,6 @@ class KNearNeighPDF(BaseEstimation):
 
         testcolordata = self.computecolordata(knn_df)
         dists, idxs = self.model.query(testcolordata, k=self.numneigh)
-        #pdfs = [self.makepdf(dist, id, self.trainszs, self.sigma) for dist, id in zip(dists,idxs)]
-        #pdfs = np.array(pdfs)
         test_ens = self.makepdf(dists, idxs, self.trainszs, self.sigma)
 
         if self.output_format == 'qp':
