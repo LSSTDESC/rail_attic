@@ -1,0 +1,93 @@
+
+# DELIGHT parameter file
+# Syntactic rules:
+# - You can set parameters with : or =
+# - Lines starting with # or ; will be ignored
+# - Multiple values (band names, band orders, confidence levels)
+#   must beb separated by spaces
+# - The input files should contain numbers separated with spaces.
+# - underscores mean unused column
+
+
+[Bands]
+names: lsst_u lsst_g lsst_r lsst_i lsst_z lsst_y
+directory: ./FILTERS
+bands_fmt: res
+numCoefs: 15
+bands_verbose: True
+bands_debug: True
+bands_makeplots: False
+
+
+[Templates]
+directory: ./CWW_SEDs
+names: El_B2004a Sbc_B2004a Scd_B2004a SB3_B2004a SB2_B2004a Im_B2004a ssp_25Myr_z008 ssp_5Myr_z008
+sed_fmt: sed
+p_t: 0.27 0.26 0.25 0.069 0.021 0.11 0.0061 0.0079
+p_z_t:0.23 0.39 0.33 0.31 1.1 0.34 1.2 0.14
+lambdaRef: 4.5e3
+
+[Simulation]
+numObjects: 1000
+noiseLevel: 0.03
+
+trainingFile: data_lsst/galaxies-fluxredshifts.txt
+targetFile: data_lsst/galaxies-fluxredshifts2.txt
+
+[Training]
+
+catFile: data_lsst/galaxies-fluxredshifts.txt
+
+bandOrder: lsst_u lsst_u_var lsst_g lsst_g_var lsst_r lsst_r_var lsst_i lsst_i_var lsst_z lsst_z_var lsst_y lsst_y_var redshift
+referenceBand: lsst_i
+extraFracFluxError: 1e-4
+crossValidate: False
+crossValidationBandOrder: _ _ _ _ lsst_r lsst_r_var _ _ _ _ _ _
+paramFile: data_lsst/galaxies-gpparams.txt
+
+CVfile: data_lsst/galaxies-gpCV.txt
+
+
+numChunks: 1
+
+
+[Target]
+
+catFile: data_lsst/galaxies-fluxredshifts2.txt
+
+
+bandOrder: lsst_u lsst_u_var lsst_g lsst_g_var lsst_r lsst_r_var lsst_i lsst_i_var lsst_z lsst_z_var lsst_y lsst_y_var redshift
+referenceBand: lsst_r
+extraFracFluxError: 1e-4
+
+redshiftpdfFile: data_lsst/galaxies-redshiftpdfs.txt
+redshiftpdfFileTemp: data_lsst/galaxies-redshiftpdfs-cww.txt
+metricsFile:  data_lsst/galaxies-redshiftmetrics.txt
+metricsFileTemp:  data_lsst/galaxies-redshiftmetrics-cww.txt
+
+useCompression: False
+Ncompress: 10
+
+compressIndicesFile: data_lsst/galaxies-compressionIndices.txt
+compressMargLikFile: data_lsst/galaxies-compressionMargLikes.txt
+redshiftpdfFileComp: data_lsst/galaxies-redshiftpdfs-comp.txt
+
+[Other]
+rootDir: ./
+zPriorSigma: 0.2
+ellPriorSigma: 0.5
+fluxLuminosityNorm: 1.0
+alpha_C: 1.0e3
+V_C: 0.1
+alpha_L: 1.0e2
+V_L: 0.1
+lines_pos: 6500 5002.26 3732.22
+lines_width: 20.0 20.0 20.0
+
+redshiftMin: 0.1
+redshiftMax: 1.101
+redshiftNumBinsGPpred: 100
+redshiftBinSize: 0.001
+redshiftDisBinSize: 0.2
+
+confidenceLevels: 0.1 0.50 0.68 0.95

@@ -7,22 +7,11 @@
 #  Some other parameter are hardcoded in this file
 # The fina goal is to retrieve those parameters from RAIL config file
 #####################################################################################################
-import sys
-import numpy as np
-from scipy.interpolate import interp1d
-from scipy.optimize import leastsq
-
-from delight.utils import *
-from rail.estimation.algos.include_delightPZ.delight_io import *
-#from delight.io import *
-
-
+#from delight.utils import *
+#from rail.estimation.algos.include_delightPZ.delight_io import *
 import coloredlogs
 import logging
-
-
 import os
-import yaml
 
 from pkg_resources import resource_filename
 
@@ -393,7 +382,7 @@ confidenceLevels: 0.1 0.50 0.68 0.95
 
 
 #-----------------------------------------------------------------------------------------
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     # execute only if run as a script
 
 
@@ -404,8 +393,9 @@ if __name__ == "__main__":
     logger.debug("__name__:"+__name__)
     logger.debug("__file__:"+__file__)
 
-    datapath=resource_filename('delight', '../data')
-
+    #datapath=resource_filename('delight', '../data')
+    datapath = "./"
+    
     logger.debug("datapath = " + datapath)
 
 
