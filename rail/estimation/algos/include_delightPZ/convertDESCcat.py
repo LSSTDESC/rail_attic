@@ -13,14 +13,11 @@ import os
 import numpy as np
 from functools import reduce
 
-import matplotlib.pyplot as plt
-from scipy.interpolate import interp1d
 from rail.estimation.algos.include_delightPZ.delight_io import *
 from delight.utils import *
 from tables_io import io
 import coloredlogs
 import logging
-import h5py
 
 logger = logging.getLogger(__name__)
 coloredlogs.install(level='DEBUG', logger=logger,fmt='%(asctime)s,%(msecs)03d %(programname)s, %(name)s[%(process)d] %(levelname)s %(message)s')
@@ -28,7 +25,6 @@ coloredlogs.install(level='DEBUG', logger=logger,fmt='%(asctime)s,%(msecs)03d %(
 # option to convert DC2 flux level (in AB units) into internal Delight units
 # this option will be removed when optimisation of parameters will be implemented
 FLAG_CONVERTFLUX_TODELIGHTUNIT=True
-
 
 
 def group_entries(f):
@@ -301,7 +297,7 @@ def convertDESCcatChunk(configfilename,data,chunknum,flag_filter_validation = Tr
         logger.debug(msg)
 
         outputdir = os.path.dirname(params['targetFile'])
-        if not os.path.exists(outputdir):
+        if not os.path.exists(outputdir):  # pragma: no cover
             msg = " outputdir not existing {} then create it ".format(outputdir)
             logger.info(msg)
             os.makedirs(outputdir)
@@ -984,7 +980,7 @@ def convertDESCcatTargetFile(configfilename,desctargetcatalogfile,flag_filter=Tr
 
     
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     # execute only if run as a script
 
 

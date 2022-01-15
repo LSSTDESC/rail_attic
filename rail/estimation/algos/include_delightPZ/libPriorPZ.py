@@ -137,7 +137,7 @@ def libPriorPZ(z_grid,maglim,nt=8):
 
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     # execute only if run as a script
 
 
