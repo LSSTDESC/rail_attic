@@ -54,7 +54,7 @@ def processFilters(configfilename):
     max_redshift = params['redshiftMax']  # for plotting purposes
     root = params['bands_directory']
 
-    if make_plots:
+    if make_plots:  # pragma: no cover
         import matplotlib.pyplot as plt
         cm = plt.get_cmap('brg')
         num = len(bandNames)
@@ -70,7 +70,7 @@ def processFilters(configfilename):
             y += np.abs(p[i]) * np.exp(-0.5*((mus[i]-x)/np.abs(p[n+i]))**2.0)
         return yd - y
 
-    if make_plots:
+    if make_plots:  # pragma: no cover
         fig0, ax0 = plt.subplots(1, 1, figsize=(8.2, 4))
 
     # Loop over bands
@@ -109,7 +109,7 @@ def processFilters(configfilename):
         for i in range(numCoefs):
             yy += coefs[i, 0] * np.exp(-0.5*((coefs[i, 1] - xf)/coefs[i, 2])**2.0)
 
-        if make_plots:
+        if make_plots:  # pragma: no cover
             fig, ax = plt.subplots(figsize=(8, 4))
             ax.plot(x[ind], y[ind], lw=3, label='True filter', c='k')
             ax.plot(xf, yy, lw=2, c='r', label='Gaussian fit')
@@ -128,7 +128,7 @@ def processFilters(configfilename):
                 np.exp(-0.5*((coefs_redshifted[i, 1] - xf) /
                        coefs_redshifted[i, 2])**2.0)
 
-        if make_plots:
+        if make_plots:  # pragma: no cover
             ax.plot(xf, yy, lw=2, c='b', label='G fit at z='+str(max_redshift))
             title = band + ' band (' + fname_in +\
                 ') with %i' % numCoefs+' components'
@@ -142,7 +142,7 @@ def processFilters(configfilename):
             fname_fig = root + '/' + band + '_gaussian_approximation.png'
             fig.savefig(fname_fig)
 
-    if make_plots:
+    if make_plots:  # pragma: no cover
         ax0.legend(loc='upper center', frameon=False, ncol=4)
         ylims = ax0.get_ylim()
         ax0.set_ylim([0, 1.4*ylims[1]])
