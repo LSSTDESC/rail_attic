@@ -212,11 +212,6 @@ def delightApply(configfilename):
         globalCompressIndices = np.zeros((numObjectsTarget, Ncompress), dtype=int)
         globalCompEvidences = np.zeros((numObjectsTarget, Ncompress))
         globalMetrics = np.zeros((numObjectsTarget, numMetrics))
-    else:
-        globalPDFs = None
-        globalCompressIndices = None
-        globalCompEvidences = None
-        globalMetrics = None
 
     firstLines = [int(k*numObjectsTarget/numThreads) for k in range(numThreads)]
     lastLines = [int(min(numObjectsTarget, (k+1)*numObjectsTarget/numThreads)) for k in range(numThreads)]
