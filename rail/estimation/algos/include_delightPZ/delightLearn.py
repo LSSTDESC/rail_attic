@@ -128,8 +128,6 @@ def delightLearn(configfilename):
     #comm.Barrier()
     if threadNum == 0:
         reducedData = np.zeros((numObjectsTraining, numCol))
-    else:
-        reducedData = None
 
     if crossValidate:
         chi2sGlobal = np.zeros_like(chi2sLocal)
