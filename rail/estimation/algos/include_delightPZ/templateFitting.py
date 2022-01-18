@@ -166,7 +166,7 @@ def templateFitting(configfilename):
     if threadNum == 0:
         globalPDFs = np.zeros((numObjectsTarget, numZ))
         globalMetrics = np.zeros((numObjectsTarget, numMetrics))
-    else:
+    else:  # pragma: no cover
         globalPDFs = None
         globalMetrics = None
 

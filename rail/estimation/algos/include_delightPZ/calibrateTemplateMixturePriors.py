@@ -169,7 +169,7 @@ def calibrateTemplateMixturePriors(configfilename,make_plot=False):
     params_mean = samples.mean(axis=0)
     params_std = samples.std(axis=0)
 
-    if make_plot:
+    if make_plot:  # pragma: no cover
         fig, axs = plt.subplots(4, 5, figsize=(16, 8))
         axs = axs.ravel()
         for i in range(ndim):
@@ -208,12 +208,12 @@ def calibrateTemplateMixturePriors(configfilename,make_plot=False):
 
 
 
-    if make_plot:
+    if make_plot:  # pragma: no cover
         fig = corner.corner(samples)
         fig.savefig("trianglemixture.pdf")
 
 
-def plot_params(params):
+def plot_params(params):  # pragma: no cover
     fig, axs = plt.subplots(4, 4, figsize=(16, 8))
     axs = axs.ravel()
     alphas = params[0:nt]
@@ -244,7 +244,7 @@ def plot_params(params):
     return fig
 
 #-----------------------------------------------------------------------------------------
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     # execute only if run as a script
 
 
