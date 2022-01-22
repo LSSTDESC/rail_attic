@@ -9,6 +9,7 @@
 # Affiliation   : IJCLab/IN2P3/CNRS/France
 # Creation date : March 2021
 # Last update   : October 21th 2021
+# Last update   : January 22th 2022
 #
 ###########################################################
 
@@ -26,23 +27,28 @@ import logging
 # Delight initialisation
 
 # Filters and SED
-from rail.estimation.algos.include_delightPZ.processFilters import processFilters
-from rail.estimation.algos.include_delightPZ.processSEDs import processSEDs  # build a redshift -flux grid model
+
+from delight.interfaces.rail.processFilters import processFilters
+from delight.interfaces.rail.processSEDs import processSEDs  # build a redshift -flux grid model
+
 
 # interface with Delight through files
-from rail.estimation.algos.include_delightPZ.makeConfigParam import *  # build the parameter file required by Delight
+# build the parameter file required by Delight
+from delight.interfaces.rail.makeConfigParam import *  # build the parameter file required by Delight
 
 # Delight format
-from rail.estimation.algos.include_delightPZ.convertDESCcat  import *   # convert DESC input file into Delight format
+# convert DESC input file into Delight format
+from delight.interfaces.rail.convertDESCcat  import *   # convert DESC input file into Delight format
 
 # Delight algorithms
-from rail.estimation.algos.include_delightPZ.templateFitting import templateFitting
-from rail.estimation.algos.include_delightPZ.delightLearn import delightLearn
-from rail.estimation.algos.include_delightPZ.delightApply import delightApply
+
+from delight.interfaces.rail.templateFitting import templateFitting
+from delight.interfaces.rail.delightLearn import delightLearn
+from delight.interfaces.rail.delightApply import delightApply
 
 # other
-from rail.estimation.algos.include_delightPZ.calibrateTemplateMixturePriors import *
-from rail.estimation.algos.include_delightPZ.getDelightRedshiftEstimation import *
+from delight.interfaces.rail.getDelightRedshiftEstimation import *
+
 
 # Create a logger object.
 logger = logging.getLogger(__name__)
@@ -83,7 +89,7 @@ def_param = dict(run_params = dict(dlght_redshiftMin=0.01,
                                    snr_cut_training=5,
                                    flag_filter_validation=True,
                                    snr_cut_validation=3,
-                                   dlght_calibrateTemplateMixturePrior=False,
+                                   
                                    dlght_inputdata="./examples/estimation/tmp/delight_indata",
                                    zPriorSigma=0.2,
                                    ellPriorSigma=0.5,
@@ -134,7 +140,6 @@ desc_dict = dict(dlght_redshiftMin="min redshift",
                  snr_cut_training="SNR training cut",
                  flag_filter_validation="bool: ?",
                  snr_cut_validation="SNR val cut",
-                 dlght_calibrateTemplateMixturePrior="bool, ?",
                  dlght_inputdata="data dir",
                  zPriorSigma="prior thing",
                  ellPriorSigma="prior thing",
@@ -202,7 +207,6 @@ class delightPZ(BaseEstimation):
         # counter on the chunk validation dataset
         self.chunknum = 0
 
-        self.dlght_calibrateTemplateMixturePrior = inputs["dlght_calibrateTemplateMixturePrior"]
         # all parameter files
         self.inputs = inputs
 
@@ -295,8 +299,7 @@ class delightPZ(BaseEstimation):
                                  flag_filter=self.flag_filter_validation,
                                  snr_cut=self.snr_cut_validation)
 
-        if self.dlght_calibrateTemplateMixturePrior:
-            calibrateTemplateMixturePriors(self.delightparamfile)
+ 
 
         # Learn with Gaussian processes
         delightLearn(self.delightparamfile)

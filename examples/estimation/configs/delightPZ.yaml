@@ -8,7 +8,7 @@
 # Author        : Sylvie Dagoret-Campagne
 # Affiliation   : IJCLab/IN2P3/CNRS/France
 # Creation date : March 2021
-# Last update   : May 8th 2021
+# Last update   : January 22th 2022
 #
 ############################################################################################
 run_params:
@@ -27,14 +27,12 @@ run_params:
 # Delight input data (Filters and SED templates), note Delight will write inside this directory
 # example recommended:
 # - DC2 mode : dlght_inputdata: "./tmp/delight_indata"
-# - tutorial mode : dlght_inputdata: "./tmpsim/delight_indata"
 #----------------------------------------------
   dlght_inputdata: "./tmp/delight_indata"
 #---------------------------------------
 # temporary directory for delight work
 # example recommended:
 # - DC2 mode : tempdir: "./tmp" and tempdatadir: "./tmp/delight_data"
-# - tutorial mode : tempdir: "./tmpsim" and tempdatadir: "./tmpsim/delight_data"
 #---------------------------------------
   tempdir: "./tmp"
   tempdatadir: "./tmp/delight_data"
@@ -70,14 +68,7 @@ run_params:
 # delight configuration file filename
 #----------------------------------------
   delightparamfile: "parametersTest.cfg"
-#------------------------------------------------------------------------
-# Running mode
-# tutorial mode :
-#   - True  : activate internal flux simulation
-#   - False : activate use of DC2 datasets for training and Validation
-#-----------------------------------------------------------------------
-  dlght_tutorialmode: False
-#------------------------------------------------------------------------
+
 # Filtering of training and Validation dataset
 # according flux SNR
 #-------------------------------------------------------------------------
@@ -85,12 +76,7 @@ run_params:
   snr_cut_training: 5
   flag_filter_validation: True
   snr_cut_validation: 3
-#-----------------------------------------------------------------------
-# Special run
-# Should not be used
-#-------------------------------------------------------------------------
-  dlght_calibrateTemplateMixturePrior: False
-#-------------------------------------------------------------------------
+
 # Delight hyper-parameters that must be optimized
 #---------------------------------------------------------------------------
   zPriorSigma: 0.2
