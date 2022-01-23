@@ -3,7 +3,7 @@ import os
 import filecmp
 import numpy as np
 
-from rail.estimation.algos.include_delightPZ.makeConfigParam import makeConfigParam
+from delight.interfaces.rail.makeConfigParam import makeConfigParam
 
 def test_delight_default_file_gen():
     fakepath = "./"
