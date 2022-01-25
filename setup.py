@@ -30,7 +30,7 @@ estimation_codes = {
         "corner",
         "cython",
         "emcee",
-        "delight @ git+https://github.com/LSSTDESC/Delight",
+        "delight @ git+https://github.com/LSSTDESC/Delight.git@interfacerail",
         ]
 }
 
