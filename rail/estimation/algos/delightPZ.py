@@ -216,12 +216,8 @@ class delightPZ(BaseEstimation):
 
         np.random.seed(87)
 
-    def inform(self, training_data):
-        """
-          this is delightPZ
-        """
-
-        msg = " INFORM "
+        # MOST OF INFORM COPIED TO HERE!
+        msg = " FORMERLY INFORM... "
         logger.info(msg)
 
         logger.info("Try to workout filters")
@@ -293,9 +289,9 @@ class delightPZ(BaseEstimation):
         # Build its own LSST-Flux-Redshift Model
         processSEDs(self.delightparamfile)
 
-        convertDESCcatTrainData(self.delightparamfile,
-                                training_data, flag_filter=self.flag_filter_training,
-                                snr_cut=self.snr_cut_training)
+        # convertDESCcatTrainData(self.delightparamfile,
+        #                        training_data, flag_filter=self.flag_filter_training,
+        #                        snr_cut=self.snr_cut_training)
 
         # convert target Files into ascii
         # Delight need to know this target file
@@ -303,7 +299,15 @@ class delightPZ(BaseEstimation):
                                  flag_filter=self.flag_filter_validation,
                                  snr_cut=self.snr_cut_validation)
 
- 
+        
+
+    def inform(self, training_data):
+        """
+          this is delightPZ
+        """
+        convertDESCcatTrainData(self.delightparamfile,
+                                training_data, flag_filter=self.flag_filter_training,
+                                snr_cut=self.snr_cut_training)
 
         # Learn with Gaussian processes
         delightLearn(self.delightparamfile)
