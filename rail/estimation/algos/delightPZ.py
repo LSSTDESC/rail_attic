@@ -16,6 +16,7 @@
 import numpy as np
 from rail.estimation.estimator import Estimator as BaseEstimation
 from rail.estimation.utils import check_and_print_params
+from delight.io import parseParamFile
 import qp
 
 import os
@@ -315,7 +316,20 @@ class delightPZ(BaseEstimation):
         logger.info("End of Inform")
 
     def load_pretrained_model(self):
-        pass
+        """Since current form of inform basically just writes out ascii
+        files of training data and then runs delightLearn (which saves the
+        gpparams file to a set location), I think all we really need to do
+        here is check that the files that were created on a previous run
+        of inform are actually present where they are supposed to be in
+        the param file generated for Delight
+        """
+        paramfile = self.delightparamfile
+        inform_params = parseParamFile(paramfile, verbose=False, catFilesNeeded=False)
+        # check that training files are present
+        if not os.path.exists(inform_params['training_catFile']):  # pragma: no cover
+            raise FileNotFoundError(f"training file {inform_params['training_catfile']} not present!")
+        if not os.path.exists(inform_params['training_paramFile']):  # pragma: no cover
+            raise FileNotFoundError(f"gaussian process param file {inform_params['training_paramFile']} not found!")
 
     def estimate(self, test_data):
 
