@@ -35,11 +35,11 @@ from delight.interfaces.rail.processSEDs import processSEDs  # build a redshift 
 
 # interface with Delight through files
 # build the parameter file required by Delight
-from delight.interfaces.rail.makeConfigParam import *  # build the parameter file required by Delight
+from delight.interfaces.rail.makeConfigParam import makeConfigParam  # build the parameter file required by Delight
 
 # Delight format
 # convert DESC input file into Delight format
-from delight.interfaces.rail.convertDESCcat  import *   # convert DESC input file into Delight format
+from delight.interfaces.rail.convertDESCcat import convertDESCcatTargetFile, convertDESCcatTrainData, convertDESCcatChunk
 
 # Delight algorithms
 
@@ -48,7 +48,7 @@ from delight.interfaces.rail.delightLearn import delightLearn
 from delight.interfaces.rail.delightApply import delightApply
 
 # other
-from delight.interfaces.rail.getDelightRedshiftEstimation import *
+from delight.interfaces.rail.getDelightRedshiftEstimation import getDelightRedshiftEstimation
 
 
 # Create a logger object.
@@ -92,7 +92,6 @@ def_param = dict(run_params = dict(dlght_redshiftMin=0.01,
                                    snr_cut_training=5,
                                    flag_filter_validation=True,
                                    snr_cut_validation=3,
-                                   
                                    dlght_inputdata="./examples/estimation/tmp/delight_indata",
                                    zPriorSigma=0.2,
                                    ellPriorSigma=0.5,
@@ -103,8 +102,8 @@ def_param = dict(run_params = dict(dlght_redshiftMin=0.01,
                                    V_L=0.1,
                                    lineWidthSigma=20,
                                    inform_options=dict(save_train=False,
-                                                         load_model=False,
-                                                         modelfile='model.out'),
+                                                       load_model=False,
+                                                       modelfile='model.out'),
 
 ))
 
@@ -256,23 +255,6 @@ class delightPZ(BaseEstimation):
         with open(self.delightparamfile, 'w') as out:
             out.write(paramfile_txt)
 
-        # The data required by Delight : SED and Filters
-        # For the moment, there is no automatic installation inside RAIL
-        # These must be installed by the user, later these will be copied from Delight installation automatically
-
-        #if not os.path.exists(self.delightindata):
-        #    msg = " No Delight input data in dir  " + self.delightindata
-        #    logger.error(msg)
-        #    exit(-1)
-
-        #SUBDIRs = ['BROWN_SEDs', 'CWW_SEDs', 'FILTERS']
-
-        #for subdir in SUBDIRs:
-        #    theinpath=os.path.join(self.delightindata,subdir)
-        #    if not os.path.exists(theinpath):
-        #        msg = " No Delight input data in dir  " + theinpath
-        #        logger.error(msg)
-        #        exit(-1)
         if not os.path.exists(self.sed_path):  # pragma: no cover
             msg = " No Delight SED data in dir " + self.sed_path
             logger.error(msg)
@@ -300,7 +282,6 @@ class delightPZ(BaseEstimation):
                                  flag_filter=self.flag_filter_validation,
                                  snr_cut=self.snr_cut_validation)
 
-        
 
     def inform(self, training_data):
         """
