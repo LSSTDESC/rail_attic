@@ -69,7 +69,7 @@ def plot_pit_qq(pdf_ens, ztrue, qbins=101, title=None, code=None,
     
     if show_qq:
         ax0.plot(qq_vec[0], qq_vec[1], c='r',
-                 linestyle='-', linewidth=3, label=label)
+                 linestyle='-', linewidth=3)#, label=label)
         ax0.plot([0, 1], [0, 1], color='k', linestyle='--', linewidth=2)
         ax0.set_ylabel("Q$_{data}$", fontsize=18)
         plt.ylim(-0.001, 1.001)
@@ -81,7 +81,7 @@ def plot_pit_qq(pdf_ens, ztrue, qbins=101, title=None, code=None,
         except:
             y_uni = float(len(pit_vals)) / float(len(qbins))
         if not show_qq:
-            ax0.hist(pit_vals, bins=qbins, alpha=0.7, label=label)
+            ax0.hist(pit_vals, bins=qbins, alpha=0.7) #, label=label)
             ax0.set_ylabel('Number')
             ax0.hlines(y_uni, xmin=0, xmax=1, color='k')
             plt.ylim(0, )  # -0.001, 1.001)
@@ -170,7 +170,7 @@ def plot_point_est(zpoint, z_true, sigma, code, outfile):
     lower_h = 3.0 - 3.0*(sigma)
     plt.plot([0., 3.],[upper_l, upper_h], c='r', lw=1, linestyle='--')
     plt.plot([0., 3.],[lower_l, lower_h], c='r', lw=1, linestyle='--')
-    plt.title(f"point estimate for {code}", fontsize=18)
+    #plt.title(f"point estimate for {code}", fontsize=18)
     plt.xlim(0, 3)
     plt.ylim(0, 3)
     plt.savefig(outfile, format='jpg')

@@ -4,8 +4,56 @@ import yaml
 import pickle
 import pprint
 
+from rail.core.data import TableHandle, QPHandle
+from rail.core.types import DataFile
+from rail.core.stage import RailStage
 
-class Estimator(object):
+
+def default_model_read(modelfile):
+    return pickle.load(open(modelfile, 'rb'))
+
+
+class ModelDict(dict):
+    """ 
+    A specialized dict to keep track of individual estimation models objects: this is just a dict these additional features
+
+    1. Keys are paths 
+    2. There is a read(path, force=False) method that reads a flow object and inserts it into the dictionary
+    3. There is a single static instance of this class    
+    """
+
+    def __setitem__(self, key, value):
+        return dict.__setitem__(self, key, value)
+
+    def read(self, path, force=False, reader=None):
+        if reader is None:
+            reader = default_model_read
+        if force or path not in self:
+            model = reader(path)
+            self.__setitem__(path, model)
+            return model
+        return self[path]
+
+
+MODEL_FACTORY = ModelDict()
+
+def ModelFactory():
+    return MODEL_FACTORY
+
+
+class ModelFile(DataFile):
+    """
+    A file that describes an estimator mdoel
+    """
+
+    @classmethod
+    def open(cls, path, mode, **kwargs):        
+        return MODEL_FACTORY.read(path, **kwargs)
+
+
+    
+
+class Estimator(RailStage):
     """
     The base class for photo-z posterior estimates. inherit there will
     be a default loading of data (and write out of data?), but each code
@@ -16,90 +64,39 @@ class Estimator(object):
     https://github.com/LSSTDESC/tomo_challenge
     """
 
-    base_dict = 'base.yaml'
-    _subclasses = {}
+    name = 'Estimator'
+    config_options = dict(chunk_size=10000)
+    inputs = [('model_file', ModelFile),
+              ('input', TableHandle)]
+    outputs = [('output', QPHandle)]    
+ 
+    def __init__(self, args, comm=None):
+        RailStage.__init__(self, args, comm=comm)
+        self.model = None
+        self.open_model(**args)
 
-    @classmethod
-    def _find_subclass(cls, name):
-        return cls._subclasses[name]
+    def open_model(self, **kwargs):
+        """Load the model
 
-    @classmethod
-    def __init_subclass__(cls, *args, **kwargs):
-        print(f"Found classifier {cls.__name__}")
-        cls._subclasses[cls.__name__] = cls
-
-    def __init__(self, base_config='base_yaml', config_dict={}):
-        # Allow estimators to be configured either with a dict
-        # that has already been ready or with the yaml file directly
-        if isinstance(base_config, dict):
-            base_dict = base_config
-        else:
-            if not os.path.exists(base_config):
-                raise FileNotFoundError("File base_config=" + base_config
-                                        + " not found")
-
-            with open(base_config, 'r') as f:
-                base_dict = yaml.safe_load(f)['base_config']
-
-        # Pretty-print the configuration
-        print('Basic estimator configuration: ')
-        pprint.pprint(base_dict)
-
-        for n, v in base_dict.items():
-            setattr(self, n, v)
-        for attr in ['zmode', 'zgrid', 'pz_pdf']:
-            setattr(self, attr, None)
-        self.outpath = base_dict['outpath']
-
-        self.trainfile = base_dict['trainfile']
-        self.groupname = base_dict['hdf5_groupname']
-        self.testfile = base_dict['testfile']
-        self.num_rows = getInputDataLengthHdf5(self.testfile, self.groupname)
-        self._chunk_size = base_dict['chunk_size']
-
-        self.output_format = base_dict['output_format']
-
-        self.test_fmt = self.testfile.split(".")[-1]
-        # self.test_data = load_data(self.testfile, self.test_fmt)
-        # move reading of test data to main.py so we can loop more easily
-
-        self.code_name = type(self).__name__
-
-        self.config_dict = config_dict
-
-    def inform(self, training_data):
+        Keywords
+        --------
+        model : object
+            An object with a trained model
+        model_file : str
+            A file from which to load a model object
         """
-        Prior settings and/or training algorithm for the individual
-        photo-z method, should be implemented in the subclass
-        Input:
-        ------
-        training_data: dict
-          dictionary of the training data, *including* redshift
-        """
-        raise NotImplementedError
+        model = kwargs.get('model', None)
+        if model is not None:
+            self.model = model
+            self.config['model'] = None
+            return
+        model_file = kwargs.get('model_file', None)
+        if model_file is not None:
+            self.config['model_file'] = model_file
+            if self.config['model_file'] is not None and self.config['model_file'] != 'None':
+                self.model = self.open_input('model_file')
 
-    def load_pretrained_model(self):
-        """
-        If inform step has been run separately, this funciton will
-        load the information required to run estimate.  As a
-        default we will include the loading of a pickled model,
-        but the idea is that a specific code can override this
-        function by writing a custom model load in the subclass
-        """
-        try:
-            modelfile = self.inform_options['modelfile']
-        except KeyError:
-            print("inform_options['modelfile'] not specified, exiting!")
-            raise KeyError("inform_options['modelfile'] not found!")
-        try:
-            self.model = pickle.load(open(modelfile, 'rb'))
-            print(f"success in loading {self.inform_options['modelfile']}")
-        except FileNotFoundError:
-            print(f"File {self.inform_options['modelfile']} not found!")
-            raise FileNotFoundError("File " +
-                                    self.inform_options['modelfile'] +
-                                    " not found!")
-
+            
     def estimate(self, input_data):
         """
         The main run method for the photo-z, should be implemented 
@@ -107,16 +104,56 @@ class Estimator(object):
 
         Parameters
         ----------
-        data : `dict`
+        input_data : `dict`
           dictionary of all input data
 
         Returns
         -------
-        pz_dict : `dict`
-          dictionary of output photo-z params, must include zmode and
-          pdf 
+        output: `qp.Ensemble`
+          Ensemble with output data
         """
-        # note: zgrid will still be a class variable for now
-        # should create photo-z estimates with set names, TBD
-        # for demo will just be `z_mode`
-        raise NotImplementedError
+        self.set_data('input', input_data)
+        self.run()
+        return self.get_data('output')
+
+
+class Trainer(RailStage):
+    """
+    The base class for photo-z posterior estimates. inherit there will
+    be a default loading of data (and write out of data?), but each code
+    should have its own 'train' and 'estimate' methods that override the
+    default methods in the parent class
+
+    Super/subclass framework stolen shamelessly from
+    https://github.com/LSSTDESC/tomo_challenge
+    """
+
+    name = 'Trainer'
+    config_options = dict(hdf5_groupname=str, save_train=True)
+    inputs = [('input', TableHandle)]
+    outputs = [('model_file', ModelFile)]    
+ 
+    def __init__(self, args, comm=None):
+        RailStage.__init__(self, args, comm=comm)
+        self.model = None
+            
+    def inform(self, training_data):
+        """
+        The main run method for the photo-z, should be implemented 
+        in the specific subclass.
+
+        Parameters
+        ----------
+        input_data : `dict`
+          dictionary of all input data
+
+        Returns
+        -------
+        output: `qp.Ensemble`
+          Ensemble with output data
+        """
+        self.set_data('input', training_data)
+        self.run()
+
+
+
