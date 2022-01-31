@@ -17,78 +17,65 @@ class LineConfusion(Degrader):
     the degrader ignores galaxies for which this line confusion would result
     in a negative redshift, which can occur for low redshift galaxies when
     wrong_wavelen < true_wavelen.
+
+    Parameters
+    ----------
+    true_wavelen : positive float
+        The wavelength of the true emission line.
+        Wavelength unit assumed to be the same as wrong_wavelen.
+    wrong_wavelen : positive float
+        The wavelength of the wrong emission line, which is being confused
+        for the correct emission line.
+        Wavelength unit assumed to be the same as true_wavelen.
+    frac_wrong : float between zero and one
+        The fraction of galaxies with confused emission lines.
     """
 
-    def __init__(self, true_wavelen: float, wrong_wavelen: float, frac_wrong: float):
+    name = 'LineConfusion'
+    config_options = Degrader.config_options.copy()
+    config_options.update(true_wavelen=float,
+                          wrong_wavelen=float,
+                          frac_wrong=float)
+    
+    def __init__(self, args, comm=None):
         """
-        Parameters
-        ----------
-        true_wavelen : positive float
-            The wavelength of the true emission line.
-            Wavelength unit assumed to be the same as wrong_wavelen.
-        wrong_wavelen : positive float
-            The wavelength of the wrong emission line, which is being confused
-            for the correct emission line.
-            Wavelength unit assumed to be the same as true_wavelen.
-        frac_wrong : float between zero and one
-            The fraction of galaxies with confused emission lines.
         """
-
-        # convert to floats
-        true_wavelen = float(true_wavelen)
-        wrong_wavelen = float(wrong_wavelen)
-        frac_wrong = float(frac_wrong)
-
+        Degrader.__init__(self, args, comm=comm)
         # validate parameters
-        if true_wavelen < 0:
-            raise ValueError("true_wavelen must be positive")
-        if wrong_wavelen < 0:
-            raise ValueError("wrong_wavelen must be positive")
-        if frac_wrong < 0 or frac_wrong > 1:
-            raise ValueError("frac_wrong must be between 0 and 1.")
+        if self.config.true_wavelen < 0:
+            raise ValueError("true_wavelen must be positive, not {self.config.true_wavelen}")
+        if self.config.wrong_wavelen < 0:
+            raise ValueError("wrong_wavelen must be positive, not {self.config.wrong_wavelen}")
+        if self.config.frac_wrong < 0 or self.config.frac_wrong > 1:
+            raise ValueError("frac_wrong must be between 0 and 1., not {self.config.wrong_wavelen}")
 
-        self.true_wavelen = true_wavelen
-        self.wrong_wavelen = wrong_wavelen
-        self.frac_wrong = frac_wrong
-
-    def __call__(self, data: pd.DataFrame, seed: int = None) -> pd.DataFrame:
-        """
-        Parameters
-        ----------
-        data : pd.DataFrame
-            DataFrame of galaxy data to be degraded.
-        seed : int, default=None
-            Random seed for the degrader.
-
-        Returns
-        -------
-        pd.DataFrame
-            DataFrame of the degraded galaxy data.
-        """
-
+    def run(self):
+        data = self.get_data('input')
+        
         # convert to an array for easy manipulation
         values, columns = data.values.copy(), data.columns.copy()
 
         # get the minimum redshift
         # if wrong_wavelen < true_wavelen, this is minimum the redshift for
         # which the confused redshift is still positive
-        zmin = self.wrong_wavelen / self.true_wavelen - 1
+        zmin = self.config.wrong_wavelen / self.config.true_wavelen - 1
 
         # select the random fraction of galaxies whose lines are confused
-        rng = np.random.default_rng(seed)
+        rng = np.random.default_rng(self.config.seed)
         idx = rng.choice(
             np.where(values[:, 0] > zmin)[0],
-            size=int(self.frac_wrong * values.shape[0]),
+            size=int(self.config.frac_wrong * values.shape[0]),
             replace=False,
         )
 
         # transform these redshifts
         values[idx, 0] = (
             1 + values[idx, 0]
-        ) * self.true_wavelen / self.wrong_wavelen - 1
+        ) * self.config.true_wavelen / self.config.wrong_wavelen - 1
 
         # return results in a data frame
-        return pd.DataFrame(values, columns=columns)
+        outData = pd.DataFrame(values, columns=columns)
+        self._cached = self.add_data('output', outData)
 
 
 class InvRedshiftIncompleteness(Degrader):
@@ -98,41 +85,33 @@ class InvRedshiftIncompleteness(Degrader):
     The survival probability of this selection function is
     p(z) = min(1, z_p/z),
     where z_p is the pivot redshift.
+
+    Parameters
+    ----------
+    pivot_redshift : positive float
+        The redshift at which the incompleteness begins.
     """
 
-    def __init__(self, pivot_redshift):
+    name = 'InvRedshiftIncompleteness'
+    config_options = Degrader.config_options.copy()
+    config_options.update(pivot_redshift=float)
+    
+    def __init__(self, args, comm=None):
         """
-        Parameters
-        ----------
-        pivot_redshift : positive float
-            The redshift at which the incompleteness begins.
         """
-        pivot_redshift = float(pivot_redshift)
-        if pivot_redshift < 0:
-            raise ValueError("pivot redshift must be positive.")
+        Degrader.__init__(self, args, comm=comm)
+        if self.config.pivot_redshift < 0:
+            raise ValueError("pivot redshift must be positive, not {self.config.pivot_redshift}")
 
-        self.pivot_redshift = pivot_redshift
-
-    def __call__(self, data: pd.DataFrame, seed: int = None) -> pd.DataFrame:
-        """
-        Parameters
-        ----------
-        data : pd.DataFrame
-            DataFrame of galaxy data to be degraded.
-        seed : int, default=None
-            Random seed for the degrader.
-
-        Returns
-        -------
-        pd.DataFrame
-            DataFrame of the degraded galaxy data.
-        """
-
+    def run(self):
+        data = self.get_data('input')
+        
         # calculate survival probability for each galaxy
-        survival_prob = np.clip(self.pivot_redshift / data["redshift"], 0, 1)
+        survival_prob = np.clip(self.config.pivot_redshift / data["redshift"], 0, 1)
 
         # probabalistically drop galaxies from the data set
-        rng = np.random.default_rng(seed)
+        rng = np.random.default_rng(self.config.seed)
         mask = rng.random(size=data.shape[0]) <= survival_prob
 
-        return data[mask]
+        self._cached = self.add_data('output', data[mask])
+

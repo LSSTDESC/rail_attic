@@ -11,8 +11,16 @@ class QuantityCut(Degrader):
     Note if a galaxy fails any of the cuts on any one of its columns, that
     galaxy is removed from the sample.
     """
+    name = 'QuantityCut'
+    config_options = Degrader.config_options.copy()
+    config_options.update(cuts=dict)
 
-    def __init__(self, cuts: dict):
+    def __init__(self, args, comm=None):
+        Degrader.__init__(self, args, comm=comm)
+        self.cuts = None
+        self.set_cuts(self.config['cuts'])
+        
+    def set_cuts(self, cuts: dict):
         """
         Parameters
         ----------
@@ -63,8 +71,9 @@ class QuantityCut(Degrader):
             else:
                 raise TypeError(bad_cut_msg)
 
-    def __call__(self, data: pd.DataFrame, seed: int = None) -> pd.DataFrame:
-
+    def run(self):
+        data = self.get_data('input')
+        
         # get overlap of columns from data and columns on which to make cuts
         columns = set(self.cuts.keys()).intersection(data.columns)
 
@@ -75,8 +84,9 @@ class QuantityCut(Degrader):
         ]
         query = " & ".join(query)
 
-        return data.query(query)
-
+        out_data = data.query(query)
+        self._cached = self.add_data('output', out_data)
+        
     def __repr__(self):  # pragma: no cover
         printMsg = "Degrader that applies the following cuts to a pandas DataFrame:\n"
         printMsg += "{column: (min, max), ...}\n"
