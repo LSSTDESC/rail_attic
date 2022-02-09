@@ -49,6 +49,7 @@ coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
+inprogress_*
 
 # Translations
 *.mo
@@ -78,6 +79,7 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+sandbox_*.ipynb
 
 # pyenv
 .python-version

@@ -24,7 +24,7 @@ def make_color_data(data_dict, bands):
     Parameters
     -----------
     data_dict : `ndarray`
-      array of magnitudes and errors, with names mag_{bands[i]}_lsst 
+      array of magnitudes and errors, with names mag_{bands[i]}_lsst
       and mag_err_{bands[i]}_lsst respectively.
 
     Returns
@@ -56,10 +56,10 @@ def make_color_data(data_dict, bands):
 
 
 class Train_FZBoost(Trainer):
-    """
+    """ Train a FZBoost Estimator
     """
     name = 'Train_FZBoost'
-    config_options = Trainer.config_options.copy() 
+    config_options = Trainer.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
                           nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
@@ -86,8 +86,10 @@ class Train_FZBoost(Trainer):
                                                   "max_depth (int), and objective, which should be set "
                                                   " to reg:squarederror"))
 
-    
+
     def __init__(self, args, comm=None):
+        """ Constructor
+        Do Trainer specific initialization, then check on bands """
         Trainer.__init__(self, args, comm=comm)
         if not all(c in string.ascii_letters for c in self.config.bands):
             raise ValueError("'bands' option should be letters only (no spaces or commas etc)")
@@ -111,10 +113,9 @@ class Train_FZBoost(Trainer):
         return x_train, x_val, z_train, z_val
 
     def run(self):
+        """Train flexzboost model model
         """
-          train flexzboost model model
-        """
-        training_data = self.get_data('input')                               
+        training_data = self.get_data('input')['photometry']
         speczs = training_data['redshift']
         print("stacking some data...")
         color_data = make_color_data(training_data, self.config.bands)
@@ -158,22 +159,25 @@ class Train_FZBoost(Trainer):
 
 
 class FZBoost(Estimator):
-    """
+    """FZBoost-based Estimator
     """
     name = 'FZBoost'
     config_options = Estimator.config_options.copy()
     config_options.update(nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
                           bands=Param(str, 'ugrizy', msg="bands to use in estimation"))
-    
+
     def __init__(self, args, comm=None):
+        """ Constructor:
+        Do Estimator specific initialization """
         Estimator.__init__(self, args, comm=comm)
-                           
+        if not all(c in string.ascii_letters for c in self.config.bands):
+            raise ValueError("'bands' option should be letters only (no spaces or commas etc)")
+        self.zgrid = None
 
     def run(self):
-        test_data = self.get_data('input')
+        test_data = self.get_data('input')['photometry']
         color_data = make_color_data(test_data, self.config.bands)
         pdfs, z_grid = self.model.predict(color_data, n_grid=self.config.nzbins)
         self.zgrid = np.array(z_grid).flatten()
-        qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid,
-                                                       yvals=pdfs))
+        qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=pdfs))
         self.add_data('output', qp_dstn)

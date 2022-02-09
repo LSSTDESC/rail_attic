@@ -25,23 +25,14 @@ import glob
 import qp
 import rail
 from ceci.config import StageParameter as Param
-from rail.estimation.estimator import Estimator, Trainer
-from rail.estimation.utils import check_and_print_params
+from rail.estimation.estimator import Estimator
 from desc_bpz.useful_py3 import get_str, get_data, match_resol
 
 
 
-class Train_BPZ_lite(Trainer):
-
-    name = 'Train_BPZ_lite'
-
-    def __init__(self, args, comm=None):
-        raise NotImplementedError("Training BPZ_lite is not implemented, please use a pre-made estimator")
-
 
 class BPZ_lite(Estimator):
-    """
-    subclass to implement basic marginalized PDF for BPZ
+    """Estimator subclass to implement basic marginalized PDF for BPZ
     """
     config_options = Estimator.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="min z for grid"),
@@ -52,9 +43,9 @@ class BPZ_lite(Estimator):
                                           msg="data_path (str): file path to the "
                                           "SED, FILTER, and AB directories.  If left to "
                                           "default `None` it will use the install "
-                                          "directory for rail + estimation/data"),                        
+                                          "directory for rail + estimation/data"),
                           columns_file=Param(str, './examples/estimation/configs/test_bpz.columns',
-                                             msg="name of the file specifying the columns"),                          
+                                             msg="name of the file specifying the columns"),
                           spectra_file=Param(str, 'SED/CWWSB4.list',
                                              msg="name of the file specifying the list of SEDs to use"),
                           madau_flag=Param(str, 'no',
@@ -86,12 +77,12 @@ class BPZ_lite(Estimator):
                           mag_err_min=Param(float, 0.005,
                                             msg="a minimum floor for the magnitude errors to prevent a "
                                             "large chi^2 for very very bright objects"))
-  
+
     def __init__(self, args, comm=None):
-        """
+        """Constructor, build the Estimator, then do BPZ specific setup
         """
         Estimator.__init__(self, args, comm=comm)
-        
+
         datapath = self.config['data_path']
         if datapath is None or datapath == "None":
             railpath = os.path.dirname(rail.__file__)
@@ -105,13 +96,13 @@ class BPZ_lite(Estimator):
             raise FileNotFoundError("BPZDATAPATH " + self.data_path
                                     + " does not exist! Check value of "
                                     + "data_path in config file!")
-                                    
+
         # load the template fluxes from the AB files
-        self.flux_templates = self.load_templates()
+        self.flux_templates = self._load_templates()
 
         # Load the AB files, or if they don't exist, create from SEDs*filters
 
-    def load_templates(self):
+    def _load_templates(self):
 
         # The redshift range we will evaluate on
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
@@ -137,22 +128,22 @@ class BPZ_lite(Estimator):
         for i, s in enumerate(spectra):
             for j, f in enumerate(filters):
                 model = f"{s}.{f}.AB"
-                if model not in ab_file_db:
-                    self.make_new_ab_file(s, f)
+                if model not in ab_file_db:  #pragma: no cover
+                    self._make_new_ab_file(s, f)
                 model_path = os.path.join(data_path, "AB", model)
                 zo, f_mod_0 = get_data(model_path, (0, 1))
                 flux_templates[:, i, j] = match_resol(zo, f_mod_0, z)
 
         return flux_templates
 
-    def make_new_ab_file(self, spectrum, filter):
+    def _make_new_ab_file(self, spectrum, filter_):  #pragma: no cover
         from desc_bpz.bpz_tools_py3 import ABflux
 
-        new_file = f"{spectrum}.{filter}.AB"
+        new_file = f"{spectrum}.{filter_}.AB"
         print(f"  Generating new AB file {new_file}....")
         ABflux(spectrum, filter, self.config.madau)
 
-    def preprocess_magnitudes(self, data):
+    def _preprocess_magnitudes(self, data):
         from desc_bpz.bpz_tools_py3 import e_mag2frac
 
         bands = self.config.bands
@@ -219,7 +210,7 @@ class BPZ_lite(Estimator):
         data['mags'] = mags
         return data
 
-    def estimate_pdf(self, flux_templates, kernel, flux, flux_err, mag_0, z):
+    def _estimate_pdf(self, flux_templates, kernel, flux, flux_err, mag_0, z):
 
         from desc_bpz.bpz_tools_py3 import p_c_z_t, prior
 
@@ -234,7 +225,7 @@ class BPZ_lite(Estimator):
 
         # old prior code returns NoneType for prior if "flat" or "none"
         # just hard code the no prior case for now for backward compatibility
-        if prior_file == 'flat' or prior_file == 'none':
+        if prior_file in ['flat', 'none']:  #pragma: no cover
             P = np.ones(L.shape)
         else:
             P = prior(z, mag_0, prior_file, nt, ninterp=0)  # hardcode interp 0
@@ -245,7 +236,7 @@ class BPZ_lite(Estimator):
         post_z = post.sum(axis=1)
 
         # Convolve with Gaussian kernel, if present
-        if kernel is not None:
+        if kernel is not None:  #pragma: no cover
             post_z = np.convolve(post_z, kernel, 1)
 
         # Find the mode
@@ -269,8 +260,8 @@ class BPZ_lite(Estimator):
         """
         This will likely mostly be copied from BPZPipe code
         """
-        test_data = self.get_data('input', allow_missing=True)        
-        test_data = self.preprocess_magnitudes(test_data)
+        test_data = self.get_data('input', allow_missing=True)['photometry']
+        test_data = self._preprocess_magnitudes(test_data)
 
         m_0_col = self.config.bands.index(self.config.prior_band)
 
@@ -278,8 +269,8 @@ class BPZ_lite(Estimator):
         ng = test_data['mags'].shape[0]
 
         # Set up Gauss kernel for extra smoothing, if needed
-        if self.config.gauss_kernel > 0:
-            dz = self.dz
+        if self.config.gauss_kernel > 0:  #pragma: no cover
+            dz = self.config.dz
             x = np.arange(-3.*self.config.gauss_kernel,
                           3.*self.config.gauss_kernel + dz/10., dz)
             kernel = np.exp(-(x/self.config.gauss_kernel)**2)
@@ -295,10 +286,11 @@ class BPZ_lite(Estimator):
             mag_0 = test_data['mags'][i, m_0_col]
             flux = test_data['flux'][i]
             flux_err = test_data['flux_err'][i]
-            pdfs[i], zmode[i] = self.estimate_pdf(flux_temps,
-                                                  kernel, flux,
-                                                  flux_err, mag_0,
-                                                  zgrid)
+            pdfs[i], zmode[i] = self._estimate_pdf(flux_temps,
+                                                    kernel, flux,
+                                                    flux_err, mag_0,
+                                                    zgrid)
 
         qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=pdfs))
+        qp_dstn.set_ancil(dict(zmode=zmode))
         self.add_data('output', qp_dstn)

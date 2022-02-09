@@ -1,9 +1,9 @@
 import numpy as np
-from rail.evaluation.evaluator import Evaluator
+from .base import MetricEvaluator
 from rail.evaluation.utils import stat_and_pval
 
 
-class CDELoss(Evaluator):
+class CDELoss(MetricEvaluator):
     """ Conditional density loss """
     def __init__(self, qp_ens, zgrid, ztrue):
         """Class constructor"""
@@ -29,4 +29,4 @@ class CDELoss(Evaluator):
         # Calculate second term E[f*(Z | X)]
         term2 = np.mean(self._pdfs[range(self._npdf), nns])
         cdeloss = term1 - 2 * term2
-        return stat_and_pval(cdeloss, None)
+        return stat_and_pval(cdeloss, np.nan)

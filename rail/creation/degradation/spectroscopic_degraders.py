@@ -1,3 +1,5 @@
+"""Degraders that emulate spectroscopic effects on photometry"""
+
 import numpy as np
 import pandas as pd
 from rail.creation.degradation import Degrader
@@ -36,7 +38,7 @@ class LineConfusion(Degrader):
     config_options.update(true_wavelen=float,
                           wrong_wavelen=float,
                           frac_wrong=float)
-    
+
     def __init__(self, args, comm=None):
         """
         """
@@ -50,8 +52,17 @@ class LineConfusion(Degrader):
             raise ValueError("frac_wrong must be between 0 and 1., not {self.config.wrong_wavelen}")
 
     def run(self):
+        """ Run method
+
+        Applies line confusion
+
+        Notes
+        -----
+        Get the input data from the data store under this stages 'input' tag
+        Puts the data into the data store under this stages 'output' tag
+        """
         data = self.get_data('input')
-        
+
         # convert to an array for easy manipulation
         values, columns = data.values.copy(), data.columns.copy()
 
@@ -75,7 +86,7 @@ class LineConfusion(Degrader):
 
         # return results in a data frame
         outData = pd.DataFrame(values, columns=columns)
-        self._cached = self.add_data('output', outData)
+        self.add_data('output', outData)
 
 
 class InvRedshiftIncompleteness(Degrader):
@@ -95,7 +106,7 @@ class InvRedshiftIncompleteness(Degrader):
     name = 'InvRedshiftIncompleteness'
     config_options = Degrader.config_options.copy()
     config_options.update(pivot_redshift=float)
-    
+
     def __init__(self, args, comm=None):
         """
         """
@@ -104,8 +115,17 @@ class InvRedshiftIncompleteness(Degrader):
             raise ValueError("pivot redshift must be positive, not {self.config.pivot_redshift}")
 
     def run(self):
+        """ Run method
+
+        Applies incompleteness
+
+        Notes
+        -----
+        Get the input data from the data store under this stages 'input' tag
+        Puts the data into the data store under this stages 'output' tag
+        """
         data = self.get_data('input')
-        
+
         # calculate survival probability for each galaxy
         survival_prob = np.clip(self.config.pivot_redshift / data["redshift"], 0, 1)
 
@@ -113,5 +133,4 @@ class InvRedshiftIncompleteness(Degrader):
         rng = np.random.default_rng(self.config.seed)
         mask = rng.random(size=data.shape[0]) <= survival_prob
 
-        self._cached = self.add_data('output', data[mask])
-
+        self.add_data('output', data[mask])

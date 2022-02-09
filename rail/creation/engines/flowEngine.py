@@ -1,11 +1,8 @@
-# this is a subclass of Engine that wraps a pzflow Flow so that it can
-# be used as the engine of a Creator object.
+""" This is the subclass of Engine that wraps a pzflow Flow so that it can
+used to generate synthetic data """
 
 import numpy as np
-import pandas as pd
 import qp
-
-from collections import UserDict
 
 from pzflow import Flow
 
@@ -15,21 +12,23 @@ from rail.creation.engines import Engine, PosteriorEvaluator
 
 
 class FlowDict(dict):
-    """ 
+    """
     A specialized dict to keep track of individual flow objects: this is just a dict these additional features
 
-    1. Keys are paths 
+    1. Keys are paths
     2. Values are flow objects, this is checked at runtime.
     3. There is a read(path, force=False) method that reads a flow object and inserts it into the dictionary
-    4. There is a single static instance of this class    
+    4. There is a single static instance of this class
     """
 
     def __setitem__(self, key, value):
+        """ Add a key-value pair, and check to make sure that the value is a `Flow` object """
         if not isinstance(value, Flow):
             raise TypeError(f"Only values of type Flow can be added to a FlowFactory, not {type(value)}")
         return dict.__setitem__(self, key, value)
 
     def read(self, path, force=False):
+        """ Read a `Flow` object from disk and add it to this dictionary """
         if force or path not in self:
             flow = Flow(file=path)
             self.__setitem__(path, flow)
@@ -37,20 +36,15 @@ class FlowDict(dict):
         return self[path]
 
 
-FLOW_FACTORY = FlowDict()
-
-def FlowFactory():
-    return FLOW_FACTORY
-
-
 class FlowFile(DataFile):
     """
-    A file that describes a PZFlow object
+    A wrapper around a file that describes a PZFlow object
     """
+    flow_factory = FlowDict()
 
     @classmethod
-    def open(cls, path, mode, **kwargs):
-        return FLOW_FACTORY.read(path)
+    def open(cls, path, mode, **kwargs):  #pylint: disable=unused-argument
+        return cls.flow_factory.read(path)
 
 
 class FlowEngine(Engine):
@@ -59,8 +53,12 @@ class FlowEngine(Engine):
     name = 'FlowEngine'
     inputs = [('flow_file', FlowFile)]
     outputs = [('output', TableHandle)]
-    
+
     def __init__(self, args, comm=None):
+        """ Constructor
+
+        Does standard Engine initialization and also gets the `Flow` object
+        """
         Engine.__init__(self, args, comm=comm)
         self.flow = None
         self.open_flow(**args)
@@ -86,32 +84,19 @@ class FlowEngine(Engine):
             self.config['flow_file'] = flow_file
             self.flow = self.open_input('flow_file')
 
-    def sample(self, n_samples: int, seed: int = None) -> pd.DataFrame:
-        """Sample from the pzflow Flow.
-        
-        Parameters
-        ----------
-        n_samples : int
-            Number of samples to draw
-        seed : int, optional
-            sets the random seed for drawing samples
-
-        Returns
-        -------
-        outputs : pd.DataFrame
-            samples from the Flow.
-        """
-        self.config.n_samples = n_samples
-        if seed is not None:
-            self.config.seed = seed
-        self.run()
-        return self._cached
-        
     def run(self):
+        """ Run method
+
+        Calls `Flow.sample` to use the `Flow` object to generate photometric data
+
+        Notes
+        -----
+        Puts the data into the data store under this stages 'output' tag
+        """
         if self.flow is None:
             raise ValueError("Tried to run a FlowEngine before the Flow object is loaded")
-        self._cached = self.add_data('output', self.flow.sample(self.config.n_samples, self.config.seed))
-        
+        self.add_data('output', self.flow.sample(self.config.n_samples, self.config.seed))
+
 
 class FlowPosterior(PosteriorEvaluator):
     """Engine wrapper for a pzflow Flow object
@@ -169,17 +154,22 @@ class FlowPosterior(PosteriorEvaluator):
                           seed=12345,
                           marg_rules={"flag": np.nan, "mag_u_lsst": lambda row: np.linspace(25, 31, 10)},
                           batch_size=10000,
-                          nan_to_zero=True)        
-        
+                          nan_to_zero=True)
+
     inputs = [('flow_file', FlowFile),
               ('input', TableHandle)]
     outputs = [('output', QPHandle)]
 
     def __init__(self, args, comm=None):
+        """ Constructor
+
+        Does standard Engine initialization and also gets the `Flow` object
+        """
+
         PosteriorEvaluator.__init__(self, args, comm=comm)
         self.flow = None
         self.open_flow(**args)
-    
+
     def open_flow(self, **kwargs):
         """Instantiate a pzflow Flow engine.
 
@@ -200,8 +190,18 @@ class FlowPosterior(PosteriorEvaluator):
         if flow_file is not None:
             self.config['flow_file'] = flow_file
             self.flow = self.open_input('flow_file')
-    
+
     def run(self):
+        """ Run method
+
+        Calls `Flow.posterior` to use the `Flow` object to get the posterior disrtibution
+
+        Notes
+        -----
+        Get the input data from the data store under this stages 'input' tag
+        Puts the data into the data store under this stages 'output' tag
+        """
+
         data = self.get_data('input')
         if self.config.marg_rules is None:
             marg_rules = {"flag": np.nan, "mag_u_lsst": lambda row: np.linspace(25, 31, 10)}
@@ -214,11 +214,10 @@ class FlowPosterior(PosteriorEvaluator):
             grid=self.config.grid,
             err_samples=self.config.err_samples,
             seed=self.config.seed,
-            marg_rules=self.config.marg_rules,
+            marg_rules=marg_rules,
             batch_size=self.config.batch_size,
             nan_to_zero=self.config.nan_to_zero,
         )
 
         ensemble = qp.Ensemble(qp.interp, data={"xvals": self.config.grid, "yvals": pdfs})
-        self._cached = self.add_data('output', ensemble)
-        
+        self.add_data('output', ensemble)
