@@ -224,7 +224,7 @@ class PZFlowPDF(Estimator):
                 flow_df.loc[np.isclose(flow_df[col], 99.), col] = self.config.mag_limits[col]
 
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
-        if self.config.include_mag_errors:
+        if self.config.include_mag_errors:  #pragma: no cover
             pdfs = self.model.posterior(flow_df,
                                         column=self.config.redshift_column_name,
                                         seed=self.config.flow_seed,
