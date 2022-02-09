@@ -212,7 +212,7 @@ def test_catch_bad_bands():
     with pytest.raises(ValueError):
         flexzboost.FZBoost.make_stage(**params)
     with pytest.raises(ValueError) as errinfo:
-        sklearn_nn.Train_SimpleNN.make_stage(**params)
+        sklearn_nn.Train_SimpleNN.make_stage(hdf5_groupname='', **params)
     with pytest.raises(ValueError) as errinfo:
         sklearn_nn.SimpleNN.make_stage(**params)
 

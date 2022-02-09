@@ -1,4 +1,6 @@
+import os
 import numpy as np
+import pzflow
 from pzflow.examples import get_example_flow, get_galaxy_data
 from rail.creation.engines import FlowEngine, FlowPosterior
 from rail.core.data import DATA_STORE, TableHandle
@@ -14,8 +16,15 @@ def test_flowengine_sample():
 
     flowEng = FlowEngine.make_stage(flow=flow, n_samples=n_samples)
     flowEng_samples = flowEng.sample(n_samples, seed=seed).data
+
+    pzdir = os.path.dirname(pzflow.__file__)
+    flow_path = os.path.join(pzpathpzdir, 'examples', 'example-flow.pkl')
     
+    flowEng2 = FlowEngine.make_stage("other_flow", flow_file=flow_path, n_samples=n_samples)
+    flowEng2_samples = flowEng2.sample(n_samples, seed=seed).data
+
     assert flow_samples.equals(flowEng_samples)
+    assert flow_samples.equals(flowEng2_samples)
 
 
 def test_flowengine_pz_estimate():
