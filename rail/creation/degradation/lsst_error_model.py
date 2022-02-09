@@ -1,8 +1,9 @@
+""" LSST Model for photometric errors """
+
 from numbers import Number
 from typing import Iterable, List, Optional, Tuple
 
 import numpy as np
-import pandas as pd
 from rail.creation.degradation import Degrader
 
 
@@ -46,7 +47,7 @@ class LSSTErrorModel(Degrader):
     For example, if in your DataFrame, the bands are named lsst_u, lsst_g, etc.
     you can set bandNames = {"u": "lsst_u", "g": "lsst_g", ...},
     and the error model will work automatically.
-    
+
     You can also add other bands to bandNames. For example, if you want to
     use the same model to calculate photometric errors for Euclid bands, you
     can include {"euclid_y": "euclid_y", "euclid_j": "euclid_j", ...}.
@@ -202,7 +203,7 @@ class LSSTErrorModel(Degrader):
         """
 
         # check that highSNR is boolean
-        if not isinstance(self.config["highSNR"], bool):
+        if not isinstance(self.config["highSNR"], bool):  #pragma: no cover
             raise TypeError("highSNR must be boolean.")
 
         # check all the numbers
@@ -223,20 +224,20 @@ class LSSTErrorModel(Degrader):
             is_nan = np.isnan(self.config[key])
             # ndFlag can be np.nan
             if key == "ndFlag":
-                if not (is_number or is_nan) or is_bool:
+                if not (is_number or is_nan) or is_bool:  #pragma: no cover
                     raise TypeError(f"{key} must be a number or NaN.")
             # the others cannot
             else:
-                if not is_number or is_nan or is_bool:
+                if not is_number or is_nan or is_bool:  #pragma: no cover
                     raise TypeError(f"{key} must be a number.")
             # if they are numbers, check that they are non-negative
             # except for magLim and ndFlag, which can be
-            if key != "magLim" and key != "ndFlag":
+            if key not in ["magLim", "ndFlag"]:
                 if self.config[key] < 0:
                     raise ValueError(f"{key} must be non-negative.")
 
         # make sure bandNames is a dictionary
-        if not isinstance(self.config["bandNames"], dict):
+        if not isinstance(self.config["bandNames"], dict):  #pragma: no cover
             raise TypeError(
                 "bandNames must be a dictionary where the keys are the names "
                 "of the bands as used internally by the error model, and the "
@@ -258,7 +259,7 @@ class LSSTErrorModel(Degrader):
         for key in ["nVisYr", "gamma", "Cm", "msky", "theta", "km"]:
 
             # make sure they are dictionaries
-            if not isinstance(self.config[key], dict):
+            if not isinstance(self.config[key], dict):  #pragma: no cover
                 raise TypeError(f"{key} must be a dictionary.")
 
             # check the values in the dictionary
@@ -279,7 +280,7 @@ class LSSTErrorModel(Degrader):
             missing = set(self.config["bandNames"]) - set(self.config[key])
 
             # nVisYr and gamma must have an entry for every band in bandNames
-            if key == "nVisYr" or key == "gamma":
+            if key in ["nVisYr", "gamma"]:
                 if len(missing) > 0:
                     raise ValueError(
                         f"{key} must have an entry for every band in bandNames, "
@@ -457,7 +458,7 @@ class LSSTErrorModel(Degrader):
         for band in bandNames:
             columns.insert(columns.index(band) + 1, band + "_err")
         obsData = obsData[columns]
-        self._cached = self.add_data('output', obsData)
+        self.add_data('output', obsData)
 
     def get_limiting_mags(
         self,
@@ -519,7 +520,7 @@ class LSSTErrorModel(Degrader):
         limiting_mags = m5 + 2.5 * np.log10(x)
 
         # return as a dictionary
-        return {bandName: mag for bandName, mag in zip(bandNames, limiting_mags)}
+        return dict(zip(bandNames, limiting_mags))
 
     def __repr__(self):  # pragma: no cover
         """
@@ -532,7 +533,7 @@ class LSSTErrorModel(Degrader):
         printMsg = "LSSTErrorModel parameters:\n\n"
 
         # list all bands
-        printMsg += f"Model for bands: "
+        printMsg += "Model for bands: "
         printMsg += ", ".join(settings["bandNames"].values()) + "\n"
 
         # print whether using the high SNR approximation

@@ -1,8 +1,8 @@
-# Abstract base class defining a degrader
+""" Abstract base class defining a degrader
 
-# note that this is just to indicate that any callable object can serve as
-# a degrader, as long as its __call__ method takes a pandas DataFrame and a
-# seed, and returns a pandas DataFrame
+The key feature is that the __call__ method takes a pandas DataFrame and a
+seed, and returns a pandas DataFrame, and wraps the run method
+"""
 
 import pandas as pd
 
@@ -10,20 +10,17 @@ from rail.core.stage import RailStage
 from rail.core.data import TableHandle
 
 class Degrader(RailStage):
+    """Base class Degraders, which apply various degradations to synthetic photometric data"""
 
     name = 'Degrader'
     config_options = dict(seed=12345)
-    inputs = [('input', TableHandle)]    
+    inputs = [('input', TableHandle)]
     outputs = [('output', TableHandle)]
 
     def __init__(self, args, comm=None):
+        """Initialize Degrader that can degrade photometric data"""
         RailStage.__init__(self, args, comm=comm)
-        self._cached = None
 
-    @property
-    def cached(self):
-        return self._cached
-        
     def __call__(self, sample: pd.DataFrame, seed: int = None) -> pd.DataFrame:
         """Return a degraded sample.
 
@@ -43,4 +40,4 @@ class Degrader(RailStage):
             self.config.seed = seed
         self.set_data('input', sample)
         self.run()
-        return self._cached
+        return self.get_handle('output')

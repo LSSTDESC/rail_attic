@@ -2,7 +2,7 @@ import inspect
 import numpy as np
 from scipy import stats
 import qp
-from rail.evaluation.evaluator import Evaluator
+from .base import MetricEvaluator
 from rail.evaluation.utils import stat_and_pval, stat_crit_sig
 import warnings
 
@@ -19,7 +19,7 @@ def PITMetaMetric(cls):
     return cls
 
 
-class PIT(Evaluator):
+class PIT(MetricEvaluator):
     """ Probability Integral Transform """
 
     def __init__(self, qp_ens, ztrue):
