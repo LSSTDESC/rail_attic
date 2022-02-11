@@ -44,7 +44,7 @@ class RandomPZ(Estimator):
         self.zgrid = np.linspace(self.config.rand_zmin, self.config.rand_zmax, self.config.nzbins)
         for i in range(numzs):
             pdf.append(norm.pdf(self.zgrid, zmode[i], widths[i]))
-        qp_d = qp.Ensemble(qp.stats.norm, data=dict(loc=np.expand_dims(zmode, -1),
-                                                    scale=np.expand_dims(widths, -1)))  #pylint: disable=no-member
+        qp_d = qp.Ensemble(qp.stats.norm, data=dict(loc=np.expand_dims(zmode, -1),  #pylint: disable=no-member
+                                                    scale=np.expand_dims(widths, -1)))
         qp_d.set_ancil(dict(zmode=zmode))
         self.add_data('output', qp_d)

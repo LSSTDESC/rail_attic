@@ -76,7 +76,7 @@ class Evaluator(RailStage):
                            OutRate=PITOutRate)
         if self.config.pit_metrics == 'all':
             pit_metrics = list(PIT_METRICS.keys())
-        else:
+        else:  #pragma: no cover
             pit_metrics = self.config.pit_metrics.split()
 
         POINT_METRICS = dict(SimgaIQR=PointSigmaIQR,
@@ -85,7 +85,7 @@ class Evaluator(RailStage):
                              SigmaMAD=PointSigmaMAD)
         if self.config.point_metrics == 'all':
             point_metrics = list(POINT_METRICS.keys())
-        else:
+        else:  #pragma: no cover
             point_metrics = self.config.point_metrics.split()
 
         out_table = {}
@@ -94,7 +94,7 @@ class Evaluator(RailStage):
             if pitobj is None:
                 pitobj = PIT(pz_data, z_true)
                 quant_ens, _ = pitobj.evaluate()
-                pit_vals = np.array(pitobj._pit_samps)
+                pit_vals = np.array(pitobj.pit_samps)
 
             value = PIT_METRICS[pit_metric](pit_vals, quant_ens).evaluate()
             if isinstance(value, stat_and_pval):

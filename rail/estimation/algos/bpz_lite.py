@@ -128,7 +128,7 @@ class BPZ_lite(Estimator):
         for i, s in enumerate(spectra):
             for j, f in enumerate(filters):
                 model = f"{s}.{f}.AB"
-                if model not in ab_file_db:  #pragma: no cover
+                if model not in ab_file_db:
                     self._make_new_ab_file(s, f)
                 model_path = os.path.join(data_path, "AB", model)
                 zo, f_mod_0 = get_data(model_path, (0, 1))
@@ -136,12 +136,12 @@ class BPZ_lite(Estimator):
 
         return flux_templates
 
-    def _make_new_ab_file(self, spectrum, filter_):  #pragma: no cover
+    def _make_new_ab_file(self, spectrum, filter_):
         from desc_bpz.bpz_tools_py3 import ABflux
 
         new_file = f"{spectrum}.{filter_}.AB"
         print(f"  Generating new AB file {new_file}....")
-        ABflux(spectrum, filter, self.config.madau)
+        ABflux(spectrum, filter_, self.config.madau_flag)
 
     def _preprocess_magnitudes(self, data):
         from desc_bpz.bpz_tools_py3 import e_mag2frac

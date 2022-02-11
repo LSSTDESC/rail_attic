@@ -42,6 +42,8 @@ def test_flowengine_pz_estimate():
 
     flow = get_example_flow()
     flow_pdfs = flow.posterior(data, column="redshift", grid=grid)
+    pzdir = os.path.dirname(pzflow.__file__)
+    flow_path = os.path.join(pzdir, 'examples', 'example-flow.pkl')
 
     flowPost = FlowPosterior.make_stage(name='flow',
                                         flow=flow,
@@ -49,7 +51,17 @@ def test_flowengine_pz_estimate():
                                         grid=grid,
                                         marg_rules = {"flag": np.nan, "u": lambda row: np.linspace(25, 31, 10)})
 
+    flowPost2 = FlowPosterior.make_stage(name='flow2',
+                                        flow_file=flow_path,
+                                        column="redshift",
+                                        grid=grid,
+                                        marg_rules = {"flag": np.nan, "u": lambda row: np.linspace(25, 31, 10)})
+
+    
     flowPost_pdfs = flowPost.get_posterior(DS['data'], column="redshift", grid=grid).data
     flowPost_pdfs = flowPost_pdfs.objdata()["yvals"]
+
+    flowPost2_pdfs = flowPost2.get_posterior(DS['data'], column="redshift", grid=grid).data
+    flowPost2_pdfs = flowPost2_pdfs.objdata()["yvals"]
 
     assert np.allclose(flow_pdfs, flowPost_pdfs)
