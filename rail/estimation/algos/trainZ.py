@@ -37,7 +37,7 @@ class Train_trainZ(Trainer):
         Trainer.__init__(self, args, comm=comm)
 
     def run(self):
-        training_data = self.get_data('input')['photometry']
+        training_data = self.get_data('input')[self.config.hdf5_groupname]
         zbins = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins+1)
         speczs = np.sort(training_data['redshift'])
         train_pdf, _ = np.histogram(speczs, zbins)
@@ -72,7 +72,7 @@ class TrainZ(Estimator):
         self.zmode = self.model.zmode
 
     def run(self):
-        test_data = self.get_data('input')['photometry']
+        test_data = self.get_data('input')[self.config.hdf5_groupname]
         test_size = len(test_data['mag_i_lsst'])
         zmode = np.repeat(self.zmode, test_size)
         qp_d = qp.Ensemble(qp.interp,

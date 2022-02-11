@@ -90,7 +90,7 @@ class Estimator(RailStage):
     """
 
     name = 'Estimator'
-    config_options = dict(chunk_size=10000)
+    config_options = dict(chunk_size=10000, hdf5_groupname=str)
     inputs = [('model_file', ModelFile),
               ('input', TableHandle)]
     outputs = [('output', QPHandle)]

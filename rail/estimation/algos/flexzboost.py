@@ -115,7 +115,7 @@ class Train_FZBoost(Trainer):
     def run(self):
         """Train flexzboost model model
         """
-        training_data = self.get_data('input')['photometry']
+        training_data = self.get_data('input')[self.config.hdf5_groupname]
         speczs = training_data['redshift']
         print("stacking some data...")
         color_data = make_color_data(training_data, self.config.bands)
@@ -175,7 +175,7 @@ class FZBoost(Estimator):
         self.zgrid = None
 
     def run(self):
-        test_data = self.get_data('input')['photometry']
+        test_data = self.get_data('input')[self.config.hdf5_groupname]
         color_data = make_color_data(test_data, self.config.bands)
         pdfs, z_grid = self.model.predict(color_data, n_grid=self.config.nzbins)
         self.zgrid = np.array(z_grid).flatten()

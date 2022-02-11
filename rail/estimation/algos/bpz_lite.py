@@ -260,7 +260,7 @@ class BPZ_lite(Estimator):
         """
         This will likely mostly be copied from BPZPipe code
         """
-        test_data = self.get_data('input', allow_missing=True)['photometry']
+        test_data = self.get_data('input', allow_missing=True)[self.config.hdf5_groupname]
         test_data = self._preprocess_magnitudes(test_data)
 
         m_0_col = self.config.bands.index(self.config.prior_band)
