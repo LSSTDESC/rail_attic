@@ -23,7 +23,7 @@ class FlowDict(dict):
 
     def __setitem__(self, key, value):
         """ Add a key-value pair, and check to make sure that the value is a `Flow` object """
-        if not isinstance(value, Flow):
+        if not isinstance(value, Flow):  #pragma: no cover
             raise TypeError(f"Only values of type Flow can be added to a FlowFactory, not {type(value)}")
         return dict.__setitem__(self, key, value)
 
@@ -33,7 +33,7 @@ class FlowDict(dict):
             flow = Flow(file=path)
             self.__setitem__(path, flow)
             return flow
-        return self[path]
+        return self[path]  #pragma: no cover
 
 
 class FlowFile(DataFile):
@@ -93,7 +93,7 @@ class FlowEngine(Engine):
         -----
         Puts the data into the data store under this stages 'output' tag
         """
-        if self.flow is None:
+        if self.flow is None:  #pragma: no cover
             raise ValueError("Tried to run a FlowEngine before the Flow object is loaded")
         self.add_data('output', self.flow.sample(self.config.n_samples, self.config.seed))
 
@@ -203,7 +203,7 @@ class FlowPosterior(PosteriorEvaluator):
         """
 
         data = self.get_data('input')
-        if self.config.marg_rules is None:
+        if self.config.marg_rules is None:  #pragma: no cover
             marg_rules = {"flag": np.nan, "mag_u_lsst": lambda row: np.linspace(25, 31, 10)}
         else:
             marg_rules = self.config.marg_rules

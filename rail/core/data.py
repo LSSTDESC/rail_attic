@@ -131,7 +131,7 @@ class TableHandle(DataHandle):
         This will simply open the file and return a file-like object to the caller.
         It will not read or cache the data
         """
-        return tables_io.io.open(path, **kwargs)
+        return tables_io.io.open(path, **kwargs)  #pylint: disable=no-member
 
     @classmethod
     def _read(cls, path, **kwargs):
@@ -163,7 +163,7 @@ class QPHandle(DataHandle):
         This will simply open the file and return a file-like object to the caller.
         It will not read or cache the data
         """
-        return tables_io.io.open(path)
+        return tables_io.io.open(path)  #pylint: disable=no-member
 
     @classmethod
     def _read(cls, path, **kwargs):

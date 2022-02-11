@@ -120,7 +120,7 @@ class SimpleNN(Estimator):
         input_data = regularize_data(color_data)
         zmode = np.round(self.model.predict(input_data), 3)
         widths = self.config.width * (1.0+zmode)
-        qp_dstn = qp.Ensemble(qp.stats.norm, data=dict(loc=np.expand_dims(zmode, -1),
-                                                       scale=np.expand_dims(widths, -1)))  #pylint: disable=no-member
+        qp_dstn = qp.Ensemble(qp.stats.norm, data=dict(loc=np.expand_dims(zmode, -1), #pylint: disable=no-member
+                                                       scale=np.expand_dims(widths, -1)))
         qp_dstn.set_ancil(dict(zmode=zmode))
         self.add_data('output', qp_dstn)

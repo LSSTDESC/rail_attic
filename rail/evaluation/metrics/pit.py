@@ -29,6 +29,13 @@ class PIT(MetricEvaluator):
         self._ztrue = ztrue
         self._pit_samps = np.array([self._qp_ens[i].cdf(self._ztrue[i])[0][0] for i in range(len(self._ztrue))])
 
+
+    @property
+    def pit_samps(self):
+        """Return the samples used to compute the PIT"""
+        return self._pit_samps
+        
+        
     def evaluate(self, eval_grid=default_quants, meta_options=_pitMetaMetrics):
         """Compute PIT array using qp.Ensemble class
         Notes

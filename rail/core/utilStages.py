@@ -20,9 +20,9 @@ class ColumnMapper(RailStage):
         RailStage.__init__(self, args, comm=comm)
 
     def run(self):
-        data = self.get_data('input')
+        data = self.get_data('input')['photometry']
         out_data = data.rename(columns=self.config.columns, inplace=self.config.inplace)
-        if self.config.inplace:
+        if self.config.inplace:  #pragma: no cover
             out_data = data
         self.add_data('output', out_data)
 
