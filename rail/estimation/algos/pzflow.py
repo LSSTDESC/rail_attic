@@ -117,7 +117,7 @@ class Train_PZFlowPDF(Trainer):
         train a flow based on the training data
         This is mostly based off of the pzflow example notebook
         """
-        training_data = self.get_data('input')['photometry']
+        training_data = self.get_data('input')[self.config.hdf5_groupname]
 
         input_df = pd.DataFrame(training_data)
         flowdf = input_df[self.usecols]
@@ -204,7 +204,7 @@ class PZFlowPDF(Estimator):
         """
         calculate and return PDFs for each galaxy using the trained flow
         """
-        test_data = self.get_data('input')['photometry']
+        test_data = self.get_data('input')[self.config.hdf5_groupname]
 
         # flow expects dataframe
         test_df = pd.DataFrame(test_data)

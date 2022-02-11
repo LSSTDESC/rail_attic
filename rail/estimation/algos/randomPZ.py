@@ -31,7 +31,7 @@ class RandomPZ(Estimator):
         self.zgrid = None
 
     def run(self):
-        test_data = self.get_data('input')['photometry']
+        test_data = self.get_data('input')[self.config.hdf5_groupname]
         pdf = []
         # allow for either format for now
         try:

@@ -37,7 +37,7 @@ def test_random_pz():
     train_config_dict = {}
     estim_config_dict = {'rand_width': 0.025, 'rand_zmin': 0.0,
                          'rand_zmax': 3.0, 'nzbins': 301,
-                         'hdf5_groupname':'',
+                         'hdf5_groupname':'photometry',
                          'model_file': 'None'}
     zb_expected = np.array([1.359, 0.013, 0.944, 1.831, 2.982, 1.565, 0.308, 0.157, 0.986, 1.679])
     train_algo = None
@@ -52,9 +52,9 @@ def test_random_pz():
 def test_simple_nn():
     train_config_dict = {'width': 0.025, 'zmin': 0.0, 'zmax': 3.0,
                          'nzbins': 301, 'max_iter': 250,
-                         'hdf5_groupname':'',                         
+                         'hdf5_groupname':'photometry',                         
                          'model_file': 'model.tmp'}
-    estim_config_dict = {'hdf5_groupname':'',
+    estim_config_dict = {'hdf5_groupname':'photometry',
                          'model_file': 'inprogress_model.tmp'}        
     zb_expected = np.array([0.152, 0.135, 0.109, 0.158, 0.113, 0.176, 0.13 , 0.15 , 0.119, 0.133])
     train_algo = sklearn_nn.Train_SimpleNN
@@ -75,7 +75,7 @@ def bob_flexzboost():
                          'regression_params': {'max_depth': 8,
                                                'objective':
                                                'reg:squarederror'},
-                         'hdf5_groupname':'',                                               
+                         'hdf5_groupname':'photometry',                                               
                          'modelfile': 'model.tmp'}
     estim_config_dict = {}        
     zb_expected = np.array([0.13, 0.13, 0.13, 0.12, 0.12, 0.13, 0.12, 0.13,
@@ -94,7 +94,7 @@ def bob_flexzboost():
      (True, [0.15, 0.14, 0.15, 0.14, 0.12, 0.14, 0.15, 0.12, 0.13, 0.11]),
      ],
 )
-def bob_pzflow(inputs, zb_expected):
+def test_pzflow(inputs, zb_expected):
     def_bands = ['u', 'g', 'r', 'i', 'z', 'y']
     refcols = [f"mag_{band}_lsst" for band in def_bands]
     def_maglims = dict(mag_u_lsst=27.79,
@@ -123,9 +123,9 @@ def bob_pzflow(inputs, zb_expected):
                              soft_idx_col=0,
                              redshift_column_name='redshift',
                              num_training_epochs=50,
-                             hdf5_groupname='',
+                             hdf5_groupname='photometry',
                              model_file="PZflowPDF.pkl")
-    estim_config_dict = dict(hdf5_groupname='',
+    estim_config_dict = dict(hdf5_groupname='photometry',                                 
                              model_file="inprogress_PZflowPDF.pkl")
 
     # zb_expected = np.array([0.15, 0.14, 0.11, 0.14, 0.12, 0.14, 0.15, 0.16, 0.11, 0.12])
@@ -142,9 +142,9 @@ def test_train_pz():
     train_config_dict = dict(zmin=0.0,
                              zmax=3.0,
                              nzbins=301,
-                             hdf5_groupname='',
+                             hdf5_groupname='photometry',
                              model_file='model_train_z.tmp')
-    estim_config_dict = dict(hdf5_groupname='',
+    estim_config_dict = dict(hdf5_groupname='photometry',
                              model_file='inprogress_model_train_z.tmp')
 
     zb_expected = np.repeat(0.1445183, 10)
@@ -191,9 +191,9 @@ def test_KNearNeigh():
                              nneigh_min=2,
                              nneigh_max=3,
                              redshift_column_name='redshift',
-                             hdf5_groupname='',                             
+                             hdf5_groupname='photometry',
                              model_file="KNearNeighPDF.pkl")
-    estim_config_dict = dict(hdf5_groupname='',
+    estim_config_dict = dict(hdf5_groupname='photometry',
                              model_file="inprogress_KNearNeighPDF.pkl")       
 
     zb_expected = np.array([0.13, 0.14, 0.13, 0.13, 0.11, 0.15, 0.13, 0.14,
@@ -210,11 +210,11 @@ def test_KNearNeigh():
 def test_catch_bad_bands():
     params = dict(bands='u,g,r,i,z,y')
     with pytest.raises(ValueError):
-        flexzboost.FZBoost.make_stage(**params)
+        flexzboost.FZBoost.make_stage(hdf5_groupname='', **params)
     with pytest.raises(ValueError) as errinfo:
         sklearn_nn.Train_SimpleNN.make_stage(hdf5_groupname='', **params)
     with pytest.raises(ValueError) as errinfo:
-        sklearn_nn.SimpleNN.make_stage(**params)
+        sklearn_nn.SimpleNN.make_stage(hdf5_groupname='', **params)
 
 
 def test_bpz_lite():
@@ -233,6 +233,7 @@ def test_bpz_lite():
                          'gauss_kernel': 0.0,
                          'zp_errors': np.array([0.01, 0.01, 0.01, 0.01, 0.01, 0.01]),
                          'mag_err_min': 0.005,
+                         'hdf5_groupname':'photometry',
                          'modelfile': 'model.out'}
     zb_expected = np.array([0.18, 2.88, 0.14, 0.21, 2.97, 0.18, 0.23, 0.23,
                             2.98, 2.92])
@@ -257,10 +258,10 @@ def test_bpz_lite_wkernel_flatprior():
                          'prior_file': 'flat',
                          'p_min': 0.005,
                          'gauss_kernel': 0.1,
-                         'zp_errors': [0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
+                         'zp_errors': np.array([0.01, 0.01, 0.01, 0.01, 0.01, 0.01]),
                          'mag_err_min': 0.005,
+                         'hdf5_groupname':'photometry',                         
                          'modelfile': 'model.out'}
-    estim_config_dict = {}
     zb_expected = np.array([0.18, 2.88, 0.12, 0.15, 2.97, 2.78, 0.11, 0.19,
                             2.98, 2.92])
     train_algo = None
@@ -270,7 +271,7 @@ def test_bpz_lite_wkernel_flatprior():
     assert np.isclose(results.ancil['zmode'], rerun_results.ancil['zmode']).all()
 
 
-def test_missing_modelfile_keyword():
+def test_missing_groupname_keyword():
     config_dict = {'zmin': 0.0, 'zmax': 3.0, 'nzbins': 301,
                    'trainfrac': 0.75, 'bumpmin': 0.02,
                    'bumpmax': 0.35, 'nbump': 3,
@@ -280,8 +281,8 @@ def test_missing_modelfile_keyword():
                    'regression_params': {'max_depth': 8,
                                              'objective':
                                              'reg:squarederror'}}
-    #with pytest.raises(KeyError):
-    pz_algo = flexzboost.FZBoost.make_stage(**config_dict)
+    with pytest.raises(ValueError):
+        pz_algo = flexzboost.FZBoost.make_stage(**config_dict)
 
 
 
@@ -292,6 +293,7 @@ def test_wrong_modelfile_keyword():
                    'sharpmin': 0.7, 'sharpmax': 2.1,
                    'nsharp': 3, 'max_basis': 35,
                    'basis_system': 'cosine',
+                   'hdf5_groupname':'photometry',                                            
                    'regression_params': {'max_depth': 8,
                                              'objective':
                                              'reg:squarederror'},
