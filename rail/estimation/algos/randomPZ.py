@@ -31,7 +31,11 @@ class RandomPZ(Estimator):
         self.zgrid = None
 
     def run(self):
-        test_data = self.get_data('input')[self.config.hdf5_groupname]
+
+        if self.config.hdf5_groupname:
+            test_data = self.get_data('input')[self.config.hdf5_groupname]
+        else:  #pragma:  no cover
+            test_data = self.get_data('input')
         pdf = []
         # allow for either format for now
         try:

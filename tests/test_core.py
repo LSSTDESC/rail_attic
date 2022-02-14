@@ -14,7 +14,7 @@ def test_util_stages():
     
     data = DS.read_file('data', TableHandle, datapath)
     
-    table_conv = TableConverter.make_stage(name='conv', output_format='pandasDataFrame')
+    table_conv = TableConverter.make_stage(name='conv', hdf5_groupname='photometry', output_format='pandasDataFrame')
     col_map = ColumnMapper.make_stage(name='col_map', columns={})
     row_sel = RowSelector.make_stage(name='row_sel', start=1, stop=15)
 

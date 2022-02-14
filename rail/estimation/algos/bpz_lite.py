@@ -260,7 +260,10 @@ class BPZ_lite(Estimator):
         """
         This will likely mostly be copied from BPZPipe code
         """
-        test_data = self.get_data('input', allow_missing=True)[self.config.hdf5_groupname]
+        if self.config.hdf5_groupname:
+            test_data = self.get_data('input')[self.config.hdf5_groupname]
+        else:  #pragma:  no cover
+            test_data = self.get_data('input')
         test_data = self._preprocess_magnitudes(test_data)
 
         m_0_col = self.config.bands.index(self.config.prior_band)
