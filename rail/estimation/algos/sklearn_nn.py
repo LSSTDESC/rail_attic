@@ -82,7 +82,10 @@ class Train_SimpleNN(Trainer):
     def run(self):
         """Train the NN model
         """
-        training_data = self.get_data('input')[self.config.hdf5_groupname]
+        if self.config.hdf5_groupname:
+            training_data = self.get_data('input')[self.config.hdf5_groupname]
+        else:  #pragma:  no cover
+            training_data = self.get_data('input')
         speczs = training_data['redshift']
         print("stacking some data...")
         color_data = make_color_data(training_data, self.config.bands)
@@ -115,7 +118,10 @@ class SimpleNN(Estimator):
             raise ValueError("'bands' option should be letters only (no spaces or commas etc)")
 
     def run(self):
-        test_data = self.get_data('input')[self.config.hdf5_groupname]
+        if self.config.hdf5_groupname:
+            test_data = self.get_data('input')[self.config.hdf5_groupname]
+        else:  #pragma:  no cover
+            test_data = self.get_data('input')
         color_data = make_color_data(test_data, self.config.bands)
         input_data = regularize_data(color_data)
         zmode = np.round(self.model.predict(input_data), 3)

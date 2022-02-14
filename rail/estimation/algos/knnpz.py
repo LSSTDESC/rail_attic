@@ -89,7 +89,10 @@ class Train_KNearNeighPDF(Trainer):
         """
         train a KDTree on a fraction of the training data
         """
-        training_data = self.get_data('input')[self.config.hdf5_groupname]
+        if self.config.hdf5_groupname:
+            training_data = self.get_data('input')[self.config.hdf5_groupname]
+        else:  #pragma:  no cover
+            training_data = self.get_data('input')
         input_df = pd.DataFrame(training_data)
         knndf = input_df[self.config.column_names]
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
@@ -179,7 +182,10 @@ class KNearNeighPDF(Estimator):
         calculate and return PDFs for each galaxy using the trained flow
         """
         # flow expects dataframe
-        test_data = self.get_data('input')[self.config.hdf5_groupname]
+        if self.config.hdf5_groupname:
+            test_data = self.get_data('input')[self.config.hdf5_groupname]
+        else:  #pragma:  no cover
+            test_data = self.get_data('input')
         test_df = pd.DataFrame(test_data)
         knn_df = test_df[self.usecols]
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
