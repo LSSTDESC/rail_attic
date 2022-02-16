@@ -67,16 +67,16 @@ class DataHandle:
     def _write(cls, data, path, **kwargs):
         raise NotImplementedError("DataHandle._write")
 
-    def iterate(self, **kwargs):
-        """Iterate over the data"""
-        if self.data is not None:
-            for i in range(1):
-                yield i, -1, self.data
-        return self._iterate(self.path, **kwargs)
+    def iterator(self, **kwargs):
+        """Iterator over the data"""
+        #if self.data is not None:
+        #    for i in range(1):
+        #        yield i, -1, self.data
+        return self._iterator(self.path, **kwargs)
 
     @classmethod
-    def _iterate(cls, path, **kwargs):
-        raise NotImplementedError("DataHandle._iterate")
+    def _iterator(cls, path, **kwargs):
+        raise NotImplementedError("DataHandle._iterator")
 
     @property
     def has_data(self):
@@ -144,9 +144,9 @@ class TableHandle(DataHandle):
         return tables_io.write(data, path, **kwargs)
 
     @classmethod
-    def _iterate(cls, path, **kwargs):
+    def _iterator(cls, path, **kwargs):
         """Iterate over the data"""
-        tables_io.iterate(path, **kwargs)
+        return tables_io.iteratorNative(path, **kwargs)
 
 
 class QPHandle(DataHandle):

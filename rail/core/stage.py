@@ -151,7 +151,7 @@ class RailStage(PipelineStage):
         handle = self.add_handle(tag, data=data)
         return handle.data
 
-    def iterate_input(self, tag, **kwargs):
+    def input_iterator(self, tag, **kwargs):
         """Iterate the input assocated to a particular tag
 
         Parameters
@@ -164,4 +164,7 @@ class RailStage(PipelineStage):
         These will be passed to the Handle's iterate function
         """
         handle = self.get_handle(tag)
-        handle.iterate(**kwargs)
+        kwcopy = dict(groupname=self.config.hdf5_groupname,
+                      chunk_size=self.config.chunk_size)
+        kwcopy.update(**kwargs)
+        return handle.iterator(**kwcopy)
