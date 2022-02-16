@@ -12,7 +12,7 @@ class ColumnMapper(RailStage):
 
     """
     name = 'ColumnMapper'
-    config_options = dict(hdf5_groupname='', columns=dict, inplace=False)
+    config_options = dict(hdf5_groupname='', chunk_size=100_000, columns=dict, inplace=False)
     inputs = [('input', TableHandle)]
     outputs = [('output', TableHandle)]
 
