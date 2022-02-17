@@ -42,7 +42,7 @@ class DataHandle:
 
     @classmethod
     def _open(cls, path, **kwargs):
-        raise NotImplementedError("DataHandle._open")
+        raise NotImplementedError("DataHandle._open")  #pragma: no cover
 
     def read(self, force=False, **kwargs):
         """Read and return the data from the associated file """
@@ -53,7 +53,7 @@ class DataHandle:
 
     @classmethod
     def _read(cls, path, **kwargs):
-        raise NotImplementedError("DataHandle._read")
+        raise NotImplementedError("DataHandle._read")  #pragma: no cover
 
     def write(self, **kwargs):
         """Write the data to the associatied file """
@@ -65,7 +65,7 @@ class DataHandle:
 
     @classmethod
     def _write(cls, data, path, **kwargs):
-        raise NotImplementedError("DataHandle._write")
+        raise NotImplementedError("DataHandle._write")  #pragma: no cover
 
     def iterator(self, **kwargs):
         """Iterator over the data"""
@@ -76,7 +76,7 @@ class DataHandle:
 
     @classmethod
     def _iterator(cls, path, **kwargs):
-        raise NotImplementedError("DataHandle._iterator")
+        raise NotImplementedError("DataHandle._iterator")  #pragma: no cover
 
     @property
     def has_data(self):
@@ -114,7 +114,7 @@ class DataHandle:
         if cls.suffix:
             return f"{tag}.{cls.suffix}"
         else:
-            return tag
+            return tag  #pragma: no cover
 
 
 class TableHandle(DataHandle):
@@ -148,6 +148,15 @@ class TableHandle(DataHandle):
         """Iterate over the data"""
         return tables_io.iteratorNative(path, **kwargs)
 
+class Hdf5Handle(TableHandle):
+    """DataHandle for a table written to HDF5"""
+    suffix = 'hdf5'
+
+
+class PqHandle(TableHandle):
+    """DataHandle for a parquet table"""
+    suffix = 'pq'
+
 
 class QPHandle(DataHandle):
     """DataHandle for qp ensembles
@@ -163,7 +172,7 @@ class QPHandle(DataHandle):
         This will simply open the file and return a file-like object to the caller.
         It will not read or cache the data
         """
-        return tables_io.io.open(path)  #pylint: disable=no-member
+        return tables_io.io.open(path, **kwargs)  #pylint: disable=no-member
 
     @classmethod
     def _read(cls, path, **kwargs):
@@ -215,23 +224,23 @@ class DataFile:
         instance of the class itself to use as an intermediary for the file.
 
         """
-        return open(path, mode)
+        return open(path, mode)  #pragma: no cover
 
     @classmethod
     def read(cls, path):
         """ Reads a data file """
-        raise NotImplementedError()
+        raise NotImplementedError()  #pragma: no cover
 
     @classmethod
     def write(cls, data, path, **kwargs):
         """ Write a data file """
-        raise NotImplementedError()
+        raise NotImplementedError()  #pragma: no cover
 
     @classmethod
     def make_name(cls, tag):
         """Construct and return file name for a particular data tag """
         if cls.suffix:
-            return f"{tag}.{cls.suffix}"
+            return f"{tag}.{cls.suffix}"  #pragma: no cover
         else:
             return tag
 
@@ -316,7 +325,7 @@ class DataStore(dict):
             handle = self[key]
         except KeyError as msg:
             raise KeyError(f"Failed to open data {key} because {msg}") from msg
-        return handle.open(mode, **kwargs)
+        return handle.open(mode=mode, **kwargs)
 
     def write(self, key, **kwargs):
         """ Write the data associated to a particular key """

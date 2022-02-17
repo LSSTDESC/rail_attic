@@ -438,7 +438,7 @@ class LSSTErrorModel(Degrader):
         Calculate errors for data, and save the results in a pandas DataFrame.
         """
         # get the bands and bandNames present in the data
-        data = self.get_data('input')
+        data = self.get_data('input', allow_missing=True)
         bands, bandNames = self._get_bands_and_names(data.columns)
 
         # get numpy array of magnitudes

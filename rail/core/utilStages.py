@@ -5,25 +5,23 @@ import pandas as pd
 import tables_io
 from rail.core.stage import RailStage
 
-from rail.core.data import TableHandle
+from rail.core.data import PqHandle, Hdf5Handle
 
 class ColumnMapper(RailStage):
     """Utility stage that remaps the names of columns.
 
     """
     name = 'ColumnMapper'
-    config_options = dict(hdf5_groupname='', chunk_size=100_000, columns=dict, inplace=False)
-    inputs = [('input', TableHandle)]
-    outputs = [('output', TableHandle)]
+    config_options = RailStage.config_options.copy()
+    config_options.update(chunk_size=100_000, columns=dict, inplace=False)
+    inputs = [('input', PqHandle)]
+    outputs = [('output', PqHandle)]
 
     def __init__(self, args, comm=None):
         RailStage.__init__(self, args, comm=comm)
 
     def run(self):
-        if self.config.hdf5_groupname:
-            data = self.get_data('input')[self.config.hdf5_groupname]
-        else:
-            data = self.get_data('input')
+        data = self.get_data('input', allow_missing=True)
         out_data = data.rename(columns=self.config.columns, inplace=self.config.inplace)
         if self.config.inplace:  #pragma: no cover
             out_data = data
@@ -57,18 +55,16 @@ class RowSelector(RailStage):
 
     """
     name = 'RowSelector'
-    config_options = dict(hdf5_groupname='', start=int, stop=int)
-    inputs = [('input', TableHandle)]
-    outputs = [('output', TableHandle)]
+    config_options = RailStage.config_options.copy()
+    config_options.update(start=int, stop=int)
+    inputs = [('input', PqHandle)]
+    outputs = [('output', PqHandle)]
 
     def __init__(self, args, comm=None):
         RailStage.__init__(self, args, comm=comm)
 
     def run(self):
-        if self.config.hdf5_groupname:
-            data = self.get_data('input')[self.config.hdf5_groupname]
-        else:
-            data = self.get_data('input')
+        data = self.get_data('input', allow_missing=True)
         out_data = data.iloc[3:4]
         self.add_data('output', out_data)
 
@@ -98,18 +94,16 @@ class RowSelector(RailStage):
 class TableConverter(RailStage):
     """Utility stage that converts tables from one format to another"""
     name = 'TableConverter'
-    config_options = dict(hdf5_groupname='', output_format=str)
-    inputs = [('input', TableHandle)]
-    outputs = [('output', TableHandle)]
+    config_options = RailStage.config_options.copy()
+    config_options.update(output_format=str)
+    inputs = [('input', PqHandle)]
+    outputs = [('output', Hdf5Handle)]
 
     def __init__(self, args, comm=None):
         RailStage.__init__(self, args, comm=comm)
 
     def run(self):
-        if self.config.hdf5_groupname:
-            data = self.get_data('input')[self.config.hdf5_groupname]
-        else:
-            data = self.get_data('input')
+        data = self.get_data('input', allow_missing=True)
         out_fmt = tables_io.types.TABULAR_FORMAT_NAMES[self.config.output_format]
         out_data = tables_io.convert(data, out_fmt)
         self.add_data('output', out_data)

@@ -7,7 +7,7 @@ The key feature is that the evaluate method.
 import numpy as np
 
 from ceci.config import StageParameter as Param
-from rail.core.data import TableHandle, QPHandle
+from rail.core.data import Hdf5Handle, QPHandle
 from rail.core.stage import RailStage
 
 from rail.evaluation.utils import stat_and_pval
@@ -20,15 +20,16 @@ class Evaluator(RailStage):
     """ Evalute the preformance of a photo-Z estimator """
 
     name = 'Evaluator'
-    config_options = dict(zmin=Param(float, 0., msg="min z for grid"),
+    config_options = RailStage.config_options.copy()
+    config_options.update(zmin=Param(float, 0., msg="min z for grid"),
                           zmax=Param(float, 3.0, msg="max z for grid"),
                           nzbins=Param(int, 301, msg="# of bins in zgrid"),
                           pit_metrics=Param(str, 'all', msg='PIT-based metrics to include'),
                           point_metrics=Param(str, 'all', msg='Point-estimate metrics to include'),
                           do_cde=Param(bool, True, msg='Evalute CDE Metric'))
     inputs = [('input', QPHandle),
-              ('truth', TableHandle)]
-    outputs = [('output', TableHandle)]
+              ('truth', Hdf5Handle)]
+    outputs = [('output', Hdf5Handle)]
 
     def __init__(self, args, comm=None):
         """Initialize Degrader that can degrade photometric data"""
@@ -53,6 +54,7 @@ class Evaluator(RailStage):
         self.set_data('input', data)
         self.set_data('truth', truth)
         self.run()
+        self.finalize()
         return self.get_handle('output')
 
     def run(self):
