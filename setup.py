@@ -25,6 +25,13 @@ estimation_codes = {
     "bpz": ["DESC_BPZ @ git+https://github.com/LSSTDESC/DESC_BPZ"],
     "flex": ["FlexCode[all]"],
     "NN": ["sklearn"],
+    "delightPZ": [
+        "coloredlogs",
+        "corner",
+        "cython",
+        "emcee",
+        "delight @ git+https://github.com/LSSTDESC/Delight.git@interfacerail",
+        ]
 }
 
 # dependencies for the Evaluation module
@@ -61,6 +68,7 @@ setup(
     author="The LSST DESC PZ WG",
     author_email="aimalz@nyu.edu",
     packages=find_namespace_packages(),
+    package_dir={'rail': './rail','rail.estimation':'./rail/estimation','rail.estimation.algos': './rail/estimation/algos'},
     package_data={
         "": ["*.hdf5", "*.yaml", "*.sed", "*.res", "*.AB", "*.list", "*.columns"],
         "tests": ["*.hdf5", "*.yaml", "*.columns"],

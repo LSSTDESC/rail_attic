@@ -9,7 +9,8 @@ from scipy.stats import norm
 from rail.estimation.estimator import Estimator as BaseEstimation
 from rail.estimation.utils import check_and_print_params
 import qp
-
+import pprint
+import json
 
 def_param = {'run_params': {'rand_width': 0.025, 'rand_zmin': 0.0,
                             'rand_zmax': 3.0, 'nzbins': 301,
@@ -65,6 +66,8 @@ class randomPZ(BaseEstimation):
           this is random, so does nothing
         """
         print("I don't need to train!!!")
+        pprint.pprint(training_data)
+
         pass
 
     def load_pretrained_model(self):

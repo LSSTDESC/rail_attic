@@ -1,10 +1,11 @@
 import numpy as np
 import os
 import copy
+import yaml
 from tables_io.ioUtils import readHdf5ToDict, iterHdf5ToDict
 import pytest
 from rail.estimation.algos import randomPZ, sklearn_nn, flexzboost, trainZ
-from rail.estimation.algos import bpz_lite, pzflow, knnpz
+from rail.estimation.algos import bpz_lite, pzflow, delightPZ, knnpz
 
 
 test_base_yaml = './tests/test.yaml'
@@ -44,6 +45,7 @@ def one_algo(single_estimator, single_input):
         _ = pz.estimate(data)
     # add a test load for no config dict
     # check that all keys are present
+    # if single_estimator is not delightPZ.delightPZ:
     noconfig_pz = single_estimator(test_base_yaml)
     for key in single_input['run_params'].keys():
         assert key in noconfig_pz.config_dict['run_params']
@@ -168,6 +170,16 @@ def test_train_pz():
     assert np.isclose(pz_dict['zmode'], rerun_pz_dict['zmode']).all()
 
 
+def test_delight():
+    with open("./tests/delightPZ.yaml", "r") as f:
+        config_dict=yaml.safe_load(f)
+    pz_algo = delightPZ.delightPZ
+    pz_dict, rerun_pz_dict = one_algo(pz_algo, config_dict)
+    zb_expected = np.array([0.18, 0.01, -1., -1., 0.01, -1., -1., -1., 0.01, 0.01])
+    assert np.isclose(pz_dict['zmode'], zb_expected, atol=0.03).all()
+    assert np.isclose(pz_dict['zmode'], rerun_pz_dict['zmode']).all()
+    
+
 def test_KNearNeigh():
     def_bands = ['u', 'g', 'r', 'i', 'z', 'y']
     refcols = [f"mag_{band}_lsst" for band in def_bands]
@@ -204,7 +216,7 @@ def test_KNearNeigh():
     assert np.isclose(pz_dict['zmode'], zb_expected).all()
     assert np.isclose(pz_dict['zmode'], rerun_pz_dict['zmode']).all()
     os.remove('KNearNeighPDF.pkl')
-    
+
 
 def test_catch_bad_bands():
     params = copy.deepcopy(flexzboost.def_param)
