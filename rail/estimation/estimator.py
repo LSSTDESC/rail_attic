@@ -12,12 +12,6 @@ def default_model_read(modelfile):
     """Default function to read model files, simply used pickle.load"""
     return pickle.load(open(modelfile, 'rb'))
 
-def default_model_write(modelfile, obj):
-    """Default function to read model files, simply used pickle.load"""
-    with open(modelfile) as f:
-        pickle.dump(file=f, obj=obj, protocol=pickle.HIGHEST_PROTOCOL)
-
-
 
 class ModelDict(dict):
     """
@@ -25,8 +19,7 @@ class ModelDict(dict):
 
     1. Keys are paths
     2. There is a read(path, force=False) method that reads a model object and inserts it into the dictionary
-    3. There is a write(path, model, force=False) method that write a model object and inserts it into the dictionary
-    4. There is a single static instance of this class
+    3. There is a single static instance of this class
     """
     def open(self, path, mode, **kwargs):  #pylint: disable=no-self-use
         """Open the file and return the file handle"""
@@ -42,22 +35,8 @@ class ModelDict(dict):
             return model
         return self[path]
 
-    def write(self, path, model, force=False, writer=None):
-        """Read a model into this dict"""
-        if writer is None:
-            writer = default_model_write
-        if force or path not in self:
-            model = writer(path, model)
-            self.__setitem__(path, model)
-            return model
-        return self[path]
-
 
 MODEL_FACTORY = ModelDict()
-
-def ModelFactory():
-    """Return the singleton instance of the model factory"""
-    return MODEL_FACTORY
 
 
 class ModelFile(DataFile):
@@ -72,11 +51,6 @@ class ModelFile(DataFile):
             return MODEL_FACTORY.open(path, mode='wb', **kwargs)
         return MODEL_FACTORY.read(path, **kwargs)
 
-    @classmethod
-    def write(cls, data, path, **kwargs):
-        """ Write a data file """
-        return MODEL_FACTORY.write(path, data, **kwargs)
-
 
 class Estimator(RailStage):
     """
@@ -90,7 +64,8 @@ class Estimator(RailStage):
     """
 
     name = 'Estimator'
-    config_options = dict(chunk_size=10000, hdf5_groupname=str)
+    config_options = RailStage.config_options.copy()
+    config_options.update(chunk_size=10000, hdf5_groupname=str)
     inputs = [('model_file', ModelFile),
               ('input', TableHandle)]
     outputs = [('output', QPHandle)]
@@ -139,6 +114,7 @@ class Estimator(RailStage):
         """
         self.set_data('input', input_data)
         self.run()
+        self.finalize()
         return self.get_handle('output')
 
 
@@ -154,7 +130,8 @@ class Trainer(RailStage):
     """
 
     name = 'Trainer'
-    config_options = dict(hdf5_groupname=str, save_train=True)
+    config_options = RailStage.config_options.copy()
+    config_options.update(hdf5_groupname=str, save_train=True)
     inputs = [('input', TableHandle)]
     outputs = [('model_file', ModelFile)]
 

@@ -6,7 +6,7 @@ import qp
 
 from pzflow import Flow
 
-from rail.core.data import TableHandle, QPHandle
+from rail.core.data import PqHandle, QPHandle
 from rail.core.types import DataFile
 from rail.creation.engines import Engine, PosteriorEvaluator
 
@@ -52,7 +52,7 @@ class FlowEngine(Engine):
 
     name = 'FlowEngine'
     inputs = [('flow_file', FlowFile)]
-    outputs = [('output', TableHandle)]
+    outputs = [('output', PqHandle)]
 
     def __init__(self, args, comm=None):
         """ Constructor
@@ -61,6 +61,8 @@ class FlowEngine(Engine):
         """
         Engine.__init__(self, args, comm=comm)
         self.flow = None
+        if not isinstance(args, dict):  #pragma: no cover
+            args = vars(args)
         self.open_flow(**args)
 
     def open_flow(self, **kwargs):
@@ -149,7 +151,7 @@ class FlowPosterior(PosteriorEvaluator):
 
     name = 'FlowPosterior'
     config_options = PosteriorEvaluator.config_options.copy()
-    config_options.update(grid=np.ndarray,
+    config_options.update(grid=list,
                           err_samples=10,
                           seed=12345,
                           marg_rules={"flag": np.nan, "mag_u_lsst": lambda row: np.linspace(25, 31, 10)},
@@ -157,7 +159,7 @@ class FlowPosterior(PosteriorEvaluator):
                           nan_to_zero=True)
 
     inputs = [('flow_file', FlowFile),
-              ('input', TableHandle)]
+              ('input', PqHandle)]
     outputs = [('output', QPHandle)]
 
     def __init__(self, args, comm=None):
@@ -165,9 +167,12 @@ class FlowPosterior(PosteriorEvaluator):
 
         Does standard Engine initialization and also gets the `Flow` object
         """
-
         PosteriorEvaluator.__init__(self, args, comm=comm)
         self.flow = None
+
+        if not isinstance(args, dict):  #pragma: no cover
+            args = vars(dict)
+
         self.open_flow(**args)
 
     def open_flow(self, **kwargs):
@@ -211,7 +216,7 @@ class FlowPosterior(PosteriorEvaluator):
         pdfs = self.flow.posterior(
             inputs=data,
             column=self.config.column,
-            grid=self.config.grid,
+            grid=np.array(self.config.grid),
             err_samples=self.config.err_samples,
             seed=self.config.seed,
             marg_rules=marg_rules,

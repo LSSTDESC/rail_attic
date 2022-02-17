@@ -89,6 +89,9 @@ setup(
         "Operating System :: OS Independent",
         "Programming Language :: Python",
     ],
+    entry_points={
+        'console_scripts':['rail=rail.main:main']
+    },
     install_requires=install_requires,
     extras_require=extras_require,
     python_requires=">=3.5",

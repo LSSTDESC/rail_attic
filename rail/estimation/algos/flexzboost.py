@@ -186,4 +186,6 @@ class FZBoost(Estimator):
         pdfs, z_grid = self.model.predict(color_data, n_grid=self.config.nzbins)
         self.zgrid = np.array(z_grid).flatten()
         qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=pdfs))
+        zmode = qp_dstn.mode(grid=self.zgrid)
+        qp_dstn.set_ancil(dict(zmode=zmode))
         self.add_data('output', qp_dstn)

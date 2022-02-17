@@ -13,7 +13,8 @@ class Engine(RailStage):
     """Base class for Engines that create synthetic photometric data"""
 
     name = 'Engine'
-    config_options = dict(n_samples=int, seed=12345)
+    config_options = RailStage.config_options.copy()
+    config_options.update(n_samples=int, seed=12345)
 
     def __init__(self, args, comm=None):
         """Initialize Engine that can sample galaxy data."""
@@ -32,6 +33,7 @@ class Engine(RailStage):
         self.config['seed'] = seed
         self.config.update(**kwargs)
         self.run()
+        self.finalize()
         return self.get_handle('output')
 
 
@@ -41,7 +43,8 @@ class PosteriorEvaluator(RailStage):
     """
 
     name = 'PosteriorEvaluator'
-    config_options = dict(column=str)
+    config_options = RailStage.config_options.copy()
+    config_options.update(column=str)
 
     def __init__(self, args, comm=None):
         """Initialize PosteriorEvaluator """
@@ -61,4 +64,5 @@ class PosteriorEvaluator(RailStage):
         self.config.update(column=column)
         self.config.update(**kwargs)
         self.run()
+        self.finalize()
         return self.get_handle('output')
