@@ -1,0 +1,57 @@
+import os
+import numpy as np
+import ceci
+import rail
+from rail.core.stage import RailStage
+from rail.creation.degradation import LSSTErrorModel, InvRedshiftIncompleteness, LineConfusion, QuantityCut
+from rail.creation.engines.flowEngine import FlowEngine, FlowPosterior
+from rail.core.data import TableHandle
+from rail.core.stage import RailStage
+from rail.core.utilStages import ColumnMapper, TableConverter
+
+def test_goldenspike():
+    DS = RailStage.data_store
+    DS.__class__.allow_overwrite = True
+
+    RAIL_DIR = os.path.join(os.path.dirname(rail.__file__), '..')
+    flow_file = os.path.join(RAIL_DIR, 'examples/goldenspike/data/pretrained_flow.pkl')
+    bands = ['u','g','r','i','z','y']
+    band_dict = {band:f'mag_{band}_lsst' for band in bands}
+    rename_dict = {f'mag_{band}_lsst_err':f'mag_err_{band}_lsst' for band in bands}
+    post_grid = [float(x) for x in np.linspace(0., 5, 21)]
+
+    flow_engine_test = FlowEngine.make_stage(name='flow_engine_test', 
+                                            flow_file=flow_file, n_samples=50)
+      
+    lsst_error_model_test = LSSTErrorModel.make_stage(name='lsst_error_model_test',
+                                                    bandNames=band_dict)
+                
+    col_remapper_test = ColumnMapper.make_stage(name='col_remapper_test', hdf5_groupname='',
+                                                columns=rename_dict)
+
+    flow_post_test = FlowPosterior.make_stage(name='flow_post_test',
+                                              column='redshift', flow_file=flow_file,
+                                              grid=post_grid)
+
+    table_conv_test = TableConverter.make_stage(name='table_conv_test', output_format='numpyDict', 
+                                                seed=12345)
+
+
+    pipe = ceci.Pipeline.interactive()
+    stages = [flow_engine_test, lsst_error_model_test, col_remapper_test, table_conv_test]
+    for stage in stages:
+        pipe.add_stage(stage)
+
+
+    lsst_error_model_test.connect_input(flow_engine_test)
+    col_remapper_test.connect_input(lsst_error_model_test)
+    #flow_post_test.connect_input(col_remapper_test, inputTag='input')
+    table_conv_test.connect_input(col_remapper_test)
+
+
+    pipe.initialize(dict(flow_file=flow_file), dict(output_dir='.', log_dir='.', resume=False), None)
+
+    pipe.save('stage.yaml')
+
+    pr = ceci.Pipeline.read('stage.yaml')
+    pr.run()
