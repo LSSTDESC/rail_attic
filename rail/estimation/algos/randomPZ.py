@@ -31,7 +31,6 @@ class RandomPZ(Estimator):
         self.zgrid = None
 
     def run(self):
-
         if self.config.hdf5_groupname:
             test_data = self.get_data('input')[self.config.hdf5_groupname]
         else:  #pragma:  no cover
