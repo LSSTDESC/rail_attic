@@ -6,6 +6,8 @@ from rail.core.stage import RailStage
 from rail.core.data import DataStore, TableHandle
 from rail.estimation.algos import randomPZ, sklearn_nn, flexzboost, trainZ
 from rail.estimation.algos import bpz_lite, pzflow, delightPZ, knnpz
+from rail.estimation.estimator import MODEL_FACTORY
+from pzflow import Flow
 
 traindata = 'tests/data/training_100gal.hdf5'
 validdata = 'tests/data/validation_10gal.hdf5'
@@ -27,10 +29,22 @@ def one_algo(key, single_trainer, single_estimator, train_kwargs, estim_kwargs):
         train_pz = single_trainer.make_stage(**train_kwargs)
         train_pz.inform(training_data)
         
-    pz = single_estimator.make_stage(**estim_kwargs)
-    
+    pz = single_estimator.make_stage(**estim_kwargs)    
     estim = pz.estimate(validation_data)
-    return estim.data, estim.data
+
+    copy_estim_kwargs = estim_kwargs.copy()
+    model_file = copy_estim_kwargs.pop('model_file', 'None')
+
+    READER_DICT = dict(PZFlow=pzflow.model_read_flow)
+    if model_file != 'None':
+        model = MODEL_FACTORY.read(model_file, reader=READER_DICT.get(key))
+        copy_estim_kwargs['model'] = model
+        pz_2 = single_estimator.make_stage(name=f"{pz.name}_copy", **copy_estim_kwargs)    
+        estim_2 = pz_2.estimate(validation_data)
+    else:
+        estim_2 = estim
+        
+    return estim.data, estim_2.data
 
 
 def test_random_pz():

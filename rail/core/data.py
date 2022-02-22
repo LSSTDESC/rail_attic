@@ -27,6 +27,7 @@ class DataHandle:
         self.data = data
         self.path = path
         self.creator = creator
+        self.fileObj = None
 
     def open(self, **kwargs):
         """Open and return the associated file
@@ -38,11 +39,16 @@ class DataHandle:
         """
         if self.path is None:
             raise ValueError("TableHandle.open() called but path has not been specified")
-        return self._open(self.path, **kwargs)
+        self.fileObj = self._open(self.path, **kwargs)
+        return self.fileObj
 
     @classmethod
     def _open(cls, path, **kwargs):
         raise NotImplementedError("DataHandle._open")  #pragma: no cover
+
+    def close(self, **kwargs):
+        """Close """
+        self.fileObj = None
 
     def read(self, force=False, **kwargs):
         """Read and return the data from the associated file """
@@ -66,6 +72,18 @@ class DataHandle:
     @classmethod
     def _write(cls, data, path, **kwargs):
         raise NotImplementedError("DataHandle._write")  #pragma: no cover
+
+    def write_chunk(self, start, end, **kwargs):
+        """Write the data to the associatied file """
+        if self.data is None:
+            raise ValueError(f"TableHandle.write_chunk() called for path {self.path} with no data")
+        if self.fileObj is None:
+            raise ValueError(f"TableHandle.write_chunk() called before open for {self.tag} : {self.path}")
+        return self._write_chunk(self.data, self.fileObj, start, end, **kwargs)
+
+    @classmethod
+    def _write_chunk(cls, data, fileObj, start, end, **kwargs):
+        raise NotImplementedError("DataHandle._write_chunk")  #pragma: no cover
 
     def iterator(self, **kwargs):
         """Iterator over the data"""
@@ -131,7 +149,7 @@ class TableHandle(DataHandle):
         This will simply open the file and return a file-like object to the caller.
         It will not read or cache the data
         """
-        return tables_io.io.open(path, **kwargs)  #pylint: disable=no-member
+        return tables_io.io.io_open(path, **kwargs)  #pylint: disable=no-member
 
     @classmethod
     def _read(cls, path, **kwargs):
@@ -148,9 +166,15 @@ class TableHandle(DataHandle):
         """Iterate over the data"""
         return tables_io.iteratorNative(path, **kwargs)
 
+
 class Hdf5Handle(TableHandle):
     """DataHandle for a table written to HDF5"""
     suffix = 'hdf5'
+
+    @classmethod
+    def _write_chunk(cls, data, fileObj, start, end, **kwargs):
+        tables_io.io.writeDictToHdf5Chunk(fileObj, data, start, end, **kwargs)
+
 
 
 class PqHandle(TableHandle):
