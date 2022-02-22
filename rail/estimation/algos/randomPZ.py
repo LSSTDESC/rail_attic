@@ -9,8 +9,7 @@ from scipy.stats import norm
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import Estimator
 import qp
-import pprint
-import json
+
 
 class RandomPZ(Estimator):
     """Random Estimator

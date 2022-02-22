@@ -55,3 +55,21 @@ def test_goldenspike():
 
     pr = ceci.Pipeline.read('stage.yaml')
     pr.run()
+
+
+    os.remove('stage.yaml')
+    os.remove('stage_config.yml')
+
+    outputs = pr.find_all_outputs()
+    for output_ in outputs.values():
+        try:
+            os.remove(output_)
+        except FileNotFoundError:
+            pass
+    logfiles = [f"{stage.instance_name}.out" for stage in pr.stages] 
+    for logfile_ in logfiles:
+        try:
+            os.remove(logfile_)
+        except FileNotFoundError:
+            pass
+        

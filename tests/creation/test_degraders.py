@@ -1,3 +1,4 @@
+import os
 from typing import Type
 import numpy as np
 import pandas as pd
@@ -53,6 +54,7 @@ def test_LineConfusion_returns_correct_shape(data):
     degraded_data = degrader(data).data
 
     assert degraded_data.shape == data.data.shape
+    os.remove(degrader.get_output(degrader.get_aliased_tag('output'), final_name=True))
 
 
 def test_LineConfusion_no_negative_redshifts(data):
@@ -62,6 +64,7 @@ def test_LineConfusion_no_negative_redshifts(data):
     degraded_data = degrader(data).data
 
     assert all(degraded_data["redshift"].to_numpy() >= 0)
+    os.remove(degrader.get_output(degrader.get_aliased_tag('output'), final_name=True))
 
 
 @pytest.mark.parametrize("pivot_redshift,errortype", [("fake", TypeError), (-1, ValueError)])
@@ -77,6 +80,7 @@ def test_InvRedshiftIncompleteness_returns_correct_shape(data):
     degraded_data = degrader(data).data
     assert degraded_data.shape[0] < data.data.shape[0]
     assert degraded_data.shape[1] == data.data.shape[1]
+    os.remove(degrader.get_output(degrader.get_aliased_tag('output'), final_name=True))
 
 
 @pytest.mark.parametrize(
@@ -109,7 +113,7 @@ def test_QuantityCut_returns_correct_shape(data):
     degraded_data = degrader(data).data
 
     assert degraded_data.shape == data.data.query("u < 0 & y > 1 & y < 2").shape
-
+    os.remove(degrader.get_output(degrader.get_aliased_tag('output'), final_name=True))
 
 @pytest.mark.parametrize(
     "settings,error",
@@ -181,6 +185,7 @@ def test_LSSTErrorModel_magLim(m5, highSNR, data):
     degraded_mags = degraded_data.iloc[:, 1:].to_numpy()
 
     assert degraded_mags[~np.isnan(degraded_mags)].max() < magLim
+    os.remove(degrader.get_output(degrader.get_aliased_tag('output'), final_name=True))
 
 
 @pytest.mark.parametrize("highSNR", [False, True])
@@ -229,3 +234,4 @@ def test_random_seed(degrader, data):
     # make sure setting different seeds yields different output
     degraded_data3 = degrader(data, seed=1).data.to_numpy()
     assert not degraded_data1.equals(degraded_data3)
+    os.remove(degrader.get_output(degrader.get_aliased_tag('output'), final_name=True))

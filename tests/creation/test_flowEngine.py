@@ -26,6 +26,8 @@ def test_flowengine_sample():
 
     #assert flow_samples.equals(flowEng_samples)
     #assert flow_samples.equals(flowEng2_samples)
+    os.remove(flowEng.get_output(flowEng.get_aliased_tag('output'), final_name=True))
+    os.remove(flowEng2.get_output(flowEng2.get_aliased_tag('output'), final_name=True))
 
 
 def test_flowengine_pz_estimate():
@@ -65,3 +67,7 @@ def test_flowengine_pz_estimate():
     flowPost2_pdfs = flowPost2_pdfs.objdata()["yvals"]
 
     assert np.allclose(flow_pdfs, flowPost_pdfs)
+    os.remove(flowPost.get_output(flowPost.get_aliased_tag('output'), final_name=True))
+    os.remove(flowPost2.get_output(flowPost2.get_aliased_tag('output'), final_name=True))
+
+    

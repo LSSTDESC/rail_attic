@@ -5,7 +5,7 @@ import pytest
 from rail.core.stage import RailStage
 from rail.core.data import DataStore, TableHandle
 from rail.estimation.algos import randomPZ, sklearn_nn, flexzboost, trainZ
-from rail.estimation.algos import bpz_lite, pzflow, delightPZ, knnpz
+from rail.estimation.algos import bpz_lite, pzflow, knnpz #delightPZ, knnpz
 from rail.estimation.estimator import MODEL_FACTORY
 from pzflow import Flow
 
@@ -29,7 +29,7 @@ def one_algo(key, single_trainer, single_estimator, train_kwargs, estim_kwargs):
         train_pz = single_trainer.make_stage(**train_kwargs)
         train_pz.inform(training_data)
         
-    pz = single_estimator.make_stage(**estim_kwargs)    
+    pz = single_estimator.make_stage(name=key, **estim_kwargs)    
     estim = pz.estimate(validation_data)
 
     copy_estim_kwargs = estim_kwargs.copy()
@@ -42,8 +42,12 @@ def one_algo(key, single_trainer, single_estimator, train_kwargs, estim_kwargs):
         pz_2 = single_estimator.make_stage(name=f"{pz.name}_copy", **copy_estim_kwargs)    
         estim_2 = pz_2.estimate(validation_data)
     else:
+        pz_2 = None
         estim_2 = estim
-        
+    os.remove(pz.get_output(pz.get_aliased_tag('output'), final_name=True))
+    if pz_2 is not None:
+        os.remove(pz_2.get_output(pz_2.get_aliased_tag('output'), final_name=True))
+                  
     return estim.data, estim_2.data
 
 
@@ -151,7 +155,7 @@ def test_pzflow(inputs, zb_expected):
     # slightly different answers for python3.7 vs python3.8 for some reason
 #    assert np.isclose(results.ancil['zmode'], zb_expected, atol=0.05).all()
     assert np.isclose(results.ancil['zmode'], rerun_results.ancil['zmode'], atol=0.05).all()
-
+    os.remove('inprogress_PZflowPDF.pkl')
 
 def test_train_pz():
     train_config_dict = dict(zmin=0.0,
@@ -170,6 +174,7 @@ def test_train_pz():
     results, rerun_results = one_algo("TrainZ", train_algo, pz_algo, train_config_dict, estim_config_dict)
     assert np.isclose(results.ancil['zmode'], zb_expected).all()
     assert np.isclose(results.ancil['zmode'], rerun_results.ancil['zmode']).all()
+    os.remove('inprogress_model_train_z.tmp')
 
 
 def test_delight():
@@ -220,7 +225,7 @@ def test_KNearNeigh():
     assert np.isclose(results.ancil['zmode'], rerun_results.ancil['zmode']).all()
 
     os.remove('inprogress_KNearNeighPDF.pkl')
-    
+    os.remove('TEMPZFILE.out')
 
 def test_catch_bad_bands():
     params = dict(bands='u,g,r,i,z,y')

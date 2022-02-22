@@ -117,6 +117,7 @@ def test_hdf5_handle():
     read_chunked = Hdf5Handle("read_chunked", None, path=datapath_chunked)
     data_check = read_chunked.read()
     assert np.allclose(data['id'], data_check['id'])
+    os.remove(datapath_chunked)
     
     
 def test_data_hdf5_iter():
@@ -191,3 +192,6 @@ def test_data_store():
 
     DS2 = DataStore(pq=DS.pq)
     assert isinstance(DS2.pq, DataHandle)
+
+    os.remove(datapath_hdf5_copy)
+    os.remove(datapath_pq_copy)

@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from rail.core.stage import RailStage
 from rail.core.data import QPHandle, TableHandle
@@ -91,5 +92,7 @@ def test_evaluation_stage():
     pdf = DS.add_data('pdf', pdf_ens, QPHandle)
     truth_table = dict(redshift=true_ez)
     truth = DS.add_data('truth', truth_table, TableHandle)
-    evaluator = Evaluator.make_stage()
+    evaluator = Evaluator.make_stage(name='Eval')
     evaluator.evaluate(pdf, truth)
+    
+    os.remove(evaluator.get_output(evaluator.get_aliased_tag('output'), final_name=True))
