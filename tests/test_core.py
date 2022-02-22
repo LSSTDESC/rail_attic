@@ -1,11 +1,17 @@
 import os
 import rail
 import pytest
+import numpy as np
 from types import GeneratorType
 from rail.core.stage import RailStage
-from rail.core.data import DataStore, DataHandle, TableHandle, Hdf5Handle, PqHandle, QPHandle
+from rail.core.data import DataStore, DataHandle, TableHandle, Hdf5Handle, PqHandle, QPHandle, DataFile
 from rail.core.utilStages import ColumnMapper, RowSelector, TableConverter
 
+
+def test_data_file():    
+    with pytest.raises(ValueError) as errinfo:
+        df = DataFile('dummy', 'x')
+    
 
 def test_util_stages():
 
@@ -33,8 +39,7 @@ def test_util_stages():
     
     row_sel_3 = RowSelector.make_stage(name='row_sel_3', input=handle.path, start=1, stop=15)
     row_sel_3.set_data('input', None, do_read=True)
-
-
+    
     
 def do_data_handle(datapath, handle_class):
 
@@ -47,6 +52,8 @@ def do_data_handle(datapath, handle_class):
         th.write()
 
     assert not th.has_data
+    with pytest.raises(ValueError) as errinfo:
+        th.write_chunk(0, 1)        
     assert th.has_path
     assert th.is_written
     data = th.read()
@@ -60,12 +67,13 @@ def do_data_handle(datapath, handle_class):
     assert th2.has_data
     assert not th2.has_path
     assert not th2.is_written
-
     with pytest.raises(ValueError) as errinfo:
         th2.open()
     with pytest.raises(ValueError) as errinfo:
         th2.write()
-
+    with pytest.raises(ValueError) as errinfo:
+        th2.write_chunk(0, 1)
+        
     assert th2.make_name('data2') == f'data2.{handle_class.suffix}'
     assert str(th)
     assert str(th2)
@@ -78,6 +86,9 @@ def test_pq_handle():
     handle = do_data_handle(datapath, PqHandle)
     pqfile = handle.open()
     assert pqfile
+    assert handle.fileObj is not None
+    handle.close()
+    assert handle.fileObj is None
 
 def test_hdf5_handle():
     raildir = os.path.dirname(rail.__file__)
@@ -85,6 +96,28 @@ def test_hdf5_handle():
     handle = do_data_handle(datapath, Hdf5Handle)
     with handle.open(mode='r') as f:
         assert f
+        assert handle.fileObj is not None
+    datapath_chunked = os.path.join(raildir, '..', 'tests', 'data', 'test_dc2_training_9816_chunked.hdf5')
+    handle_chunked = Hdf5Handle("chunked", handle.data, path=datapath_chunked)
+    from tables_io.arrayUtils import getGroupInputDataLength, sliceDict, getInitializationForODict
+    num_rows = len(handle.data['photometry']['id'])
+    chunk_size = 1000
+    data = handle.data['photometry']
+    init_dict = getInitializationForODict(data)
+    with handle_chunked.open(mode='w') as fout:
+        for k, v in init_dict.items():
+            fout.create_dataset(k, v[0], v[1])
+        for i in range(0, num_rows, chunk_size):
+            start = i
+            end = i+chunk_size
+            if end > num_rows:
+                end = num_rows
+            handle_chunked.data = sliceDict(handle.data['photometry'], slice(start, end))
+            handle_chunked.write_chunk(start, end)
+    read_chunked = Hdf5Handle("read_chunked", None, path=datapath_chunked)
+    data_check = read_chunked.read()
+    assert np.allclose(data['id'], data_check['id'])
+    
     
 def test_data_hdf5_iter():
 

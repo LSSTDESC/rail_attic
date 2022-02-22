@@ -15,6 +15,10 @@ from pzflow.bijectors import Chain, ColorTransform, InvSoftplus
 from pzflow.bijectors import StandardScaler, RollingSplineCoupling
 import qp
 
+def model_read_flow(modelfile):
+    """Function to read Flow files."""
+    return Flow(file=modelfile)
+
 
 def computemeanstd(df):
     """
@@ -201,7 +205,7 @@ class PZFlowPDF(Estimator):
         if model_file is not None:
             self.config['model_file'] = model_file
             if self.config['model_file'] is not None and self.config['model_file'] != 'None':
-                self.model = Flow(file=model_file)
+                self.model = model_read_flow(self.config['model_file'])
 
     def run(self):
         """
