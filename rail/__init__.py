@@ -5,4 +5,5 @@ from . import core
 from . import creation
 from . import evaluation
 from . import estimation
+from . import summarization
 from .main import *
