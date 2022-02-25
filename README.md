@@ -84,4 +84,4 @@ They are scoped such that any can be executed in any order or even simultaneousl
 * _DERAIL_: Investigate the impact of imperfect photo-z posterior estimation on a probe-specific (e.g. 3x2pt) cosmological parameter constraint by connecting the estimation subpackage to other DESC pipelines
 * _RAIL line_: Assess the sensitivity of estimated photo-z posteriors to photometry impacted by emission lines by extending the creation subpackage's forward model
 
-Informal library of fun train-themed names for future projects/pipelines built with RAIL: _monoRAIL_, _tRAILblazer_, _tRAILmix_, _tRAILer_
+Informal library of fun train-themed names for future projects/pipelines built with RAIL: _monoRAIL_, _tRAILblazer_, _tRAILmix_, _tRAILer_, _Holy gRAIL_
