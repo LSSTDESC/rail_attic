@@ -60,58 +60,57 @@ coloredlogs.install(level='DEBUG', logger=logger, fmt='%(asctime)s,%(msecs)03d %
 
 
 class TrainDelightPZ(Trainer):
-    """Train the Delight code, outputs are actually saved to files, 
+    """Train the Delight code, outputs are actually saved to files,
     which is fairly non-standard way currently
     """
     name = 'TrainDelightPZ'
     config_options = Trainer.config_options.copy()
-    config_options.update(dlght_redshiftMin=Param(float, 0.01, msg = 'min redshift'),
-                          dlght_redshiftMax=Param(float, 3.01, msg = 'max redshift'),
-                          dlght_redshiftNumBinsGPpred=Param(int, 301, msg = 'num bins'),
+    config_options.update(dlght_redshiftMin=Param(float, 0.01, msg='min redshift'),
+                          dlght_redshiftMax=Param(float, 3.01, msg='max redshift'),
+                          dlght_redshiftNumBinsGPpred=Param(int, 301, msg='num bins'),
                           nzbins=Param(int, 301, msg="num z bins"),
-                          dlght_redshiftBinSize=Param(float, 0.01, msg = '???'),
-                          dlght_redshiftDisBinSize=Param(float, 0.2, msg = 'bad, shouldnt be here'),
-                          bands_names=Param(str, "DC2LSST_u DC2LSST_g DC2LSST_r DC2LSST_i DC2LSST_z DC2LSST_y", msg = 'string with list of Filter names'),
-                          bands_path=Param(str, "./rail/estimation/data/FILTER", msg = 'string specifying path to filter directory'),
-                          bands_fmt=Param(str, "res", msg = "string giving the file extension of the filters, not including the '.'"),
-                          bands_numcoefs=Param(int, 15, msg = 'integer specifying number of coefs in approximation of filter'),
+                          dlght_redshiftBinSize=Param(float, 0.01, msg='???'),
+                          dlght_redshiftDisBinSize=Param(float, 0.2, msg='bad, shouldnt be here'),
+                          bands_names=Param(str, "DC2LSST_u DC2LSST_g DC2LSST_r DC2LSST_i DC2LSST_z DC2LSST_y", msg='string with list of Filter names'),
+                          bands_path=Param(str, "./rail/estimation/data/FILTER", msg='string specifying path to filter directory'),
+                          bands_fmt=Param(str, "res", msg="string giving the file extension of the filters, not including the '.'"),
+                          bands_numcoefs=Param(int, 15, msg='integer specifying number of coefs in approximation of filter'),
                           bands_verbose=Param(bool, True, msg='verbose'),
-                          bands_makeplots=Param(bool, False, msg = 'bool for whether to make approx band plots'),
+                          bands_makeplots=Param(bool, False, msg='bool for whether to make approx band plots'),
                           bands_debug=Param(bool, True, msg='debug flag for filters'),
-                          tempdir=Param(str, "./examples/estimation/tmp", msg = 'temp dir'),
+                          tempdir=Param(str, "./examples/estimation/tmp", msg='temp dir'),
                           tempdatadir=Param(str, "./examples/estimation/tmp/delight_data", msg='temp data dir'),
                           sed_path=Param(str, "./rail/estimation/data/SED", msg='path to SED dir'),
-                          sed_name_list=Param(str, "El_B2004a Sbc_B2004a Scd_B2004a SB3_B2004a SB2_B2004a Im_B2004a ssp_25Myr_z008 ssp_5Myr_z008", msg = 'String with list of all SED names, with no file extension'),
-                          sed_fmt=Param(str, "sed", msg = "file extension of SED files (withough the '.', e.g dat or sed"),
-                          prior_t_list=Param(str, "0.27 0.26 0.25 0.069 0.021 0.11 0.0061 0.0079", msg = 'String of numbers specifying prior type fracs MUST BE SAME LENGTH AS NUMBER OF SEDS'),
-                          prior_zt_list=Param(str, "0.23 0.39 0.33 0.31 1.1 0.34 1.2 0.14", msg = "string of numbers for redshift prior, MUST BE SAME LENGTH AS NUMBER OF SEDS"),
-                          lambda_ref=Param(float, 4500., msg = "referebce wavelength"),
-                          train_refbandorder=Param(str, "DC2LSST_u DC2LSST_u_var DC2LSST_g DC2LSST_g_var DC2LSST_r DC2LSST_r_var DC2LSST_i DC2LSST_i_var DC2LSST_z DC2LSST_z_var DC2LSST_y DC2LSST_y_var redshift", msg = "order of bands used in training"),
-                          train_refband=Param(str, "DC2LSST_i", msg = 'reference band'),
-                          train_fracfluxerr=Param(float, 1.e-4, msg = "frac err to add to flux?"),
-                          train_xvalidate=Param(bool, False, msg = "perform cross validation flag"),
-                          train_xvalbandorder=Param(str, "_ _ _ _ DC2LSST_r DC2LSST_r_var _ _ _ _ _ _", msg = 'band order for xval, unused bands indicated with _'),
-                          gp_params_file=Param(str, "galaxies_gpparams.txt", msg = 'name of file to store gaussian process params fit by delightLearn'),
-                          crossval_file=Param(str, "galaxies-gpCV.txt", msg = 'name of file to store crossvalidation parameters from delightLearn'),
-                          target_refbandorder=Param(str, "DC2LSST_u DC2LSST_u_var DC2LSST_g DC2LSST_g_var DC2LSST_r DC2LSST_r_var DC2LSST_i DC2LSST_i_var DC2LSST_z DC2LSST_z_var DC2LSST_y DC2LSST_y_var redshift", msg = 'order of reference bands for target data'),
-                          target_refband=Param(str, "DC2LSST_r", msg = "the reference band for the taret data"),
-                          target_fracfluxerr=Param(float, 1.e-4, msg = "extra fractional error to add to target fluxes?"),
-                          delightparamfile=Param(str, "parametersTest.cfg", msg = "param file name"),
-                          flag_filter_training=Param(bool, True, msg = "?"),
-                          snr_cut_training=Param(float, 5, msg = "SNR training cut"),
-                          flag_filter_validation=Param(bool, True, msg = "?"),
-                          snr_cut_validation=Param(float, 3, msg = "validation SNR cut"),
-                          dlght_inputdata=Param(str, "./examples/estimation/tmp/delight_indata", msg = "input data directory for ascii data"),
-                          zPriorSigma=Param(float, 0.2, msg = "sigma for redshift prior"),
-                          ellPriorSigma=Param(float, 0.5, msg = "prior param"),
-                          fluxLuminosityNorm=Param(float, 1.0, msg = "luminosity norm factor"),
-                          alpha_C=Param(float, 1.0e3, msg = "prior param"),
-                          V_C=Param(float, 0.1, msg = "prior param"),
-                          alpha_L=Param(float, 1.0e2, msg = "prior param"),
-                          V_L=Param(float, 0.1, msg = "prior param"),
-                          lineWidthSigma=Param(float, 20, msg = "prior param"))
+                          sed_name_list=Param(str, "El_B2004a Sbc_B2004a Scd_B2004a SB3_B2004a SB2_B2004a Im_B2004a ssp_25Myr_z008 ssp_5Myr_z008", msg='String with list of all SED names, with no file extension'),
+                          sed_fmt=Param(str, "sed", msg="file extension of SED files (withough the '.', e.g dat or sed"),
+                          prior_t_list=Param(str, "0.27 0.26 0.25 0.069 0.021 0.11 0.0061 0.0079", msg='String of numbers specifying prior type fracs MUST BE SAME LENGTH AS NUMBER OF SEDS'),
+                          prior_zt_list=Param(str, "0.23 0.39 0.33 0.31 1.1 0.34 1.2 0.14", msg="string of numbers for redshift prior, MUST BE SAME LENGTH AS NUMBER OF SEDS"),
+                          lambda_ref=Param(float, 4500., msg="referebce wavelength"),
+                          train_refbandorder=Param(str, "DC2LSST_u DC2LSST_u_var DC2LSST_g DC2LSST_g_var DC2LSST_r DC2LSST_r_var DC2LSST_i DC2LSST_i_var DC2LSST_z DC2LSST_z_var DC2LSST_y DC2LSST_y_var redshift", msg="order of bands used in training"),
+                          train_refband=Param(str, "DC2LSST_i", msg='reference band'),
+                          train_fracfluxerr=Param(float, 1.e-4, msg="frac err to add to flux?"),
+                          train_xvalidate=Param(bool, False, msg="perform cross validation flag"),
+                          train_xvalbandorder=Param(str, "_ _ _ _ DC2LSST_r DC2LSST_r_var _ _ _ _ _ _", msg='band order for xval, unused bands indicated with _'),
+                          gp_params_file=Param(str, "galaxies_gpparams.txt", msg='name of file to store gaussian process params fit by delightLearn'),
+                          crossval_file=Param(str, "galaxies-gpCV.txt", msg='name of file to store crossvalidation parameters from delightLearn'),
+                          target_refbandorder=Param(str, "DC2LSST_u DC2LSST_u_var DC2LSST_g DC2LSST_g_var DC2LSST_r DC2LSST_r_var DC2LSST_i DC2LSST_i_var DC2LSST_z DC2LSST_z_var DC2LSST_y DC2LSST_y_var redshift", msg='order of reference bands for target data'),
+                          target_refband=Param(str, "DC2LSST_r", msg="the reference band for the taret data"),
+                          target_fracfluxerr=Param(float, 1.e-4, msg="extra fractional error to add to target fluxes?"),
+                          delightparamfile=Param(str, "parametersTest.cfg", msg="param file name"),
+                          flag_filter_training=Param(bool, True, msg="?"),
+                          snr_cut_training=Param(float, 5, msg="SNR training cut"),
+                          flag_filter_validation=Param(bool, True, msg="?"),
+                          snr_cut_validation=Param(float, 3, msg="validation SNR cut"),
+                          dlght_inputdata=Param(str, "./examples/estimation/tmp/delight_indata", msg="input data directory for ascii data"),
+                          zPriorSigma=Param(float, 0.2, msg="sigma for redshift prior"),
+                          ellPriorSigma=Param(float, 0.5, msg="prior param"),
+                          fluxLuminosityNorm=Param(float, 1.0, msg="luminosity norm factor"),
+                          alpha_C=Param(float, 1.0e3, msg="prior param"),
+                          V_C=Param(float, 0.1, msg="prior param"),
+                          alpha_L=Param(float, 1.0e2, msg="prior param"),
+                          V_L=Param(float, 0.1, msg="prior param"),
+                          lineWidthSigma=Param(float, 20, msg="prior param"))
 
-    
     def __init__(self, args, comm=None):
         """ Constructor
         Do Trainer specific initialization, then check on bands """
@@ -119,7 +118,7 @@ class TrainDelightPZ(Trainer):
         # counter on the chunk validation dataset
         self.chunknum = 0
         self.delightparamfile = self.config['delightparamfile']
-        
+
         np.random.seed(87)
 
     def run(self):
@@ -131,7 +130,7 @@ class TrainDelightPZ(Trainer):
                 os.makedirs(self.config['tempdir'])
         except OSError as e:  # pragma: no cover
             if e.errno != errno.EEXIST:
-                msg = "error creating file "+self.config['tempdir']
+                msg = "error creating file " + self.config['tempdir']
                 logger.error(msg)
                 raise
         try:
@@ -144,9 +143,9 @@ class TrainDelightPZ(Trainer):
                 raise
 
         basedelight_datapath = self.config['dlght_inputdata']
-        #MAKE THE ASCII PARAM FILE THAT DELIGHT SCRIPTS READ
+        # MAKE THE ASCII PARAM FILE THAT DELIGHT SCRIPTS READ
         paramfile_txt = makeConfigParam(basedelight_datapath, self.config)
-         # save the config  parameter file that Delight needs
+        # save the config  parameter file that Delight needs
         with open(self.delightparamfile, 'w') as out:
             out.write(paramfile_txt)
 
@@ -170,7 +169,7 @@ class TrainDelightPZ(Trainer):
         # grab the training data
         if self.config.hdf5_groupname:
             training_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  #pragma:  no cover
+        else:  # pragma: no cover
             training_data = self.get_data('input')
 
         convertDESCcatTrainData(self.delightparamfile,
@@ -189,53 +188,51 @@ class delightPZ(Estimator):
     """
     name = 'delightPZ'
     config_options = Estimator.config_options.copy()
-    config_options.update(dlght_redshiftMin=Param(float, 0.01, msg = 'min redshift'),
-                          dlght_redshiftMax=Param(float, 3.01, msg = 'max redshift'),
-                          dlght_redshiftNumBinsGPpred=Param(int, 301, msg = 'num bins'),
+    config_options.update(dlght_redshiftMin=Param(float, 0.01, msg='min redshift'),
+                          dlght_redshiftMax=Param(float, 3.01, msg='max redshift'),
+                          dlght_redshiftNumBinsGPpred=Param(int, 301, msg='num bins'),
                           nzbins=Param(int, 301, msg="num z bins"),
-                          dlght_redshiftBinSize=Param(float, 0.01, msg = '???'),
-                          dlght_redshiftDisBinSize=Param(float, 0.2, msg = 'bad, shouldnt be here'),
-                          bands_names=Param(str, "DC2LSST_u DC2LSST_g DC2LSST_r DC2LSST_i DC2LSST_z DC2LSST_y", msg = 'string with list of Filter names'),
-                          bands_path=Param(str, "./rail/estimation/data/FILTER", msg = 'string specifying path to filter directory'),
-                          bands_fmt=Param(str, "res", msg = "string giving the file extension of the filters, not including the '.'"),
-                          bands_numcoefs=Param(int, 15, msg = 'integer specifying number of coefs in approximation of filter'),
+                          dlght_redshiftBinSize=Param(float, 0.01, msg='???'),
+                          dlght_redshiftDisBinSize=Param(float, 0.2, msg='bad, shouldnt be here'),
+                          bands_names=Param(str, "DC2LSST_u DC2LSST_g DC2LSST_r DC2LSST_i DC2LSST_z DC2LSST_y", msg='string with list of Filter names'),
+                          bands_path=Param(str, "./rail/estimation/data/FILTER", msg='string specifying path to filter directory'),
+                          bands_fmt=Param(str, "res", msg="string giving the file extension of the filters, not including the '.'"),
+                          bands_numcoefs=Param(int, 15, msg='integer specifying number of coefs in approximation of filter'),
                           bands_verbose=Param(bool, True, msg='verbose'),
-                          bands_makeplots=Param(bool, False, msg = 'bool for whether to make approx band plots'),
+                          bands_makeplots=Param(bool, False, msg='bool for whether to make approx band plots'),
                           bands_debug=Param(bool, True, msg='debug flag for filters'),
-                          tempdir=Param(str, "./examples/estimation/tmp", msg = 'temp dir'),
+                          tempdir=Param(str, "./examples/estimation/tmp", msg='temp dir'),
                           tempdatadir=Param(str, "./examples/estimation/tmp/delight_data", msg='temp data dir'),
                           sed_path=Param(str, "./rail/estimation/data/SED", msg='path to SED dir'),
-                          sed_name_list=Param(str, "El_B2004a Sbc_B2004a Scd_B2004a SB3_B2004a SB2_B2004a Im_B2004a ssp_25Myr_z008 ssp_5Myr_z008", msg = 'String with list of all SED names, with no file extension'),
-                          sed_fmt=Param(str, "sed", msg = "file extension of SED files (withough the '.', e.g dat or sed"),
-                          prior_t_list=Param(str, "0.27 0.26 0.25 0.069 0.021 0.11 0.0061 0.0079", msg = 'String of numbers specifying prior type fracs MUST BE SAME LENGTH AS NUMBER OF SEDS'),
-                          prior_zt_list=Param(str, "0.23 0.39 0.33 0.31 1.1 0.34 1.2 0.14", msg = "string of numbers for redshift prior, MUST BE SAME LENGTH AS NUMBER OF SEDS"),
-                          lambda_ref=Param(float, 4500., msg = "referebce wavelength"),
-                          train_refbandorder=Param(str, "DC2LSST_u DC2LSST_u_var DC2LSST_g DC2LSST_g_var DC2LSST_r DC2LSST_r_var DC2LSST_i DC2LSST_i_var DC2LSST_z DC2LSST_z_var DC2LSST_y DC2LSST_y_var redshift", msg = "order of bands used in training"),
-                          train_refband=Param(str, "DC2LSST_i", msg = 'reference band'),
-                          train_fracfluxerr=Param(float, 1.e-4, msg = "frac err to add to flux?"),
-                          train_xvalidate=Param(bool, False, msg = "perform cross validation flag"),
-                          train_xvalbandorder=Param(str, "_ _ _ _ DC2LSST_r DC2LSST_r_var _ _ _ _ _ _", msg = 'band order for xval, unused bands indicated with _'),
-                          gp_params_file=Param(str, "galaxies_gpparams.txt", msg = 'name of file to store gaussian process params fit by delightLearn'),
-                          crossval_file=Param(str, "galaxies-gpCV.txt", msg = 'name of file to store crossvalidation parameters from delightLearn'),
-                          target_refbandorder=Param(str, "DC2LSST_u DC2LSST_u_var DC2LSST_g DC2LSST_g_var DC2LSST_r DC2LSST_r_var DC2LSST_i DC2LSST_i_var DC2LSST_z DC2LSST_z_var DC2LSST_y DC2LSST_y_var redshift", msg = 'order of reference bands for target data'),
-                          target_refband=Param(str, "DC2LSST_r", msg = "the reference band for the taret data"),
-                          target_fracfluxerr=Param(float, 1.e-4, msg = "extra fractional error to add to target fluxes?"),
-                          delightparamfile=Param(str, "parametersTest.cfg", msg = "param file name"),
-                          flag_filter_training=Param(bool, True, msg = "?"),
-                          snr_cut_training=Param(float, 5, msg = "SNR training cut"),
-                          flag_filter_validation=Param(bool, True, msg = "?"),
-                          snr_cut_validation=Param(float, 3, msg = "validation SNR cut"),
-                          dlght_inputdata=Param(str, "./examples/estimation/tmp/delight_indata", msg = "input data directory for ascii data"),
-                          zPriorSigma=Param(float, 0.2, msg = "sigma for redshift prior"),
-                          ellPriorSigma=Param(float, 0.5, msg = "prior param"),
-                          fluxLuminosityNorm=Param(float, 1.0, msg = "luminosity norm factor"),
-                          alpha_C=Param(float, 1.0e3, msg = "prior param"),
-                          V_C=Param(float, 0.1, msg = "prior param"),
-                          alpha_L=Param(float, 1.0e2, msg = "prior param"),
-                          V_L=Param(float, 0.1, msg = "prior param"),
-                          lineWidthSigma=Param(float, 20, msg = "prior param"))
-
-
+                          sed_name_list=Param(str, "El_B2004a Sbc_B2004a Scd_B2004a SB3_B2004a SB2_B2004a Im_B2004a ssp_25Myr_z008 ssp_5Myr_z008", msg='String with list of all SED names, with no file extension'),
+                          sed_fmt=Param(str, "sed", msg="file extension of SED files (withough the '.', e.g dat or sed"),
+                          prior_t_list=Param(str, "0.27 0.26 0.25 0.069 0.021 0.11 0.0061 0.0079", msg='String of numbers specifying prior type fracs MUST BE SAME LENGTH AS NUMBER OF SEDS'),
+                          prior_zt_list=Param(str, "0.23 0.39 0.33 0.31 1.1 0.34 1.2 0.14", msg="string of numbers for redshift prior, MUST BE SAME LENGTH AS NUMBER OF SEDS"),
+                          lambda_ref=Param(float, 4500., msg="referebce wavelength"),
+                          train_refbandorder=Param(str, "DC2LSST_u DC2LSST_u_var DC2LSST_g DC2LSST_g_var DC2LSST_r DC2LSST_r_var DC2LSST_i DC2LSST_i_var DC2LSST_z DC2LSST_z_var DC2LSST_y DC2LSST_y_var redshift", msg="order of bands used in training"),
+                          train_refband=Param(str, "DC2LSST_i", msg='reference band'),
+                          train_fracfluxerr=Param(float, 1.e-4, msg="frac err to add to flux?"),
+                          train_xvalidate=Param(bool, False, msg="perform cross validation flag"),
+                          train_xvalbandorder=Param(str, "_ _ _ _ DC2LSST_r DC2LSST_r_var _ _ _ _ _ _", msg='band order for xval, unused bands indicated with _'),
+                          gp_params_file=Param(str, "galaxies_gpparams.txt", msg='name of file to store gaussian process params fit by delightLearn'),
+                          crossval_file=Param(str, "galaxies-gpCV.txt", msg='name of file to store crossvalidation parameters from delightLearn'),
+                          target_refbandorder=Param(str, "DC2LSST_u DC2LSST_u_var DC2LSST_g DC2LSST_g_var DC2LSST_r DC2LSST_r_var DC2LSST_i DC2LSST_i_var DC2LSST_z DC2LSST_z_var DC2LSST_y DC2LSST_y_var redshift", msg='order of reference bands for target data'),
+                          target_refband=Param(str, "DC2LSST_r", msg="the reference band for the taret data"),
+                          target_fracfluxerr=Param(float, 1.e-4, msg="extra fractional error to add to target fluxes?"),
+                          delightparamfile=Param(str, "parametersTest.cfg", msg="param file name"),
+                          flag_filter_training=Param(bool, True, msg="?"),
+                          snr_cut_training=Param(float, 5, msg="SNR training cut"),
+                          flag_filter_validation=Param(bool, True, msg="?"),
+                          snr_cut_validation=Param(float, 3, msg="validation SNR cut"),
+                          dlght_inputdata=Param(str, "./examples/estimation/tmp/delight_indata", msg="input data directory for ascii data"),
+                          zPriorSigma=Param(float, 0.2, msg="sigma for redshift prior"),
+                          ellPriorSigma=Param(float, 0.5, msg="prior param"),
+                          fluxLuminosityNorm=Param(float, 1.0, msg="luminosity norm factor"),
+                          alpha_C=Param(float, 1.0e3, msg="prior param"),
+                          V_C=Param(float, 0.1, msg="prior param"),
+                          alpha_L=Param(float, 1.0e2, msg="prior param"),
+                          V_L=Param(float, 0.1, msg="prior param"),
+                          lineWidthSigma=Param(float, 20, msg="prior param"))
 
     def __init__(self, args, comm=None):
         """ Constructor:
@@ -256,14 +253,13 @@ class delightPZ(Estimator):
         """
         pass
 
-    
     def run(self):
         # load data
         if self.config.hdf5_groupname:
             test_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  #pragma:  no cover
+        else:  # pragma: no cover
             test_data = self.get_data('input')
-        
+
         print("\n\n\n Starting estimation...\n\n\n")
         self.chunknum += 1
 

@@ -15,7 +15,8 @@ class AddID(Degrader):
         """
         Constructor
 
-        Does standard Degrader initialization and also gets defines the cuts to be applied
+        Does standard Degrader initialization and also gets defines the cuts
+        to be applied
         """
         Degrader.__init__(self, args, comm=comm)
 
@@ -35,7 +36,7 @@ class AddID(Degrader):
             exkey = data.keys()[0]
             numgals = len(data[exkey])
             data['id'] = np.arange(numgals)
-        
+
         self.add_data('output', data)
 
     def __repr__(self):  # pragma: no cover
