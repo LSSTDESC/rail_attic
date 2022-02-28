@@ -1,3 +1,5 @@
+"""Tuples that capture standard statisical quantities """
+
 from collections import namedtuple
 
 # These generic mathematical metrics will be moved to qp at some point.
