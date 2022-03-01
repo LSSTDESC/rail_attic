@@ -36,15 +36,25 @@ class FlowDict(dict):
         return self[path]  #pragma: no cover
 
 
-class FlowFile(DataFile):
+class FlowHandle(ModelHandle):
     """
     A wrapper around a file that describes a PZFlow object
     """
     flow_factory = FlowDict()
 
+    suffix = 'pkl'
+
     @classmethod
-    def open(cls, path, mode, **kwargs):  #pylint: disable=unused-argument
+    def _open(cls, path, mode, **kwargs):  #pylint: disable=unused-argument
+        if kwargs.get('mode', 'r') == 'w':
+            return cls.flow_factory.open(path, mode='wb', **kwargs)
         return cls.flow_factory.read(path)
+
+    @classmethod
+    def _read(cls, path, **kwargs):
+        """Read and return the data from the associated file """
+        return cls.model_factory.read(path, **kwargs)
+
 
 
 class FlowEngine(Engine):

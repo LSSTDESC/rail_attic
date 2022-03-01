@@ -3,53 +3,9 @@ Abstract base classes defining redshift estimations Trainers and Estimators
 """
 import pickle
 
-from rail.core.data import TableHandle, QPHandle
+from rail.core.data import TableHandle, QPHandle, ModelHandle
 from rail.core.types import DataFile
 from rail.core.stage import RailStage
-
-
-def default_model_read(modelfile):
-    """Default function to read model files, simply used pickle.load"""
-    return pickle.load(open(modelfile, 'rb'))
-
-
-class ModelDict(dict):
-    """
-    A specialized dict to keep track of individual estimation models objects: this is just a dict these additional features
-
-    1. Keys are paths
-    2. There is a read(path, force=False) method that reads a model object and inserts it into the dictionary
-    3. There is a single static instance of this class
-    """
-    def open(self, path, mode, **kwargs):  #pylint: disable=no-self-use
-        """Open the file and return the file handle"""
-        return open(path, mode, **kwargs)
-
-    def read(self, path, force=False, reader=None):
-        """Read a model into this dict"""
-        if reader is None:
-            reader = default_model_read
-        if force or path not in self:
-            model = reader(path)
-            self.__setitem__(path, model)
-            return model
-        return self[path]
-
-
-MODEL_FACTORY = ModelDict()
-
-
-class ModelFile(DataFile):
-    """
-    A file that describes an estimator mdoel
-    """
-
-    @classmethod
-    def open(cls, path, mode, **kwargs):
-        """ Opens a data file"""
-        if mode == 'w':
-            return MODEL_FACTORY.open(path, mode='wb', **kwargs)
-        return MODEL_FACTORY.read(path, **kwargs)
 
 
 class Estimator(RailStage):
@@ -66,7 +22,7 @@ class Estimator(RailStage):
     name = 'Estimator'
     config_options = RailStage.config_options.copy()
     config_options.update(chunk_size=10000, hdf5_groupname=str)
-    inputs = [('model_file', ModelFile),
+    inputs = [('model_file', ModelHandle),
               ('input', TableHandle)]
     outputs = [('output', QPHandle)]
 
@@ -133,7 +89,7 @@ class Trainer(RailStage):
     config_options = RailStage.config_options.copy()
     config_options.update(hdf5_groupname=str, save_train=True)
     inputs = [('input', TableHandle)]
-    outputs = [('model_file', ModelFile)]
+    outputs = [('model_file', ModelHandle)]
 
     def __init__(self, args, comm=None):
         """Initialize Trainer that can train models for redshift estimation """

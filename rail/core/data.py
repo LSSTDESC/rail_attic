@@ -38,7 +38,7 @@ class DataHandle:
         It will not read or cache the data
         """
         if self.path is None:
-            raise ValueError("TableHandle.open() called but path has not been specified")
+            raise ValueError("DataHandle.open() called but path has not been specified")
         self.fileObj = self._open(self.path, **kwargs)
         return self.fileObj
 
@@ -208,6 +208,85 @@ class QPHandle(DataHandle):
         """Write the data to the associatied file """
         return data.write_to(path)
 
+
+
+
+def default_model_read(modelfile):
+    """Default function to read model files, simply used pickle.load"""
+    return pickle.load(open(modelfile, 'rb'))
+
+
+def default_model_write(model, path):
+    """Write the model, this default implementation uses pickle"""
+    with open(model, 'wb') as f:
+        pickle.dump(file=f, obj=model, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+class ModelDict(dict):
+    """
+    A specialized dict to keep track of individual estimation models objects: this is just a dict these additional features
+
+    1. Keys are paths
+    2. There is a read(path, force=False) method that reads a model object and inserts it into the dictionary
+    3. There is a single static instance of this class
+    """
+    def open(self, path, mode, **kwargs):  #pylint: disable=no-self-use
+        """Open the file and return the file handle"""
+        return open(path, mode, **kwargs)
+
+    def read(self, path, force=False, reader=None, **kwargs):
+        """Read a model into this dict"""
+        if reader is None:
+            reader = default_model_read
+        if force or path not in self:
+            model = reader(path)
+            self.__setitem__(path, model)
+            return model
+        return self[path]
+
+    def write(self, model, path, force=False, writer=None, **kwargs):
+        """Write the model, this default implementation uses pickle"""
+        if writer is None:
+            writer = default_model_write
+        if force or path not in self:
+            self.__setitem__[path, model]
+            writer(model, path)
+            pickle.dump(file=f, obj=model, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+    
+class ModelHandle(DataHandle):
+    """DataHandle for machine learning models
+    """
+    suffix = 'pkl'
+
+    model_factory = ModelDict()
+
+    @classmethod
+    def _open(cls, path, mode, **kwargs):
+        """Open and return the associated file
+
+        Notes
+        -----
+        This will simply open the file and return a file-like object to the caller.
+        It will not read or cache the data
+        """
+        """ Opens a data file"""
+        if kwargs.get('mode', 'r') == 'w':
+            return cls.model_factory.open(path, mode='wb', **kwargs)
+        return cls.model_factory.read(path, **kwargs)
+
+    @classmethod
+    def _read(cls, path, **kwargs):
+        """Read and return the data from the associated file """
+        return cls.model_factory.read(path, **kwargs)
+
+    @classmethod
+    def _write(cls, data, path, **kwargs):
+        """Write the data to the associatied file """
+        return cls.model_factory.write(data, path, **kwargs)
+
+    
 
 class DataFile:
     """
