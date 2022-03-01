@@ -2,10 +2,11 @@ import numpy as np
 import os
 import copy
 import pytest
+import yaml
 from rail.core.stage import RailStage
 from rail.core.data import DataStore, TableHandle
 from rail.estimation.algos import randomPZ, sklearn_nn, flexzboost, trainZ
-from rail.estimation.algos import bpz_lite, pzflow, knnpz #delightPZ, knnpz
+from rail.estimation.algos import bpz_lite, pzflow, knnpz, delightPZ
 from rail.estimation.estimator import MODEL_FACTORY
 from pzflow import Flow
 
@@ -179,13 +180,16 @@ def test_train_pz():
 
 def test_delight():
     with open("./tests/delightPZ.yaml", "r") as f:
-        config_dict=yaml.safe_load(f)
+        config_dict = yaml.safe_load(f)
+    config_dict['model_file'] = "None"
+    config_dict['hdf5_groupname'] = 'photometry'
+    train_algo = delightPZ.TrainDelightPZ
     pz_algo = delightPZ.delightPZ
-    pz_dict, rerun_pz_dict = one_algo(pz_algo, config_dict)
+    results, rerun_results = one_algo("Delight", train_algo, pz_algo, config_dict, config_dict)
     zb_expected = np.array([0.18, 0.01, -1., -1., 0.01, -1., -1., -1., 0.01, 0.01])
-    assert np.isclose(pz_dict['zmode'], zb_expected, atol=0.03).all()
-    assert np.isclose(pz_dict['zmode'], rerun_pz_dict['zmode']).all()
-    
+    assert np.isclose(results.ancil['zmode'], zb_expected, atol=0.03).all()
+    assert np.isclose(results.ancil['zmode'], rerun_results.ancil['zmode']).all()
+
 
 def test_KNearNeigh():
     def_bands = ['u', 'g', 'r', 'i', 'z', 'y']
