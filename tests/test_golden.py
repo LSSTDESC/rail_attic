@@ -21,7 +21,7 @@ def test_goldenspike():
     post_grid = [float(x) for x in np.linspace(0., 5, 21)]
 
     flow_engine_test = FlowEngine.make_stage(name='flow_engine_test', 
-                                            flow_file=flow_file, n_samples=50)
+                                             flow=flow_file, n_samples=50)
       
     lsst_error_model_test = LSSTErrorModel.make_stage(name='lsst_error_model_test',
                                                     bandNames=band_dict)
@@ -30,7 +30,7 @@ def test_goldenspike():
                                                 columns=rename_dict)
 
     flow_post_test = FlowPosterior.make_stage(name='flow_post_test',
-                                              column='redshift', flow_file=flow_file,
+                                              column='redshift', flow=flow_file,
                                               grid=post_grid)
 
     table_conv_test = TableConverter.make_stage(name='table_conv_test', output_format='numpyDict', 
@@ -49,7 +49,7 @@ def test_goldenspike():
     table_conv_test.connect_input(col_remapper_test)
 
 
-    pipe.initialize(dict(flow_file=flow_file), dict(output_dir='.', log_dir='.', resume=False), None)
+    pipe.initialize(dict(flow=flow_file), dict(output_dir='.', log_dir='.', resume=False), None)
 
     pipe.save('stage.yaml')
 

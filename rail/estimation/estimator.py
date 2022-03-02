@@ -1,10 +1,8 @@
 """
 Abstract base classes defining redshift estimations Trainers and Estimators
 """
-import pickle
 
 from rail.core.data import TableHandle, QPHandle, ModelHandle
-from rail.core.types import DataFile
 from rail.core.stage import RailStage
 
 
@@ -22,7 +20,7 @@ class Estimator(RailStage):
     name = 'Estimator'
     config_options = RailStage.config_options.copy()
     config_options.update(chunk_size=10000, hdf5_groupname=str)
-    inputs = [('model_file', ModelHandle),
+    inputs = [('model', ModelHandle),
               ('input', TableHandle)]
     outputs = [('output', QPHandle)]
 
@@ -30,6 +28,8 @@ class Estimator(RailStage):
         """Initialize Estimator that can sample galaxy data."""
         RailStage.__init__(self, args, comm=comm)
         self.model = None
+        if not isinstance(args, dict):
+            args = vars(args)
         self.open_model(**args)
 
     def open_model(self, **kwargs):
@@ -43,15 +43,18 @@ class Estimator(RailStage):
             A file from which to load a model object
         """
         model = kwargs.get('model', None)
-        if model is not None:
-            self.model = model
-            self.config['model'] = None
-            return
-        model_file = kwargs.get('model_file', None)
-        if model_file is not None:
-            self.config['model_file'] = model_file
-            if self.config['model_file'] is not None and self.config['model_file'] != 'None':
-                self.model = self.open_input('model_file')
+        if model is None or model == 'None':
+            self.model = None
+            return self.model
+        if isinstance(model, str):
+            self.model = self.set_data('model', data=None, path=model)
+            self.config['model'] = model
+            return self.model
+        if isinstance(model, ModelHandle):
+            if model.has_path:
+                self.config['model'] = model.path
+        self.model = self.set_data('model', model)
+        return self.model
 
     def estimate(self, input_data):
         """
@@ -89,17 +92,12 @@ class Trainer(RailStage):
     config_options = RailStage.config_options.copy()
     config_options.update(hdf5_groupname=str, save_train=True)
     inputs = [('input', TableHandle)]
-    outputs = [('model_file', ModelHandle)]
+    outputs = [('model', ModelHandle)]
 
     def __init__(self, args, comm=None):
         """Initialize Trainer that can train models for redshift estimation """
         RailStage.__init__(self, args, comm=comm)
         self.model = None
-
-    def write_model(self):
-        """Write the model, this default implementation uses pickle"""
-        with self.open_output('model_file') as f:
-            pickle.dump(file=f, obj=self.model, protocol=pickle.HIGHEST_PROTOCOL)
 
     def inform(self, training_data):
         """

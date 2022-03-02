@@ -52,7 +52,7 @@ class Train_trainZ(Trainer):
         train_pdf = train_pdf/norm
         zgrid = midpoints
         self.model = trainZmodel(zgrid, train_pdf, zmode)
-        self.write_model()
+        self.add_data('model', self.model)
 
 
 class TrainZ(Estimator):
@@ -70,6 +70,8 @@ class TrainZ(Estimator):
 
     def open_model(self, **kwargs):
         Estimator.open_model(self, **kwargs)
+        if self.model is None:
+            return
         self.zgrid = self.model.zgrid
         self.train_pdf = self.model.pdf
         self.zmode = self.model.zmode

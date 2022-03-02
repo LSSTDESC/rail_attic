@@ -8,6 +8,7 @@ import numpy as np
 from scipy.stats import norm
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import Estimator
+from rail.core.data import TableHandle
 import qp
 
 
@@ -16,7 +17,7 @@ class RandomPZ(Estimator):
     """
 
     name = 'RandomPZ'
-
+    inputs = [('input', TableHandle)]
     config_options = Estimator.config_options.copy()
     config_options.update(rand_width=Param(float, 0.025, "ad hock width of PDF"),
                           rand_zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),

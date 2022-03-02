@@ -26,14 +26,16 @@ import qp
 import rail
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import Estimator
+from rail.core.data import TableHandle
 from desc_bpz.useful_py3 import get_str, get_data, match_resol
-
-
 
 
 class BPZ_lite(Estimator):
     """Estimator subclass to implement basic marginalized PDF for BPZ
     """
+
+    inputs = [('input', TableHandle)]
+
     config_options = Estimator.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="min z for grid"),
                           zmax=Param(float, 3.0, msg="max z for grid"),
@@ -72,7 +74,7 @@ class BPZ_lite(Estimator):
                                               msg="gauss_kernel (float): BPZ "
                                               "convolves the PDF with a kernel if this is set "
                                               "to a non-zero number"),
-                          zp_errors=Param(np.ndarray, np.array([0.01, 0.01, 0.01, 0.01, 0.01, 0.01]),
+                          zp_errors=Param(list, [0.01, 0.01, 0.01, 0.01, 0.01, 0.01],
                                           msg="BPZ adds these values in quadrature to the photometric errors"),
                           mag_err_min=Param(float, 0.005,
                                             msg="a minimum floor for the magnitude errors to prevent a "
@@ -149,7 +151,7 @@ class BPZ_lite(Estimator):
         bands = self.config.bands
 
         # Load the magnitudes
-        zp_frac = e_mag2frac(self.config.zp_errors)
+        zp_frac = e_mag2frac(np.array(self.config.zp_errors))
 
         # Only one set of mag errors
         mag_errs = np.array([data[f'mag_err_{b}_lsst'] for b in bands]).T

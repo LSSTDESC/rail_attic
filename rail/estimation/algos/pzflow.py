@@ -9,15 +9,12 @@ import numpy as np
 
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import Estimator, Trainer
+from rail.core.data import FlowHandle, TableHandle
 import pandas as pd
 from pzflow import Flow
 from pzflow.bijectors import Chain, ColorTransform, InvSoftplus
 from pzflow.bijectors import StandardScaler, RollingSplineCoupling
 import qp
-
-def model_read_flow(modelfile):
-    """Function to read Flow files."""
-    return Flow(file=modelfile)
 
 
 def computemeanstd(df):
@@ -74,6 +71,7 @@ class Train_PZFlowPDF(Trainer):
     """ Subclass to train a pzflow-based estimator
     """
     name = 'Train_PZFlowPdf'
+    outputs = [('model', FlowHandle)]
     config_options = Trainer.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="min z"),
                           zmax=Param(float, 3.0, msg="max_z"),
@@ -147,19 +145,16 @@ class Train_PZFlowPDF(Trainer):
         self.model = Flow(flowdf.columns, bijector, seed=self.config.flow_seed)
         _ = self.model.train(flowdf[self.usecols], epochs=self.config.num_training_epochs,
                              verbose=True)
-        self.write_model()
-
-
-    def write_model(self):
-        self.model.save(self.get_output('model_file'))
+        self.model.save(self.get_output('model'))
 
 
 
 class PZFlowPDF(Estimator):
     """Estimator which uses PZFlow
     """
-
     name = 'PZFlowPDF'
+    inputs = [('model', FlowHandle),
+              ('input', TableHandle)]
     config_options = Estimator.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
@@ -194,18 +189,6 @@ class PZFlowPDF(Estimator):
         self.usecols = usecols
         self.allcols = allcols
         self.zgrid = None
-
-    def open_model(self, **kwargs):
-        model = kwargs.get('model', None)
-        if model is not None:  #pragma: no cover
-            self.model = model
-            self.config['model'] = None
-            return
-        model_file = kwargs.get('model_file', None)
-        if model_file is not None:
-            self.config['model_file'] = model_file
-            if self.config['model_file'] is not None and self.config['model_file'] != 'None':
-                self.model = model_read_flow(self.config['model_file'])
 
     def run(self):
         """

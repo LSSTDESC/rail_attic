@@ -140,7 +140,8 @@ class Train_KNearNeighPDF(Trainer):
         # remake tree with full dataset!
         kdtree = KDTree(colordata, leaf_size=self.config.leaf_size)
         self.model = dict(kdtree=kdtree, bestsig=sigma, nneigh=numneigh, truezs=trainszs)
-        self.write_model()
+        self.add_data('model', self.model)
+
 
 
 class KNearNeighPDF(Estimator):
