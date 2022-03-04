@@ -30,7 +30,7 @@ class FlowEngine(Engine):
     def set_flow(self, **kwargs):
         """ Set the flow, either from an object or by loading from a file """
         flow = kwargs.get('flow')
-        if flow is None:
+        if flow is None:  #pragma: no cover
             return None
         if isinstance(flow, Flow):
             return self.set_data('flow', flow)

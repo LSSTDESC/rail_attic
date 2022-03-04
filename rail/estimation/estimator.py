@@ -28,7 +28,7 @@ class Estimator(RailStage):
         """Initialize Estimator that can sample galaxy data."""
         RailStage.__init__(self, args, comm=comm)
         self.model = None
-        if not isinstance(args, dict):
+        if not isinstance(args, dict):  #pragma: no cover
             args = vars(args)
         self.open_model(**args)
 
@@ -116,3 +116,4 @@ class Trainer(RailStage):
         """
         self.set_data('input', training_data)
         self.run()
+        self.finalize()

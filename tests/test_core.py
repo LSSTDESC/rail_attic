@@ -4,13 +4,13 @@ import pytest
 import numpy as np
 from types import GeneratorType
 from rail.core.stage import RailStage
-from rail.core.data import DataStore, DataHandle, TableHandle, Hdf5Handle, PqHandle, QPHandle, DataFile
+from rail.core.data import DataStore, DataHandle, TableHandle, Hdf5Handle, PqHandle, QPHandle, ModelHandle, FlowHandle
 from rail.core.utilStages import ColumnMapper, RowSelector, TableConverter
 
 
-def test_data_file():    
-    with pytest.raises(ValueError) as errinfo:
-        df = DataFile('dummy', 'x')
+#def test_data_file():    
+#    with pytest.raises(ValueError) as errinfo:
+#        df = DataFile('dummy', 'x')
     
 
 def test_util_stages():
@@ -118,12 +118,50 @@ def test_hdf5_handle():
     data_check = read_chunked.read()
     assert np.allclose(data['id'], data_check['id'])
     os.remove(datapath_chunked)
+
+
+def test_model_handle():
+    DS = RailStage.data_store
+    DS.clear()
+    
+    raildir = os.path.dirname(rail.__file__)
+    model_path = os.path.join(raildir, '..', 'examples', 'estimation', 'demo_FZB_model.pkl')
+    mh = ModelHandle("model", path=model_path)
+    mh2 = ModelHandle("model2", path=model_path)
+    
+    model1 = mh.read()
+    model2 = mh2.read()
+
+    model3 = mh.open()
+
+    assert model1 is model2
+    assert model2 is model3
+    
+    
+def test_flow_handle():
+    DS = RailStage.data_store
+    DS.clear()
+    
+    raildir = os.path.dirname(rail.__file__)
+    flow_path = os.path.join(raildir, '..', 'examples', 'goldenspike', 'data', 'pretrained_flow.pkl')
+    fh = FlowHandle("flow", path=flow_path)
+    fh2 = FlowHandle("flow2", path=flow_path)
+    
+    flow1 = fh.read()
+    flow2 = fh2.read()
+
+    flow3 = fh.open()
+
+    assert flow1 is flow2
+    assert flow2 is flow3
+    
     
     
 def test_data_hdf5_iter():
 
     DS = RailStage.data_store
-
+    DS.clear()
+    
     raildir = os.path.dirname(rail.__file__)
     datapath = os.path.join(raildir, '..', 'tests', 'data', 'test_dc2_training_9816.hdf5')
 

@@ -66,11 +66,14 @@ class TrainZ(Estimator):
                           nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"))
 
     def __init__(self, args, comm=None):
+        self.zgrid = None
+        self.train_pdf = None
+        self.zmode = None
         Estimator.__init__(self, args, comm=comm)
 
     def open_model(self, **kwargs):
         Estimator.open_model(self, **kwargs)
-        if self.model is None:
+        if self.model is None:  #pragma: no cover
             return
         self.zgrid = self.model.zgrid
         self.train_pdf = self.model.pdf

@@ -3,7 +3,8 @@ import numpy as np
 import pzflow
 from pzflow.examples import get_example_flow, get_galaxy_data
 from rail.creation.engines import FlowEngine, FlowPosterior
-from rail.core.data import DATA_STORE, TableHandle
+from rail.core.data import TableHandle
+from rail.core.stage import RailStage
 
 def test_flowengine_sample():
     """Test that flow samples and flowEng samples are the same."""
@@ -34,8 +35,9 @@ def test_flowengine_pz_estimate():
     """Test that flow posteriors and flowEng posteriors are the same."""
 
     data = get_galaxy_data().iloc[:10, :]
-    DS = DATA_STORE()
-    DS.add_data('data', data, TableHandle, path='dummy.pd')
+    DS = RailStage.data_store
+    DS.clear()
+    handle = DS.add_data('data', data, TableHandle, path='dummy.pd')
 
     bands = ['u','g','r','i','z','y']
     rename_dict = {f'mag_{band}_lsst_err':f'mag_err_{band}_lsst' for band in bands}
@@ -48,22 +50,22 @@ def test_flowengine_pz_estimate():
     flow_path = os.path.join(pzdir, 'examples', 'example-flow.pkl')
 
     flowPost = FlowPosterior.make_stage(name='flow',
-                                        flow=flow,
+                                        flow=flow_path,
                                         column="redshift",
                                         grid=grid,
                                         marg_rules = {"flag": np.nan, "u": lambda row: np.linspace(25, 31, 10)})
 
     flowPost2 = FlowPosterior.make_stage(name='flow2',
-                                        flow_file=flow_path,
+                                        flow=flow,
                                         column="redshift",
                                         grid=grid,
                                         marg_rules = {"flag": np.nan, "u": lambda row: np.linspace(25, 31, 10)})
 
     
-    flowPost_pdfs = flowPost.get_posterior(DS['data'], column="redshift", grid=grid).data
+    flowPost_pdfs = flowPost.get_posterior(handle, column="redshift", grid=grid).data
     flowPost_pdfs = flowPost_pdfs.objdata()["yvals"]
 
-    flowPost2_pdfs = flowPost2.get_posterior(DS['data'], column="redshift", grid=grid).data
+    flowPost2_pdfs = flowPost2.get_posterior(handle, column="redshift", grid=grid).data
     flowPost2_pdfs = flowPost2_pdfs.objdata()["yvals"]
 
     assert np.allclose(flow_pdfs, flowPost_pdfs)

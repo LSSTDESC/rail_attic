@@ -1,24 +1,22 @@
-###########################################################
-#
-# RAIL interface class to Delight
-#
-# Steering Delight from RAIL
-# Used on Vera C. Runbin LSST only estimation
-#
-# Author        : Sylvie Dagoret-Campagne, Sam Schmidt, others
-# Affiliation   : IJCLab/IN2P3/CNRS/France
-# Creation date : March 2021
-# Last update   : October 21th 2021
-# Last update   : February 25th 2022
-#
-###########################################################
+"""
+
+RAIL interface class to Delight
+
+Steering Delight from RAIL
+Used on Vera C. Rubin LSST only estimation
+
+Author        : Sylvie Dagoret-Campagne, Sam Schmidt, others
+Affiliation   : IJCLab/IN2P3/CNRS/France
+Creation date : March 2021
+Last update   : October 21th 2021
+Last update   : February 25th 2022
+"""
 
 import sys
 import numpy as np
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import Estimator, Trainer
 
-from delight.io import parseParamFile
 import qp
 
 import os
@@ -41,7 +39,7 @@ from delight.interfaces.rail.makeConfigParam import makeConfigParam  # build the
 
 # Delight format
 # convert DESC input file into Delight format
-from delight.interfaces.rail.convertDESCcat import convertDESCcatTargetFile, convertDESCcatTrainData, convertDESCcatChunk
+from delight.interfaces.rail.convertDESCcat import convertDESCcatTrainData, convertDESCcatChunk
 
 # Delight algorithms
 
@@ -52,6 +50,7 @@ from delight.interfaces.rail.delightApply import delightApply
 # other
 from delight.interfaces.rail.getDelightRedshiftEstimation import getDelightRedshiftEstimation
 
+from rail.core.data import TableHandle
 
 # Create a logger object.
 logger = logging.getLogger(__name__)
@@ -64,6 +63,7 @@ class TrainDelightPZ(Trainer):
     which is fairly non-standard way currently
     """
     name = 'TrainDelightPZ'
+    outputs = []
     config_options = Trainer.config_options.copy()
     config_options.update(dlght_redshiftMin=Param(float, 0.01, msg='min redshift'),
                           dlght_redshiftMax=Param(float, 3.01, msg='max redshift'),
@@ -110,6 +110,8 @@ class TrainDelightPZ(Trainer):
                           alpha_L=Param(float, 1.0e2, msg="prior param"),
                           V_L=Param(float, 0.1, msg="prior param"),
                           lineWidthSigma=Param(float, 20, msg="prior param"))
+
+    outputs = []
 
     def __init__(self, args, comm=None):
         """ Constructor
@@ -187,6 +189,7 @@ class delightPZ(Estimator):
        created that need to be cleaned up in the future
     """
     name = 'delightPZ'
+    inputs = [('input', TableHandle)]    
     config_options = Estimator.config_options.copy()
     config_options.update(dlght_redshiftMin=Param(float, 0.01, msg='min redshift'),
                           dlght_redshiftMax=Param(float, 3.01, msg='max redshift'),
@@ -251,7 +254,7 @@ class delightPZ(Estimator):
         are specified in the ascii param file, so we don't actually need to
         do anything here for now.
         """
-        pass
+        return
 
     def run(self):
         # load data
@@ -263,15 +266,15 @@ class delightPZ(Estimator):
         print("\n\n\n Starting estimation...\n\n\n")
         self.chunknum += 1
 
-        msg = " ESTIMATE : chunk number {} ".format(self.chunknum)
+        msg = f" ESTIMATE : chunk number {self.chunknum}"
         logger.info(msg)
 
         basedelight_datapath = self.delightindata
 
-        msg = " Delight input data file are in dir : {} ".format(self.delightparamfile)
+        msg = f" Delight input data file are in dir : {self.delightparamfile} "
         logger.debug(msg)
 
-        msg = "STANDARD MODE : process chunk {}".format(self.chunknum)
+        msg = f"STANDARD MODE : process chunk {self.chunknum}"
         logger.info(msg)
 
         # Generate a new parameter file for delight this chunk
@@ -285,7 +288,7 @@ class delightPZ(Estimator):
         basnsplit = basn.split(".")
         basnchunk = basnsplit[0] + "_" + str(self.chunknum) + "." + basnsplit[1]
         delightparamfilechunk = os.path.join(dirn, basnchunk)
-        logger.debug("parameter file for delight :" + delightparamfilechunk)
+        logger.debug("parameter file for delight :%s", delightparamfilechunk)
 
         # save the config parameter file for the data chunk that Delight needs
         with open(delightparamfilechunk, 'w') as out:
