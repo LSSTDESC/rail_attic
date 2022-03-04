@@ -95,7 +95,7 @@ class Train_SimpleNN(Trainer):
                                      max_iter=self.config.max_iter)
         simplenn.fit(input_data, speczs)
         self.model = simplenn
-        self.write_model()
+        self.add_data('model', self.model)
 
 
 class SimpleNN(Estimator):

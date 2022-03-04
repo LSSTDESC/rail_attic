@@ -5,53 +5,16 @@ import numpy as np
 import qp
 
 from pzflow import Flow
-
-from rail.core.data import PqHandle, QPHandle
-from rail.core.types import DataFile
+from rail.core.data import PqHandle, QPHandle, FlowHandle
 from rail.creation.engines import Engine, PosteriorEvaluator
 
-
-class FlowDict(dict):
-    """
-    A specialized dict to keep track of individual flow objects: this is just a dict these additional features
-
-    1. Keys are paths
-    2. Values are flow objects, this is checked at runtime.
-    3. There is a read(path, force=False) method that reads a flow object and inserts it into the dictionary
-    4. There is a single static instance of this class
-    """
-
-    def __setitem__(self, key, value):
-        """ Add a key-value pair, and check to make sure that the value is a `Flow` object """
-        if not isinstance(value, Flow):  #pragma: no cover
-            raise TypeError(f"Only values of type Flow can be added to a FlowFactory, not {type(value)}")
-        return dict.__setitem__(self, key, value)
-
-    def read(self, path, force=False):
-        """ Read a `Flow` object from disk and add it to this dictionary """
-        if force or path not in self:
-            flow = Flow(file=path)
-            self.__setitem__(path, flow)
-            return flow
-        return self[path]  #pragma: no cover
-
-
-class FlowFile(DataFile):
-    """
-    A wrapper around a file that describes a PZFlow object
-    """
-    flow_factory = FlowDict()
-
-    @classmethod
-    def open(cls, path, mode, **kwargs):  #pylint: disable=unused-argument
-        return cls.flow_factory.read(path)
 
 
 class FlowEngine(Engine):
     """Engine wrapper for a pzflow Flow object."""
 
     name = 'FlowEngine'
-    inputs = [('flow_file', FlowFile)]
+    inputs = [('flow', FlowHandle)]
     outputs = [('output', PqHandle)]
 
     def __init__(self, args, comm=None):
@@ -60,31 +23,18 @@ class FlowEngine(Engine):
         Does standard Engine initialization and also gets the `Flow` object
         """
         Engine.__init__(self, args, comm=comm)
-        self.flow = None
-        if not isinstance(args, dict):  #pragma: no cover
+        if not isinstance(args, dict):
             args = vars(args)
-        self.open_flow(**args)
+        self.set_flow(**args)
 
-    def open_flow(self, **kwargs):
-        """Instantiate a pzflow Flow engine.
-
-        Keywords
-        --------
-        flow : pzflow Flow object
-            A trained pzflow Flow from which the creator will sample
-            and will use to draw posteriors.
-        flow_file : str
-            A file from which to load a Flow object
-        """
-        flow = kwargs.get('flow', None)
-        if flow is not None:
-            self.flow = flow
-            self.config['flow_file'] = None
-            return
-        flow_file = kwargs.get('flow_file', None)
-        if flow_file is not None:
-            self.config['flow_file'] = flow_file
-            self.flow = self.open_input('flow_file')
+    def set_flow(self, **kwargs):
+        """ Set the flow, either from an object or by loading from a file """
+        flow = kwargs.get('flow')
+        if flow is None:
+            return None
+        if isinstance(flow, Flow):
+            return self.set_data('flow', flow)
+        return self.set_data('flow', data=None, path=flow)
 
     def run(self):
         """ Run method
@@ -95,9 +45,10 @@ class FlowEngine(Engine):
         -----
         Puts the data into the data store under this stages 'output' tag
         """
-        if self.flow is None:  #pragma: no cover
+        flow = self.get_data('flow')
+        if flow is None:  #pragma: no cover
             raise ValueError("Tried to run a FlowEngine before the Flow object is loaded")
-        self.add_data('output', self.flow.sample(self.config.n_samples, self.config.seed))
+        self.add_data('output', flow.sample(self.config.n_samples, self.config.seed))
 
 
 class FlowPosterior(PosteriorEvaluator):
@@ -158,7 +109,7 @@ class FlowPosterior(PosteriorEvaluator):
                           batch_size=10000,
                           nan_to_zero=True)
 
-    inputs = [('flow_file', FlowFile),
+    inputs = [('flow', FlowHandle),
               ('input', PqHandle)]
     outputs = [('output', QPHandle)]
 
@@ -168,33 +119,6 @@ class FlowPosterior(PosteriorEvaluator):
         Does standard Engine initialization and also gets the `Flow` object
         """
         PosteriorEvaluator.__init__(self, args, comm=comm)
-        self.flow = None
-
-        if not isinstance(args, dict):  #pragma: no cover
-            args = vars(dict)
-
-        self.open_flow(**args)
-
-    def open_flow(self, **kwargs):
-        """Instantiate a pzflow Flow engine.
-
-        Keywords
-        --------
-        flow : pzflow Flow object
-            A trained pzflow Flow from which the creator will sample
-            and will use to draw posteriors.
-        flow_file : str
-            A file from which to load a Flow object
-        """
-        flow = kwargs.get('flow', None)
-        if flow is not None:
-            self.flow = flow
-            self.config['flow_file'] = None
-            return
-        flow_file = kwargs.get('flow_file', None)
-        if flow_file is not None:
-            self.config['flow_file'] = flow_file
-            self.flow = self.open_input('flow_file')
 
     def run(self):
         """ Run method
@@ -208,12 +132,13 @@ class FlowPosterior(PosteriorEvaluator):
         """
 
         data = self.get_data('input')
+        flow = self.get_data('flow')
         if self.config.marg_rules is None:  #pragma: no cover
             marg_rules = {"flag": np.nan, "mag_u_lsst": lambda row: np.linspace(25, 31, 10)}
         else:
             marg_rules = self.config.marg_rules
 
-        pdfs = self.flow.posterior(
+        pdfs = flow.posterior(
             inputs=data,
             column=self.config.column,
             grid=np.array(self.config.grid),

@@ -7,7 +7,6 @@ p(z) shape) via cde-loss over a grid.
 """
 
 import numpy as np
-import pickle
 import flexcode
 import qp
 from flexcode.regression_models import XGBoost
@@ -156,9 +155,8 @@ class Train_FZBoost(Trainer):
                 bestloss = tmploss
                 bestsharp = sharp
         model.sharpen_alpha = bestsharp
-        if self.config.save_train:
-            with open(self.config.model_file, 'wb') as f:
-                pickle.dump(file=f, obj=model, protocol=pickle.HIGHEST_PROTOCOL)
+        self.model = model
+        self.add_data('model', self.model)
 
 
 class FZBoost(Estimator):

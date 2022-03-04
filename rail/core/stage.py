@@ -17,7 +17,7 @@ class RailStage(PipelineStage):
 
     data_store = DATA_STORE()
 
-    def get_handle(self, tag, allow_missing=False):
+    def get_handle(self, tag, path=None, allow_missing=False):
         """Gets a DataHandle associated to a particular tag
 
         Note that this will get the data from the DataStore under the aliased tag
@@ -26,6 +26,8 @@ class RailStage(PipelineStage):
         ----------
         tag : str
             The tag (from cls.inputs or cls.outputs) for this data
+        path : str or None
+            The path to the data, only needed if we might need to read the data
         allow_missing : bool
             If False this will raise a key error if the tag is not in the DataStore
 
@@ -39,11 +41,11 @@ class RailStage(PipelineStage):
         if handle is None:
             if not allow_missing:
                 raise KeyError(f'{self.instance_name} failed to get data by handle {aliased_tag}, associated to {tag}')
-            handle = self.add_handle(tag)
+            handle = self.add_handle(tag, path=path)
         return handle
 
 
-    def add_handle(self, tag, data=None):
+    def add_handle(self, tag, data=None, path=None):
         """Adds a DataHandle associated to a particular tag
 
         Note that this will add the data to the DataStore under the aliased tag
@@ -54,7 +56,8 @@ class RailStage(PipelineStage):
             The tag (from cls.inputs or cls.outputs) for this data
         data : any or None
             If not None these data will be associated to the handle
-
+        path : str or None
+            If not None, this will be the path used to read the data
         Returns
         -------
         handle : DataHandle
@@ -62,17 +65,19 @@ class RailStage(PipelineStage):
         """
         aliased_tag = self.get_aliased_tag(tag)
         if aliased_tag in self._inputs:
-            path = self.get_input(aliased_tag)
+            if path is None:
+                path = self.get_input(aliased_tag)
             handle_type = self.get_input_type(tag)
         else:
-            path = self.get_output(aliased_tag)
+            if path is None:
+                path = self.get_output(aliased_tag)
             handle_type = self.get_output_type(tag)
         handle = handle_type(aliased_tag, path=path, data=data, creator=self.instance_name)
         print(f"Inserting handle into data store.  {aliased_tag}: {handle.path}, {handle.creator}")
         self.data_store[aliased_tag] = handle
         return handle
 
-    def get_data(self, tag, allow_missing=False):
+    def get_data(self, tag, allow_missing=True):
         """Gets the data associated to a particular tag
 
         Note that this will get the data from the DataStore under the aliased tag
@@ -90,12 +95,12 @@ class RailStage(PipelineStage):
             The data accesed by the handle assocated to the tag
         """
 
-        handle = self.get_handle(tag, allow_missing)
+        handle = self.get_handle(tag, allow_missing=allow_missing)
         if not handle.has_data:
             handle.read()
         return handle.data
 
-    def set_data(self, tag, data, do_read=True):
+    def set_data(self, tag, data, path=None, do_read=True):
         """Sets the data associated to a particular tag
 
         Note that this will set the data in the handle from the DataStore
@@ -107,6 +112,8 @@ class RailStage(PipelineStage):
             The tag (from cls.inputs or cls.outputs) for this data
         data : any
             The data being set
+        path : str or None
+            Can be used to set the path for the data
         do_read : bool
             If True, will read the data if it is not set
 
@@ -119,15 +126,21 @@ class RailStage(PipelineStage):
             aliased_tag = data.tag
             if tag in self.input_tags():
                 self.config.aliases[tag] = aliased_tag
+                if data.has_path:
+                    self._inputs[tag] = data.path
             arg_data = data.data
         else:
-            arg_data = data
+            if path is None:
+                arg_data = data
+            else:
+                arg_data = None
 
-        handle = self.get_handle(tag, allow_missing=True)
+        handle = self.get_handle(tag, path=path, allow_missing=True)
         if not handle.has_data:
             if arg_data is None and do_read:
                 handle.read()
-            handle.data = arg_data
+            if arg_data is not None:
+                handle.data = arg_data
         return handle.data
 
     def add_data(self, tag, data=None):
@@ -197,7 +210,7 @@ class RailStage(PipelineStage):
 
         This can be overridden by sub-classes for more complicated behavior
         """
-        handle = self.get_handle(tag)
+        handle = self.get_handle(tag, allow_missing=True)
         if self.config.output_mode == 'default':
             handle.write()
         final_name = PipelineStage._finalize_tag(self, tag)
