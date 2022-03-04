@@ -6,7 +6,7 @@ install_requires = [
     "numpy",
     "pandas>=1.1",
     "tables-io",
-    "qp"
+    "qp @ git+https://github.com/LSSTDESC/qp",
 ]
 
 # dependencies for the Creation module
@@ -30,6 +30,7 @@ estimation_codes = {
         "corner",
         "cython",
         "emcee",
+        "delight @ git+https://github.com/LSSTDESC/delight@interfacerail",
         ]
 }
 
