@@ -329,66 +329,9 @@ class FlowHandle(ModelHandle):
         """Read and return the data from the associated file """
         return cls.flow_factory.read(path, **kwargs)
 
-
-class DataFile:
-    """
-    A class representing a DataFile to be made by pipeline stages
-    and passed on to subsequent ones.
-
-    DataFile itself should not be instantiated - instead subclasses
-    should be defined for different file types.
-
-    These subclasses are used in the definition of pipeline stages
-    to indicate what kind of file is expected.  The "suffix" attribute,
-    which must be defined on subclasses, indicates the file suffix.
-
-    The open method, which can optionally be overridden, is used by the
-    machinery of the PipelineStage class to open an input our output
-    named by a tag.
-
-    """
-    suffix = ''
-
-    def __init__(self, path, mode, extra_provenance=None, validate=True, **kwargs):
-        self.path = path
-        self.mode = mode
-
-        if mode not in ["r", "w"]:
-            raise ValueError(f"File 'mode' argument must be 'r' or 'w' not '{mode}'")
-
-        self.file = self.open(path, mode, **kwargs)
-
     @classmethod
-    def open(cls, path, mode):
-        """
-        Open a data file.  The base implementation of this function just
-        opens and returns a standard python file object.
-
-        Subclasses can override to either open files using different openers
-        (like fitsio.FITS), or, for more specific data types, return an
-        instance of the class itself to use as an intermediary for the file.
-
-        """
-        return open(path, mode)  #pragma: no cover
-
-    @classmethod
-    def read(cls, path):
-        """ Reads a data file """
-        raise NotImplementedError()  #pragma: no cover
-
-    @classmethod
-    def write(cls, data, path, **kwargs):
-        """ Write a data file """
-        raise NotImplementedError()  #pragma: no cover
-
-    @classmethod
-    def make_name(cls, tag):
-        """Construct and return file name for a particular data tag """
-        if cls.suffix:
-            return f"{tag}.{cls.suffix}"  #pragma: no cover
-        else:
-            return tag
-
+    def _write(cls, data, path, **kwargs):
+        return data.save(path)
 
 
 class DataStore(dict):

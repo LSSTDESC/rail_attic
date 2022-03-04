@@ -1,5 +1,6 @@
 """ Base class for PipelineStages in Rail """
 
+import os
 from ceci.config import StageParameter as Param
 from ceci import PipelineStage
 
@@ -212,7 +213,8 @@ class RailStage(PipelineStage):
         """
         handle = self.get_handle(tag, allow_missing=True)
         if self.config.output_mode == 'default':
-            handle.write()
+            if not os.path.exists(handle.path):
+                handle.write()
         final_name = PipelineStage._finalize_tag(self, tag)
         handle.path = final_name
         return final_name
