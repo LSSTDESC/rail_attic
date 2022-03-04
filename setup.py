@@ -6,6 +6,7 @@ install_requires = [
     "numpy",
     "pandas>=1.1",
     "tables-io",
+    "ceci",
     "qp @ git+https://github.com/LSSTDESC/qp",
 ]
 
