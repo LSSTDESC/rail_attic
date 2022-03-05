@@ -5,6 +5,7 @@ import pytest
 from rail.core.stage import RailStage
 from rail.core.data import QPHandle
 from rail.summarization.algos import naiveStack, pointEstimateHist
+from rail.summarization.algos import varInference
 
 testdata = 'tests/data/output_BPZ_lite.fits'
 DS = RailStage.data_store
@@ -32,3 +33,9 @@ def test_point_estimate_hist():
     summary_config_dict = {}
     summarizer_class = pointEstimateHist.PointEstimateHist
     results = one_algo("PointEstimateHist", summarizer_class, summary_config_dict)
+
+
+def test_var_inference_stack():
+    summary_config_dict = {}
+    summarizer_class = varInference.VarInferenceStack
+    results = one_algo("VariationalInference", summarizer_class, summary_config_dict)
