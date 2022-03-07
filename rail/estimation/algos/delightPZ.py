@@ -16,6 +16,7 @@ import sys
 import numpy as np
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import Estimator, Trainer
+from rail.core.data import TableHandle
 
 import qp
 
@@ -49,8 +50,6 @@ from delight.interfaces.rail.delightApply import delightApply
 
 # other
 from delight.interfaces.rail.getDelightRedshiftEstimation import getDelightRedshiftEstimation
-
-from rail.core.data import TableHandle
 
 # Create a logger object.
 logger = logging.getLogger(__name__)

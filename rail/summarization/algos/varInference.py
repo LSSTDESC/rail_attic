@@ -55,9 +55,9 @@ class VarInferenceStack(PZtoNZSummarizer):
             gamma_matrix = np.array([kk/np.sum(kk) for kk in matrix_grid])
             nk = np.sum(gamma_matrix, axis=0)
             alpha_trace = nk + init_trace
-            
+
         qp_d = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=alpha_trace))
-        sample_pz = dirichlet.rvs(alpha_trace, size=self.config.nsamples)
+        #sample_pz = dirichlet.rvs(alpha_trace, size=self.config.nsamples)
         #siglow = np.expand_dims(np.percentile(sample_pz, 15.87, axis=0), -1).T
         #sighi = np.expand_dims(np.percentile(sample_pz, 84.13, axis=0), -1).T
         #ancil_dict = dict(sigmalow=siglow, sigmahigh=sighi)
