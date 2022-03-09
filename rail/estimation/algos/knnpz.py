@@ -7,6 +7,7 @@ future update
 
 import numpy as np
 import copy
+import pickle
 
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import Estimator, Trainer
@@ -122,14 +123,15 @@ class Train_KNearNeighPDF(Trainer):
         bestsig = self.config.sigma_grid_min
         bestnn = self.config.nneigh_min
         siggrid = np.linspace(self.config.sigma_grid_min, self.config.sigma_grid_max, self.config.ngrid_sigma)
+        print("finding best fit sigma and NNeigh...")
         for sig in siggrid:
             for nn in range(self.config.nneigh_min, self.config.nneigh_max+1):
-                print(f"sigma: {sig} num neigh: {nn}...")
+                # print(f"sigma: {sig} num neigh: {nn}...")
                 dists, idxs = tmpmodel.query(val_data, k=nn)
                 ens = _makepdf(dists, idxs, train_sz, sig)
                 cdelossobj = CDELoss(ens, self.zgrid, val_sz)
                 cdeloss = cdelossobj.evaluate().statistic
-                print(f"sigma: {sig} num neigh: {nn} loss: {cdeloss}")
+                # print(f"sigma: {sig} num neigh: {nn} loss: {cdeloss}")
                 if cdeloss < bestloss:
                     bestsig = sig
                     bestnn = nn
@@ -172,7 +174,11 @@ class KNearNeighPDF(Estimator):
         self.usecols = usecols
 
     def open_model(self, **kwargs):
-        Estimator.open_model(self, **kwargs)
+        #Estimator.open_model(self, **kwargs)
+        model = kwargs.get('model', None)
+        with open(model, 'rb') as f:
+            self.model = pickle.load(f)
+        self.config.model = self.model
         self.sigma = self.model['bestsig']
         self.numneigh = self.model['nneigh']
         self.kdtree = self.model['kdtree']
