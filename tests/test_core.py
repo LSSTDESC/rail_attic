@@ -125,7 +125,7 @@ def test_model_handle():
     DS.clear()
     
     raildir = os.path.dirname(rail.__file__)
-    model_path = os.path.join(raildir, '..', 'examples', 'estimation', 'demo_snn.pkl')
+    model_path = os.path.join(raildir, '..', 'examples', 'estimation', 'demo_knn.pkl')
     mh = ModelHandle("model", path=model_path)
     mh2 = ModelHandle("model2", path=model_path)
     
