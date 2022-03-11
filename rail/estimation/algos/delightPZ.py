@@ -128,7 +128,7 @@ class TrainDelightPZ(Trainer):
         """
         try:
             if not os.path.exists(self.config['tempdir']):
-                os.makedirs(self.config['tempdir'])
+                os.makedirs(self.config['tempdir'])  # pragma: no cover
         except OSError as e:  # pragma: no cover
             if e.errno != errno.EEXIST:
                 msg = "error creating file " + self.config['tempdir']
@@ -136,7 +136,7 @@ class TrainDelightPZ(Trainer):
                 raise
         try:
             if not os.path.exists(self.config['tempdatadir']):
-                os.makedirs(self.config['tempdatadir'])
+                os.makedirs(self.config['tempdatadir'])  # pragma: no cover
         except OSError as e:  # pragma: no cover
             if e.errno != errno.EEXIST:
                 msg = "error creating file " + self.config['tempdatadir']

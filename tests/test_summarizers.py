@@ -18,7 +18,7 @@ def one_algo(key, summarizer_class, summary_kwargs):
     Run summarize
     """
     test_data = DS.read_file('test_data', QPHandle, testdata)
-    summarizer = summarizer_class.make_stage(name=key, **summary_kwargs)    
+    summarizer = summarizer_class.make_stage(name=key, **summary_kwargs)
     summary_ens = summarizer.summarize(test_data)                  
     return summary_ens
 

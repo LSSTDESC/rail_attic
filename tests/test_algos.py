@@ -44,7 +44,7 @@ def one_algo(key, single_trainer, single_estimator, train_kwargs, estim_kwargs):
         pz_2 = None
         estim_2 = estim
 
-    if single_trainer is not None and 'model' in single_trainer.input_tags():
+    if single_trainer is not None and 'model' in single_trainer.output_tags():
         copy3_estim_kwargs = estim_kwargs.copy()
         copy3_estim_kwargs['model'] = train_pz.get_handle('model')
         pz_3 = single_estimator.make_stage(name=f"{pz.name}_copy3", **copy3_estim_kwargs) 

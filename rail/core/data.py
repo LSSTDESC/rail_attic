@@ -200,7 +200,7 @@ class QPHandle(DataHandle):
         This will simply open the file and return a file-like object to the caller.
         It will not read or cache the data
         """
-        return tables_io.io.open(path, **kwargs)  #pylint: disable=no-member
+        return tables_io.io.io_open(path, **kwargs)  #pylint: disable=no-member
 
     @classmethod
     def _read(cls, path, **kwargs):
@@ -269,8 +269,9 @@ class ModelHandle(DataHandle):
     def _open(cls, path, **kwargs):
         """Open and return the associated file
         """
-        if kwargs.get('mode', 'r') == 'w':
-            return cls.model_factory.open(path, mode='wb', **kwargs)
+        kwcopy = kwargs.copy()        
+        if kwcopy.pop('mode', 'r') == 'w':
+            return cls.model_factory.open(path, mode='wb', **kwcopy)
         return cls.model_factory.read(path, **kwargs)
 
     @classmethod
@@ -320,8 +321,8 @@ class FlowHandle(ModelHandle):
 
     @classmethod
     def _open(cls, path, **kwargs):  #pylint: disable=unused-argument
-        if kwargs.get('mode', 'r') == 'w':
-            return open(path, 'wb')
+        if kwargs.get('mode', 'r') == 'w':  #pragma: no cover
+            raise NotImplementedError("Use FlowHandle.write(), not FlowHandle.open(mode='w')")
         return cls.flow_factory.read(path)
 
     @classmethod

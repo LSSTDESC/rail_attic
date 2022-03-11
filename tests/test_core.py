@@ -1,6 +1,7 @@
 import os
 import rail
 import pytest
+import pickle
 import numpy as np
 from types import GeneratorType
 from rail.core.stage import RailStage
@@ -90,6 +91,19 @@ def test_pq_handle():
     handle.close()
     assert handle.fileObj is None
 
+    
+def test_qp_handle():
+    raildir = os.path.dirname(rail.__file__)
+    datapath = os.path.join(raildir, '..', 'tests', 'data', 'output_BPZ_lite.fits')
+    handle = do_data_handle(datapath, QPHandle)
+    qpfile = handle.open()
+    assert qpfile
+    assert handle.fileObj is not None
+    handle.close()
+    assert handle.fileObj is None
+
+
+    
 def test_hdf5_handle():
     raildir = os.path.dirname(rail.__file__)
     datapath = os.path.join(raildir, '..', 'tests', 'data', 'test_dc2_training_9816.hdf5')
@@ -126,6 +140,7 @@ def test_model_handle():
     
     raildir = os.path.dirname(rail.__file__)
     model_path = os.path.join(raildir, '..', 'examples', 'estimation', 'demo_snn.pkl')
+    model_path_copy = os.path.join(raildir, '..', 'examples', 'estimation', 'demo_snn_copy.pkl')
     mh = ModelHandle("model", path=model_path)
     mh2 = ModelHandle("model2", path=model_path)
     
@@ -136,14 +151,19 @@ def test_model_handle():
 
     assert model1 is model2
     assert model2 is model3
+
+    mh3 = ModelHandle("model3", path=model_path_copy, data=model1)
+    with mh3.open(mode='w') as fout:
+        pickle.dump(obj=mh3.data, file=fout, protocol=pickle.HIGHEST_PROTOCOL)
     
-    
+
 def test_flow_handle():
     DS = RailStage.data_store
     DS.clear()
     
     raildir = os.path.dirname(rail.__file__)
     flow_path = os.path.join(raildir, '..', 'examples', 'goldenspike', 'data', 'pretrained_flow.pkl')
+    flow_path_copy = os.path.join(raildir, '..', 'examples', 'goldenspike', 'data', 'pretrained_flow_copy.pkl')
     fh = FlowHandle("flow", path=flow_path)
     fh2 = FlowHandle("flow2", path=flow_path)
     
@@ -155,7 +175,11 @@ def test_flow_handle():
     assert flow1 is flow2
     assert flow2 is flow3
     
-    
+    fh3 = FlowHandle("flo3", path=flow_path_copy, data=flow1)
+    with pytest.raises(NotImplementedError) as errinfo:
+        fh3.open(mode='w')
+    fh3.write()
+
     
 def test_data_hdf5_iter():
 
