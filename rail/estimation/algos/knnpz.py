@@ -7,7 +7,6 @@ future update
 
 import numpy as np
 import copy
-import pickle
 
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import Estimator, Trainer
@@ -175,10 +174,6 @@ class KNearNeighPDF(Estimator):
 
     def open_model(self, **kwargs):
         Estimator.open_model(self, **kwargs)
-        #model = kwargs.get('model', None)
-        #with open(model, 'rb') as f:
-        #    self.model = pickle.load(f)
-        #self.config.model = self.model
         self.sigma = self.model['bestsig']
         self.numneigh = self.model['nneigh']
         self.kdtree = self.model['kdtree']

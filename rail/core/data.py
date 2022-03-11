@@ -269,7 +269,7 @@ class ModelHandle(DataHandle):
     def _open(cls, path, **kwargs):
         """Open and return the associated file
         """
-        kwcopy = kwargs.copy()        
+        kwcopy = kwargs.copy()
         if kwcopy.pop('mode', 'r') == 'w':
             return cls.model_factory.open(path, mode='wb', **kwcopy)
         return cls.model_factory.read(path, **kwargs)

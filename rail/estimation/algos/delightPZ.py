@@ -188,7 +188,7 @@ class delightPZ(Estimator):
        created that need to be cleaned up in the future
     """
     name = 'delightPZ'
-    inputs = [('input', TableHandle)]    
+    inputs = [('input', TableHandle)]
     config_options = Estimator.config_options.copy()
     config_options.update(dlght_redshiftMin=Param(float, 0.01, msg='min redshift'),
                           dlght_redshiftMax=Param(float, 3.01, msg='max redshift'),
