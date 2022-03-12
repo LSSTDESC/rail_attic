@@ -155,7 +155,7 @@ def test_model_handle():
     mh3 = ModelHandle("model3", path=model_path_copy, data=model1)
     with mh3.open(mode='w') as fout:
         pickle.dump(obj=mh3.data, file=fout, protocol=pickle.HIGHEST_PROTOCOL)
-    
+    os.remove(model_path_copy)
 
 def test_flow_handle():
     DS = RailStage.data_store
@@ -179,6 +179,7 @@ def test_flow_handle():
     with pytest.raises(NotImplementedError) as errinfo:
         fh3.open(mode='w')
     fh3.write()
+    os.remove(flow_path_copy)
 
     
 def test_data_hdf5_iter():
@@ -249,11 +250,15 @@ def test_data_store():
         DS.pq = DS['pq']
 
     assert repr(DS) 
-    DS.write_all()
-    DS.write_all(force=True)
 
     DS2 = DataStore(pq=DS.pq)
     assert isinstance(DS2.pq, DataHandle)
 
+    # pop the 'pq' data item to avoid overwriting file under git control
+    DS.pop('pq')
+    
+    DS.write_all()
+    DS.write_all(force=True)
+    
     os.remove(datapath_hdf5_copy)
     os.remove(datapath_pq_copy)

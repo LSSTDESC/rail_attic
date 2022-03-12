@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import copy
+import glob
 import pytest
 import yaml
 from rail.core.stage import RailStage
@@ -59,7 +60,12 @@ def one_algo(key, single_trainer, single_estimator, train_kwargs, estim_kwargs):
 
     if pz_3 is not None:
         os.remove(pz_3.get_output(pz_3.get_aliased_tag('output'), final_name=True))
-
+    model_file = estim_kwargs.get('model', 'None')
+    if model_file != 'None':
+        try:
+            os.remove(model_file)
+        except FileNotFoundError:
+            pass
     return estim.data, estim_2.data, estim_3.data
 
 
@@ -197,7 +203,17 @@ def test_delight():
     zb_expected = np.array([0.18, 0.01, -1., -1., 0.01, -1., -1., -1., 0.01, 0.01])
     assert np.isclose(results.ancil['zmode'], zb_expected, atol=0.03).all()
     assert np.isclose(results.ancil['zmode'], rerun_results.ancil['zmode']).all()
-
+    # get delight to clean up after itself
+    for pattern in ['rail/estimation/data/SED/ssp_*Myr_z008_fluxredshiftmod.txt',
+                    'rail/estimation/data/SED/*_B2004a_fluxredshiftmod.txt',
+                    'rail/estimation/data/FILTER/DC2LSST_*_gaussian_coefficients.txt',
+                    'examples/estimation/tmp/delight_data/galaxies*.txt',
+                    'parametersTest*.cfg']:
+        files = glob.glob(pattern)
+        for file_ in files:
+            os.remove(file_)
+    os.removedirs('examples/estimation/tmp/delight_data')
+    
 
 def test_KNearNeigh():
     def_bands = ['u', 'g', 'r', 'i', 'z', 'y']
