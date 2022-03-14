@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import sys
 import copy
 import glob
 import pytest
@@ -7,7 +8,11 @@ import yaml
 from rail.core.stage import RailStage
 from rail.core.data import DataStore, TableHandle
 from rail.estimation.algos import randomPZ, sklearn_nn, flexzboost, trainZ
-from rail.estimation.algos import bpz_lite, pzflow, knnpz, delightPZ
+try:
+    from rail.estimation.algos import delightPZ
+except ImportError:
+    pass
+from rail.estimation.algos import bpz_lite, pzflow, knnpz
 from pzflow import Flow
 
 traindata = 'tests/data/training_100gal.hdf5'
@@ -192,6 +197,8 @@ def test_train_pz():
     assert np.isclose(results.ancil['zmode'], rerun_results.ancil['zmode']).all()
 
 
+@pytest.mark.skipif('rail.estimation.algos.delightPZ' not in sys.modules,
+                    reason="delightPZ not installed!")
 def test_delight():
     with open("./tests/delightPZ.yaml", "r") as f:
         config_dict = yaml.safe_load(f)
