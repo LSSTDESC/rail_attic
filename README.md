@@ -18,7 +18,7 @@ Now to install RAIL, you need to:
 2. Change directories so that you are in the RAIL root directory.
 3. Run one of the following commands, depending on your use case:
 
-    - If you are not developing RAIL and just want to install the package for use in some other project, you can run the command `pip install .[all]`. This will download the entire RAIL package.
+    - If you are not developing RAIL and just want to install the package for use in some other project, you can run the command `pip install .[all]` (or `pip install '.[all]'` if you are using zsh, note the single quotes). This will download the entire RAIL package.
     - If you are installing RAIL on a Mac, as noted above the `delightPZ` estimator requires that your machine's `gcc` be set up to work with `openmp`. If you are installing on a Mac and do not plan on using `delightPZ`, then you can simply install RAIL with `pip install .[base]` rather than `pip install .[all]`, which will skip the Delight package.  If you are on a Mac and *do* expect to run `delightPZ`, then follow the instructions [here](https://github.com/LSSTDESC/Delight/blob/master/Mac_installation.md) to install Delight before running `pip install .[all]`.
 
 
