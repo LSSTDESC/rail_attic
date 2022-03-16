@@ -7,7 +7,7 @@ N (z) of the training set.
 
 import numpy as np
 from ceci.config import StageParameter as Param
-from rail.estimation.estimator import Estimator, Trainer
+from rail.estimation.estimator import Estimator, Informer
 import qp
 
 
@@ -22,19 +22,19 @@ class trainZmodel:
         self.zmode = zmode
 
 
-class Train_trainZ(Trainer):
+class Train_trainZ(Informer):
     """Train an Estimator which returns a global PDF for all galaxies
     """
 
     name = 'Train_trainZ'
-    config_options = Trainer.config_options.copy()
+    config_options = Informer.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
                           nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"))
 
 
     def __init__(self, args, comm=None):
-        Trainer.__init__(self, args, comm=comm)
+        Informer.__init__(self, args, comm=comm)
 
     def run(self):
         if self.config.hdf5_groupname:

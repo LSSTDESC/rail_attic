@@ -1,5 +1,5 @@
 """
-Abstract base classes defining redshift estimations Trainers and Estimators
+Abstract base classes defining redshift estimations Informers and Estimators
 """
 
 from rail.core.data import TableHandle, QPHandle, ModelHandle
@@ -77,7 +77,7 @@ class Estimator(RailStage):
         return self.get_handle('output')
 
 
-class Trainer(RailStage):
+class Informer(RailStage):
     """
     The base class for photo-z posterior estimates. inherit there will
     be a default loading of data (and write out of data?), but each code
@@ -88,14 +88,14 @@ class Trainer(RailStage):
     https://github.com/LSSTDESC/tomo_challenge
     """
 
-    name = 'Trainer'
+    name = 'Informer'
     config_options = RailStage.config_options.copy()
     config_options.update(hdf5_groupname=str, save_train=True)
     inputs = [('input', TableHandle)]
     outputs = [('model', ModelHandle)]
 
     def __init__(self, args, comm=None):
-        """Initialize Trainer that can train models for redshift estimation """
+        """Initialize Informer that can train models for redshift estimation """
         RailStage.__init__(self, args, comm=comm)
         self.model = None
 

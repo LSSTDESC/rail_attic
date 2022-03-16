@@ -15,7 +15,7 @@ Last update   : February 25th 2022
 import sys
 import numpy as np
 from ceci.config import StageParameter as Param
-from rail.estimation.estimator import Estimator, Trainer
+from rail.estimation.estimator import Estimator, Informer
 from rail.core.data import TableHandle
 
 import qp
@@ -57,13 +57,13 @@ logger = logging.getLogger(__name__)
 coloredlogs.install(level='DEBUG', logger=logger, fmt='%(asctime)s,%(msecs)03d %(programname)s %(name)s[%(process)d] %(levelname)s %(message)s')
 
 
-class TrainDelightPZ(Trainer):
+class TrainDelightPZ(Informer):
     """Train the Delight code, outputs are actually saved to files,
     which is fairly non-standard way currently
     """
     name = 'TrainDelightPZ'
     outputs = []
-    config_options = Trainer.config_options.copy()
+    config_options = Informer.config_options.copy()
     config_options.update(dlght_redshiftMin=Param(float, 0.01, msg='min redshift'),
                           dlght_redshiftMax=Param(float, 3.01, msg='max redshift'),
                           dlght_redshiftNumBinsGPpred=Param(int, 301, msg='num bins'),
@@ -114,8 +114,8 @@ class TrainDelightPZ(Trainer):
 
     def __init__(self, args, comm=None):
         """ Constructor
-        Do Trainer specific initialization, then check on bands """
-        Trainer.__init__(self, args, comm=comm)
+        Do Informer specific initialization, then check on bands """
+        Informer.__init__(self, args, comm=comm)
         # counter on the chunk validation dataset
         self.chunknum = 0
         self.delightparamfile = self.config['delightparamfile']

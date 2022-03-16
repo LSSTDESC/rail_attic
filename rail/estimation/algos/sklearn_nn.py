@@ -9,7 +9,7 @@ import numpy as np
 import sklearn.neural_network as sknn
 from sklearn.preprocessing import StandardScaler
 from ceci.config import StageParameter as Param
-from rail.estimation.estimator import Estimator, Trainer
+from rail.estimation.estimator import Estimator, Informer
 import string
 import qp
 
@@ -50,7 +50,7 @@ def regularize_data(data):
     return regularized_data
 
 
-class Train_SimpleNN(Trainer):
+class Train_SimpleNN(Informer):
     """
     Subclass to train a simple point estimate Neural Net photoz
     rather than actually predict PDF, for now just predict point zb
@@ -59,7 +59,7 @@ class Train_SimpleNN(Trainer):
     """
 
     name = 'Train_SimpleNN'
-    config_options = Trainer.config_options.copy()
+    config_options = Informer.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
                           nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
@@ -74,8 +74,8 @@ class Train_SimpleNN(Trainer):
 
     def __init__(self, args, comm=None):
         """ Constructor:
-        Do Trainer specific initialization """
-        Trainer.__init__(self, args, comm=comm)
+        Do Informer specific initialization """
+        Informer.__init__(self, args, comm=comm)
         if not all(c in string.ascii_letters for c in self.config.bands):
             raise ValueError("'bands' option should be letters only (no spaces or commas etc)")
 
