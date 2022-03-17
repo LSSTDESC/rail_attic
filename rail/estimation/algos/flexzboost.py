@@ -13,7 +13,7 @@ from flexcode.regression_models import XGBoost
 from flexcode.loss_functions import cde_loss
 # from numpy import inf
 from ceci.config import StageParameter as Param
-from rail.estimation.estimator import Estimator, Trainer
+from rail.estimation.estimator import Estimator, Informer
 import string
 
 def make_color_data(data_dict, bands):
@@ -54,11 +54,11 @@ def make_color_data(data_dict, bands):
 
 
 
-class Train_FZBoost(Trainer):
+class Train_FZBoost(Informer):
     """ Train a FZBoost Estimator
     """
     name = 'Train_FZBoost'
-    config_options = Trainer.config_options.copy()
+    config_options = Informer.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
                           nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
@@ -88,8 +88,8 @@ class Train_FZBoost(Trainer):
 
     def __init__(self, args, comm=None):
         """ Constructor
-        Do Trainer specific initialization, then check on bands """
-        Trainer.__init__(self, args, comm=comm)
+        Do Informer specific initialization, then check on bands """
+        Informer.__init__(self, args, comm=comm)
         if not all(c in string.ascii_letters for c in self.config.bands):
             raise ValueError("'bands' option should be letters only (no spaces or commas etc)")
 

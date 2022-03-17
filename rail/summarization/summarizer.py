@@ -1,5 +1,5 @@
 """
-Abstract base classes defining redshift estimations Trainers and Estimators
+Abstract base classes defining redshift estimations Informers and Estimators
 """
 from rail.core.data import QPHandle
 from rail.core.stage import RailStage

@@ -9,7 +9,7 @@ import numpy as np
 import copy
 
 from ceci.config import StageParameter as Param
-from rail.estimation.estimator import Estimator, Trainer
+from rail.estimation.estimator import Estimator, Informer
 
 from rail.evaluation.metrics.cdeloss import CDELoss
 from sklearn.neighbors import KDTree
@@ -51,11 +51,11 @@ def _makepdf(dists, ids, szs, sigma):
     return pdfs
 
 
-class Train_KNearNeighPDF(Trainer):
+class Train_KNearNeighPDF(Informer):
     """Train a KNN-based estimator
     """
     name = 'Train_KNearNeighPDF'
-    config_options = Trainer.config_options.copy()
+    config_options = Informer.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="min z"),
                           zmax=Param(float, 3.0, msg="max_z"),
                           nzbins=Param(int, 301, msg="num z bins"),
@@ -77,8 +77,8 @@ class Train_KNearNeighPDF(Trainer):
 
     def __init__(self, args, comm=None):
         """ Constructor
-        Do Trainer specific initialization, then check on bands """
-        Trainer.__init__(self, args, comm=comm)
+        Do Informer specific initialization, then check on bands """
+        Informer.__init__(self, args, comm=comm)
 
         usecols = self.config.column_names.copy()
         usecols.append(self.config.redshift_column_name)
