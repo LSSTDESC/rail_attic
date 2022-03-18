@@ -11,7 +11,7 @@ install_requires = [
 ]
 
 # dependencies for the Creation module
-creation_extras = ["pzflow"]
+creation_extras = ["pzflow>=2.0.7"]
 
 # dependencies required for all estimators in the Estimation module
 estimation_extras = [
