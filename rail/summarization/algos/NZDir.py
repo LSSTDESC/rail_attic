@@ -127,8 +127,6 @@ class NZDir(SZtoNZSummarizer):
                 weights=weights[i] * szweights,
             )
             hist_data.append(single_hist[0])
-            print(self.zgrid)
-            print(hist_data)
         # make the ensembles of the histograms
         qp_d = qp.Ensemble(qp.hist,
                            data=dict(bins=self.zgrid, pdfs=np.atleast_2d(hist_data)))
