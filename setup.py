@@ -6,11 +6,12 @@ install_requires = [
     "numpy",
     "pandas>=1.1",
     "tables-io",
+    "ceci",
     "qp @ git+https://github.com/LSSTDESC/qp",
 ]
 
 # dependencies for the Creation module
-creation_extras = ["pzflow"]
+creation_extras = ["pzflow>=2.0.7"]
 
 # dependencies required for all estimators in the Estimation module
 estimation_extras = [
@@ -25,14 +26,17 @@ estimation_codes = {
     "bpz": ["DESC_BPZ @ git+https://github.com/LSSTDESC/DESC_BPZ"],
     "flex": ["FlexCode[all]"],
     "NN": ["sklearn"],
-    "delightPZ": [
-        "coloredlogs",
-        "corner",
-        "cython",
-        "emcee",
-        "delight @ git+https://github.com/LSSTDESC/Delight.git@interfacerail",
-        ]
 }
+# dependencies for Delight, separate out because it can be a
+# pain to install on Mac due to dropped default openmp
+delight_extras = [
+    "coloredlogs",
+    "corner",
+    "cython",
+    "emcee",
+    "delight @ git+https://github.com/LSSTDESC/Delight",
+]
+
 
 # dependencies for the Evaluation module
 evaluation_extras = ["seaborn"]
@@ -44,10 +48,11 @@ extras_require["creation"] = creation_extras
 extras_require["estimation"] = estimation_extras + list(
     set(sum(estimation_codes.values(), []))
 )
+extras_require["delight"] = delight_extras
 for key, values in estimation_codes.items():
     extras_require[key] = estimation_extras + values
 extras_require["evaluation"] = evaluation_extras
-extras_require["all"] = extras_require["full"] = extras_require["Full"] = list(
+extras_require["base"] = list(
     set(
         (
             extras_require["creation"]
@@ -57,6 +62,15 @@ extras_require["all"] = extras_require["full"] = extras_require["Full"] = list(
     )
 )
 
+extras_require["all"] = extras_require["full"] = extras_require["Full"] = list(
+    set(
+        (
+            extras_require["base"]
+            + extras_require["delight"]
+        )
+    )
+)
+        
 # load the version number
 with open("rail/version.py") as f:
     __version__ = f.read().replace('"', "").split("=")[1]
@@ -68,7 +82,7 @@ setup(
     author="The LSST DESC PZ WG",
     author_email="aimalz@nyu.edu",
     packages=find_namespace_packages(),
-    package_dir={'rail': './rail','rail.estimation':'./rail/estimation','rail.estimation.algos': './rail/estimation/algos'},
+    package_dir={'rail': './rail', 'rail.estimation':'./rail/estimation', 'rail.estimation.algos': './rail/estimation/algos'},
     package_data={
         "": ["*.hdf5", "*.yaml", "*.sed", "*.res", "*.AB", "*.list", "*.columns"],
         "tests": ["*.hdf5", "*.yaml", "*.columns"],
@@ -89,6 +103,9 @@ setup(
         "Operating System :: OS Independent",
         "Programming Language :: Python",
     ],
+    entry_points={
+        'console_scripts':['rail=rail.main:main']
+    },
     install_requires=install_requires,
     extras_require=extras_require,
     python_requires=">=3.5",

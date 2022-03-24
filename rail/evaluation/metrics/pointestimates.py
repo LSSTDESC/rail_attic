@@ -1,7 +1,8 @@
 import numpy as np
 
+from .base import MetricEvaluator
 
-class PointStatsEz(object):
+class PointStatsEz(MetricEvaluator):
     """Copied from PZDC1paper repo. Adapted to remove the cut based on
     magnitude."""
 

@@ -1,7 +1,8 @@
+"""Degrader that applies a cut to given columns."""
+
 from numbers import Number
 
 import numpy as np
-import pandas as pd
 from rail.creation.degradation import Degrader
 
 
@@ -11,8 +12,21 @@ class QuantityCut(Degrader):
     Note if a galaxy fails any of the cuts on any one of its columns, that
     galaxy is removed from the sample.
     """
+    name = 'QuantityCut'
+    config_options = Degrader.config_options.copy()
+    config_options.update(cuts=dict)
 
-    def __init__(self, cuts: dict):
+    def __init__(self, args, comm=None):
+        """
+        Constructor
+
+        Does standard Degrader initialization and also gets defines the cuts to be applied
+        """
+        Degrader.__init__(self, args, comm=comm)
+        self.cuts = None
+        self.set_cuts(self.config['cuts'])
+
+    def set_cuts(self, cuts: dict):
         """
         Parameters
         ----------
@@ -28,11 +42,11 @@ class QuantityCut(Degrader):
         """
 
         # check that cuts is a dictionary
-        if not isinstance(cuts, dict):
+        if not isinstance(cuts, dict):  #pragma: no cover
             raise TypeError("cuts must be a dictionary.")
 
         # validate all the cuts and standardize format in dictionary
-        self.cuts = dict()
+        self.cuts = {}
         for quantity, cut in cuts.items():
             bad_cut_msg = (
                 f"Cut for {quantity} must be a number or an iterable of (min, max)"
@@ -43,7 +57,7 @@ class QuantityCut(Degrader):
             # else, if it's an iterable...
             elif hasattr(cut, "__iter__"):
                 # if the iterable is a string or dict, raise error
-                if isinstance(cut, str) or isinstance(cut, dict):
+                if isinstance(cut, (dict, str)):
                     raise TypeError(bad_cut_msg)
                 # if the length of the iterable isn't 2, raise error
                 if len(cut) != 2:
@@ -63,7 +77,17 @@ class QuantityCut(Degrader):
             else:
                 raise TypeError(bad_cut_msg)
 
-    def __call__(self, data: pd.DataFrame, seed: int = None) -> pd.DataFrame:
+    def run(self):
+        """ Run method
+
+        Applies cuts
+
+        Notes
+        -----
+        Get the input data from the data store under this stages 'input' tag
+        Puts the data into the data store under this stages 'output' tag
+        """
+        data = self.get_data('input')
 
         # get overlap of columns from data and columns on which to make cuts
         columns = set(self.cuts.keys()).intersection(data.columns)
@@ -75,9 +99,11 @@ class QuantityCut(Degrader):
         ]
         query = " & ".join(query)
 
-        return data.query(query)
+        out_data = data.query(query)
+        self.add_data('output', out_data)
 
     def __repr__(self):  # pragma: no cover
+        """ Pretty print this object """
         printMsg = "Degrader that applies the following cuts to a pandas DataFrame:\n"
         printMsg += "{column: (min, max), ...}\n"
         printMsg += self.cuts.__str__()

@@ -1,0 +1,22 @@
+config: pipe_example_config.yml
+inputs:
+  flow: /Users/echarles/software/vro/RAIL/rail/../examples/goldenspike/data/pretrained_flow.pkl
+log_dir: .
+modules: rail
+output_dir: .
+resume: false
+site:
+  max_threads: 2
+stages:
+- classname: FlowEngine
+  name: flow_engine_test
+  nprocess: 1
+- classname: LSSTErrorModel
+  name: lsst_error_model_test
+  nprocess: 1
+- classname: ColumnMapper
+  name: col_remapper_test
+  nprocess: 1
+- classname: TableConverter
+  name: table_conv_test
+  nprocess: 1

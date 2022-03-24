@@ -1,7 +1,11 @@
+import os
 import numpy as np
+from rail.core.stage import RailStage
+from rail.core.data import QPHandle, TableHandle
 from rail.evaluation.metrics.pit import PIT, PITOutRate, PITKS, PITCvM, PITAD
 from rail.evaluation.metrics.cdeloss import CDELoss
 import rail.evaluation.metrics.pointestimates as pe
+from rail.evaluation.evaluator import Evaluator
 import qp
 
 
@@ -79,3 +83,16 @@ def test_point_metrics():
 
     sig_mad = pe.PointSigmaMAD(zb, zspec).evaluate()
     assert np.isclose(sig_mad, SIGMAD)
+
+
+def test_evaluation_stage():
+
+    DS = RailStage.data_store
+    zgrid, zspec, pdf_ens, true_ez = construct_test_ensemble()
+    pdf = DS.add_data('pdf', pdf_ens, QPHandle)
+    truth_table = dict(redshift=true_ez)
+    truth = DS.add_data('truth', truth_table, TableHandle)
+    evaluator = Evaluator.make_stage(name='Eval')
+    evaluator.evaluate(pdf, truth)
+    
+    os.remove(evaluator.get_output(evaluator.get_aliased_tag('output'), final_name=True))
