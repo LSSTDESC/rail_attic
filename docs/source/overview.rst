@@ -48,8 +48,7 @@ Future extensions to creation/degredation could also be built using existing too
 
 The estimation module enables the automatic execution of arbitrary redshift estimation codes in a common computing environment.  Each photo-z method usually has both a `train` method that trains a model based on a dataset with known redshifts, and an `estimate` method that executes the particular estimation method.
 
-**Structure**: Wrapped codes can be found as submodules of `rail.estimation.algos`.
-Each must correspond to a config file in with any parameters the method needs, examples of which can be found in the `examples/configs` directory.
+**base design**: Estimators for for several popular codes `BPZ_lite` (a slimmed down version of the popular template-based BPZ code), `FlexZBoost`, and delight `Delight` are included in rail/estimation, as are an estimator `PZFlowPDF` that uses the same normalizing flow employed in the creation module, and `KNearNeighPDF` for a simple color-based nearest neighbor estimator.  The pathological `trainZ` estimator is also implemented.
 
 **Usage**: In the `example` directory, you can execute the estimation/RAIL_estimation_demo.ipynb notebook.  Estimation codes can also be run as ceci modules with variables stored in a yaml file.
 
