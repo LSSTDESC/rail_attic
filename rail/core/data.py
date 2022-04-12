@@ -9,7 +9,7 @@ from pzflow import Flow
 
 
 class DataHandle:
-    """Class to act as a handle for a bit of data.  Associated it with a file and
+    """Class to act as a handle for a bit of data.  Associating it with a file and
     providing tools to read & write it to that file
 
     Parameters
