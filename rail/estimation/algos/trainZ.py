@@ -84,7 +84,7 @@ class TrainZ(Estimator):
             test_data = self.get_data('input')[self.config.hdf5_groupname]
         else:  #pragma:  no cover
             test_data = self.get_data('input')
-        test_size = len(test_data['mag_i_lsst'])
+        test_size = len(test_data[self.mag_err_cols['i']])
         zmode = np.repeat(self.zmode, test_size)
         qp_d = qp.Ensemble(qp.interp,
                            data=dict(xvals=self.zgrid, yvals=np.tile(self.train_pdf, (test_size, 1))))
