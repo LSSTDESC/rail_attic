@@ -22,13 +22,13 @@ def make_color_data(data_dict, bands):
     --------
     input_data: `ndarray` array of imag and 5 colors
     """
-    input_data = data_dict['mag_i_lsst']
+    input_data = data_dict[self.mag_err_cols['i']]
     # make colors and append to input data
     for i in range(len(bands)-1):
         # replace the non-detect 99s with 28.0 just arbitrarily for now
-        band1 = data_dict[f'mag_{bands[i]}_lsst']
+        band1 = data_dict[self.mag_cols[bands[i]]]
         # band1err = data_dict[f'mag_err_{bands[i]}_lsst']
-        band2 = data_dict[f'mag_{bands[i+1]}_lsst']
+        band2 = data_dict[self.mag_cols[bands[i+1]]]
         # band2err = data_dict[f'mag_err_{bands[i+1]}_lsst']
         # for j,xx in enumerate(band1):
         #    if np.isclose(xx,99.,atol=.01):

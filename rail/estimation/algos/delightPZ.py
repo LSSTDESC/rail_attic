@@ -308,7 +308,7 @@ class delightPZ(Estimator):
         try:
             d = test_data['i_mag']
         except Exception:
-            d = test_data['mag_i_lsst']
+            d = test_data[self.mag_err_cols['i']]
 
         numzs = len(d)
 

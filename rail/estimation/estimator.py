@@ -19,7 +19,10 @@ class Estimator(RailStage):
 
     name = 'Estimator'
     config_options = RailStage.config_options.copy()
-    config_options.update(chunk_size=10000, hdf5_groupname=str)
+    config_options.update(chunk_size=10000, hdf5_groupname=str,
+                         mag_colname='mag_{}_lsst',
+                         mag_err_colname='mag_err_{}_lsst',
+                         redshift_colname='redshift')
     inputs = [('model', ModelHandle),
               ('input', TableHandle)]
     outputs = [('output', QPHandle)]
@@ -31,7 +34,16 @@ class Estimator(RailStage):
         if not isinstance(args, dict):  #pragma: no cover
             args = vars(args)
         self.open_model(**args)
+        self._make_mag_colname()
 
+    def _make_mag_colname(self):
+        
+        # This function specifies the column names of magnitudes and their errors
+        self.mag_cols = {b: self.config['mag_colname'].replace('{}', b) 
+                         for b in 'ugrizy'}
+        self.mag_err_cols = {b: self.config['mag_err_colname'].replace('{}', b) 
+                             for b in 'ugrizy'}
+        
     def open_model(self, **kwargs):
         """Load the model
 
