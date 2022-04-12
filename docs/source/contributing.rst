@@ -10,7 +10,7 @@ To contribute, isolate `an issue <https://github.com/LSSTDESC/RAIL/issues>`_ to 
 the issue's discussion page to let others know you're working on it. Then, make a branch with a name of the
 form `issue/#/brief-description` and do the work on the branch.
 
-When you're ready to merge your branch into the `master` branch,
+When you're ready to merge your branch into the `main` branch,
 `make a pull request <https://github.com/LSSTDESC/RAIL/compare>`_ and request that other collaborators review it.
 Once the changes have been approved, you can merge and squash the pull request.
 
