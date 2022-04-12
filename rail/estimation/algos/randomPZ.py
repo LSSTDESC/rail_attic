@@ -40,7 +40,7 @@ class RandomPZ(Estimator):
         try:
             d = test_data['i_mag']
         except Exception:
-            d = test_data['mag_i_lsst']
+            d = test_data[self.mag_err_cols['i']]
         numzs = len(d)
         zmode = np.round(np.random.uniform(0.0, self.config.rand_zmax, numzs), 3)
         widths = self.config.rand_width * (1.0 + zmode)
