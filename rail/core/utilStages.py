@@ -108,7 +108,7 @@ class RowSelector(RailStage):
 class TableConverter(RailStage):
     """Utility stage that converts tables from one format to anothe
 
-    FIXME, this is hardwired to confert parquet tables to Hdf5Tables. 
+    FIXME, this is hardwired to convert parquet tables to Hdf5Tables. 
     It would be nice to have more options here.
     """
     name = 'TableConverter'
