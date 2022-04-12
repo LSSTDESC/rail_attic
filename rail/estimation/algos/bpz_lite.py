@@ -154,11 +154,11 @@ class BPZ_lite(Estimator):
         zp_frac = e_mag2frac(np.array(self.config.zp_errors))
 
         # Only one set of mag errors
-        mag_errs = np.array([data[f'mag_err_{b}_lsst'] for b in bands]).T
+        mag_errs = np.array([data[self.mag_err_cols[b]] for b in self.config.bands]).T
 
         # But many sets of mags, for now
         # Group the magnitudes and errors into one big array
-        mags = np.array([data[f'mag_{b}_lsst'] for b in bands]).T
+        mags = np.array([data[self.mag_cols[b]] for b in self.config.bands]).T
 
         # Clip to min mag errors.
         # JZ: Changed the max value here to 20 as values in the lensfit
