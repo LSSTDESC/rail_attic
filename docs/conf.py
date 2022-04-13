@@ -161,8 +161,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'rail.tex', 'RAIL Documentation',
-     'railteam'),  # 'Manual'),
+    #(master_doc, 'rail.tex', 'RAIL Documentation',
+    # 'railteam', 'Manual'),
 ]
 
 
@@ -171,8 +171,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'RAIL', 'RAIL Documentation',
-     [author], 1)
+    #(master_doc, 'RAIL', 'RAIL Documentation',
+    # [author], 1)
 ]
 
 
@@ -182,9 +182,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'RAIL', 'RAIL Documentation',
-     author, 'RAIL', 'One line description of project.',
-     'Miscellaneous'),
+    #(master_doc, 'RAIL', 'RAIL Documentation',
+    # author, 'RAIL', 'One line description of project.',
+    # 'Miscellaneous'),
 ]
 
 
