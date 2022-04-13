@@ -7,6 +7,8 @@ RAIL's purpose is to be the infrastructure enabling the PZ WG Deliverables in [t
 RAIL differs from previous plans for PZ pipeline infrastructure in that it is broken into stages, each corresponding to a manageable unit of infrastructure advancement, a specific question to answer with that code, and a guaranteed publication opportunity.
 RAIL uses [qp](https://github.com/LSSTDESC/qp) as a back-end for handling univariate probability density functions (PDFs) such as photo-z posteriors or n(z) samples.
 
+A more detailed overview is available in the [Overview Section](https://lsstdescrail.readthedocs.io/en/latest/source/overview.html) of the RAIL Read The Docs page.
+
 ## Installation
 
 Installation instructions are available on the [Installation section](https://lsstdescrail.readthedocs.io/en/latest/source/installation.html) of the [RAIL Read The Docs page](https://lsstdescrail.readthedocs.io/en/latest/)
