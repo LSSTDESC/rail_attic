@@ -162,7 +162,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'rail.tex', 'RAIL Documentation',
-     'railteam', 'Manual'),
+     'railteam'),  # 'Manual'),
 ]
 
 
