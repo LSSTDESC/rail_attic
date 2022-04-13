@@ -20,8 +20,3 @@ tables
 DESC_BPZ@git+https://github.com/LSSTDESC/DESC_BPZ
 FlexCode
 h5py
-coloredlogs
-corner
-cython
-emcee
-delight@git+https://github.com/LSSTDESC/Delight
