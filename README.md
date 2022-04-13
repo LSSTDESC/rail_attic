@@ -9,7 +9,7 @@ RAIL uses [qp](https://github.com/LSSTDESC/qp) as a back-end for handling univar
 
 ## Installation
 
-Installation instructions are available on the [RAIL Read The Docs page](https://lsstdescrail.readthedocs.io/en/latest/)
+Installation instructions are available on the [Installation section](https://lsstdescrail.readthedocs.io/en/latest/source/installation.html) of the [RAIL Read The Docs page](https://lsstdescrail.readthedocs.io/en/latest/)
 
 ## Contributing
 
@@ -29,4 +29,4 @@ External contributors and DESC members wishing to use RAIL for non-DESC projects
 
 ### Citing specific codes within RAIL
 
-Several of the codes included within the RAIL framework, e.g. BPZ and Delight, are pre-existing codes that have been included in RAIL.  If you use those specific codes you should also cite the appropriate papers for each code used.  A list of such codes is included in the [Citing RAIL](https://lsstdescrail.readthedocs.io/en/latest/source/citing.html) section of the Read The Docs page.
+Several of the codes included within the RAIL framework, e.g. BPZ, Delight, and FlexZBoost, are pre-existing codes that have been included in RAIL.  If you use those specific codes you should also cite the appropriate papers for each code used.  A list of such codes is included in the [Citing RAIL](https://lsstdescrail.readthedocs.io/en/latest/source/citing.html) section of the Read The Docs page.
