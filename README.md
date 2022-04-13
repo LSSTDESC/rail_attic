@@ -26,3 +26,7 @@ This code, while public on GitHub, has not yet been released by DESC and is stil
 If you make use of the ideas or software here, please cite this repository https://github.com/LSSTDESC/RAIL. You are welcome to re-use the code, which is open source and available under terms consistent with our [LICENSE](https://github.com/LSSTDESC/RAIL/blob/main/LICENSE) [(BSD 3-Clause)](https://opensource.org/licenses/BSD-3-Clause).
 
 External contributors and DESC members wishing to use RAIL for non-DESC projects should consult with the Photometric Redshifts (PZ) Working Group conveners, ideally before the work has started, but definitely before any publication or posting of the work to the arXiv.
+
+### Citing specific codes within RAIL
+
+Several of the codes included within the RAIL framework, e.g. BPZ and Delight, are pre-existing codes that have been included in RAIL.  If you use those specific codes you should also cite the appropriate papers for each code used.  A list of such codes is included in the [Citing RAIL](https://lsstdescrail.readthedocs.io/en/latest/source/citing.html) section of the Read The Docs page.
