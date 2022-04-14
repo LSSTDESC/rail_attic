@@ -89,7 +89,7 @@ setup(
         "rail/estimation/data/SED": ["*.sed", "*.list"],
         "rail/estimation/data/FILTER": ["*.res"],
         "rail/estimation/data/AB": ["*.AB"],
-        "examples/goldenspike/data/":["*.pkl"],
+        "examples/goldenspike/data":["*.pkl"],
     },
     include_package_data=True,
     license="BSD 3-Clause License",
