@@ -25,9 +25,31 @@ import glob
 import qp
 import rail
 from ceci.config import StageParameter as Param
-from rail.estimation.estimator import Estimator
+from rail.estimation.estimator import Estimator, Informer
 from rail.core.data import TableHandle
 from desc_bpz.useful_py3 import get_str, get_data, match_resol
+
+
+class Train_BPZ_lite(Informer):
+    """Placeholder class for the eventual BPZ_lite inform stage
+    that we will write. for now just have it raise a
+    notImplemented error
+    """
+    name = 'Train_BPZ_lite'
+    config_options = Informer.config_options.copy()
+    config_options.update(zmin=Param(float, 0.0, msg="min z"),
+                          zmax=Param(float, 3.0, msg="max_z"),
+                          nzbins=Param(int, 301, msg="num z bins"))
+
+    def __init__(self, args, comm=None):
+        """Init function, init config stuff
+        """
+        Informer.__init__(self, args, comm=comm)
+
+    def run(self):
+        """Dummy function for now, just raise notImplemented
+        """
+        raise NotImplementedError("inform/train not yet implemented for BPZ, you can remove this stage from your pipeline") 
 
 
 class BPZ_lite(Estimator):

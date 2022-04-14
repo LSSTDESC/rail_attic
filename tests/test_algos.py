@@ -73,7 +73,6 @@ def one_algo(key, single_trainer, single_estimator, train_kwargs, estim_kwargs):
             pass
     return estim.data, estim_2.data, estim_3.data
 
-
 def test_random_pz():
     train_config_dict = {}
     estim_config_dict = {'rand_width': 0.025, 'rand_zmin': 0.0,
@@ -271,6 +270,14 @@ def test_catch_bad_bands():
     with pytest.raises(ValueError) as errinfo:
         sklearn_nn.SimpleNN.make_stage(hdf5_groupname='', **params)
 
+def test_dummy_bpz_train():
+    train_config_dict = {'zmin': 0.0, 'zmax': 3.0, 'dz': 0.01, 'hdf5_groupname':'photometry'}
+    train_algo = bpz_lite.Train_BPZ_lite
+    DS.clear()
+    training_data = DS.read_file('training_data', TableHandle, traindata)
+    train_stage = train_algo.make_stage(**train_config_dict)
+    with pytest.raises(NotImplementedError):
+        train_stage.inform(training_data)
 
 def test_bpz_lite():
     train_config_dict = {}    
@@ -297,7 +304,6 @@ def test_bpz_lite():
     results, rerun_results, rerun3_results = one_algo("BPZ_lite", train_algo, pz_algo, train_config_dict, estim_config_dict)
     assert np.isclose(results.ancil['zmode'], zb_expected).all()
     assert np.isclose(results.ancil['zmode'], rerun_results.ancil['zmode']).all()
-
 
 def test_bpz_lite_wkernel_flatprior():
     train_config_dict = {}
