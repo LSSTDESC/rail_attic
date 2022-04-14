@@ -35,9 +35,10 @@ copyright = '2019-2021, LSST DESC RAIL Contributors'
 author = 'LSST DESC RAIL Contributors'
 
 # The short X.Y version
-version = u'1.0'
+from rail import _version
+version = "%i.%i" % (_version.version_tuple[0], _version.version_tuple[1])
 # The full version, including alpha/beta/rc tags
-release = u'1.0'
+release = _version.version
 
 
 # -- General configuration ---------------------------------------------------
