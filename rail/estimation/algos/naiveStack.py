@@ -4,7 +4,7 @@ A summarizer that simple makes a histogram of a point estimate
 
 import numpy as np
 from ceci.config import StageParameter as Param
-from ..summarizer import PZtoNZSummarizer
+from rail.estimation.summarizer import PZtoNZSummarizer
 import qp
 
 class NaiveStack(PZtoNZSummarizer):
