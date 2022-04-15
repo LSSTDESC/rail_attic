@@ -9,11 +9,11 @@ from rail.core.stage import RailStage
 class Estimator(RailStage):
     """The base class for making photo-z posterior estimates.
 
-    Estimators use a generic "model", the details of which depends on the sub-class. 
+    Estimators use a generic "model", the details of which depends on the sub-class.
 
-    They take as "input" tabular data, apply the photo-z estimation and 
+    They take as "input" tabular data, apply the photo-z estimation and
     provide as "output" a QPEnsemble, with per-object p(z).
-    
+
     """
 
     name = 'Estimator'
@@ -36,14 +36,14 @@ class Estimator(RailStage):
 
         Keywords
         --------
-        model : `object`, `str` or `ModelHandle`   
-            Either an object with a trained model, 
+        model : `object`, `str` or `ModelHandle`
+            Either an object with a trained model,
             a path pointing to a file that can be read to obtain the trained model,
             or a `ModelHandle` providing access to the trained model.
 
         Returns
         -------
-        self.model : `object` 
+        self.model : `object`
             The object encapsulating the trained model.
         """
         model = kwargs.get('model', None)
@@ -63,15 +63,15 @@ class Estimator(RailStage):
     def estimate(self, input_data):
         """The main interface method for the photo-z estimation
 
-        This will attach the input_data to this `Estimator` 
+        This will attach the input_data to this `Estimator`
         (for introspection and provenance tracking).
-        
-        Then it will call the run() and finalize() methods, which need to 
-        be implemented by the sub-classes.  
-        
+
+        Then it will call the run() and finalize() methods, which need to
+        be implemented by the sub-classes.
+
         The run() method will need to register the data that it creates to this Estimator
         by using `self.add_data('output', output_data)`.
-        
+
         Finally, this will return a QPHandle providing access to that output data.
 
         Parameters
@@ -93,14 +93,14 @@ class Estimator(RailStage):
 class Informer(RailStage):
     """The base class for informing models used to make photo-z posterior estimates.
 
-    Estimators use a generic "model", the details of which depends on the sub-class. 
-    Most estimators will have associated Informer classes, which can be used to inform 
-    those models.  
+    Estimators use a generic "model", the details of which depends on the sub-class.
+    Most estimators will have associated Informer classes, which can be used to inform
+    those models.
 
     (Note, "Inform" is more generic than "Train" as it also applies to algorithms that
     are template-based rather than machine learning-based.)
 
-    Informer will produce as output a generic "model", the details of which depends on the sub-class. 
+    Informer will produce as output a generic "model", the details of which depends on the sub-class.
 
     They take as "input" tabular data, which is used to "inform" the model.
     """
@@ -119,22 +119,22 @@ class Informer(RailStage):
     def inform(self, training_data):
         """The main interface method for Informers
 
-        This will attach the input_data to this `Informer` 
+        This will attach the input_data to this `Informer`
         (for introspection and provenance tracking).
-        
-        Then it will call the run() and finalize() methods, which need to 
-        be implemented by the sub-classes.  
-        
+
+        Then it will call the run() and finalize() methods, which need to
+        be implemented by the sub-classes.
+
         The run() method will need to register the model that it creates to this Estimator
         by using `self.add_data('model', model)`.
-        
+
         Finally, this will return a ModelHandle providing access to the trained model.
 
         Parameters
         ----------
-        input_data : `dict` or `TableHandle` 
+        input_data : `dict` or `TableHandle`
             dictionary of all input data, or a `TableHandle` providing access to it
-  
+
         Returns
         -------
         model : ModelHandle

@@ -65,7 +65,7 @@ class RowSelector(RailStage):
     1. This operates on pandas dataframs in parquet files.
 
     2. In short, this does:
-    `output_data = input_data[self.config.start:self.config.stop]`  
+    `output_data = input_data[self.config.start:self.config.stop]`
 
     """
     name = 'RowSelector'
@@ -108,7 +108,7 @@ class RowSelector(RailStage):
 class TableConverter(RailStage):
     """Utility stage that converts tables from one format to anothe
 
-    FIXME, this is hardwired to convert parquet tables to Hdf5Tables. 
+    FIXME, this is hardwired to convert parquet tables to Hdf5Tables.
     It would be nice to have more options here.
     """
     name = 'TableConverter'
