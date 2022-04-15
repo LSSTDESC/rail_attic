@@ -4,7 +4,7 @@ A summarizer that simple makes a histogram of a point estimate
 
 import numpy as np
 from ceci.config import StageParameter as Param
-from rail.summarization.summarizer import PZtoNZSummarizer
+from ..summarizer import PZtoNZSummarizer
 import qp
 from scipy.special import digamma
 from scipy.stats import dirichlet
