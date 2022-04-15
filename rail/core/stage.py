@@ -12,39 +12,39 @@ class RailStage(PipelineStage):
 
     This inherits from `ceci.PipelineStage` and implements rail-specific data handling
     In particular, this provides some very useful features:
-    
-    1.  Access to the `DataStore`, which keeps track of the various data used in a pipeline, and 
+
+    1.  Access to the `DataStore`, which keeps track of the various data used in a pipeline, and
     provides access to each by a unique key.
 
     2.  Functionality to help manage multiple instances of a particular class of stage.
     The original ceci design didn't have a mechanism to handle this.  If you tried
-    you would run into name clashes between the different instances.  In `ceci` 1.7 we 
-    added functionality to `ceci` to allow you to have multiple instances of a single class, 
-    in particular we distinguish between the class name (`cls.name`) and and the name of 
+    you would run into name clashes between the different instances.  In `ceci` 1.7 we
+    added functionality to `ceci` to allow you to have multiple instances of a single class,
+    in particular we distinguish between the class name (`cls.name`) and and the name of
     the partiuclar instance (`self.instance_name`) and added aliasing for inputs and outputs,
-    so that different instances of `PipelineStage` would be able to give different names 
-    to their inputs and outputs.  However, using that functionality in a consistent way 
-    requires a bit of care.  So here we are providing methods to do that, and to do it in 
+    so that different instances of `PipelineStage` would be able to give different names
+    to their inputs and outputs.  However, using that functionality in a consistent way
+    requires a bit of care.  So here we are providing methods to do that, and to do it in
     a way that uses the `DataStore` to keep track of the various data products.
-    
+
     Notes
     -----
-    These methods typically take a tag as input (i.e., something like "input"), 
+    These methods typically take a tag as input (i.e., something like "input"),
     but use the "aliased_tag" (i.e., something like "inform_pz_input") when interacting
     with the DataStore.
-    
+
     In particular, the `get_handle()`, `get_data()` and `input_iterator()` will get the data
-    from the DataStore under the aliased tag.  E.g., if you call `self.get_data('input')` for 
-    a `Stage` that has aliased "input" to "special_pz_input", it will 
+    from the DataStore under the aliased tag.  E.g., if you call `self.get_data('input')` for
+    a `Stage` that has aliased "input" to "special_pz_input", it will
     get the data associated to "special_pz_input" in the DataStore.
 
-    Similarly, `add_handle()` and `set_data()` will add the data to the DataStore under the aliased tag 
+    Similarly, `add_handle()` and `set_data()` will add the data to the DataStore under the aliased tag
     e.g., if you call `self.set_data('input')` for a `Stage` that has
-    aliased "input" to "special_pz_input", it will store the data in the DataStore 
+    aliased "input" to "special_pz_input", it will store the data in the DataStore
     under the key "special_pz_input".
 
-    And `connect_input()` will do the alias lookup both on the input and output. 
-    I.e., it is the same as calling 
+    And `connect_input()` will do the alias lookup both on the input and output.
+    I.e., it is the same as calling
     `self.set_data(inputTag, other.get_handle(outputTag, allow_missing=True), do_read=False)`
     """
 
@@ -115,7 +115,7 @@ class RailStage(PipelineStage):
         Notes
         -----
         1. This gets the data via the DataHandle, and can and will read the data
-        from disk if needed. 
+        from disk if needed.
 
         Parameters
         ----------
@@ -139,18 +139,18 @@ class RailStage(PipelineStage):
 
         Notes
         -----
-        1. If data is a DataHandle and tag is one of the input tags, 
-        then this will add an alias between the two, i.e., it will 
+        1. If data is a DataHandle and tag is one of the input tags,
+        then this will add an alias between the two, i.e., it will
         set `self.config.alias[tag] = data.tag`.  This allows the user to
-        make connections between stages simply by passing DataHandles between 
-        them.  
+        make connections between stages simply by passing DataHandles between
+        them.
 
         Parameters
         ----------
         tag : str
             The tag (from cls.inputs or cls.outputs) for this data
         data : any
-            The data being set, 
+            The data being set,
         path : str or None
             Can be used to set the path for the data
         do_read : bool
