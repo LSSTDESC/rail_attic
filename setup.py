@@ -71,14 +71,10 @@ extras_require["all"] = extras_require["full"] = extras_require["Full"] = list(
     )
 )
         
-# load the version number
-with open("rail/version.py") as f:
-    __version__ = f.read().replace('"', "").split("=")[1]
 
 # setup the rail package!
 setup(
     name="rail",
-    version=__version__,
     author="The LSST DESC PZ WG",
     author_email="aimalz@nyu.edu",
     packages=find_namespace_packages(),
@@ -110,6 +106,7 @@ setup(
     install_requires=install_requires,
     extras_require=extras_require,
     python_requires=">=3.5",
-    setup_requires=["pytest-runner"],
+    setup_requires=["setuptools_scm", "pytest-runner"],
+    use_scm_version={"write_to":"rail/_version.py"},
     tests_require=["pytest"],
 )

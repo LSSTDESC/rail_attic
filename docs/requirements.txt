@@ -1,3 +1,4 @@
+setuptools_scm
 jupyter
 jupyterlab
 numpy
