@@ -14,7 +14,10 @@ import string
 import qp
 
 
-def make_color_data(data_dict, bands):
+def_filt = ['u', 'g', 'r', 'i', 'z', 'y']
+def_bands = [f"mag_{band}_lsst" for band in def_filt]
+
+def make_color_data(data_dict, bands, ref_band, nondet_val):
     """
     make a dataset consisting of the i-band mag and the five colors
 
@@ -22,13 +25,13 @@ def make_color_data(data_dict, bands):
     --------
     input_data: `ndarray` array of imag and 5 colors
     """
-    input_data = data_dict['mag_i_lsst']
+    input_data = data_dict[ref_band]
     # make colors and append to input data
     for i in range(len(bands)-1):
         # replace the non-detect 99s with 28.0 just arbitrarily for now
-        band1 = data_dict[f'mag_{bands[i]}_lsst']
+        band1 = data_dict[bands[i]]
         # band1err = data_dict[f'mag_err_{bands[i]}_lsst']
-        band2 = data_dict[f'mag_{bands[i+1]}_lsst']
+        band2 = data_dict[bands[i+1]]
         # band2err = data_dict[f'mag_err_{bands[i+1]}_lsst']
         # for j,xx in enumerate(band1):
         #    if np.isclose(xx,99.,atol=.01):
@@ -38,6 +41,12 @@ def make_color_data(data_dict, bands):
         #    if np.isclose(xx,99.,atol=0.01):
         #        band2[j] = band2err[j]
         #        band2err[j] = 1.0
+        for band in [band1, band2]:
+            if np.isnan(nondet_val):
+                nondetmask = np.isnan(band)
+            else:
+                nondetmask = np.isclose(band)
+            band[nondetmask] = 28.0    
         input_data = np.vstack((input_data, band1-band2))
     return input_data.T
 
@@ -64,7 +73,9 @@ class Train_SimpleNN(Informer):
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
                           nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
                           width=Param(float, 0.05, msg="The ad hoc base width of the PDFs"),
-                          bands=Param(str, 'ugrizy', msg="bands to use in estimation"),
+                          bands=Param(list, def_bands, msg="bands to use in estimation"),
+                          ref_band=Param(str, "mag_i_lsst", msg="reference magnitude"),
+                          nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
                           max_iter=Param(int, 500,
                                          msg="max number of iterations while "
                                          "training the neural net.  Too low a value will cause an "
@@ -76,8 +87,8 @@ class Train_SimpleNN(Informer):
         """ Constructor:
         Do Informer specific initialization """
         Informer.__init__(self, args, comm=comm)
-        if not all(c in string.ascii_letters for c in self.config.bands):
-            raise ValueError("'bands' option should be letters only (no spaces or commas etc)")
+        if self.config.ref_band not in self.config.bands:
+            raise ValueError("ref_band not present in bands list! ")
 
     def run(self):
         """Train the NN model
@@ -88,7 +99,8 @@ class Train_SimpleNN(Informer):
             training_data = self.get_data('input')
         speczs = training_data['redshift']
         print("stacking some data...")
-        color_data = make_color_data(training_data, self.config.bands)
+        color_data = make_color_data(training_data, self.config.bands,
+                                     self.config.ref_band, self.config.nondetect_val)
         input_data = regularize_data(color_data)
         simplenn = sknn.MLPRegressor(hidden_layer_sizes=(12, 12),
                                      activation='tanh', solver='lbfgs',
@@ -108,21 +120,23 @@ class SimpleNN(Estimator):
     name = 'SimpleNN'
     config_options = Estimator.config_options.copy()
     config_options.update(width=Param(float, 0.05, msg="The ad hoc base width of the PDFs"),
-                          bands=Param(str, 'ugrizy', msg="bands to use in estimation"))
+                          ref_band=Param(str, "mag_i_lsst", msg="reference magnitude"),
+                          bands=Param(list, def_bands, msg="bands to use in estimation"))
 
     def __init__(self, args, comm=None):
         """ Constructor:
         Do Estimator specific initialization """
         Estimator.__init__(self, args, comm=comm)
-        if not all(c in string.ascii_letters for c in self.config.bands):
-            raise ValueError("'bands' option should be letters only (no spaces or commas etc)")
+        if self.config.ref_band not in self.config.bands:
+            raise ValueError("ref_band is not in list of bands!")
 
     def run(self):
         if self.config.hdf5_groupname:
             test_data = self.get_data('input')[self.config.hdf5_groupname]
         else:  #pragma:  no cover
             test_data = self.get_data('input')
-        color_data = make_color_data(test_data, self.config.bands)
+        color_data = make_color_data(test_data, self.config.bands,
+                                     self.config.ref_band, self.config.nondetect_val)
         input_data = regularize_data(color_data)
         zmode = np.round(self.model.predict(input_data), 3)
         widths = self.config.width * (1.0+zmode)

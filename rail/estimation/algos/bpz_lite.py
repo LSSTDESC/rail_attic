@@ -29,6 +29,16 @@ from rail.estimation.estimator import Estimator
 from rail.core.data import TableHandle
 from desc_bpz.useful_py3 import get_str, get_data, match_resol
 
+def_bands = ['u', 'g', 'r', 'i', 'z', 'y']
+def_bandnames = [f"mag_{band}_lsst" for band in def_bands]
+def_errnames = [f"mag_err_{band}_lsst" for band in def_bands]
+def_maglims = dict(mag_u_lsst=27.79,
+                   mag_g_lsst=29.04,
+                   mag_r_lsst=29.06,
+                   mag_i_lsst=28.62,
+                   mag_z_lsst=27.98,
+                   mag_y_lsst=27.05)
+
 
 class BPZ_lite(Estimator):
     """Estimator subclass to implement basic marginalized PDF for BPZ
@@ -41,6 +51,11 @@ class BPZ_lite(Estimator):
                           zmax=Param(float, 3.0, msg="max z for grid"),
                           dz=Param(float, 0.01, msg="delta z in grid"),
                           nzbins=Param(int, 301, msg="# of bins in zgrid"),
+                          band_names=Param(list, def_bandnames,
+                                           msg="band names to be used, *ASSUMED TO BE IN INCREASING WL ORDER!*"),
+                          band_err_names=Param(list, def_errnames,
+                                               msg="band error column names to be used * ASSUMED TO BE IN INCREASING WL ORDER!*"),
+                          nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
                           data_path=Param(str, "None",
                                           msg="data_path (str): file path to the "
                                           "SED, FILTER, and AB directories.  If left to "
@@ -53,10 +68,8 @@ class BPZ_lite(Estimator):
                           madau_flag=Param(str, 'no',
                                            msg="set to 'yes' or 'no' to set whether to include intergalactic "
                                                "Madau reddening when constructing model fluxes"),
-                          bands=Param(str, 'ugrizy',
-                                      msg="the list of filter bands used by BPZ, e.g for LSST we would "
-                                          "use 'ugrizy'"),
-                          prior_band=Param(str, 'i',
+                          mag_limits=Param(dict, def_maglims, msg="1 sigma mag limits"),
+                          prior_band=Param(str, 'mag_i_lsst',
                                            msg="specifies which band the magnitude/type prior is trained in, e.g. 'i'"),
                           prior_file=Param(str, 'hdfn_gen',
                                            msg="prior_file (str): the file "
@@ -99,6 +112,11 @@ class BPZ_lite(Estimator):
                                     + " does not exist! Check value of "
                                     + "data_path in config file!")
 
+        # check on bands, errs, and prior band
+        if len(self.config.band_names) != len(self.config.band_err_names):
+            raise ValueError("Number of bands specified in band_names must be equal to number of mag errors specified in bad_err_names!")
+        if self.config.prior_band not in self.config.band_names:
+            raise ValueError("prior band not found in bands specified in band_names!")
         # load the template fluxes from the AB files
         self.flux_templates = self._load_templates()
 
@@ -144,21 +162,32 @@ class BPZ_lite(Estimator):
         new_file = f"{spectrum}.{filter_}.AB"
         print(f"  Generating new AB file {new_file}....")
         ABflux(spectrum, filter_, self.config.madau_flag)
-
+                
     def _preprocess_magnitudes(self, data):
         from desc_bpz.bpz_tools_py3 import e_mag2frac
 
-        bands = self.config.bands
-
+        bands = self.config.band_names
+        errs = self.config.band_err_names
+        
         # Load the magnitudes
         zp_frac = e_mag2frac(np.array(self.config.zp_errors))
 
-        # Only one set of mag errors
-        mag_errs = np.array([data[f'mag_err_{b}_lsst'] for b in bands]).T
 
-        # But many sets of mags, for now
+        # replace non-detects with 99 and mag_err with lim_mag for consistency
+        # with typical BPZ performance
+        for bandname, errname in zip(bands, errs):
+            if np.isnan(self.config.nondetect_val):
+                detmask = np.isnan(data[bandname])
+            else:
+                detmask = np.isclose(data[bandname], self.config.nondetect_val)
+            data[bandname][detmask] = 99.0
+            data[errname][detmask] = self.config.mag_limits[bandname]
+
+        # Only one set of mag errors
+        mag_errs = np.array([data[er] for er in errs]).T
+
         # Group the magnitudes and errors into one big array
-        mags = np.array([data[f'mag_{b}_lsst'] for b in bands]).T
+        mags = np.array([data[b] for b in bands]).T
 
         # Clip to min mag errors.
         # JZ: Changed the max value here to 20 as values in the lensfit
@@ -266,9 +295,12 @@ class BPZ_lite(Estimator):
             test_data = self.get_data('input')[self.config.hdf5_groupname]
         else:  #pragma:  no cover
             test_data = self.get_data('input')
+
+        # replace non-detects, traditional BPZ had nondet=99 and err = maglim
+        # put in that format here
         test_data = self._preprocess_magnitudes(test_data)
 
-        m_0_col = self.config.bands.index(self.config.prior_band)
+        m_0_col = self.config.band_names.index(self.config.prior_band)
 
         nz = len(self.zgrid)
         ng = test_data['mags'].shape[0]
