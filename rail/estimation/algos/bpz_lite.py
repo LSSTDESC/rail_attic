@@ -176,7 +176,7 @@ class BPZ_lite(Estimator):
         # replace non-detects with 99 and mag_err with lim_mag for consistency
         # with typical BPZ performance
         for bandname, errname in zip(bands, errs):
-            if np.isnan(self.config.nondetect_val):
+            if np.isnan(self.config.nondetect_val): # pragma: no cover
                 detmask = np.isnan(data[bandname])
             else:
                 detmask = np.isclose(data[bandname], self.config.nondetect_val)

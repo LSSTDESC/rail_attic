@@ -101,7 +101,7 @@ class Train_KNearNeighPDF(Informer):
         # replace nondetects
         # will fancy this up later with a flow to sample from truth
         for col in self.config.column_names:
-            if np.isnan(self.config.nondetect_val):
+            if np.isnan(self.config.nondetect_val): # pragma: no cover
                 knndf.loc[np.isnan(knndf[col]), col] = self.config.mag_limits[col]
             else:
                 knndf.loc[np.isclose(knndf[col], self.config.nondetect_val), col] = self.config.mag_limits[col]
@@ -200,7 +200,7 @@ class KNearNeighPDF(Estimator):
         # replace nondetects
         # will fancy this up later with a flow to sample from truth
         for col in self.config.column_names:
-            if np.isnan(self.config.nondetect_val):
+            if np.isnan(self.config.nondetect_val): # pragma: no cover
                 knn_df.loc[np.isnan(knn_df[col]), col] = self.config.mag_limits[col]
             else:
                 knn_df.loc[np.isclose(knn_df[col], self.config.nondetect_val), col] = self.config.mag_limits[col]
