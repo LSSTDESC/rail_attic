@@ -42,10 +42,10 @@ def make_color_data(data_dict, bands, ref_band, nondet_val):
         #        band2[j] = band2err[j]
         #        band2err[j] = 1.0
         for band in [band1, band2]:
-            if np.isnan(nondet_val):
+            if np.isnan(nondet_val): # pragma: no cover
                 nondetmask = np.isnan(band)
-            else:
-                nondetmask = np.isclose(band)
+            else: # pragma: no cover
+                nondetmask = np.isclose(band, nondet_val)
             band[nondetmask] = 28.0    
         input_data = np.vstack((input_data, band1-band2))
     return input_data.T
@@ -121,6 +121,7 @@ class SimpleNN(Estimator):
     config_options = Estimator.config_options.copy()
     config_options.update(width=Param(float, 0.05, msg="The ad hoc base width of the PDFs"),
                           ref_band=Param(str, "mag_i_lsst", msg="reference magnitude"),
+                          nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
                           bands=Param(list, def_bands, msg="bands to use in estimation"))
 
     def __init__(self, args, comm=None):
