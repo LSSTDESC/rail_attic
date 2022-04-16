@@ -66,6 +66,7 @@ class Train_KNearNeighPDF(Informer):
                           ref_column_name=Param(str, 'mag_i_lsst', msg="name for reference column"),
                           column_names=Param(list, refcols,
                                              msg="column names to be used in NN, *ASSUMED TO BE IN INCREASING WL ORDER!*"),
+                          nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
                           mag_limits=Param(dict, def_maglims, msg="1 sigma mag limits"),
                           sigma_grid_min=Param(float, 0.01, msg="minimum value of sigma for grid check"),
                           sigma_grid_max=Param(float, 0.075, msg="maximum value of sigma for grid check"),
@@ -100,7 +101,10 @@ class Train_KNearNeighPDF(Informer):
         # replace nondetects
         # will fancy this up later with a flow to sample from truth
         for col in self.config.column_names:
-            knndf.loc[np.isclose(knndf[col], 99.), col] = self.config.mag_limits[col]
+            if np.isnan(self.config.nondetect_val): # pragma: no cover
+                knndf.loc[np.isnan(knndf[col]), col] = self.config.mag_limits[col]
+            else:
+                knndf.loc[np.isclose(knndf[col], self.config.nondetect_val), col] = self.config.mag_limits[col]
 
         trainszs = np.array(input_df[self.config.redshift_column_name])
         colordata = _computecolordata(knndf, self.config.ref_column_name, self.config.column_names)
@@ -156,6 +160,7 @@ class KNearNeighPDF(Estimator):
                           column_names=Param(list, refcols,
                                              msg="column names to be used in NN, *ASSUMED TO BE IN INCREASING WL ORDER!*"),
                           ref_column_name=Param(str, 'mag_i_lsst', msg="name for reference column"),
+                          nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
                           mag_limits=Param(dict, def_maglims, msg="1 sigma mag limits"),
                           redshift_column_name=Param(str, 'redshift', msg="name of redshift column"))
 
@@ -193,8 +198,12 @@ class KNearNeighPDF(Estimator):
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
 
         # replace nondetects
+        # will fancy this up later with a flow to sample from truth
         for col in self.config.column_names:
-            knn_df.loc[np.isclose(knn_df[col], 99.), col] = self.config.mag_limits[col]
+            if np.isnan(self.config.nondetect_val): # pragma: no cover
+                knn_df.loc[np.isnan(knn_df[col]), col] = self.config.mag_limits[col]
+            else:
+                knn_df.loc[np.isclose(knn_df[col], self.config.nondetect_val), col] = self.config.mag_limits[col]
 
         testcolordata = _computecolordata(knn_df, self.config.ref_column_name, self.config.column_names)
         dists, idxs = self.kdtree.query(testcolordata, k=self.numneigh)
