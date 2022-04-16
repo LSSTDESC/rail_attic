@@ -6,5 +6,5 @@ def find_version():
 
 try:
     __version__ = find_version()
-except:
+except: # pragma: no cover
     __version__ = "unknown"
