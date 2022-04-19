@@ -4,7 +4,7 @@ Installation
 
 RAIL has multiple dependencies that are sensitive to out-of-date code versions, therefore it is strongly recommended that you create a new dedicated virtual environment for RAIL to avoid problems with pip/conda failing to update some packages that you have previously installed during installation of RAIL.  Due to changes in `scipy` array broadcasting with v1.8.0, we also strongly recommend using scipy >= 1.8.0, and note that scipy 1.8.0 requires python >= 3.8, and therefore recommend against using python versions of 3.7 or below.
 
-If you want to add the conda environment that you are about to create as a kernel that you can use in a Jupyter notebook, see below in the :ref: `Adding your kernel to jupyter` section.
+If you want to add the conda environment that you are about to create as a kernel that you can use in a Jupyter notebook, see the `Adding your kernel to jupyter` section further down on this page.
 
 | To create a conda environment named "[name-for-your-env]" that has a specific version of python (in this case 3.9) and pip, run the command:
 | `conda create -n [name-for-your-env] pip python=3.9`.
