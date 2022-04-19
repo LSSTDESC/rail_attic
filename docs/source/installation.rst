@@ -2,9 +2,14 @@
 Installation
 ************
 
-First, it is recommended that you create a new virtual environment for RAIL.
-For example, to create a conda environment named "rail" that has the latest version of python and pip, run the command `conda create -n rail pip`.
-You can then run the command `conda activate rail` to activate this environment.  We note that the particular estimator `Delight` is built with `Cython` and uses `openmp`.  Mac has dropped native support for `openmp`, which will likely cause problems when trying to run the `delightPZ` estimation code in RAIL.  See the notes below for instructions on installing Delight if you wish to use this particular estimator.
+RAIL has multiple dependencies that are sensitive to out-of-date code versions, therefore it is strongly recommended that you create a new dedicated virtual environment for RAIL to avoid problems with pip/conda failing to update some packages that you have previously installed during installation of RAIL.  Due to changes in `scipy` array broadcasting with v1.8.0, we also strongly recommend using scipy >= 1.8.0, and note that scipy 1.8.0 requires python >= 3.8, and therefore recommend against using python versions of 3.7 or below.
+
+If you want to add the conda environment that you are about to create as a kernel that you can use in a Jupyter notebook, see below in the :ref: `Adding your kernel to jupyter` section.
+
+To create a conda environment named "[name-for-your-env]" that has a specific version of python (in this case 3.9) and pip, run the command:
+`conda create -n [name-for-your-env] pip python=3.9`.
+Where you have replaced [name-for-your-env] with whatever name you wish to use, e.g. `rail`.
+You can then run the command `conda activate [name-for-your-env]` to activate this environment.  We are now ready to install RAIL.  Before we do that, though, we note that the particular estimator `Delight` is built with `Cython` and uses `openmp`.  Mac has dropped native support for `openmp`, which will likely cause problems when trying to run the `delightPZ` estimation code in RAIL.  See the notes below for instructions on installing Delight if you wish to use this particular estimator.
 
 Now to install RAIL, you need to:
 1. `Clone this repo <https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/cloning-a-repository-from-github/cloning-a-repository>`_ to your local workspace.
@@ -39,7 +44,15 @@ For bpz_lite:
 
 Once you have installed RAIL, you can import the package (via `import rail`) in any of your scripts and notebooks.
 For examples demonstrating how to use the different pieces, see the notebooks in the `examples/` directory.
-  
+
+
+Adding your kernel to jupyter
+========================
+If you want to use the kernel that you have just created to run RAIL example demos, then you may need to explicitly add an ipython kernel.  You may need to first install ipykernel with `conda install ipykernel`.  You can do then add your kernel with the following command, making sure that you have the conda environment that you wish to add activated.  From your environment, execute the command:
+`python -m ipykernel install --user --name [nametocallnewkernel]`
+(you may or may not need to prepend `sudo` depending on your permissions).  When you next start up Jupyter you should see a kernel with your new name as an option, including using the Jupyter interface at NERSC.
+
+
 Requirements
 ============
 
