@@ -5,7 +5,7 @@ name: rail
 
 on:
   push:
-    branches: [ main ]
+    branches: [ issue/161/testskip ]
   pull_request:
     branches: [ main ]
 
@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.8]
+        python-version: [3.7, 3.8, 3.9]
         mpi: [ openmpi ]
     steps:
     - uses: actions/checkout@v2
