@@ -16,7 +16,7 @@ from rail.estimation.algos import bpz_lite, pzflow, knnpz
 from pzflow import Flow
 import scipy
 sci_ver_str = scipy.__version__.split('.')
-sci_ver = int(sci_ver_str[0]) + 0.1 * int(sci_ver_str[1])
+
 
 traindata = 'tests/data/training_100gal.hdf5'
 validdata = 'tests/data/validation_10gal.hdf5'
@@ -225,7 +225,7 @@ def test_delight():
     os.removedirs('examples/estimation/tmp/delight_data')
 
 
-@pytest.mark.skipif(sci_ver < 1.79,
+@pytest.mark.skipif(int(sci_ver_str[0]) < 2 and int(sci_ver_str[1])<8,
                     reason="mixmod parameterization known to break for scipy<1.8 due to array broadcast change")
 def test_KNearNeigh():
     def_bands = ['u', 'g', 'r', 'i', 'z', 'y']
