@@ -46,7 +46,7 @@ def make_color_data(data_dict, bands, ref_band, nondet_val):
                 nondetmask = np.isnan(band)
             else: # pragma: no cover
                 nondetmask = np.isclose(band, nondet_val)
-            band[nondetmask] = 28.0    
+            band[nondetmask] = 28.0
         input_data = np.vstack((input_data, band1-band2))
     return input_data.T
 
@@ -59,7 +59,7 @@ def regularize_data(data):
     return regularized_data
 
 
-class Train_SimpleNN(Informer):
+class Inform_SimpleNN(Informer):
     """
     Subclass to train a simple point estimate Neural Net photoz
     rather than actually predict PDF, for now just predict point zb
@@ -67,7 +67,7 @@ class Train_SimpleNN(Informer):
     photo-z later.
     """
 
-    name = 'Train_SimpleNN'
+    name = 'Inform_SimpleNN'
     config_options = Informer.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),

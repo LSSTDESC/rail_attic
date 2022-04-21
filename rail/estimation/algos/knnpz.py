@@ -51,10 +51,10 @@ def _makepdf(dists, ids, szs, sigma):
     return pdfs
 
 
-class Train_KNearNeighPDF(Informer):
+class Inform_KNearNeighPDF(Informer):
     """Train a KNN-based estimator
     """
-    name = 'Train_KNearNeighPDF'
+    name = 'Inform_KNearNeighPDF'
     config_options = Informer.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="min z"),
                           zmax=Param(float, 3.0, msg="max_z"),

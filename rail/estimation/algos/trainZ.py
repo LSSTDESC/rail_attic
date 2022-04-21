@@ -22,11 +22,11 @@ class trainZmodel:
         self.zmode = zmode
 
 
-class Train_trainZ(Informer):
+class Inform_trainZ(Informer):
     """Train an Estimator which returns a global PDF for all galaxies
     """
 
-    name = 'Train_trainZ'
+    name = 'Inform_trainZ'
     config_options = Informer.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
