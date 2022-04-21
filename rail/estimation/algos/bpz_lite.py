@@ -60,7 +60,7 @@ class BPZ_lite(Estimator):
                                           msg="data_path (str): file path to the "
                                           "SED, FILTER, and AB directories.  If left to "
                                           "default `None` it will use the install "
-                                          "directory for rail + estimation/data"),
+                                          "directory for rail + ../examples/estimation/data"),
                           columns_file=Param(str, './examples/estimation/configs/test_bpz.columns',
                                              msg="name of the file specifying the columns"),
                           spectra_file=Param(str, 'SED/CWWSB4.list',
@@ -101,7 +101,7 @@ class BPZ_lite(Estimator):
         datapath = self.config['data_path']
         if datapath is None or datapath == "None":
             railpath = os.path.dirname(rail.__file__)
-            tmpdatapath = os.path.join(railpath, "estimation/data")
+            tmpdatapath = os.path.join(railpath, "../examples/estimation/data")
             os.environ["BPZDATAPATH"] = tmpdatapath
             self.data_path = tmpdatapath
         else:  #pragma: no cover
