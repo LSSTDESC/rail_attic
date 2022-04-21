@@ -9,7 +9,7 @@ Beyond comparison of codes, RAIL will be employed to generate photo-z catalogs u
 
 
 There are four aspects to the RAIL approach: creation, estimation, and evaluation for individual galaxy PDFs, and summarization of ensemble redshift distributions. 
-Each is defined by a minimal version that can be developed further as necessary.
+Each is defined by a minimal version that can be developed further as necessary.  Creation is subdivided into creation and degradation.  Estimation and summarization are, in some cases, closely related, and are both contained within an overarching estimation module.
 The purpose of each piece of infrastructure is outlined below.
 
 All redshift PDFs, for both individual galaxies, ensembles, and tomographic bin estimates, will be stored as `qp` Ensemble objects.
@@ -46,13 +46,13 @@ Future extensions to creation/degredation could also be built using existing too
 `estimation`
 ============
 
-The estimation module enables the automatic execution of arbitrary redshift estimation codes in a common computing environment.  Each photo-z method usually has both a `train` method that trains a model based on a dataset with known redshifts, and an `estimate` method that executes the particular estimation method.
+The estimation module enables the automatic execution of arbitrary redshift estimation codes in a common computing environment.  Each photo-z method usually has both a `train` method that trains a model based on a dataset with known redshifts, and an `estimate` method that executes the particular estimation method.  There are two types of quantities that RAIL can estimate: redshift PDFs for individual objects, and overall PDFs for ensembles of objects, one obvious use case being tomographic redshift bins for cosmological analyses.  Methods that estimate PDFs directly are referred to as Estimators, while those that take the PDF outputs of an Estimator and produce a summary PDF of the ensemble are referred to as Summarizers.  Summarizers should also have uncertainty estimates for their estimated redshift distributions.
 
-**base design**: Estimators for for several popular codes `BPZ_lite` (a slimmed down version of the popular template-based BPZ code), `FlexZBoost`, and delight `Delight` are included in rail/estimation, as are an estimator `PZFlowPDF` that uses the same normalizing flow employed in the creation module, and `KNearNeighPDF` for a simple color-based nearest neighbor estimator.  The pathological `trainZ` estimator is also implemented.
+**base design**: Estimators for for several popular codes `BPZ_lite` (a slimmed down version of the popular template-based BPZ code), `FlexZBoost`, and delight `Delight` are included in rail/estimation, as are an estimator `PZFlowPDF` that uses the same normalizing flow employed in the creation module, and `KNearNeighPDF` for a simple color-based nearest neighbor estimator.  The pathological `trainZ` estimator is also implemented.  Several very basic summarizers such as a histogram of point source estimates, the naive "stacking"/summing of PDFs, and a variational inference-based summarizer are also included in RAIL.
 
 **Usage**: In the `example` directory, you can execute the estimation/RAIL_estimation_demo.ipynb notebook.  Estimation codes can also be run as ceci modules with variables stored in a yaml file.
 
-**Immediate next steps**: Adding more wrapped estimator codes so that they can be compared.
+**Immediate next steps**: Adding more wrapped estimator codes so that they can be compared.  Add more wrapped summarizer codes so that they can be compared, including at least one spatial cross-correlation method and a SOM or tree-based method.
 
 `evaluation`
 ============
@@ -64,12 +64,3 @@ The evalution module contains metrics for assesing the performance of redshift e
 **Usage**: In the `example` directory, you can execute the evaluation/demo.ipynb jupyter notebook.
 
 **Future extensions**: Expansion of the library of available metrics.  An immediate extension would propagate estimated redshift posteriors to science-motivated metrics, and/or metrics related to computational requirements of the estimators. One could imagine this branch of more sophisticated metrics for DESC being called Dark Energy Redshift Assessment Infrastructure Layers (DERAIL).
-
-`summarization`
-===============
-
-The summarization module houses codes that estimate redshift distributions for large ensembles of galaxies, one prominent use case being tomographic redshift bins for cosmological analyses.  Some summarizers will operate on the PDFs from the estimation stage, while others may base their redshift inference on weighted spectroscopic samples (e.g. SOM or other color-space-based schemes) or spatial clustering (e.g. the-wizz or other "clustering-z" based summarizers).  Summarizers should also have uncertainty estimates for the redshift distributions.
-
-**Base design**:  The current summarizaation module includes very basic summarizers such as a histogram of point source estimates, the naive "stacking"/summing of PDFs, and a variational inference-based summarizer.
-
-**Immediate next steps**: Adding more wrapped summarizer codes so that they can be compared, including at least one spatial cross-correlation method.
