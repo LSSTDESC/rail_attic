@@ -207,7 +207,7 @@ def test_delight():
         config_dict = yaml.safe_load(f)
     config_dict['model_file'] = "None"
     config_dict['hdf5_groupname'] = 'photometry'
-    train_algo = delightPZ.TrainDelightPZ
+    train_algo = delightPZ.Inform_DelightPZ
     pz_algo = delightPZ.delightPZ
     results, rerun_results, rerun3_results = one_algo("Delight", train_algo, pz_algo, config_dict, config_dict)
     zb_expected = np.array([0.18, 0.01, -1., -1., 0.01, -1., -1., -1., 0.01, 0.01])
