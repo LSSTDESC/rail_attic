@@ -67,11 +67,12 @@ class NZDir(SZtoNZSummarizer):
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
         sz_mag_data = np.array([sz_data[band] for band in self.config.usecols]).T
         # assign weight vecs, if present, else set all to 1.0
-        if self.config.phot_weightcol in test_data.keys():
+        # tested in example notebook, so just put a pragma no cover for if present
+        if self.config.phot_weightcol in test_data.keys(): # pragma: no cover
             pweight = np.array(test_data[self.config.phot_weightcol])
         else:
             pweight = np.ones(len(test_data[self.config.usecols[0]]))
-        if self.config.szweightcol in sz_data.keys():
+        if self.config.szweightcol in sz_data.keys():  # pragma: no cover
             szweights = np.array(sz_data[self.config.szweightcol])
         else:
             szweights = np.ones(len(sz_data[self.config.usecols[0]]))
@@ -92,7 +93,7 @@ class NZDir(SZtoNZSummarizer):
             print("bincol not found! Perform single tomo bin measurement!")
             tomobinids = np.ones(len(test_data[self.config.usecols[0]]), dtype='int')
             test_data[self.config.bincol] = tomobinids
-        else:
+        else: # pragma: no cover 
             print(f"found bin IDs")
             tomobinids = test_data[self.config.bincol]
             print(tomobinids)
