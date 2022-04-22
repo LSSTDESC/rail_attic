@@ -4,7 +4,7 @@ Implement simple version of TxPipe NZDir summarizer
 
 import numpy as np
 from ceci.config import StageParameter as Param
-from rail.summarization.summarizer import SZtoNZSummarizer
+from rail.estimation.summarizer import SZtoNZSummarizer
 import qp
 from sklearn.neighbors import NearestNeighbors
 import scipy.spatial
