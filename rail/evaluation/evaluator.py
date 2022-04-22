@@ -17,7 +17,7 @@ from rail.evaluation.metrics.pointestimates import PointSigmaIQR, PointBias, Poi
 
 
 class Evaluator(RailStage):
-    """ Evalute the preformance of a photo-Z estimator """
+    """Evalute the preformance of a photo-Z estimator """
 
     name = 'Evaluator'
     config_options = RailStage.config_options.copy()
@@ -32,11 +32,20 @@ class Evaluator(RailStage):
     outputs = [('output', Hdf5Handle)]
 
     def __init__(self, args, comm=None):
-        """Initialize Degrader that can degrade photometric data"""
+        """Initialize Evaluator"""
         RailStage.__init__(self, args, comm=comm)
 
     def evaluate(self, data, truth):
         """Evaluate the performance of an estimator
+
+        This will attach the input data and truth to this `Evaluator`
+        (for introspection and provenance tracking).
+
+        Then it will call the run() and finalize() methods, which need to
+        be implemented by the sub-classes.
+
+        The run() method will need to register the data that it creates to this Estimator
+        by using `self.add_data('output', output_data)`.
 
         Parameters
         ----------

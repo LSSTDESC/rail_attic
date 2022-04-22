@@ -1,3 +1,4 @@
+setuptools_scm
 jupyter
 jupyterlab
 numpy
@@ -14,3 +15,9 @@ corner
 tables-io
 qp@git+https://github.com/LSSTDESC/qp
 pzflow
+ceci
+pyarrow
+tables
+DESC_BPZ@git+https://github.com/LSSTDESC/DESC_BPZ
+FlexCode
+h5py

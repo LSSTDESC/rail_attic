@@ -1,5 +1,10 @@
-# Store the version number here so that
-# 1. We can control the version number in one location
-# 2. It is accessible from the package (see __init__.py)
-# 3. We can access it from setup.py without loading rail.
-__version__ = "0.1.dev0"
+def find_version():
+    # setuptools_scm should install a
+    # file _version alongside this one.
+    from . import _version
+    return _version.version
+
+try:
+    __version__ = find_version()
+except: # pragma: no cover
+    __version__ = "unknown"

@@ -1,9 +1,9 @@
 config: examples/goldenspike/goldenspike_config.yml
 inputs:
   flow: examples/goldenspike/data/pretrained_flow.pkl
-log_dir: .
+log_dir: examples/goldenspike/logs
 modules: rail
-output_dir: .
+output_dir: examples/goldenspike/output
 resume: false
 site:
   name: local

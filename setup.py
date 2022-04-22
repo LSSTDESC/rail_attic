@@ -11,7 +11,7 @@ install_requires = [
 ]
 
 # dependencies for the Creation module
-creation_extras = ["pzflow"]
+creation_extras = ["pzflow>=2.0.7,<3.0.0"]
 
 # dependencies required for all estimators in the Estimation module
 estimation_extras = [
@@ -71,24 +71,21 @@ extras_require["all"] = extras_require["full"] = extras_require["Full"] = list(
     )
 )
         
-# load the version number
-with open("rail/version.py") as f:
-    __version__ = f.read().replace('"', "").split("=")[1]
 
 # setup the rail package!
 setup(
     name="rail",
-    version=__version__,
     author="The LSST DESC PZ WG",
     author_email="aimalz@nyu.edu",
     packages=find_namespace_packages(),
     package_dir={'rail': './rail', 'rail.estimation':'./rail/estimation', 'rail.estimation.algos': './rail/estimation/algos'},
     package_data={
-        "": ["*.hdf5", "*.yaml", "*.sed", "*.res", "*.AB", "*.list", "*.columns"],
+        "": ["*.hdf5", "*.yaml", "*.sed", "*.res", "*.AB", "*.list", "*.columns", "*.pkl"],
         "tests": ["*.hdf5", "*.yaml", "*.columns"],
         "rail/estimation/data/SED": ["*.sed", "*.list"],
         "rail/estimation/data/FILTER": ["*.res"],
         "rail/estimation/data/AB": ["*.AB"],
+        "examples/goldenspike/data":["*.pkl"],
     },
     include_package_data=True,
     license="BSD 3-Clause License",
@@ -109,6 +106,7 @@ setup(
     install_requires=install_requires,
     extras_require=extras_require,
     python_requires=">=3.5",
-    setup_requires=["pytest-runner"],
+    setup_requires=["setuptools_scm", "pytest-runner"],
+    use_scm_version={"write_to":"rail/_version.py"},
     tests_require=["pytest"],
 )

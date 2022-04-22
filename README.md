@@ -7,84 +7,28 @@ RAIL's purpose is to be the infrastructure enabling the PZ WG Deliverables in [t
 RAIL differs from previous plans for PZ pipeline infrastructure in that it is broken into stages, each corresponding to a manageable unit of infrastructure advancement, a specific question to answer with that code, and a guaranteed publication opportunity.
 RAIL uses [qp](https://github.com/LSSTDESC/qp) as a back-end for handling univariate probability density functions (PDFs) such as photo-z posteriors or n(z) samples.
 
+A more detailed overview is available in the [Overview Section](https://lsstdescrail.readthedocs.io/en/latest/source/overview.html) of the RAIL Read The Docs page.
+
 ## Installation
 
-First, it is recommended that you create a new virtual environment for RAIL.
-For example, to create a conda environment named "rail" that has the latest version of python and pip, run the command `conda create -n rail pip`.
-You can then run the command `conda activate rail` to activate this environment.  We note that the particular estimator `Delight` is built with `Cython` and uses `openmp`.  Mac has dropped native support for `openmp`, which will likely cause problems when trying to run the `delightPZ` estimation code in RAIL.  See the notes below for instructions on installing Delight if you wish to use this particular estimator.
-
-Now to install RAIL, you need to:
-1. [Clone this repo](https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/cloning-a-repository-from-github/cloning-a-repository) to your local workspace.
-2. Change directories so that you are in the RAIL root directory.
-3. Run one of the following commands, depending on your use case:
-
-    - If you are not developing RAIL and just want to install the package for use in some other project, you can run the command `pip install .[all]` (or `pip install '.[all]'` if you are using zsh, note the single quotes). This will download the entire RAIL package.
-    - If you are installing RAIL on a Mac, as noted above the `delightPZ` estimator requires that your machine's `gcc` be set up to work with `openmp`. If you are installing on a Mac and do not plan on using `delightPZ`, then you can simply install RAIL with `pip install .[base]` rather than `pip install .[all]`, which will skip the Delight package.  If you are on a Mac and *do* expect to run `delightPZ`, then follow the instructions [here](https://github.com/LSSTDESC/Delight/blob/master/Mac_installation.md) to install Delight before running `pip install .[all]`.
-
-
-    If you only want to install the dependencies for a specific piece of RAIL, you can change the install option. E.g. to install only the dependencies for the Creation Module or the Estimation Module, run `pip install .[creation]` or `pip install .[estimation]` respectively. For other install options, look at the keys for the `extras_require` dictionary at the top of `setup.py`.
-    - If you are developing RAIL, you should install with the `-e` flag, e.g. `pip install -e .[all]`. This means that any changes you make to the RAIL codebase will propagate to imports of RAIL in your scripts and notebooks.
-
-Note the Creation Module depends on pzflow, which has an optional GPU-compatible installation.
-For instructions, see the [pzflow Github repo](https://github.com/jfcrenshaw/pzflow/).
-
-On some systems that are slightly out of date, e.g. an older version of python's `setuptools`, there can be some problems installing packages hosted on GitHub rather than PyPi.  We recommend that you update your system; however, some users have still reported problems with installation of subpackages necessary for `FZBoost` and `bpz_lite`.  If this occurs, try the following procedure:
-
-If all of the estimation algorithms are listed as `not avaialble` there may have been a problem installing `qp`.  Try:
-- cd to a directory where you wish to clone qp and run `git clone https://github.com/LSSTDESC/qp.git`
-- cd to the qp directory and run `python setup.py install`
-- cd to the directory where you cloned RAIL, and reinstall with `pip install .[all]`, or `pip install '.[all]'` if using zsh
-
-For FZBoost:
-- install `xgboost` with the command `pip install xgboost==0.90.0`
-- install FlexCode with `pip install FlexCode[all]
-- ensure that you are in the directory where you cloned RAIL, and reinstall with `pip install .[all]`, or `pip install '.[all]'` if using zsh
-
-For bpz_lite:
-- cd to a directory where you wish to clone the DESC_BPZ package and run `git clone https://github.com/LSSTDESC/DESC_BPZ.git`
-- cd to the DESC_BPZ directory and run `python setup.py install` (add `--user` if you are on a shared system such as NERSC)
-- cd to the directory where you cloned RAIL, and reinstall with `pip install .[all]`, or `pip install '.[all]'` if using zsh
-
-Once you have installed RAIL, you can import the package (via `import rail`) in any of your scripts and notebooks.
-For examples demonstrating how to use the different pieces, see the notebooks in the `examples/` directory.
+Installation instructions are available on the [Installation section](https://lsstdescrail.readthedocs.io/en/latest/source/installation.html) of the [RAIL Read The Docs page](https://lsstdescrail.readthedocs.io/en/latest/)
 
 ## Contributing
 
-The RAIL repository uses an issue-branch-review workflow.
-When you identify something that should be done, [make an issue](https://github.com/LSSTDESC/RAIL/issues/new) for it.
-To contribute, isolate [an issue](https://github.com/LSSTDESC/RAIL/issues) to work on and leave a comment on the issue's discussion page to let others know you're working on it.
-Then, make a branch with a name of the form `issue/#/brief-description` and do the work on the branch.
-When you're ready to merge your branch into the `master` branch, [make a pull request](https://github.com/LSSTDESC/RAIL/compare) and request that other collaborators review it.
-Once the changes have been approved, you can merge and squash the pull request.
-
-## Immediate Plans
-
-An outline of the baseline RAIL is illustrated [here](https://docs.google.com/drawings/d/1or8xyBqLkpc_4_Cr-ROSA3F7fBm3RMRnRzytorw_FYM/edit?usp=sharing).
-1. _Golden Spike_: Build the basic infrastructure for controlled experiments of forward-modeled photo-z posteriors
-- [X] a `rail.creation` subpackage that can generate true photo-z posteriors and mock photometry
-- [X] an `rail.estimation` subpackage with a superclass for photo-z posterior estimation routines and at least one subclass template example implementing the trainZ (experimental control) algorithm
-- [X] a `rail.evaluation` subpackage that calculates at least the metrics from the [PZ DC1 Paper](https://github.com/LSSTDESC/PZDC1paper) for estimated photo-z posteriors relative to the true photo-z posteriors
-- [ ] documented scripts that demonstrate the use of RAIL in a DC1-like experiment on NERSC
-- [ ] sufficient documentation for a v1.0 release
-- [ ] an LSST-DESC Note presenting the RAIL infrastructure
-2. _RAILroad_: Quantify the impact of nonrepresentativity (imbalance and incompleteness) of a training set on estimated photo-z posteriors by multiple machine learning methods
-- [ ] parameter specifications for degrading an existing `Creator` to make an imperfect prior of the form of nonrepresentativity into the observed photometry
-- [ ] at least two `Estimator` wrapped machine learning-based codes for estimating photo-z posteriors
-- [ ] additional `Evaluator` metrics with feed-through access to the [qp](https://github.com/LSSTDESC/qp) metrics
-- [ ] end-to-end documented scripts that demonstrate a blinded experiment on NERSC
-- [ ] an LSST-DESC paper presenting the results of the experiment
+If interested in contributing to `RAIL` see the [Contributing section](https://lsstdescrail.readthedocs.io/en/latest/source/contributing.html) of the RAIL Read The Docs page.
 
 ## Future Plans
 
-RAIL's design aims to break up the PZ WG's pipeline responsibilities into smaller milestones that can be accomplished by individuals or small groups on short timescales, i.e. under a year.
-The next stages of RAIL development (tentative project codenames subject to change) are intended to be paper-able projects each of which addresses one or more SRM Deliverables by incrementally advancing the code along the way to project completion.
-They are scoped such that any can be executed in any order or even simultaneously.
-* _RAILyard_: Assess the performance of template-fitting codes by extending the creation subpackage to forward model templates
-* _RAIL network_: Assess the performance of clustering-redshift methods by extending the creation subpackage to forward model positions
-* _Off the RAILs_: Investigate the effects of erroneous spectroscopic redshifts (or uncertain narrow-band photo-zs) in a training set by extending the creation subpackage's imperfect prior model
-* _Third RAIL_: Investigate the effects of imperfect deblending on estimated photo-z posteriors by extending the creation subpackage to forward model the effect of imperfect deblending
-* _RAIL gauge_: Investigate the impact of measurement errors (PSF, aperture photometry, flux calibration, etc.) on estimated photo-z posteriors by including their effects in the the forward model of the creation subpackage
-* _DERAIL_: Investigate the impact of imperfect photo-z posterior estimation on a probe-specific (e.g. 3x2pt) cosmological parameter constraint by connecting the estimation subpackage to other DESC pipelines
-* _RAIL line_: Assess the sensitivity of estimated photo-z posteriors to photometry impacted by emission lines by extending the creation subpackage's forward model
+Potential extensions of the RAIL package are summarized in the [Future Plans section](https://lsstdescrail.readthedocs.io/en/latest/source/futureplans.html) of the RAIL Read The Docs page.
 
-Informal library of fun train-themed names for future projects/pipelines built with RAIL: _monoRAIL_, _tRAILblazer_, _tRAILmix_, _tRAILer_, _Holy gRAIL_
+## Citing RAIL
+
+This code, while public on GitHub, has not yet been released by DESC and is still under active development. Our release of v1.0 will be accompanied by a journal paper describing the development and validation of RAIL.
+
+If you make use of the ideas or software here, please cite this repository https://github.com/LSSTDESC/RAIL. You are welcome to re-use the code, which is open source and available under terms consistent with our [LICENSE](https://github.com/LSSTDESC/RAIL/blob/main/LICENSE) [(BSD 3-Clause)](https://opensource.org/licenses/BSD-3-Clause).
+
+External contributors and DESC members wishing to use RAIL for non-DESC projects should consult with the Photometric Redshifts (PZ) Working Group conveners, ideally before the work has started, but definitely before any publication or posting of the work to the arXiv.
+
+### Citing specific codes within RAIL
+
+Several of the codes included within the RAIL framework, e.g. BPZ, Delight, and FlexZBoost, are pre-existing codes that have been included in RAIL.  If you use those specific codes you should also cite the appropriate papers for each code used.  A list of such codes is included in the [Citing RAIL](https://lsstdescrail.readthedocs.io/en/latest/source/citing.html) section of the Read The Docs page.

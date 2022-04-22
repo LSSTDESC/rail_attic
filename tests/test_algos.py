@@ -14,6 +14,9 @@ except ImportError:
     pass
 from rail.estimation.algos import bpz_lite, pzflow, knnpz
 from pzflow import Flow
+import scipy
+sci_ver_str = scipy.__version__.split('.')
+
 
 traindata = 'tests/data/training_100gal.hdf5'
 validdata = 'tests/data/validation_10gal.hdf5'
@@ -220,8 +223,10 @@ def test_delight():
         for file_ in files:
             os.remove(file_)
     os.removedirs('examples/estimation/tmp/delight_data')
-    
 
+
+@pytest.mark.skipif(int(sci_ver_str[0]) < 2 and int(sci_ver_str[1])<8,
+                    reason="mixmod parameterization known to break for scipy<1.8 due to array broadcast change")
 def test_KNearNeigh():
     def_bands = ['u', 'g', 'r', 'i', 'z', 'y']
     refcols = [f"mag_{band}_lsst" for band in def_bands]
@@ -282,7 +287,7 @@ def test_bpz_lite():
                          'spectra_file': "SED/CWWSB4.list",
                          'madau_flag': 'no',
                          'bands': 'ugrizy',
-                         'prior_band': 'i',
+                         'prior_band': 'mag_i_lsst',
                          'prior_file': 'hdfn_gen',
                          'p_min': 0.005,
                          'gauss_kernel': 0.0,
@@ -309,7 +314,7 @@ def test_bpz_lite_wkernel_flatprior():
                          'spectra_file': "SED/CWWSB4.list",
                          'madau_flag': 'no',
                          'bands': 'ugrizy',
-                         'prior_band': 'i',
+                         'prior_band': 'mag_i_lsst',
                          'prior_file': 'flat',
                          'p_min': 0.005,
                          'gauss_kernel': 0.1,
