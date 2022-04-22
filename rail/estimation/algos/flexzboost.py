@@ -209,14 +209,19 @@ class FZBoost(Estimator):
 
     def run(self):
         if self.config.hdf5_groupname:
-            test_data = self.get_data('input')[self.config.hdf5_groupname]
+            iterator = self.input_iterator('input')
         else:  #pragma:  no cover
             test_data = self.get_data('input')
-        color_data = make_color_data(test_data, self.config.bands, self.config.err_bands,
-                                     self.config.ref_band, self.config.nondetect_val)
-        pdfs, z_grid = self.model.predict(color_data, n_grid=self.config.nzbins)
-        self.zgrid = np.array(z_grid).flatten()
-        qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=pdfs))
-        zmode = qp_dstn.mode(grid=self.zgrid)
-        qp_dstn.set_ancil(dict(zmode=zmode))
-        self.add_data('output', qp_dstn)
+        for s, e, test_data in iterator:
+            print(f"Process {self.rank} estimating PZ PDF for rows {s:,} - {e:,}")
+            color_data = make_color_data(test_data, self.config.bands, self.config.err_bands,
+                                         self.config.ref_band, self.config.nondetect_val)
+            pdfs, z_grid = self.model.predict(color_data, n_grid=self.config.nzbins)
+            self.zgrid = np.array(z_grid).flatten()
+            qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=pdfs))
+            zmode = qp_dstn.mode(grid=self.zgrid)
+            qp_dstn.set_ancil(dict(zmode=zmode))
+            suffix = '_tmp_estimation.pickle'
+            self.save_chunk(qp_dstn, s, suffix)
+        self.output_chunks(suffix)
+

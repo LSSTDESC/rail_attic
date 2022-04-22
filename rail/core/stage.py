@@ -6,6 +6,8 @@ from ceci import PipelineStage
 
 from rail.core.data import DATA_STORE, DataHandle
 
+import pickle
+from math import ceil
 
 class RailStage(PipelineStage):
     """Base class for rail stages
@@ -212,11 +214,39 @@ class RailStage(PipelineStage):
         --------
         These will be passed to the Handle's iterator method
         """
-        handle = self.get_handle(tag)
+        handle = self.get_handle(tag, allow_missing=True)
+        if not handle.has_data:
+            handle.read()
+        self.input_lenght = handle.size(groupname=self.config.hdf5_groupname)
         kwcopy = dict(groupname=self.config.hdf5_groupname,
-                      chunk_size=self.config.chunk_size)
+                      chunk_size=self.config.chunk_size,
+                      rank=self.rank,
+                      parallel_size=self.size)
         kwcopy.update(**kwargs)
         return handle.iterator(**kwcopy)
+        
+    def save_chunk(self, data_chunk, s, suffix):
+        with open(str(s) + '_' + str(self.config.chunk_size) + suffix, 'wb') as pickle_handle:
+            pickle.dump(data_chunk, pickle_handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    def output_chunks(self, suffix):
+        if self.comm is not None:
+            self.comm.Barrier()
+        if self.rank == 0:
+            first = True
+            starts = range(ceil(self.input_lenght/self.config.chunk_size))
+            for start in starts:
+                file_name = str(start*self.config.chunk_size) + '_' + str(self.config.chunk_size) + suffix
+                with open(file_name, 'rb') as chunk_handle:
+                    b = pickle.load(chunk_handle)
+                    if first:
+                        output_ensemble = b
+                        first = False
+                    else:
+                        output_ensemble.append(b)
+            self.add_data('output', output_ensemble)
+        if self.comm is not None:
+            self.comm.Barrier()
 
     def connect_input(self, other, inputTag=None, outputTag=None):
         """Connect another stage to this stage as an input

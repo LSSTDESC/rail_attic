@@ -96,6 +96,9 @@ class DataHandle:
         #        yield i, -1, self.data
         return self._iterator(self.path, **kwargs)
 
+    def size(self, **kwargs):
+        return self._size(self.path, **kwargs)
+
     @classmethod
     def _iterator(cls, path, **kwargs):
         raise NotImplementedError("DataHandle._iterator")  #pragma: no cover
@@ -166,10 +169,13 @@ class TableHandle(DataHandle):
         return tables_io.write(data, path, **kwargs)
 
     @classmethod
+    def _size(cls, path, **kwargs):
+        return tables_io.io.getInputDataLengthHdf5(path, **kwargs)
+
+    @classmethod
     def _iterator(cls, path, **kwargs):
         """Iterate over the data"""
         return tables_io.iteratorNative(path, **kwargs)
-
 
 class Hdf5Handle(TableHandle):
     """DataHandle for a table written to HDF5"""
