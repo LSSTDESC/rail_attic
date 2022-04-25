@@ -1,4 +1,4 @@
-Inform_"""
+"""
 
 RAIL interface class to Delight
 
