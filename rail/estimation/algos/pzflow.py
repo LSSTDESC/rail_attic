@@ -67,10 +67,10 @@ def_errornames=dict(mag_err_u_lsst="mag_u_lsst_err",
                     mag_err_y_lsst="mag_y_lsst_err")
 
 
-class Train_PZFlowPDF(Informer):
+class Inform_PZFlowPDF(Informer):
     """ Subclass to train a pzflow-based estimator
     """
-    name = 'Train_PZFlowPdf'
+    name = 'Inform_PZFlowPdf'
     outputs = [('model', FlowHandle)]
     config_options = Informer.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="min z"),

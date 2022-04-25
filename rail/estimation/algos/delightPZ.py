@@ -57,7 +57,7 @@ logger = logging.getLogger(__name__)
 coloredlogs.install(level='DEBUG', logger=logger, fmt='%(asctime)s,%(msecs)03d %(programname)s %(name)s[%(process)d] %(levelname)s %(message)s')
 
 
-class TrainDelightPZ(Informer):
+class Inform_DelightPZ(Informer):
     """Train the Delight code, outputs are actually saved to files,
     which is fairly non-standard way currently
     """

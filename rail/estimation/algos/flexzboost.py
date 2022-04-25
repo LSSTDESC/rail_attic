@@ -79,10 +79,10 @@ def make_color_data(data_dict, bands, err_bands, ref_band, nondetect_val):
 
 
 
-class Train_FZBoost(Informer):
+class Inform_FZBoost(Informer):
     """ Train a FZBoost Estimator
     """
-    name = 'Train_FZBoost'
+    name = 'Inform_FZBoost'
     config_options = Informer.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
