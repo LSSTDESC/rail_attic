@@ -39,31 +39,3 @@ class PZtoNZSummarizer(RailStage):
         self.run()
         self.finalize()
         return self.get_handle('output')
-
-
-class SZtoNZSummarizer(RailStage):
-    """
-    Base clasee to go from a set of training spec-z galaxies to ensemble NZ estimate
-    """
-
-    name = 'SZtoNZSummarizer'
-    config_options = RailStage.config_options.copy()
-    config_options.update(chunk_size=10000)
-    inputs = [('input', TableHandle),
-              ('sz_data', TableHandle)]
-    outputs = [('output', QPHandle)]
-
-    def __init__(self, args, comm=None):
-        """Initialize the estimator for spec-z data"""
-        RailStage.__init__(self, args, comm=comm)
-
-    def summarize(self, input_data, sz_data):
-        """
-        Specifics to be handled in individual subclass
-        just load tabular data
-        """
-        self.set_data('input', input_data)
-        self.set_data('sz_data', sz_data)
-        self.run()
-        self.finalize()
-        return self.get_handle('output')
