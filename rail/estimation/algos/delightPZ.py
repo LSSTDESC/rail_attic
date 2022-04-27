@@ -61,7 +61,7 @@ class Inform_DelightPZ(CatInformer):
     """Train the Delight code, outputs are actually saved to files,
     which is fairly non-standard way currently
     """
-    name = 'TrainDelightPZ'
+    name = 'Inform_DelightPZ'
     outputs = []
     config_options = CatInformer.config_options.copy()
     config_options.update(dlght_redshiftMin=Param(float, 0.01, msg='min redshift'),
@@ -122,6 +122,21 @@ class Inform_DelightPZ(CatInformer):
 
         np.random.seed(87)
 
+        
+    def inform(self, training_data):
+        """Override the inform method because Delight doesn't have a model to return
+
+        Parameters
+        ----------
+        input_data : `dict` or `TableHandle`
+            dictionary of all input data, or a `TableHandle` providing access to it
+
+        """
+        self.set_data('input', training_data)
+        self.run()
+        self.finalize()
+        
+        
     def run(self):
         """Do all the annoying file IO stuff to ascii in current delight
            Then run delightApply to train the gauss. process

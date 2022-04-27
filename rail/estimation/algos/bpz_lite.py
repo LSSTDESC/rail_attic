@@ -54,7 +54,7 @@ class Inform_BPZ_lite(CatInformer):
     def __init__(self, args, comm=None):
         """Init function, init config stuff
         """
-        Informer.__init__(self, args, comm=comm)
+        CatInformer.__init__(self, args, comm=comm)
 
     def run(self):
         """Dummy function for now, just raise notImplemented
