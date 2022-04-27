@@ -15,7 +15,7 @@ Last update   : February 25th 2022
 import sys
 import numpy as np
 from ceci.config import StageParameter as Param
-from rail.estimation.estimator import Estimator, Informer
+from rail.estimation.estimator import CatEstimator, CatInformer
 from rail.core.data import TableHandle
 
 import qp
@@ -57,13 +57,13 @@ logger = logging.getLogger(__name__)
 coloredlogs.install(level='DEBUG', logger=logger, fmt='%(asctime)s,%(msecs)03d %(programname)s %(name)s[%(process)d] %(levelname)s %(message)s')
 
 
-class Inform_DelightPZ(Informer):
+class Inform_DelightPZ(CatInformer):
     """Train the Delight code, outputs are actually saved to files,
     which is fairly non-standard way currently
     """
     name = 'TrainDelightPZ'
     outputs = []
-    config_options = Informer.config_options.copy()
+    config_options = CatInformer.config_options.copy()
     config_options.update(dlght_redshiftMin=Param(float, 0.01, msg='min redshift'),
                           dlght_redshiftMax=Param(float, 3.01, msg='max redshift'),
                           dlght_redshiftNumBinsGPpred=Param(int, 301, msg='num bins'),
@@ -114,8 +114,8 @@ class Inform_DelightPZ(Informer):
 
     def __init__(self, args, comm=None):
         """ Constructor
-        Do Informer specific initialization, then check on bands """
-        Informer.__init__(self, args, comm=comm)
+        Do CatInformer specific initialization, then check on bands """
+        CatInformer.__init__(self, args, comm=comm)
         # counter on the chunk validation dataset
         self.chunknum = 0
         self.delightparamfile = self.config['delightparamfile']
@@ -182,14 +182,14 @@ class Inform_DelightPZ(Informer):
         delightLearn(self.delightparamfile)
 
 
-class delightPZ(Estimator):
+class delightPZ(CatEstimator):
     """Run the delight scripts from the LSSTDESC fork of Delight
        Still has the ascii writeout stuff, so intermediate files are
        created that need to be cleaned up in the future
     """
     name = 'delightPZ'
     inputs = [('input', TableHandle)]
-    config_options = Estimator.config_options.copy()
+    config_options = CatEstimator.config_options.copy()
     config_options.update(dlght_redshiftMin=Param(float, 0.01, msg='min redshift'),
                           dlght_redshiftMax=Param(float, 3.01, msg='max redshift'),
                           dlght_redshiftNumBinsGPpred=Param(int, 301, msg='num bins'),
@@ -238,8 +238,8 @@ class delightPZ(Estimator):
 
     def __init__(self, args, comm=None):
         """ Constructor:
-        Do Estimator specific initialization """
-        Estimator.__init__(self, args, comm=comm)
+        Do CatEstimator specific initialization """
+        CatEstimator.__init__(self, args, comm=comm)
         self.delightparamfile = self.config['delightparamfile']
         self.chunknum = 0
         self.delightindata = self.config['dlght_inputdata']

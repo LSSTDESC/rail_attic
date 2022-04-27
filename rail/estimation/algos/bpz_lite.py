@@ -25,7 +25,7 @@ import glob
 import qp
 import rail
 from ceci.config import StageParameter as Param
-from rail.estimation.estimator import Estimator
+from rail.estimation.estimator import CatEstimator
 from rail.core.data import TableHandle
 from desc_bpz.useful_py3 import get_str, get_data, match_resol
 
@@ -40,13 +40,13 @@ def_maglims = dict(mag_u_lsst=27.79,
                    mag_y_lsst=27.05)
 
 
-class BPZ_lite(Estimator):
-    """Estimator subclass to implement basic marginalized PDF for BPZ
+class BPZ_lite(CatEstimator):
+    """CatEstimator subclass to implement basic marginalized PDF for BPZ
     """
 
     inputs = [('input', TableHandle)]
 
-    config_options = Estimator.config_options.copy()
+    config_options = CatEstimator.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="min z for grid"),
                           zmax=Param(float, 3.0, msg="max z for grid"),
                           dz=Param(float, 0.01, msg="delta z in grid"),
@@ -94,9 +94,9 @@ class BPZ_lite(Estimator):
                                             "large chi^2 for very very bright objects"))
 
     def __init__(self, args, comm=None):
-        """Constructor, build the Estimator, then do BPZ specific setup
+        """Constructor, build the CatEstimator, then do BPZ specific setup
         """
-        Estimator.__init__(self, args, comm=comm)
+        CatEstimator.__init__(self, args, comm=comm)
 
         datapath = self.config['data_path']
         if datapath is None or datapath == "None":
@@ -162,13 +162,13 @@ class BPZ_lite(Estimator):
         new_file = f"{spectrum}.{filter_}.AB"
         print(f"  Generating new AB file {new_file}....")
         ABflux(spectrum, filter_, self.config.madau_flag)
-                
+
     def _preprocess_magnitudes(self, data):
         from desc_bpz.bpz_tools_py3 import e_mag2frac
 
         bands = self.config.band_names
         errs = self.config.band_err_names
-        
+
         # Load the magnitudes
         zp_frac = e_mag2frac(np.array(self.config.zp_errors))
 
