@@ -13,12 +13,11 @@ from flexcode.regression_models import XGBoost
 from flexcode.loss_functions import cde_loss
 # from numpy import inf
 from ceci.config import StageParameter as Param
-from rail.estimation.estimator import Estimator, Informer
-import string
+from rail.estimation.estimator import CatEstimator, CatInformer
 
 def_filt = ['u', 'g', 'r', 'i', 'z', 'y']
 def_bands = [f"mag_{band}_lsst" for band in def_filt]
-err_bands = [f"mag_err_{band}_lsst" for band in def_filt]
+def_err_bands = [f"mag_err_{band}_lsst" for band in def_filt]
 def_maglims = dict(mag_u_lsst=27.79,
                    mag_g_lsst=29.04,
                    mag_r_lsst=29.06,
@@ -79,11 +78,11 @@ def make_color_data(data_dict, bands, err_bands, ref_band, nondetect_val):
 
 
 
-class Inform_FZBoost(Informer):
-    """ Train a FZBoost Estimator
+class Inform_FZBoost(CatInformer):
+    """ Train a FZBoost CatEstimator
     """
     name = 'Inform_FZBoost'
-    config_options = Informer.config_options.copy()
+    config_options = CatInformer.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
                           nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
@@ -106,7 +105,7 @@ class Inform_FZBoost(Informer):
                           max_basis=Param(int, 35, msg="maximum number of basis funcitons to use in density estimate"),
                           basis_system=Param(str, 'cosine', msg="type of basis sytem to use with flexcode"),
                           bands=Param(list, def_bands, msg="bands to use in estimation"),
-                          err_bands=Param(list, err_bands, msg="error column names to use in estimation"),
+                          err_bands=Param(list, def_err_bands, msg="error column names to use in estimation"),
                           ref_band=Param(str, "mag_i_lsst", msg="band to use in addition to colors"),
                           regression_params=Param(dict, {'max_depth': 8, 'objective': 'reg:squarederror'},
                                                   msg="dictionary of options passed to flexcode, includes "
@@ -116,8 +115,8 @@ class Inform_FZBoost(Informer):
 
     def __init__(self, args, comm=None):
         """ Constructor
-        Do Informer specific initialization, then check on bands """
-        Informer.__init__(self, args, comm=comm)
+        Do CatInformer specific initialization, then check on bands """
+        CatInformer.__init__(self, args, comm=comm)
         if self.config.ref_band not in self.config.bands:
             raise ValueError("ref_band not present in bands list! ")
 
@@ -188,21 +187,21 @@ class Inform_FZBoost(Informer):
         self.add_data('model', self.model)
 
 
-class FZBoost(Estimator):
-    """FZBoost-based Estimator
+class FZBoost(CatEstimator):
+    """FZBoost-based CatEstimator
     """
     name = 'FZBoost'
-    config_options = Estimator.config_options.copy()
+    config_options = CatEstimator.config_options.copy()
     config_options.update(nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
                           nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
                           bands=Param(list, def_bands, msg="bands to use in estimation"),
-                          err_bands=Param(list, err_bands, msg="error column names to use in estimation"),
+                          err_bands=Param(list, def_err_bands, msg="error column names to use in estimation"),
                           ref_band=Param(str, "mag_i_lsst", msg="band to use in addition to colors"))
 
     def __init__(self, args, comm=None):
         """ Constructor:
-        Do Estimator specific initialization """
-        Estimator.__init__(self, args, comm=comm)
+        Do CatEstimator specific initialization """
+        CatEstimator.__init__(self, args, comm=comm)
         if self.config.ref_band not in self.config.bands:
             raise ValueError("ref_band not present in bands list! ")
         self.zgrid = None
