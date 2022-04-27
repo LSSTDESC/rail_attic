@@ -6,7 +6,7 @@ from rail.core.stage import RailStage
 
 
 
-class CatSummarizer(RailStage):
+class CatSummarizer(RailStage):  #pragma: no cover
     """The base class for classes that go from catalog-like tables
     to ensemble NZ estimates.
 
@@ -108,7 +108,7 @@ class PZSummarizer(RailStage):
 
 
 
-class PzInformer(RailStage):
+class PzInformer(RailStage):  #pragma: no cover
     """The base class for informing models used to summarize photo-z posterior estimates
     from ensembles of p(z) distributions.
 
