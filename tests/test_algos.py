@@ -277,7 +277,7 @@ def test_catch_bad_bands():
 
 def test_dummy_bpz_train():
     train_config_dict = {'zmin': 0.0, 'zmax': 3.0, 'dz': 0.01, 'hdf5_groupname':'photometry'}
-    train_algo = bpz_lite.Train_BPZ_lite
+    train_algo = bpz_lite.Inform_BPZ_lite
     DS.clear()
     training_data = DS.read_file('training_data', TableHandle, traindata)
     train_stage = train_algo.make_stage(**train_config_dict)
