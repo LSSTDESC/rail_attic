@@ -25,7 +25,7 @@ import glob
 import qp
 import rail
 from ceci.config import StageParameter as Param
-from rail.estimation.estimator import CatEstimator
+from rail.estimation.estimator import CatEstimator, CatInformer
 from rail.core.data import TableHandle
 from desc_bpz.useful_py3 import get_str, get_data, match_resol
 
@@ -38,6 +38,28 @@ def_maglims = dict(mag_u_lsst=27.79,
                    mag_i_lsst=28.62,
                    mag_z_lsst=27.98,
                    mag_y_lsst=27.05)
+
+
+class Inform_BPZ_lite(CatInformer):
+    """Placeholder class for the eventual BPZ_lite inform stage
+    that we will write. for now just have it raise a
+    notImplemented error
+    """
+    name = 'Inform_BPZ_lite'
+    config_options = CatInformer.config_options.copy()
+    config_options.update(zmin=Param(float, 0.0, msg="min z"),
+                          zmax=Param(float, 3.0, msg="max_z"),
+                          nzbins=Param(int, 301, msg="num z bins"))
+
+    def __init__(self, args, comm=None):
+        """Init function, init config stuff
+        """
+        Informer.__init__(self, args, comm=comm)
+
+    def run(self):
+        """Dummy function for now, just raise notImplemented
+        """
+        raise NotImplementedError("inform/train not yet implemented for BPZ, you can remove this stage from your pipeline") 
 
 
 class BPZ_lite(CatEstimator):
