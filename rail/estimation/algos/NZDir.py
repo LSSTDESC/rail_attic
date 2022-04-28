@@ -4,14 +4,14 @@ Implement simple version of TxPipe NZDir summarizer
 
 import numpy as np
 from ceci.config import StageParameter as Param
-from rail.estimation.estimator import Estimator, Informer
+from rail.estimation.estimator import CatEstimator, CatInformer
 import qp
 from sklearn.neighbors import NearestNeighbors
 import scipy.spatial
 import pandas as pd
 
 
-class Inform_NZDir(Informer):
+class Inform_NZDir(CatInformer):
     """Quick implementation of an NZ Estimator that
     creates weights for each input
     object using sklearn's NearestNeighbors.
@@ -30,7 +30,7 @@ class Inform_NZDir(Informer):
     default_usecols = [f"mag_{band}_lsst" for band in bands]
 
     name = 'Inform_NZDir'
-    config_options = Informer.config_options.copy()
+    config_options = CatInformer.config_options.copy()
     config_options.update(usecols=Param(list, default_usecols, msg="columns from sz_date for Neighor calculation"),
                           n_neigh=Param(int, 10, msg="number of neighbors to use"),
                           kalgo=Param(str, "kd_tree", msg="Neighbor algorithm to use"),
@@ -43,7 +43,7 @@ class Inform_NZDir(Informer):
     def __init__(self, args, comm=None):
         """ Constructor:
         Do Informer specific initialization """
-        Informer.__init__(self, args, comm=comm)
+        CatInformer.__init__(self, args, comm=comm)
 
     def run(self):
         if self.config.hdf5_groupname:
@@ -72,7 +72,7 @@ class Inform_NZDir(Informer):
         self.add_data('model', self.model)
 
 
-class NZDir(Estimator):
+class NZDir(CatEstimator):
     """Quick implementation of a summarizer that creates
     weights for each input object using sklearn's
     NearestNeighbors.  Very basic, we can probably
@@ -95,7 +95,7 @@ class NZDir(Estimator):
     default_usecols = [f"mag_{band}_lsst" for band in bands]
 
     name = 'NZDir'
-    config_options = Estimator.config_options.copy()
+    config_options = CatEstimator.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
                           nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
@@ -112,10 +112,10 @@ class NZDir(Estimator):
         self.szusecols = None
         self.szweights = None
         self.sz_mag_data = None
-        Estimator.__init__(self, args, comm=comm)
+        CatEstimator.__init__(self, args, comm=comm)
 
     def open_model(self, **kwargs):
-        Estimator.open_model(self, **kwargs)
+        CatEstimator.open_model(self, **kwargs)
         self.distances = self.model['distances']
         self.szusecols = self.model['szusecols']
         self.szweights = self.model['szweights']

@@ -1,6 +1,4 @@
-import numpy as np
 import os
-import copy
 from rail.core.stage import RailStage
 from rail.core.data import TableHandle
 from rail.estimation.algos import NZDir
@@ -22,7 +20,7 @@ def one_algo(key, inform_class, estimator_class, summary_kwargs):
     informer = inform_class.make_stage(name=f"inform_{key}", model="tmp.pkl")
     informer.inform(spec_data)
     estimatorr = estimator_class.make_stage(name=key, model=informer.get_handle('model'), **summary_kwargs)
-    summary_ens = estimatorr.estimate(phot_data)                  
+    summary_ens = estimatorr.estimate(phot_data)
     os.remove(estimatorr.get_output(estimatorr.get_aliased_tag('output'), final_name=True))
     os.remove("tmp.pkl")
     return summary_ens
@@ -32,4 +30,4 @@ def test_NZDir():
     summary_config_dict = {}
     inform_class = NZDir.Inform_NZDir
     estimator_class = NZDir.NZDir
-    results = one_algo("NZDir", inform_class, estimator_class, summary_config_dict)
+    _ = one_algo("NZDir", inform_class, estimator_class, summary_config_dict)
