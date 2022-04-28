@@ -9,7 +9,7 @@ import numpy as np
 import copy
 
 from ceci.config import StageParameter as Param
-from rail.estimation.estimator import Estimator, Informer
+from rail.estimation.estimator import CatEstimator, CatInformer
 
 from rail.evaluation.metrics.cdeloss import CDELoss
 from sklearn.neighbors import KDTree
@@ -51,11 +51,11 @@ def _makepdf(dists, ids, szs, sigma):
     return pdfs
 
 
-class Train_KNearNeighPDF(Informer):
+class Inform_KNearNeighPDF(CatInformer):
     """Train a KNN-based estimator
     """
-    name = 'Train_KNearNeighPDF'
-    config_options = Informer.config_options.copy()
+    name = 'Inform_KNearNeighPDF'
+    config_options = CatInformer.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="min z"),
                           zmax=Param(float, 3.0, msg="max_z"),
                           nzbins=Param(int, 301, msg="num z bins"),
@@ -78,8 +78,8 @@ class Train_KNearNeighPDF(Informer):
 
     def __init__(self, args, comm=None):
         """ Constructor
-        Do Informer specific initialization, then check on bands """
-        Informer.__init__(self, args, comm=comm)
+        Do CatInformer specific initialization, then check on bands """
+        CatInformer.__init__(self, args, comm=comm)
 
         usecols = self.config.column_names.copy()
         usecols.append(self.config.redshift_column_name)
@@ -149,11 +149,11 @@ class Train_KNearNeighPDF(Informer):
 
 
 
-class KNearNeighPDF(Estimator):
+class KNearNeighPDF(CatEstimator):
     """KNN-based estimator
     """
     name = 'KNearNeighPDF'
-    config_options = Estimator.config_options.copy()
+    config_options = CatEstimator.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="min z"),
                           zmax=Param(float, 3.0, msg="max_z"),
                           nzbins=Param(int, 301, msg="num z bins"),
@@ -172,13 +172,13 @@ class KNearNeighPDF(Estimator):
         self.model = None
         self.trainszs = None
         self.zgrid = None
-        Estimator.__init__(self, args, comm=comm)
+        CatEstimator.__init__(self, args, comm=comm)
         usecols = self.config.column_names.copy()
         usecols.append(self.config.redshift_column_name)
         self.usecols = usecols
 
     def open_model(self, **kwargs):
-        Estimator.open_model(self, **kwargs)
+        CatEstimator.open_model(self, **kwargs)
         self.sigma = self.model['bestsig']
         self.numneigh = self.model['nneigh']
         self.kdtree = self.model['kdtree']
