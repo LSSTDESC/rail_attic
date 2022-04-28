@@ -5,7 +5,7 @@ name: rail
 
 on:
   push:
-    branches: [ u/sschmidt23/nzdir ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
