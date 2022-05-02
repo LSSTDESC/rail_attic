@@ -163,12 +163,21 @@ class HSCSelection(Degrader):
         """
 
         data = self.get_data('input')
-
-        i_mag = data['i'].to_numpy()
+        
+        #first, add colors to data
         g_mag = data['g'].to_numpy()
         z_mag = data['z'].to_numpy()
 
         gz_color = g_mag-z_mag
+        
+        data['color'] = gz_color
+        
+        #now remove galaxies that don't fall in i-mag and g-z color range of HSC data. These will always be application sample galaxies
+        
+        data_hsc_like = data[(data['i'] >= 13) & (data['i'] <=26) & (data['color'] >= -2) & (data['color'] <=6)]
+        
+        i_mag = data_hsc_like['i'].to_numpy()
+        color = data_hsc_like['color'].to_numpy()
 
        
         #Sets pixel edges to be the same as were used to calculate HSC ratios
@@ -176,37 +185,40 @@ class HSCSelection(Degrader):
         y_edges = np.linspace(13, 26, 201)
 
         #Opens file with HSC ratios
-        #For each galaxy in data, identifies the pixel it belongs in, and adds the ratio for that pixel to a new column in data called 'ratios'
         ratios = pd.read_csv('hsc_ratios.csv', delimiter=',', header=None)
-        ratio_list = []
-        for k in range(len(i_mag)):
-            for p in range(0, 200):
-                if (gz_color[k] > x_edges[p]) & (gz_color[k] < x_edges[p+1]):
-                    pixelx = p
-            for q in range(0, 200):
-                if (i_mag[k] > y_edges[q]) & (i_mag[k] < y_edges[q+1]):
-                    pixely = q
-            ratio_list.append(ratios[pixely][pixelx])
+        
+        #For each galaxy in data, identifies the pixel it belongs in, and adds the ratio for that pixel to a new column in data called 'ratios'
+        pixels_x = np.searchsorted(x_edges, color)
+        pixels_y = np.searchsorted(y_edges, i_mag)
+        
+        pixels_x = pixels_x-1
+        pixels_y = pixels_y-1
+        
+        ratio_list  = []
+        for i in range(len(pixels_x)):
+            ratio_list.append(ratios[pixels_y[i]][pixels_x[i]])
+        
 
-        data['ratios'] = ratio_list
+        data_hsc_like['ratios'] = ratio_list
 
         #This picks galaxies for the training set
-        unique_ratios = data['ratios'].unique()
+        unique_ratios = data_hsc_like['ratios'].unique()
 
         keep_inds = []
         for i in range(len(unique_ratios)):
-            temp_data = data[data['ratios'] == unique_ratios[i]]
+            temp_data = data_hsc_like[data_hsc_like['ratios'] == unique_ratios[i]]
             number_to_keep = int(len(temp_data)*unique_ratios[i])
             indices_to_list = temp_data.index.values
             for j in range(0, number_to_keep):
                 keep_inds.append(indices_to_list[j])
  
 
-        training_data = data.loc[keep_inds,:]
+        training_data = data_hsc_like.loc[keep_inds,:]
 
         #For the pessimistic choice, also remove galaxies with z > redshift_cut from the sample
         if self.config['redshift_cut'] != 100:
             training_data = training_data[training_data['redshift'] <= self.config['redshift_cut']]
         
+        training_data = training_data.drop(['color', 'ratios'], axis=1)
 
         self.add_data('output', training_data)
