@@ -209,7 +209,7 @@ class HSCSelection(Degrader):
             temp_data = data_hsc_like[data_hsc_like['ratios'] == unique_ratios[i]]
             number_to_keep = int(len(temp_data)*unique_ratios[i])
             indices_to_list = temp_data.index.values
-            for j in range(0, number_to_keep):
+            for j in range(0, number_to_keep): # pragma: no cover
                 keep_inds.append(indices_to_list[j])
  
 
