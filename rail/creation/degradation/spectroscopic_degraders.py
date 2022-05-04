@@ -3,6 +3,10 @@
 import numpy as np
 import pandas as pd
 from rail.creation.degradation import Degrader
+from rail.core.data import PqHandle
+from ceci.config import StageParameter as Param 
+
+import galselect  # https://github.com/jlvdb/galselect
 
 
 class LineConfusion(Degrader):
@@ -134,3 +138,115 @@ class InvRedshiftIncompleteness(Degrader):
         mask = rng.random(size=data.shape[0]) <= survival_prob
 
         self.add_data('output', data[mask])
+
+
+class SampleMatcher(Degrader):
+    """Degrader that ...
+    TODO
+    """
+
+    name = 'SampleMatcher'
+    config_options = Degrader.config_options.copy()
+    # TODO: implement weights, idx_interval description
+    config_options.update(
+        sim_features=Param(
+            list, msg="magnitudes for which hyperbolic magnitudes are computed"),
+        data_features=Param(
+            list, msg="magnitudes for which hyperbolic magnitudes are computed"),
+        sim_zname=Param(
+            str, "redshift", msg="redshift column name in the simulation"),
+        data_zname=Param(
+            str, "redshift", msg="redshift column name in the data sample"),
+        normalise=Param(
+            bool, True, msg="whether to normalise the feature space (by median and nMAD)"),
+        duplicates=Param(
+            bool, True, msg="whether to allow duplicating simulation objects"),
+        progress=Param(
+            bool, False, msg="whether to show a progress bar"),
+        clone=Param(
+            list, [], msg="clone data columns from the input data"),
+        idx_interval=Param(
+            int, 10000, msg="number of closest redshifts on both sides of the data redshifts"),
+    )
+    inputs = [('sim', PqHandle),
+              ('data', PqHandle)]
+    outputs = [('output', PqHandle)]
+
+    def __init__(self, args, comm=None):
+        """
+        """
+        Degrader.__init__(self, args, comm=comm)
+        # check configuration
+        self.sim_feature_names = self.config.sim_features
+        self.data_feature_names = self.config.data_features
+        if (n_sim := len(self.sim_feature_names)) != (n_data := len(self.data_feature_names)):
+            raise ValueError(
+                f"number of simulation and data features do not match ({n_sim} != {n_data})")
+
+    def run(self):
+        """
+        TODO
+        """
+        sim = self.get_data('sim')
+        z_sim = sim[self.config.sim_zname]
+        data = self.get_data('data')
+        z_data = data[self.config.data_zname]
+
+        # ensure that the data redshift range does not exceed the simulation
+        zmin = z_sim.min()
+        zmax = z_sim.max()
+        zrange_mask = (z_data >= zmin) & (z_data <= zmax)
+        # update the data sample
+        data = data[zrange_mask]
+        z_data = data[self.config.data_zname]
+
+        # initialise the selector and parse configuration
+        selector = galselect.DataMatcher(
+            sim, self.config.sim_zname, self.sim_feature_names,
+            normalise=self.config.normalise,
+            duplicates=self.config.duplicates,
+            redshift_warning=1e99)  # disables redshift range warnings
+
+        # configure the cloned columns (always includes the data redshifts)
+        if self.config.clone is None:
+            self.config.clone = []
+        if self.config.data_zname not in self.config.clone:
+            self.config.clone.append(self.config.data_zname)
+        clone_cols = [  # avoid name collisions
+            colname if colname not in sim else f"{colname}_data"
+            for colname in self.config.clone]
+
+        # run matcher
+        matched = selector.match_catalog(
+            data[self.config.data_zname],
+            features=data[[colname for colname in self.data_feature_names]].to_numpy(),
+            d_idx=self.config.idx_interval, clonecols=data[clone_cols],
+            return_mock_distance=False, progress=self.config.progress)
+
+        self.add_data('output', matched)
+
+    def __call__(self, sim: pd.DataFrame, data: pd.DataFrame, seed: int = None) -> pd.DataFrame:
+        """Return a degraded sample.
+        TODO
+
+        Parameters
+        ----------
+        sim : pd.DataFrame
+            The sample to be degraded.
+        data : pd.DataFrame
+            The sample to be replicated by matching the feature space.
+        seed : int, default=None
+            For compatibility only, not used.
+
+        Returns
+        -------
+        pd.DataFrame
+            The degraded (matched) sample.
+        """
+        if seed is not None:
+            pass  # deterministic
+        self.set_data('sim', sim)
+        self.set_data('data', data)
+        self.run()
+        self.finalize()
+        return self.get_handle('output')
