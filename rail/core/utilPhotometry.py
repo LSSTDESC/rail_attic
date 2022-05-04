@@ -27,7 +27,7 @@ def _compute_flux(mags, zeropoint):
     ----------
     mags : array-like
         Magnitude or array of magnitudes.
-    zeropoint : `float`
+    zeropoint : array-like
         Photometric zeropoint used for conversion.
 
     Returns

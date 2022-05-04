@@ -262,3 +262,19 @@ def test_data_store():
     
     os.remove(datapath_hdf5_copy)
     os.remove(datapath_pq_copy)
+
+
+def load_testdata():
+    DS = RailStage.data_store
+    DS.clear()
+    DS.__class__.allow_overwrite = False
+    raildir = os.path.dirname(rail.__file__)
+    testFile = os.path.join(raildir, '..', 'tests', 'data', 'test_dc2_training_9816.pq')
+    return DS.read_file("test_data", TableHandle, testFile)
+
+def test_HyperbolicSmoothing():
+    data = load_testdata()
+
+
+def test_HyperbolicMagnitudes():
+    data = load_testdata()
