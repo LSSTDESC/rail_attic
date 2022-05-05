@@ -138,7 +138,7 @@ class BPZ_lite(CatEstimator):
         if len(self.config.band_names) != len(self.config.band_err_names): # pragma: no cover
             raise ValueError("Number of bands specified in band_names must be equal to number of mag errors specified in bad_err_names!")
         if self.config.prior_band not in self.config.band_names: # pragma: no cover
-            raise ValueError("prior band not found in bands specified in band_names!")
+            raise ValueError(f"prior band not found in bands specified in band_names: {str(self.config.band_names)}")
         # load the template fluxes from the AB files
         self.flux_templates = self._load_templates()
 
