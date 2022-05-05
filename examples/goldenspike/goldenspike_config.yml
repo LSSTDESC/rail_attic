@@ -46,7 +46,7 @@ estimate_bpz:
   nzbins: 301
   output_mode: default
   p_min: 0.005
-  prior_band: i
+  prior_band: mag_i_lsst
   prior_file: hdfn_gen
   spectra_file: SED/CWWSB4.list
   zmax: 3.0
