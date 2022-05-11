@@ -31,12 +31,12 @@ class Inform_NZDir(CatInformer):
 
     name = 'Inform_NZDir'
     config_options = CatInformer.config_options.copy()
-    config_options.update(usecols=Param(list, default_usecols, msg="columns from sz_date for Neighor calculation"),
+    config_options.update(usecols=Param(list, default_usecols, msg="columns from sz_data for Neighor calculation"),
                           n_neigh=Param(int, 10, msg="number of neighbors to use"),
                           kalgo=Param(str, "kd_tree", msg="Neighbor algorithm to use"),
                           kmetric=Param(str, "euclidean", msg="Knn metric to use"),
                           szname=Param(str, "redshift", msg="name of specz column in sz_data"),
-                          szweightcol=Param(str, "weight", msg="name of sz weight column"),
+                          szweightcol=Param(str, "", msg="name of sz weight column"),
                           distance_delta=Param(float, 1.e-6, msg="padding for distance calculation"),
                           hdf5_groupname=Param(str, "photometry", msg="name of hdf5 group for data, if None, then set to ''"))
 
@@ -50,10 +50,15 @@ class Inform_NZDir(CatInformer):
             sz_data = self.get_data('input')[self.config.hdf5_groupname]
         else:  # pragma:  no cover
             sz_data = self.get_data('input')
-        if self.config.szweightcol in sz_data.keys():  # pragma: no cover
-            szweights = np.array(sz_data[self.config.szweightcol])
-        else:
+        # if no weights specified, which is the default
+        # set all weights to 1.0 if weights not present in keys
+        # set to same length as one of the usecols cols
+        if self.config.szweightcol == '':
             szweights = np.ones(len(sz_data[self.config.usecols[0]]))
+        elif self.config.szweightcol in sz_data.keys():  # pragma: no cover
+            szweights = np.array(sz_data[self.config.szweightcol])
+        else:  # pragma: no cover
+            raise KeyError(f"weight column {self.config.szweightcol} not found in input data!") 
         sz_mag_data = np.array([sz_data[band] for band in self.config.usecols]).T
         sz_mag_data[~np.isfinite(sz_mag_data)] = 40.
         szvec = np.array(sz_data[self.config.szname])
@@ -100,10 +105,9 @@ class NZDir(CatEstimator):
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
                           nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
                           usecols=Param(list, default_usecols, msg="columns from sz_date for Neighor calculation"),
-                          bincol=Param(str, "bin", msg="name of column with int bins"),
                           leafsize=Param(int, 40, msg="leaf size for testdata KDTree"),
                           hdf5_groupname=Param(str, "photometry", msg="name of hdf5 group for data, if None, then set to ''"),
-                          phot_weightcol=Param(str, "weight", msg="name of photometry weight, if present"))
+                          phot_weightcol=Param(str, "", msg="name of photometry weight, if present"))
 
     def __init__(self, args, comm=None):
         self.zgrid = None
@@ -129,54 +133,36 @@ class NZDir(CatEstimator):
             test_data = self.get_data('input')
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
 
-        # assign weight vecs, if present, else set all to 1.0
+        # assign weight vecs if present, else set all to 1.0
         # tested in example notebook, so just put a pragma no cover for if present
-        if self.config.phot_weightcol in test_data.keys():  # pragma: no cover
+        if self.config.phot_weightcol == "":
+            pweight = np.ones(len(test_data[self.config.usecols[0]]))
+        elif self.config.phot_weightcol in test_data.keys():  # pragma: no cover
             pweight = np.array(test_data[self.config.phot_weightcol])
         else:
-            pweight = np.ones(len(test_data[self.config.usecols[0]]))
+            raise KeyError(f"photometric weight column {self.config.phot_weightcol} not present in data!")
         # calculate weights for the test data
-        if self.config.bincol not in test_data.keys():
-            # stack all galaxies into single ensemble
-            print("bincol not found! Perform single tomo bin measurement!")
-            tomobinids = np.ones(len(test_data[self.config.usecols[0]]), dtype='int')
-            test_data[self.config.bincol] = tomobinids
-        else:  # pragma: no cover
-            print("found bin IDs")
-            tomobinids = test_data[self.config.bincol]
-            print(tomobinids)
-        nzbins = sorted(list(set(tomobinids)))
-        print(f" list of bins to process: {nzbins}")
-        numnzbins = len(nzbins)
-        weights = np.zeros([numnzbins, len(self.szvec)])
-        hist_data = []
+        weights = np.zeros(len(self.szvec))
         tmpdf = pd.DataFrame(test_data)
 
-        for i, bin in enumerate(nzbins):
-            print(f" working on tomobin #{i} for bin defined by {bin}")
-            binselect = tmpdf[self.config.bincol] == bin
-            cutdata = tmpdf[binselect]
+        phot_mag_data = np.array([tmpdf[band] for band in self.config.usecols]).T
+        phot_mag_data[~np.isfinite(phot_mag_data)] = 40.
+        # create a tree for the photometric data, for each specz object find all the
+        # tomo objects within the distance to Kth speczNN from before
+        tree = scipy.spatial.KDTree(phot_mag_data, leafsize=self.config.leafsize)
+        indices = tree.query_ball_point(self.sz_mag_data, self.distances)
 
-            phot_mag_data = np.array([cutdata[band] for band in self.config.usecols]).T
-            phot_mag_data[~np.isfinite(phot_mag_data)] = 40.
-            # create a tree for the photometric data, for each specz object find all the
-            # tomo objects within the distance to Kth speczNN from before
-            tree = scipy.spatial.KDTree(phot_mag_data, leafsize=self.config.leafsize)
-            indices = tree.query_ball_point(self.sz_mag_data, self.distances)
-
-            # for each of the indexed galaxies within the distance, add the weights to the
-            # appropriate tomographic bin
-            for j, index in enumerate(indices):
-                weights[i, j] += pweight[index].sum()
-            # make weighted histograms
-            single_hist = np.histogram(
-                self.szvec,
-                bins=self.zgrid,
-                range=(0, self.config["zmax"]),
-                weights=weights[i] * self.szweights,
-            )
-            hist_data.append(single_hist[0])
+        # for each of the indexed galaxies within the distance, add the weights to the
+        # appropriate tomographic bin
+        for j, index in enumerate(indices):
+            weights[j] += pweight[index].sum()
+        # make weighted histograms
+        hist_data = np.histogram(
+            self.szvec,
+            bins=self.zgrid,
+            weights = weights * self.szweights,
+        )
         # make the ensembles of the histograms
         qp_d = qp.Ensemble(qp.hist,
-                           data=dict(bins=self.zgrid, pdfs=np.atleast_2d(hist_data)))
+                           data=dict(bins=self.zgrid, pdfs=hist_data[0]))
         self.add_data('output', qp_d)
