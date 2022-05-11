@@ -58,7 +58,7 @@ class Inform_NZDir(CatInformer):
         elif self.config.szweightcol in sz_data.keys():  # pragma: no cover
             szweights = np.array(sz_data[self.config.szweightcol])
         else:  # pragma: no cover
-            raise KeyError(f"weight column {self.config.szweightcol} not found in input data!") 
+            raise KeyError(f"weight column {self.config.szweightcol} not found in input data!")
         sz_mag_data = np.array([sz_data[band] for band in self.config.usecols]).T
         sz_mag_data[~np.isfinite(sz_mag_data)] = 40.
         szvec = np.array(sz_data[self.config.szname])
@@ -160,7 +160,7 @@ class NZDir(CatEstimator):
         hist_data = np.histogram(
             self.szvec,
             bins=self.zgrid,
-            weights = weights * self.szweights,
+            weights=weights * self.szweights,
         )
         # make the ensembles of the histograms
         qp_d = qp.Ensemble(qp.hist,
