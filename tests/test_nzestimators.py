@@ -1,4 +1,5 @@
 import os
+import pytest
 from rail.core.stage import RailStage
 from rail.core.data import TableHandle
 from rail.estimation.algos import NZDir
@@ -31,3 +32,11 @@ def test_NZDir():
     inform_class = NZDir.Inform_NZDir
     estimator_class = NZDir.NZDir
     _ = one_algo("NZDir", inform_class, estimator_class, summary_config_dict)
+
+
+def test_NZDir_bad_weight():
+    summary_config_dict = {'phot_weightcol': 'notarealcol'}
+    inform_class = NZDir.Inform_NZDir
+    estimator_class = NZDir.NZDir
+    with pytest.raises(KeyError):
+        _ = one_algo("NZDir", inform_class, estimator_class, summary_config_dict)
