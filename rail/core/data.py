@@ -180,6 +180,10 @@ class Hdf5Handle(TableHandle):
         tables_io.io.writeDictToHdf5Chunk(fileObj, data, start, end, **kwargs)
 
 
+class FitsHandle(TableHandle):
+    """DataHandle for a table written to fits"""
+    suffix = 'fits'
+
 
 class PqHandle(TableHandle):
     """DataHandle for a parquet table"""
