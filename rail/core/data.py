@@ -177,7 +177,7 @@ class Hdf5Handle(TableHandle):
 
     @classmethod
     def _write_chunk(cls, data, fileObj, start, end, **kwargs):
-        tables_io.io.writeDictToHdf5Chunk(fileObj, data, start, end, **kwargs)
+        tables_io.io.writeDictToHdf5ChunkSingle(fileObj, data, start, end, **kwargs)
 
 
 class FitsHandle(TableHandle):
