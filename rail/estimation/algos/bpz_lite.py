@@ -89,6 +89,9 @@ class Inform_BPZ_lite(CatInformer):
                           spectra_file=Param(str, 'SED/CWWSB4.list',
                                              msg="name of the file specifying the list of SEDs to use"),
                           m0=Param(float, 20.0, msg="reference apparent mag, used in prior param"),
+                          nt_array=Param(list, [1, 2, 3], msg="list of integer number of templates per 'broad type', "
+                                         "must be in same order as the template set, and must sum to the same number "
+                                         "as the # of templates in the spectra file"),
                           mmin=Param(float, 18.0, msg="lowest apparent mag in ref band, lower values ignored"),
                           mmax=Param(float, 29.0, msg="highest apparent mag in ref band, higher values ignored"),
                           init_kt=Param(float, 0.3, msg="initial guess for kt in training"),
@@ -200,7 +203,9 @@ class Inform_BPZ_lite(CatInformer):
         print(self.kt_arr)
         zo_arr, km_arr, a_arr = self._find_dndz_params()
 
-        self.model = dict(fo_arr=self.fo_arr, kt_arr=self.kt_arr, zo_arr=zo_arr, km_arr=km_arr, a_arr=a_arr)
+        self.model = dict(fo_arr=self.fo_arr, kt_arr=self.kt_arr, zo_arr=zo_arr,
+                          km_arr=km_arr, a_arr=a_arr, mo=self.config.m0,
+                          numpertype=self.config.nt_array)
         self.add_data('model', self.model)
 
 
@@ -208,7 +213,8 @@ class BPZ_lite(CatEstimator):
     """CatEstimator subclass to implement basic marginalized PDF for BPZ
     """
 
-    inputs = [('input', TableHandle)]
+#    inputs = [('input', TableHandle),
+#              ('model', TableHandle)]
 
     config_options = CatEstimator.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="min z for grid"),
@@ -233,16 +239,9 @@ class BPZ_lite(CatEstimator):
                                            msg="set to 'yes' or 'no' to set whether to include intergalactic "
                                                "Madau reddening when constructing model fluxes"),
                           mag_limits=Param(dict, def_maglims, msg="1 sigma mag limits"),
+                          no_prior=Param(bool, "False", msg="set to True if you want to run with no prior"),
                           prior_band=Param(str, 'mag_i_lsst',
                                            msg="specifies which band the magnitude/type prior is trained in, e.g. 'i'"),
-                          prior_file=Param(str, 'hdfn_gen',
-                                           msg="prior_file (str): the file "
-                                           "name of the prior, which should be located "
-                                           "in the root BPZ directory.  If the "
-                                           "full prior file is named e.g. "
-                                           "'prior_dc2_lsst_trained_model.py' then we should "
-                                           "set the value to 'dc2_lsst_trained_model', as "
-                                           "'prior_' is added to the name by BPZ"),
                           p_min=Param(float, 0.005,
                                       msg="BPZ sets all values of "
                                       "the PDF that are below p_min*peak_value to 0.0, "
@@ -261,6 +260,7 @@ class BPZ_lite(CatEstimator):
         """Constructor, build the CatEstimator, then do BPZ specific setup
         """
         CatEstimator.__init__(self, args, comm=comm)
+        self.model=None
 
         datapath = self.config['data_path']
         if datapath is None or datapath == "None":
@@ -284,6 +284,10 @@ class BPZ_lite(CatEstimator):
 
         # Load the AB files, or if they don't exist, create from SEDs*filters
 
+    def open_model(self, **kwargs):
+        CatEstimator.open_model(self, **kwargs)
+        self.foarr = self.model['fo_arr']
+        
     def _load_templates(self):
 
         # The redshift range we will evaluate on
@@ -404,9 +408,9 @@ class BPZ_lite(CatEstimator):
 
     def _estimate_pdf(self, flux_templates, kernel, flux, flux_err, mag_0, z):
 
-        from desc_bpz.bpz_tools_py3 import p_c_z_t, prior
+        from desc_bpz.bpz_tools_py3 import p_c_z_t, prior_with_dict
 
-        prior_file = self.config.prior_file
+        modeldict = self.model
         p_min = self.config.p_min
 
         nt = flux_templates.shape[1]
@@ -417,10 +421,10 @@ class BPZ_lite(CatEstimator):
 
         # old prior code returns NoneType for prior if "flat" or "none"
         # just hard code the no prior case for now for backward compatibility
-        if prior_file in ['flat', 'none']:  # pragma: no cover
+        if self.config.no_prior:  # pragma: no cover
             P = np.ones(L.shape)
         else:
-            P = prior(z, mag_0, prior_file, nt, ninterp=0)  # hardcode interp 0
+            P = prior_with_dict(z, mag_0, modeldict, nt, ninterp=0)  # hardcode interp 0
 
         post = L * P
         # Right now we jave the joint PDF of p(z,template). Marginalize
