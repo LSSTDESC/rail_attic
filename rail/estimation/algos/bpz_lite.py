@@ -213,9 +213,6 @@ class BPZ_lite(CatEstimator):
     """CatEstimator subclass to implement basic marginalized PDF for BPZ
     """
 
-#    inputs = [('input', TableHandle),
-#              ('model', TableHandle)]
-
     config_options = CatEstimator.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="min z for grid"),
                           zmax=Param(float, 3.0, msg="max z for grid"),
@@ -282,12 +279,6 @@ class BPZ_lite(CatEstimator):
         # load the template fluxes from the AB files
         self.flux_templates = self._load_templates()
 
-        # Load the AB files, or if they don't exist, create from SEDs*filters
-
-    def open_model(self, **kwargs):
-        CatEstimator.open_model(self, **kwargs)
-        self.foarr = self.model['fo_arr']
-        
     def _load_templates(self):
 
         # The redshift range we will evaluate on
