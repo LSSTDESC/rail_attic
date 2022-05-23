@@ -1,9 +1,9 @@
 """ Base class for PipelineStages in Rail """
 
 import os
-from ceci.config import StageParameter as Param
-from ceci import PipelineStage
 
+from ceci import PipelineStage
+from ceci.config import StageParameter as Param
 from rail.core.data import DATA_STORE, DataHandle
 
 
@@ -21,7 +21,7 @@ class RailStage(PipelineStage):
     you would run into name clashes between the different instances.  In `ceci` 1.7 we
     added functionality to `ceci` to allow you to have multiple instances of a single class,
     in particular we distinguish between the class name (`cls.name`) and and the name of
-    the partiuclar instance (`self.instance_name`) and added aliasing for inputs and outputs,
+    the particular instance (`self.instance_name`) and added aliasing for inputs and outputs,
     so that different instances of `PipelineStage` would be able to give different names
     to their inputs and outputs.  However, using that functionality in a consistent way
     requires a bit of care.  So here we are providing methods to do that, and to do it in
