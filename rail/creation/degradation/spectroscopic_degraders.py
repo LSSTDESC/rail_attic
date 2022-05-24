@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import h5py
 import pickle
+import tables_io
 from rail.creation.degradation import Degrader
 
 
@@ -156,7 +157,7 @@ class HSCSelection(Degrader):
 
     name='HSCSelection'
     config_options = Degrader.config_options.copy()
-    config_options.update(**{'redshift_cut':100, 'ratio_file': 'hsc_ratios.hdf5', 'settings_file':'hsc_like_settings.pickle'})
+    config_options.update(**{'redshift_cut':100, 'ratio_file': './examples/creation/data/hsc_ratios.hdf5', 'settings_file':'./examples/creation/data/hsc_config_settings.pkl'})
 
     def __init__(self, args, comm=None):
 
@@ -175,7 +176,7 @@ class HSCSelection(Degrader):
         """
 
         data = self.get_data('input')
-        with open('settings.pickle', 'rb') as handle:
+        with open(self.config.settings_file, 'rb') as handle:
             settings = pickle.load(handle)
         
         mag_band = settings['mag_band']
@@ -198,20 +199,16 @@ class HSCSelection(Degrader):
         i_mag = data_hsc_like[mag_band].to_numpy()
         color = data_hsc_like['color'].to_numpy()
 
-        #Opens file with HSC ratios
-        #ratios = pd.read_csv('hsc_ratios.csv', delimiter=',', header=None)
-        ratio_file = self.config['ratio_file']
-        hf = h5py.File(ratio_file, 'r')
-        ratios = hf.get('ratios')
-        ratios = np.array(ratios)
+        # Opens file with HSC ratios
+        ratios = tables_io.read(self.config.ratio_file)['ratios']
         
-        #Sets pixel edges to be the same as were used to calculate HSC ratios
+        # Sets pixel edges to be the same as were used to calculate HSC ratios
         num_edges_colors = ratios.shape[1]
         num_edges_mags = ratios.shape[0]
         colors_edges = np.linspace(color_lims[0], color_lims[1], num_edges_colors)
         mags_edges = np.linspace(mag_lims[0], mag_lims[1], num_edges_mags)
         
-        #For each galaxy in data, identifies the pixel it belongs in, and adds the ratio for that pixel to a new column in data called 'ratios'
+        # For each galaxy in data, identifies the pixel it belongs in, and adds the ratio for that pixel to a new column in data called 'ratios'
         pixels_colors = np.searchsorted(colors_edges, color)
         pixels_mags = np.searchsorted(mags_edges, i_mag)
         
