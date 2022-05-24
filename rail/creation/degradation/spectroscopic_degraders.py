@@ -241,7 +241,7 @@ class HSCSelection(Degrader):
             np.random.shuffle(indices_to_list)
             if random_num > unique_ratios[i]: #if the random draw is greater than the ratio for that pixel, we don't keep the partial galaxy 
                 for j in range(0, int(number_to_keep)):
-                    keep_inds.append(indices_to_list[j])
+                    keep_inds.append(indices_to_list[j]) 
             if random_num <= unique_ratios[i]: #if the random draw is less than the ratio for that pixel, we do keep the partial galaxy
                  for j in range(0, int(number_to_keep)+1):
                     keep_inds.append(indices_to_list[j])
@@ -253,6 +253,6 @@ class HSCSelection(Degrader):
             training_data = training_data[training_data['redshift'] <= self.config['redshift_cut']]
         
         training_data = training_data.drop(['color', 'ratios'], axis=1)
-        data = data.drop(['color'], axis=1)
+        #data = data.drop(['color'], axis=1)
 
         self.add_data('output', training_data)
