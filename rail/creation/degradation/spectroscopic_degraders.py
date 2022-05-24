@@ -241,10 +241,10 @@ class HSCSelection(Degrader):
             np.random.shuffle(indices_to_list)
             if random_num > unique_ratios[i]: #if the random draw is greater than the ratio for that pixel, we don't keep the partial galaxy 
                 for j in range(0, int(number_to_keep)):
-                    keep_inds.append(indices_to_list[j]) 
+                    keep_inds.append(indices_to_list[j]) #pragma:no cover 
             if random_num <= unique_ratios[i]: #if the random draw is less than the ratio for that pixel, we do keep the partial galaxy
-                 for j in range(0, int(number_to_keep)+1):
-                    keep_inds.append(indices_to_list[j])
+                 for j in range(0, int(number_to_keep)+1):#pragma:no cover
+                    keep_inds.append(indices_to_list[j])#pragma:no cover
 
         training_data = data_hsc_like.loc[keep_inds,:]
 
