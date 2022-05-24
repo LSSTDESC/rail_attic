@@ -93,7 +93,7 @@ def test_HSCSelection_returns_correct_shape(data):
     degrader = HSCSelection.make_stage(redshift_cut = 1.)
     degraded_data = degrader(data).data
     assert degraded_data.shape[0] < data.data.shape[0]
-    assert degraded_data.shape[1] == data.data.shape[1]
+    assert degraded_data.shape[1] == data.data.shape[1]-1
     os.remove(degrader.get_output(degrader.get_aliased_tag('output'), final_name=True))
 
 
