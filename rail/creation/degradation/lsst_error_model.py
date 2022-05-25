@@ -130,7 +130,7 @@ class LSSTErrorModel(Degrader):
         in magnitude space, and errors are Gaussian in magnitude space.
     A_max: float, maximum GAaP aperture size (in arcmin)
     A_min: float, minimum GAaP aperture size (in arcmin)
-    errortype" string, should be 'point', 'auto', or 'gaap'
+    errortype: string, should be 'point', 'auto', or 'gaap'
 
     """
 
@@ -196,7 +196,8 @@ class LSSTErrorModel(Degrader):
                     "y": 0.170},
         "highSNR": False,
         # aperture sizes
-        "A_min": 0.7,  # in arcsec
+        "A_min": 0.7,  # in arcsec, these default values need to be validated according
+                       # to LSST observation strategy.
         "A_max": 2.0,
         "errortype": "point"})
 
@@ -619,6 +620,14 @@ class LSSTErrorModel(Degrader):
         printMsg += "Model for bands: "
         printMsg += ", ".join(settings["bandNames"].values()) + "\n"
 
+        # Error type
+        printMsg += "Type of magnitude error: "
+        printMsg += self.config['errortype'] + "\n"
+        if self.config['errortype'] == 'gaap':
+            printMsg += "With aperture sizes: " + "\n"
+            printMsg += "A_max = " + str(self.config['A_max']) + "\n"
+            printMsg += "A_min = " + str(self.config['A_min']) + "\n"
+        
         # print whether using the high SNR approximation
         if self.config["highSNR"]:
             printMsg += "Using the high SNR approximation\n\n"
