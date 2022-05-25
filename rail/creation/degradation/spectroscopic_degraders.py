@@ -5,6 +5,7 @@ import pandas as pd
 import pickle
 import tables_io
 from rail.creation.degradation import Degrader
+from ceci.config import StageParameter as Param
 
 
 class LineConfusion(Degrader):
@@ -157,8 +158,12 @@ class HSCSelection(Degrader):
 
     name = 'HSCSelection'
     config_options = Degrader.config_options.copy()
-    config_options.update(**{'redshift_cut': 100, 'ratio_file': './examples/creation/data/hsc_ratios.hdf5',
-                             'settings_file': './examples/creation/data/hsc_config_settings.pkl'})
+    config_options.update(redshift_cut=Param(float, 100.0, msg="cut redshifts above this value"),
+                          ratio_file=Param(str, './examples/creation/data/hsc_ratios.hdf5',
+                                           msg="path to ratio file"),
+                          settings_file=Param(str, './examples/creation/data/hsc_config_settings.pkl',
+                                              msg='path to pickled parameters file'),
+                          random_seed=Param(int, 12345, msg="random seed for reproducibility"))
 
     def __init__(self, args, comm=None):
 
@@ -174,6 +179,7 @@ class HSCSelection(Degrader):
         galaxies with only photometry in HSC wide field (application galaxies) was computed for each pixel. We divide
         the data into the same pixels and randomly select galaxies into the training sample based on the HSC ratios
         """
+        np.random.seed(self.config.random_seed)
 
         data = self.get_data('input')
         with open(self.config.settings_file, 'rb') as handle:
