@@ -2,7 +2,6 @@
 
 import numpy as np
 import pandas as pd
-import h5py
 import pickle
 import tables_io
 from rail.creation.degradation import Degrader
@@ -137,13 +136,14 @@ class InvRedshiftIncompleteness(Degrader):
         mask = rng.random(size=data.shape[0]) <= survival_prob
 
         self.add_data('output', data[mask])
-        
+
+
 class HSCSelection(Degrader):
     """
     Uses the ratio of HSC spectroscpic galaxies to photometric galaxies to portion a sample
     into training and application samples. Option of further degrading the training sample by limiting it to galaxies
     less than a redshift cutoff by specifying redshift_cut.
-    
+
     configuration options:
     redshift_cut: redshift above which all galaxies will be removed from training sample. Default is 100
     ratio_file: hdf5 file containing an array of spectroscpic vs. photometric galaxies in each pixel. Default is hsc_ratios.hdf5 for an HSC based selection
@@ -155,9 +155,10 @@ class HSCSelection(Degrader):
          'color_lims': list, this is a list of the lower and upper limits of the color. Default for HSC is [-2, 6]}
     """
 
-    name='HSCSelection'
+    name = 'HSCSelection'
     config_options = Degrader.config_options.copy()
-    config_options.update(**{'redshift_cut':100, 'ratio_file': './examples/creation/data/hsc_ratios.hdf5', 'settings_file':'./examples/creation/data/hsc_config_settings.pkl'})
+    config_options.update(**{'redshift_cut': 100, 'ratio_file': './examples/creation/data/hsc_ratios.hdf5',
+                             'settings_file': './examples/creation/data/hsc_config_settings.pkl'})
 
     def __init__(self, args, comm=None):
 
@@ -165,7 +166,6 @@ class HSCSelection(Degrader):
 
         if self.config.redshift_cut < 0:
             raise ValueError("redshift cut must be positive")
-
 
     def run(self):
         """
@@ -178,78 +178,69 @@ class HSCSelection(Degrader):
         data = self.get_data('input')
         with open(self.config.settings_file, 'rb') as handle:
             settings = pickle.load(handle)
-        
+
         mag_band = settings['mag_band']
         blue_band = settings['color_band_blue']
         red_band = settings['color_band_red']
-        
-        #first, add colors to data
+
+        # first, add colors to data
         g_mag = data[blue_band].to_numpy()
         z_mag = data[red_band].to_numpy()
 
-        gz_color = g_mag-z_mag
-        
+        gz_color = g_mag - z_mag
+
         data['color'] = gz_color
-        
-        #now remove galaxies that don't fall in i-mag and g-z color range of HSC data. These will always be application sample galaxies
+
+        # now remove galaxies that don't fall in i-mag and g-z color range of HSC data. These will always be application sample galaxies
         mag_lims = settings['mag_lims']
         color_lims = settings['color_lims']
         data_hsc_like = data[(data[mag_band] >= mag_lims[0]) & (data[mag_band] <= mag_lims[1]) & (data['color'] >= color_lims[0]) & (data['color'] <= color_lims[1])]
-        
+
         i_mag = data_hsc_like[mag_band].to_numpy()
         color = data_hsc_like['color'].to_numpy()
 
         # Opens file with HSC ratios
         ratios = tables_io.read(self.config.ratio_file)['ratios']
-        
+
         # Sets pixel edges to be the same as were used to calculate HSC ratios
         num_edges_colors = ratios.shape[1]
         num_edges_mags = ratios.shape[0]
         colors_edges = np.linspace(color_lims[0], color_lims[1], num_edges_colors)
         mags_edges = np.linspace(mag_lims[0], mag_lims[1], num_edges_mags)
-        
+
         # For each galaxy in data, identifies the pixel it belongs in, and adds the ratio for that pixel to a new column in data called 'ratios'
         pixels_colors = np.searchsorted(colors_edges, color)
         pixels_mags = np.searchsorted(mags_edges, i_mag)
-        
-        pixels_colors = pixels_colors-1
-        pixels_mags = pixels_mags-1
-        
-        ratio_list  = []
+
+        pixels_colors = pixels_colors - 1
+        pixels_mags = pixels_mags - 1
+
+        ratio_list = []
         for i in range(len(pixels_colors)):
             ratio_list.append(ratios[pixels_colors[i]][pixels_mags[i]])
-        
 
         data_hsc_like['ratios'] = ratio_list
 
-        #This picks galaxies for the training set
+        # This picks galaxies for the training set
         unique_ratios = data_hsc_like['ratios'].unique()
 
         keep_inds = []
-        for i in range(len(unique_ratios)):
-            temp_data = data_hsc_like[data_hsc_like['ratios'] == unique_ratios[i]]
-            number_to_keep = len(temp_data)*unique_ratios[i]
-            if int(number_to_keep) != number_to_keep:
-                random_num = np.random.uniform()
-            else: #if number_to_keep is an integer, then we don't need to pick a random number to determine whether or not to keep the extra galaxy
-                random_num = 2
-            number_to_keep = np.floor(number_to_keep) #round down the number of galaxies to the nearest whole number
-            indices_to_list = list(temp_data.index.values)
-            np.random.shuffle(indices_to_list)
-            if random_num > unique_ratios[i]: #if the random draw is greater than the ratio for that pixel, we don't keep the partial galaxy 
-                for j in range(0, int(number_to_keep)):
-                    keep_inds.append(indices_to_list[j]) #pragma:no cover 
-            if random_num <= unique_ratios[i]: #if the random draw is less than the ratio for that pixel, we do keep the partial galaxy
-                 for j in range(0, int(number_to_keep)+1):#pragma:no cover
-                    keep_inds.append(indices_to_list[j])#pragma:no cover
+        for xratio in unique_ratios:
+            temp_data = data_hsc_like[data_hsc_like['ratios'] == xratio]
+            numingroup = len(temp_data)
+            randoms = np.random.uniform(size=numingroup)
+            mask = (randoms <= xratio)
+            keepers = temp_data[mask].index.values
+            keep_inds.append(keepers)
 
-        training_data = data_hsc_like.loc[keep_inds,:]
+        # our indeces are a list of list, need to flatten that out so that we can easily apply to the dataframe
+        flat_inds = [item for sublist in keep_inds for item in sublist]
+        training_data = data_hsc_like.loc[flat_inds, :]
 
-        #For the pessimistic choice, also remove galaxies with z > redshift_cut from the sample
+        # For the pessimistic choice, also remove galaxies with z > redshift_cut from the sample
         if self.config['redshift_cut'] != 100:
             training_data = training_data[training_data['redshift'] <= self.config['redshift_cut']]
-        
+
         training_data = training_data.drop(['color', 'ratios'], axis=1)
-        #data = data.drop(['color'], axis=1)
 
         self.add_data('output', training_data)
