@@ -24,7 +24,7 @@ Before you make a pull request we ask that you do two things:
       to do this.  You can use the `do_cover.sh` script in the top
       level directory to run `pytest` and generate a coverage report.
 
-As regards `full coverage`, the automatic tests will require that 100% of the lines are covered by the tests.  However, do not that you can use the comment `#pragma: no cover` to skip bits of code, e.g., a line of code that raises an exception if an input file is missing.
+As regards `full coverage`, the automatic tests will require that 100% of the lines are covered by the tests.  However, do note that you can use the comment `#pragma: no cover` to skip bits of code, e.g., a line of code that raises an exception if an input file is missing, rather than test every possible failure mode.
 
 When you're ready to merge your branch into the `main` branch,
 `make a pull request <https://github.com/LSSTDESC/RAIL/compare>`_, and request that other team members review it if you have any in mind, for example, those who have consulted on some of the work.
