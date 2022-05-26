@@ -125,7 +125,7 @@ class GridSelection(Degrader):
         training_data = data_hsc_like.loc[flat_inds, :]
 
         # For the pessimistic choice, also remove galaxies with z > redshift_cut from the sample
-        if self.config['redshift_cut'] != 100:
+        if not np.isclose(self.config['redshift_cut'], 100.):
             training_data = training_data[training_data['redshift'] <= self.config['redshift_cut']]
 
         training_data = training_data.drop(['x_vals', 'y_vals', 'ratios'], axis=1)
