@@ -29,7 +29,6 @@ import tables_io
 import rail
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatEstimator, CatInformer
-from rail.core.data import TableHandle
 from desc_bpz.useful_py3 import get_str, get_data, match_resol
 
 def_bands = ['u', 'g', 'r', 'i', 'z', 'y']
@@ -163,7 +162,7 @@ class Inform_BPZ_lite(CatInformer):
             zo_arr[i] = result[0]
             a_arr[i] = result[1]
             km_arr[i] = result[2]
-        return zo_arr, a_arr, km_arr
+        return zo_arr, km_arr, a_arr
 
     def _get_broad_type(self):
         typefile = self.config.type_file
@@ -205,7 +204,7 @@ class Inform_BPZ_lite(CatInformer):
 
         self.model = dict(fo_arr=self.fo_arr, kt_arr=self.kt_arr, zo_arr=zo_arr,
                           km_arr=km_arr, a_arr=a_arr, mo=self.config.m0,
-                          numpertype=self.config.nt_array)
+                          nt_array=self.config.nt_array)
         self.add_data('model', self.model)
 
 
@@ -257,7 +256,7 @@ class BPZ_lite(CatEstimator):
         """Constructor, build the CatEstimator, then do BPZ specific setup
         """
         CatEstimator.__init__(self, args, comm=comm)
-        self.model=None
+        self.model = None
 
         datapath = self.config['data_path']
         if datapath is None or datapath == "None":
@@ -278,6 +277,10 @@ class BPZ_lite(CatEstimator):
             raise ValueError(f"prior band not found in bands specified in band_names: {str(self.config.band_names)}")
         # load the template fluxes from the AB files
         self.flux_templates = self._load_templates()
+
+    def open_model(self, **kwargs):
+        CatEstimator.open_model(self, **kwargs)
+        self.modeldict = self.model
 
     def _load_templates(self):
 
@@ -401,9 +404,8 @@ class BPZ_lite(CatEstimator):
 
         from desc_bpz.bpz_tools_py3 import p_c_z_t, prior_with_dict
 
-        modeldict = self.model
+        modeldict = self.modeldict
         p_min = self.config.p_min
-
         nt = flux_templates.shape[1]
 
         # The likelihood and prior...
@@ -415,7 +417,7 @@ class BPZ_lite(CatEstimator):
         if self.config.no_prior:  # pragma: no cover
             P = np.ones(L.shape)
         else:
-            P = prior_with_dict(z, mag_0, modeldict, nt, ninterp=0)  # hardcode interp 0
+            P = prior_with_dict(z, mag_0, modeldict, nt)  # hardcode interp 0
 
         post = L * P
         # Right now we jave the joint PDF of p(z,template). Marginalize
