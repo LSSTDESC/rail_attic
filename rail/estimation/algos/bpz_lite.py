@@ -124,14 +124,22 @@ class Inform_BPZ_lite(CatInformer):
 
     def _find_fractions(self):
         # set up fo and kt arrays, choose default start values
-        fo_init = np.ones(self.ntyp - 1) / (self.ntyp - 1)
-        kt_init = np.ones(self.ntyp - 1) * self.config.init_kt
+        if self.ntyp == 1:
+            fo_init = np.array([1.0])
+            kt_init = np.array([self.config.init_kt])
+        else:
+            fo_init = np.ones(self.ntyp - 1) / (self.ntyp - 1)
+            kt_init = np.ones(self.ntyp - 1) * self.config.init_kt
         fracparams = np.hstack([fo_init, kt_init])
         # run scipy optimize to find best params
         # note that best fit vals are stored as "x" for some reason
         frac_results = sciop.minimize(self._frac_likelihood, fracparams, method='nelder-mead').x
-        self.fo_arr = frac_results[:self.ntyp - 1]
-        self.kt_arr = frac_results[self.ntyp - 1:]
+        if self.ntyp == 1:
+            self.fo_arr = np.array([frac_results[0]])
+            self.kt_arr = np.array([frac_results[1]])
+        else:
+            self.fo_arr = frac_results[:self.ntyp - 1]
+            self.kt_arr = frac_results[self.ntyp - 1:]
 
     def _dndz_likelihood(self, params):
         zo = params[0]
@@ -167,7 +175,7 @@ class Inform_BPZ_lite(CatInformer):
     def _get_broad_type(self, ngal):
         typefile = self.config.type_file
         if typefile is "":
-            typedata = np.ones(ngal, dtype=int)
+            typedata = np.zeros(ngal, dtype=int)
         else:
             typedata = tables_io.read(typefile)['types']
         numtypes = len(list(set(typedata)))
