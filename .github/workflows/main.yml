@@ -5,7 +5,7 @@ name: rail
 
 on:
   push:
-    branches: [ main ]
+    branches: [ issue/72/bpz_inform ]
   pull_request:
     branches: [ main ]
 

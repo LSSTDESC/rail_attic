@@ -3,6 +3,7 @@ import os
 import sys
 import copy
 import glob
+import pickle
 import pytest
 import yaml
 from rail.core.stage import RailStage
@@ -275,14 +276,26 @@ def test_catch_bad_bands():
     with pytest.raises(ValueError) as errinfo:
         sklearn_nn.SimpleNN.make_stage(hdf5_groupname='', **params)
 
-def test_dummy_bpz_train():
-    train_config_dict = {'zmin': 0.0, 'zmax': 3.0, 'dz': 0.01, 'hdf5_groupname':'photometry'}
+def test_bpz_train():
+    train_config_dict = {'zmin': 0.0, 'zmax': 3.0, 'dz': 0.01, 'hdf5_groupname':'photometry',
+                         'nt_array': [8], 'model': 'testmodel_bpz.pkl'}
     train_algo = bpz_lite.Inform_BPZ_lite
     DS.clear()
     training_data = DS.read_file('training_data', TableHandle, traindata)
     train_stage = train_algo.make_stage(**train_config_dict)
-    with pytest.raises(NotImplementedError):
-        train_stage.inform(training_data)
+    train_stage.inform(training_data)
+    expected_keys = ['fo_arr', 'kt_arr', 'zo_arr', 'km_arr', 'a_arr', 'mo', 'nt_array']
+    with open("testmodel_bpz.pkl", "rb") as f:
+        tmpmodel = pickle.load(f)
+    for key in expected_keys:
+        assert key in tmpmodel.keys()
+    os.remove("testmodel_bpz.pkl")
+
+def make_fake_prior():
+    tmpdict = dict(fo_arr=np.array([1.0]), kt_arr=np.array([0.45]), zo_arr=np.array([0.431]),
+                   km_arr=np.array([0.0913]), a_arr=np.array([2.46]), mo=20.0, nt_array=[8])
+    with open("testmodel_bpz.pkl", "wb") as f:
+        pickle.dump(tmpdict, f)
 
 def test_bpz_lite():
     train_config_dict = {}
@@ -293,7 +306,7 @@ def test_bpz_lite():
                          'columns_file':"./examples/estimation/configs/test_bpz.columns",
                          'spectra_file': "SED/CWWSB4.list",
                          'madau_flag': 'no',
-                         'bands': 'ugrizy',
+                         'no_prior': False,
                          'prior_band': 'mag_i_lsst',
                          'prior_file': 'hdfn_gen',
                          'p_min': 0.005,
@@ -301,10 +314,12 @@ def test_bpz_lite():
                          'zp_errors': np.array([0.01, 0.01, 0.01, 0.01, 0.01, 0.01]),
                          'mag_err_min': 0.005,
                          'hdf5_groupname':'photometry',
-                         'modelfile': 'model.out'}
-    zb_expected = np.array([0.18, 2.88, 0.14, 0.21, 2.97, 0.18, 0.23, 0.23,
-                            2.98, 2.92])
+                         'nt_array': [8],
+                         'model': 'testmodel_bpz.pkl'}
+    zb_expected = np.array([0.18, 0.12, 0.41, 0.4, 0.03, 0.39, 0.23, 0.23,
+                            0.04, 0.04])
     train_algo = None
+    make_fake_prior()
     pz_algo = bpz_lite.BPZ_lite
     results, rerun_results, rerun3_results = one_algo("BPZ_lite", train_algo, pz_algo, train_config_dict, estim_config_dict)
     assert np.isclose(results.ancil['zmode'], zb_expected).all()
@@ -326,8 +341,7 @@ def test_bpz_lite_wkernel_flatprior():
                          'gauss_kernel': 0.1,
                          'zp_errors': np.array([0.01, 0.01, 0.01, 0.01, 0.01, 0.01]),
                          'mag_err_min': 0.005,
-                         'hdf5_groupname':'photometry',
-                         'modelfile': 'model.out'}
+                         'hdf5_groupname':'photometry'}
     zb_expected = np.array([0.18, 2.88, 0.12, 0.15, 2.97, 2.78, 0.11, 0.19,
                             2.98, 2.92])
     train_algo = None

@@ -99,7 +99,7 @@ class Inform_BPZ_lite(CatInformer):
                           init_km=Param(float, 0.1, msg="initial guess for km in training"),
                           prior_band=Param(str, "mag_i_lsst", msg="referene band, which column to use in training prior"),
                           redshift_col=Param(str, "redshift", msg="name for redshift column in training data"),
-                          type_file=Param(str, "broad_types.hdf5", msg="name of file with the broad type fits for the training data"))
+                          type_file=Param(str, "", msg="name of file with the broad type fits for the training data"))
 
     def __init__(self, args, comm=None):
         """Init function, init config stuff
@@ -164,9 +164,12 @@ class Inform_BPZ_lite(CatInformer):
             km_arr[i] = result[2]
         return zo_arr, km_arr, a_arr
 
-    def _get_broad_type(self):
+    def _get_broad_type(self, ngal):
         typefile = self.config.type_file
-        typedata = tables_io.read(typefile)['types']
+        if typefile is "":
+            typedata = np.ones(ngal, dtype=int)
+        else:
+            typedata = tables_io.read(typefile)['types']
         numtypes = len(list(set(typedata)))
         return numtypes, typedata
 
@@ -178,13 +181,15 @@ class Inform_BPZ_lite(CatInformer):
         else:  # pragma:  no cover
             training_data = self.get_data('input')
 
+        ngal = len(training_data[self.config.prior_band])
+
         if self.config.prior_band not in training_data.keys():
             raise KeyError(f"prior_band {self.config.prior_band} not found in input data!")
         if self.config.redshift_col not in training_data.keys():
             raise KeyError(f"redshift column {self.config.redshift_col} not found in input data!")
 
         # cal function to get broad types
-        Ntyp, broad_types = self._get_broad_type()
+        Ntyp, broad_types = self._get_broad_type(ngal)
         self.ntyp = Ntyp
         # trim data to between mmin and mmax
         ref_mags = training_data[self.config.prior_band]
