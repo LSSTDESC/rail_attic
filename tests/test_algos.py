@@ -289,13 +289,6 @@ def test_bpz_train():
         tmpmodel = pickle.load(f)
     for key in expected_keys:
         assert key in tmpmodel.keys()
-    os.remove("testmodel_bpz.pkl")
-
-def make_fake_prior():
-    tmpdict = dict(fo_arr=np.array([1.0]), kt_arr=np.array([0.45]), zo_arr=np.array([0.431]),
-                   km_arr=np.array([0.0913]), a_arr=np.array([2.46]), mo=20.0, nt_array=[8])
-    with open("testmodel_bpz.pkl", "wb") as f:
-        pickle.dump(tmpdict, f)
 
 def test_bpz_lite():
     train_config_dict = {}
@@ -316,10 +309,9 @@ def test_bpz_lite():
                          'hdf5_groupname':'photometry',
                          'nt_array': [8],
                          'model': 'testmodel_bpz.pkl'}
-    zb_expected = np.array([0.18, 0.12, 0.41, 0.4, 0.03, 0.39, 0.23, 0.23,
-                            0.04, 0.04])
+    zb_expected = np.array([0.18, 2.89, 0.12, 0.19, 2.97, 2.78, 0.1, 0.23,
+                            2.98, 2.92])
     train_algo = None
-    make_fake_prior()
     pz_algo = bpz_lite.BPZ_lite
     results, rerun_results, rerun3_results = one_algo("BPZ_lite", train_algo, pz_algo, train_config_dict, estim_config_dict)
     assert np.isclose(results.ancil['zmode'], zb_expected).all()

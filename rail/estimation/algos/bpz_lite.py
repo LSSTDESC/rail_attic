@@ -174,7 +174,7 @@ class Inform_BPZ_lite(CatInformer):
 
     def _get_broad_type(self, ngal):
         typefile = self.config.type_file
-        if typefile is "":
+        if typefile == "":
             typedata = np.zeros(ngal, dtype=int)
         else:
             typedata = tables_io.read(typefile)['types']
@@ -214,6 +214,7 @@ class Inform_BPZ_lite(CatInformer):
         print(self.fo_arr)
         print(self.kt_arr)
         zo_arr, km_arr, a_arr = self._find_dndz_params()
+        a_arr = np.abs(a_arr)
 
         self.model = dict(fo_arr=self.fo_arr, kt_arr=self.kt_arr, zo_arr=zo_arr,
                           km_arr=km_arr, a_arr=a_arr, mo=self.config.m0,
