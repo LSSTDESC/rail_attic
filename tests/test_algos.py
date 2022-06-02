@@ -5,6 +5,7 @@ import glob
 import pickle
 import pytest
 import yaml
+import tables_io
 from rail.core.stage import RailStage
 from rail.core.data import DataStore, TableHandle
 from rail.estimation.algos import randomPZ, sklearn_nn, flexzboost, trainZ
@@ -280,12 +281,19 @@ def test_catch_bad_bands():
 
 @pytest.mark.parametrize(
     "ntarray",
-    [[8], [4,4]]
+    [[8], [4, 4]]
 )
 def test_bpz_train(ntarray):
     # first, train with two broad types
     train_config_dict = {'zmin': 0.0, 'zmax': 3.0, 'dz': 0.01, 'hdf5_groupname': 'photometry',
-                         'nt_array': ntarray, 'model': 'testmodel_bpz.pkl'}
+                         'nt_array': ntarray, 'type_file': 'tmp_broad_types.hdf5',
+                         'model': 'testmodel_bpz.pkl'}
+    if len(ntarray) == 2:
+        broad_types = np.random.randint(2, size=100)
+    else:
+        broad_types = np.zeros(100, dtype=int)
+    typedict = dict(types=broad_types)
+    tables_io.write(typedict, "tmp_broad_types.hdf5")
     train_algo = bpz_lite.Inform_BPZ_lite
     DS.clear()
     training_data = DS.read_file('training_data', TableHandle, traindata)
@@ -296,6 +304,7 @@ def test_bpz_train(ntarray):
         tmpmodel = pickle.load(f)
     for key in expected_keys:
         assert key in tmpmodel.keys()
+    os.remove("tmp_broad_types.hdf5")
 
 
 def test_bpz_lite():
