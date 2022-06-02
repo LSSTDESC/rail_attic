@@ -174,7 +174,7 @@ class Inform_BPZ_lite(CatInformer):
 
     def _get_broad_type(self, ngal):
         typefile = self.config.type_file
-        if typefile == "":
+        if typefile == "":  # pragma: no cover
             typedata = np.zeros(ngal, dtype=int)
         else:
             typedata = tables_io.read(typefile)['types']  # pragma: no cover
