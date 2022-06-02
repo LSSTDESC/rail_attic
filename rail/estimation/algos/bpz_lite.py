@@ -177,7 +177,7 @@ class Inform_BPZ_lite(CatInformer):
         if typefile == "":
             typedata = np.zeros(ngal, dtype=int)
         else:
-            typedata = tables_io.read(typefile)['types']
+            typedata = tables_io.read(typefile)['types']  # pragma: no cover
         numtypes = len(list(set(typedata)))
         return numtypes, typedata
 
@@ -191,9 +191,9 @@ class Inform_BPZ_lite(CatInformer):
 
         ngal = len(training_data[self.config.prior_band])
 
-        if self.config.prior_band not in training_data.keys():
+        if self.config.prior_band not in training_data.keys():  # pragma: no cover
             raise KeyError(f"prior_band {self.config.prior_band} not found in input data!")
-        if self.config.redshift_col not in training_data.keys():
+        if self.config.redshift_col not in training_data.keys():  # pragma: no cover
             raise KeyError(f"redshift column {self.config.redshift_col} not found in input data!")
 
         # cal function to get broad types
