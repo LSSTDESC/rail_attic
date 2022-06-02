@@ -498,7 +498,10 @@ class BPZ_lite(CatEstimator):
                                                    kernel, flux,
                                                    flux_err, mag_0,
                                                    zgrid)
-
+        # remove the keys added to the data file by BPZ
+        test_data.pop('flux', None)
+        test_data.pop('flux_err', None)
+        test_data.pop('mags', None)
         qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=pdfs))
         qp_dstn.set_ancil(dict(zmode=zmode))
         self.add_data('output', qp_dstn)
