@@ -278,9 +278,14 @@ def test_catch_bad_bands():
         sklearn_nn.SimpleNN.make_stage(hdf5_groupname='', **params)
 
 
-def test_bpz_train():
+@pytest.mark.parametrize(
+    "ntarray",
+    [[8], [4,4]]
+)
+def test_bpz_train(ntarray):
+    # first, train with two broad types
     train_config_dict = {'zmin': 0.0, 'zmax': 3.0, 'dz': 0.01, 'hdf5_groupname': 'photometry',
-                         'nt_array': [8], 'model': 'testmodel_bpz.pkl'}
+                         'nt_array': ntarray, 'model': 'testmodel_bpz.pkl'}
     train_algo = bpz_lite.Inform_BPZ_lite
     DS.clear()
     training_data = DS.read_file('training_data', TableHandle, traindata)
