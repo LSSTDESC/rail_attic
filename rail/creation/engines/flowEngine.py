@@ -4,7 +4,6 @@ used to generate synthetic data """
 import numpy as np
 import qp
 
-from pzflow import Flow
 from rail.core.data import PqHandle, QPHandle, FlowHandle
 from rail.creation.engines import Engine, PosteriorEvaluator
 
@@ -32,6 +31,7 @@ class FlowEngine(Engine):
         flow = kwargs.get('flow')
         if flow is None:  #pragma: no cover
             return None
+        from pzflow import Flow
         if isinstance(flow, Flow):
             return self.set_data('flow', flow)
         return self.set_data('flow', data=None, path=flow)

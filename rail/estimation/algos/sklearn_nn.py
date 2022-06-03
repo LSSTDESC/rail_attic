@@ -6,8 +6,6 @@ read in fromfile and pdf width set to base_width*(1+zmode).
 
 import numpy as np
 # from numpy import inf
-import sklearn.neural_network as sknn
-from sklearn.preprocessing import StandardScaler
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatEstimator, CatInformer
 import qp
@@ -52,6 +50,7 @@ def make_color_data(data_dict, bands, ref_band, nondet_val):
 
 def regularize_data(data):
     """Utility function to prepare data for sklearn"""
+    from sklearn.preprocessing import StandardScaler
     scaler = StandardScaler()
     scaler.fit(data)
     regularized_data = scaler.transform(data)
@@ -92,6 +91,7 @@ class Inform_SimpleNN(CatInformer):
     def run(self):
         """Train the NN model
         """
+        import sklearn.neural_network as sknn
         if self.config.hdf5_groupname:
             training_data = self.get_data('input')[self.config.hdf5_groupname]
         else:  #pragma:  no cover

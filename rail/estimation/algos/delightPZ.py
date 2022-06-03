@@ -26,30 +26,7 @@ import errno
 import coloredlogs
 import logging
 
-# Delight initialisation
-
 # Filters and SED
-
-from delight.interfaces.rail.processFilters import processFilters
-from delight.interfaces.rail.processSEDs import processSEDs  # build a redshift -flux grid model
-
-
-# interface with Delight through files
-# build the parameter file required by Delight
-from delight.interfaces.rail.makeConfigParam import makeConfigParam  # build the parameter file required by Delight
-
-# Delight format
-# convert DESC input file into Delight format
-from delight.interfaces.rail.convertDESCcat import convertDESCcatTrainData, convertDESCcatChunk
-
-# Delight algorithms
-
-from delight.interfaces.rail.templateFitting import templateFitting
-from delight.interfaces.rail.delightLearn import delightLearn
-from delight.interfaces.rail.delightApply import delightApply
-
-# other
-from delight.interfaces.rail.getDelightRedshiftEstimation import getDelightRedshiftEstimation
 
 # Create a logger object.
 logger = logging.getLogger(__name__)
@@ -141,6 +118,13 @@ class Inform_DelightPZ(CatInformer):
         """Do all the annoying file IO stuff to ascii in current delight
            Then run delightApply to train the gauss. process
         """
+
+        from delight.interfaces.rail.processFilters import processFilters
+        from delight.interfaces.rail.processSEDs import processSEDs  # build a redshift -flux grid model
+        from delight.interfaces.rail.makeConfigParam import makeConfigParam  # build the parameter file required by Delight
+        from delight.interfaces.rail.convertDESCcat import convertDESCcatTrainData
+        from delight.interfaces.rail.delightLearn import delightLearn
+
         try:
             if not os.path.exists(self.config['tempdir']):
                 os.makedirs(self.config['tempdir'])  # pragma: no cover
@@ -271,6 +255,13 @@ class delightPZ(CatEstimator):
         return
 
     def run(self):
+        from delight.interfaces.rail.makeConfigParam import makeConfigParam
+        from delight.interfaces.rail.convertDESCcat import convertDESCcatChunk
+        from delight.interfaces.rail.templateFitting import templateFitting
+        from delight.interfaces.rail.delightApply import delightApply
+        from delight.interfaces.rail.getDelightRedshiftEstimation import getDelightRedshiftEstimation
+
+
         # load data
         if self.config.hdf5_groupname:
             test_data = self.get_data('input')[self.config.hdf5_groupname]
