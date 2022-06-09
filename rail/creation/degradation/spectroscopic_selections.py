@@ -20,6 +20,7 @@ class SpecSelection(Degrader):
     name = 'specselection'
     config_options = Degrader.config_options.copy()
     config_options.update(**{"N_tot": 10000})
+    config_options.update(**{"downsample": True})
     config_options.update(**{"success_rate_dir":
                              os.path.join(
                                  os.path.dirname(__file__),
@@ -37,7 +38,7 @@ class SpecSelection(Degrader):
         """
 
         # check that highSNR is boolean
-        if isinstance(self.config["N_tot"], int) is not True:
+        if (isinstance(self.config["N_tot"], int) is not True):
             raise TypeError("Total number of selected sources must be an "
                             "integer.")
         if os.path.exists(self.config["success_rate_dir"]) is not True:
@@ -97,7 +98,8 @@ class SpecSelection(Degrader):
         self.mask = np.product(~np.isnan(data.to_numpy()), axis=1)
 
         self.selection(data)
-        self.downsampling_N_tot(data)
+        if self.config["downsample"] is True:
+            self.downsampling_N_tot(data)
 
         data_selected = data.iloc[np.where(self.mask == 1)[0]]
 
@@ -418,31 +420,27 @@ class SpecSelection_zCOSMOS(SpecSelection):
         faster reloads
         """
         success_rate_dir = self.config["success_rate_dir"]
-        pickle_file = os.path.join(success_rate_dir, "zCOSMOS.cache")
-        if not os.path.exists(pickle_file):
-            x = np.loadtxt(os.path.join(
+        x = np.loadtxt(os.path.join(
                 success_rate_dir, "zCOSMOS_z_sampling.txt"))
-            y = np.loadtxt(os.path.join(
+        y = np.loadtxt(os.path.join(
                 success_rate_dir, "zCOSMOS_I_sampling.txt"))
-            rates = np.loadtxt(os.path.join(
+            
+        pixels_y = np.searchsorted(y, data["mag_i_lsst"])
+        pixels_x = np.searchsorted(x, data["redshift"])
+            
+        rates = np.loadtxt(os.path.join(
                 success_rate_dir, "zCOSMOS_success.txt"))
-            p_success_zI = interp2d(x, y, rates, copy=True, kind="linear")
-            with open(pickle_file, "wb") as f:
-                pickle.dump(p_success_zI, f)
-        else:
-            with open(pickle_file, "rb") as f:
-                p_success_zI = pickle.load(f)
-        # Randomly sample objects according to their success rate
-        random_draw = np.random.rand(len(data))
-        object_rates = np.empty_like(random_draw)
-        for i, (z, I_AB) in enumerate(zip(data["redshift"],
-                                          data["mag_i_lsst"])):
-            # this must be in a loop since interp2d will create a grid from the
-            # input redshifts and magnitudes instead of evaluating pairs of
-            # values
-            object_rates[i] = p_success_zI(z, I_AB)
-        mask = random_draw < object_rates
-        # update the internal state
+        ratio_list = []
+        for i in range(len(pixels_y)):
+            if (pixels_y[i] >= rates.shape[0]) or (pixels_x[i] >= rates.shape[1]):
+                rate = 0
+            else:
+                rate = rates[pixels_y[i]][pixels_x[i]]            
+            ratio_list.append(rate)
+            
+        ratio_list = np.array(ratio_list)        
+        randoms = np.random.uniform(size=data["mag_i_lsst"].size)
+        mask = (randoms <= ratio_list)
         self.mask &= mask
 
     def selection(self, data):
@@ -455,5 +453,71 @@ class SpecSelection_zCOSMOS(SpecSelection):
         """
         # start message
         printMsg = "Applying the zCOSMOS selection."
+
+        return printMsg
+
+    
+class SpecSelection_HSC(SpecSelection):
+    """
+    The class of spectroscopic selections with HSC
+    """
+
+    name = 'specselection_HSC'
+
+    def photometryCut(self, data):
+        """
+        HSC galaxies were binned in color magnitude space with i-band mag from -2 to 6 and g-z color from 13 to 26.
+        """
+        mask = (data["mag_i_lsst"] > 13.0) & (data["mag_i_lsst"] < 26.)
+        self.mask &= mask
+        gz = data["mag_g_lsst"] - data["mag_z_lsst"]
+        mask = (gz > -2.) & (gz < 6.)
+        self.mask &= mask
+
+    def speczSuccess(self, data):
+        """
+        HSC galaxies were binned in color magnitude space with i-band mag from -2 to 6 and g-z color from 13 to 26
+        200 bins in each direction. The ratio of of galaxies with spectroscopic redshifts (training galaxies) to
+        galaxies with only photometry in HSC wide field (application galaxies) was computed for each pixel. We divide
+        the data into the same pixels and randomly select galaxies into the training sample based on the HSC ratios
+        """
+        success_rate_dir = self.config["success_rate_dir"]
+        x_edge = np.loadtxt(os.path.join(
+                success_rate_dir, "hsc_i_binedge.txt"))
+        y_edge = np.loadtxt(os.path.join(
+                success_rate_dir, "hsc_gz_binedge.txt"))
+
+        rates = np.loadtxt(os.path.join(
+                success_rate_dir, "hsc_success.txt"))
+                
+        pixels_y = np.searchsorted(y_edge, data["mag_g_lsst"]-data["mag_z_lsst"])
+        pixels_x = np.searchsorted(x_edge, data["mag_i_lsst"])
+        
+        pixels_y = pixels_y - 1
+        pixels_x = pixels_x - 1
+
+        ratio_list = []
+        for i in range(len(pixels_y)):
+            if (pixels_y[i] >= rates.shape[0]) or (pixels_x[i] >= rates.shape[1]):
+                rate = 0
+            else:
+                rate = rates[pixels_y[i]][pixels_x[i]]            
+            ratio_list.append(rate)
+            
+        ratio_list = np.array(ratio_list)        
+        randoms = np.random.uniform(size=data["mag_i_lsst"].size)
+        mask = (randoms <= ratio_list)
+        self.mask &= mask
+
+    def selection(self, data):
+        self.photometryCut(data)
+        self.speczSuccess(data)
+
+    def __repr__(self):
+        """
+        Define how the model is represented and printed.
+        """
+        # start message
+        printMsg = "Applying the HSC selection."
 
         return printMsg
