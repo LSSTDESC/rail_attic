@@ -56,10 +56,17 @@ class VarInferenceStack(PZSummarizer):
             nk = np.sum(gamma_matrix, axis=0)
             alpha_trace = nk + init_trace
 
-        qp_d = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=alpha_trace))
-        #sample_pz = dirichlet.rvs(alpha_trace, size=self.config.nsamples)
-        #siglow = np.expand_dims(np.percentile(sample_pz, 15.87, axis=0), -1).T
-        #sighi = np.expand_dims(np.percentile(sample_pz, 84.13, axis=0), -1).T
-        #ancil_dict = dict(sigmalow=siglow, sigmahigh=sighi)
-        #qp_d.set_ancil(ancil_dict)
+        # old way of just spitting out a single distribution
+        # qp_d = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=alpha_trace))
+        # instead, sample and save the samples
+        sample_pz = dirichlet.rvs(alpha_trace, size=self.config.nsamples)
+
+        # "old way" of computing 1 sigma confidence interval, leave commented out for now
+        # siglow = np.expand_dims(np.percentile(sample_pz, 15.87, axis=0), -1).T
+        # sighi = np.expand_dims(np.percentile(sample_pz, 84.13, axis=0), -1).T
+        # ancil_dict = dict(sigmalow=siglow, sigmahigh=sighi)
+        # qp_d.set_ancil(ancil_dict)
+        # self.add_data('output', qp_d)
+
+        qp_d = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=sample_pz))
         self.add_data('output', qp_d)
