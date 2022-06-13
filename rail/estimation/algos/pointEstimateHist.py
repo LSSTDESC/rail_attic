@@ -37,7 +37,7 @@ class PointEstimateHist(PZSummarizer):
             zarr = np.array([])
             for un, ct in zip(uniq, cnts):
                 zarr = np.concatenate((zarr, np.repeat(zb[un], ct)), axis=None)
-                tmp_hist_vals = np.histogram(zarr, bins=self.zgrid)[0]
+            tmp_hist_vals = np.histogram(zarr, bins=self.zgrid)[0]
             hist_vals = np.vstack((hist_vals, tmp_hist_vals))
         qp_d = qp.Ensemble(qp.hist,
                            data=dict(bins=self.zgrid, pdfs=np.atleast_2d(hist_vals)))
