@@ -8,6 +8,7 @@ N (z) of the training set.
 import numpy as np
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatEstimator, CatInformer
+from rail.core.common_params import SHARED_PARAMS
 import qp
 
 
@@ -28,9 +29,9 @@ class Inform_trainZ(CatInformer):
 
     name = 'Inform_trainZ'
     config_options = CatInformer.config_options.copy()
-    config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
-                          zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
-                          nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"))
+    config_options.update(zmin=SHARED_PARAMS,
+                          zmax=SHARED_PARAMS,
+                          nzbins=SHARED_PARAMS)
 
 
     def __init__(self, args, comm=None):
@@ -61,9 +62,9 @@ class TrainZ(CatEstimator):
 
     name = 'TrainZ'
     config_options = CatEstimator.config_options.copy()
-    config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
-                          zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
-                          nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"))
+    config_options.update(zmin=SHARED_PARAMS,
+                          zmax=SHARED_PARAMS,
+                          nzbins=SHARED_PARAMS)
 
     def __init__(self, args, comm=None):
         self.zgrid = None
