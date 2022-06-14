@@ -38,11 +38,13 @@ def one_algo(key, single_trainer, single_estimator, train_kwargs, estim_kwargs):
 
     if single_trainer is not None:
         train_pz = single_trainer.make_stage(**train_kwargs)
+        help(train_pz)
         train_pz.inform(training_data)
 
     pz = single_estimator.make_stage(name=key, **estim_kwargs)
     estim = pz.estimate(validation_data)
-
+    help(estim)
+    
     copy_estim_kwargs = estim_kwargs.copy()
     model_file = copy_estim_kwargs.pop('model', 'None')
 
