@@ -7,7 +7,7 @@ from types import GeneratorType
 from rail.core.stage import RailStage
 from rail.core.data import DataStore, DataHandle, TableHandle, Hdf5Handle, FitsHandle, PqHandle, QPHandle, ModelHandle, FlowHandle
 from rail.core.utilStages import ColumnMapper, RowSelector, TableConverter
-
+from rail.core.common_params import SHARED_PARAMS, copy_param, set_param_default
 
 #def test_data_file():    
 #    with pytest.raises(ValueError) as errinfo:
@@ -273,3 +273,18 @@ def test_data_store():
     
     os.remove(datapath_hdf5_copy)
     os.remove(datapath_pq_copy)
+
+
+def test_common_params():
+
+    par = copy_param('zmin')
+    assert par.default == 0.0
+    assert par.value == 0.0
+    assert par.dtype == float
+
+    set_param_default('zmin', 0.1)
+    par = copy_param('zmin')
+    assert par.default == 0.1
+    assert par.value == 0.1
+    assert par.dtype == float
+ 
