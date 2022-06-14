@@ -5,6 +5,7 @@ Implement simple version of TxPipe NZDir summarizer
 import numpy as np
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatEstimator, CatInformer
+from rail.core.data import QPHandle
 import qp
 from sklearn.neighbors import NearestNeighbors
 import scipy.spatial
@@ -107,7 +108,10 @@ class NZDir(CatEstimator):
                           usecols=Param(list, default_usecols, msg="columns from sz_date for Neighor calculation"),
                           leafsize=Param(int, 40, msg="leaf size for testdata KDTree"),
                           hdf5_groupname=Param(str, "photometry", msg="name of hdf5 group for data, if None, then set to ''"),
-                          phot_weightcol=Param(str, "", msg="name of photometry weight, if present"))
+                          phot_weightcol=Param(str, "", msg="name of photometry weight, if present"),
+                          nsamples=Param(int, 20, msg="number of bootstrap samples to generate"))
+    outputs = [('output', QPHandle),
+               ('single_NZ', QPHandle)]
 
     def __init__(self, args, comm=None):
         self.zgrid = None
@@ -131,7 +135,8 @@ class NZDir(CatEstimator):
             test_data = self.get_data('input')[self.config.hdf5_groupname]
         else:  # pragma:  no cover
             test_data = self.get_data('input')
-        self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
+        self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins + 1)
+        self.bincents = 0.5 * (self.zgrid[1:] + self.zgrid[:-1])
 
         # assign weight vecs if present, else set all to 1.0
         # tested in example notebook, so just put a pragma no cover for if present
@@ -162,7 +167,40 @@ class NZDir(CatEstimator):
             bins=self.zgrid,
             weights=weights * self.szweights,
         )
-        # make the ensembles of the histograms
         qp_d = qp.Ensemble(qp.hist,
                            data=dict(bins=self.zgrid, pdfs=hist_data[0]))
-        self.add_data('output', qp_d)
+
+        # add a bootstrap sampling
+        # The way things are set up, it is easier and faster to bootstrap the spec-z gals
+        # and weights, but if we wanted to be more like the other bootstraps we should really
+        # bootstrap the photometric data and re-run the ball tree query N times.
+        ngal = len(self.szweights)
+        nsamp = self.config.nsamples
+        bootstrap_indeces = np.random.randint(ngal,
+                                              size=ngal * nsamp).reshape([nsamp, ngal])
+        hist_vals = np.empty((0, self.config.nzbins))
+        for i in range(nsamp):
+            uniq, cnts = np.unique(bootstrap_indeces[i], return_counts=True)
+            zarr = np.array([])
+            tmpweight = np.array([])
+            for un, ct in zip(uniq, cnts):
+                zarr = np.concatenate((zarr, np.repeat(self.szvec[un], ct)), axis=None)
+                tmpweight = np.concatenate((tmpweight, np.repeat(self.szweights[un], ct)), axis=None)
+            tmp_hist_vals = np.histogram(zarr, bins=self.zgrid, weights=weights * tmpweight)[0]
+            hist_vals = np.vstack((hist_vals, tmp_hist_vals))
+        sample_ens = qp.Ensemble(qp.hist, data=dict(bins=self.zgrid, pdfs=np.atleast_2d(hist_vals)))
+
+        self.add_data('output', sample_ens)
+        # compute error estimate based on samples, add as ancil data to overall ensemble, then save
+        # compute 1 sigma uncertainties based on the N samples
+        # use the qp Ensemble so that we are certain that std normalization has been applied
+        pdf_vals = sample_ens.pdf(self.bincents)
+        nz_vals = qp_d.pdf(self.bincents)
+        xlow = np.percentile(pdf_vals, 15.87, axis=0)
+        xhigh = np.percentile(pdf_vals, 84.13, axis=0)
+        sighigh = np.expand_dims(xhigh - nz_vals, -1).T
+        siglow = np.expand_dims(nz_vals - xlow, -1).T
+        ancil_dict = dict(sigma_low=siglow, sigma_high=sighigh)
+        qp_d.set_ancil(ancil_dict)
+
+        self.add_data('single_NZ', qp_d)

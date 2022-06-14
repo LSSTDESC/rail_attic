@@ -5,7 +5,9 @@ A summarizer that simple makes a histogram of a point estimate
 import numpy as np
 from ceci.config import StageParameter as Param
 from rail.estimation.summarizer import PZSummarizer
+from rail.core.data import QPHandle
 import qp
+
 
 class PointEstimateHist(PZSummarizer):
     """Summarizer which simply histograms a point estimate
@@ -18,6 +20,8 @@ class PointEstimateHist(PZSummarizer):
                           nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
                           point_estimate=Param(str, 'zmode', msg="Which point estimate to use"),
                           nsamples=Param(int, 1000, msg="Number of sample distributions to return"))
+    outputs = [('output', QPHandle),
+               ('single_NZ', QPHandle)]
 
     def __init__(self, args, comm=None):
         PZSummarizer.__init__(self, args, comm=comm)
@@ -28,7 +32,11 @@ class PointEstimateHist(PZSummarizer):
         npdf = test_data.npdf
         zb = test_data.ancil['zmode']
         nsamp = self.config.nsamples
-        self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins+1)
+        self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins + 1)
+        self.bincents = 0.5 * (self.zgrid[1:] + self.zgrid[:-1])
+        single_hist = np.histogram(test_data.ancil[self.config.point_estimate], bins=self.zgrid)[0]
+        qp_d = qp.Ensemble(qp.hist,
+                           data=dict(bins=self.zgrid, pdfs=np.atleast_2d(single_hist)))
         bootstrap_indeces = np.random.randint(npdf,
                                               size=npdf * nsamp).reshape([nsamp, npdf])
         hist_vals = np.empty((0, self.config.nzbins))
@@ -39,6 +47,16 @@ class PointEstimateHist(PZSummarizer):
                 zarr = np.concatenate((zarr, np.repeat(zb[un], ct)), axis=None)
             tmp_hist_vals = np.histogram(zarr, bins=self.zgrid)[0]
             hist_vals = np.vstack((hist_vals, tmp_hist_vals))
-        qp_d = qp.Ensemble(qp.hist,
-                           data=dict(bins=self.zgrid, pdfs=np.atleast_2d(hist_vals)))
-        self.add_data('output', qp_d)
+        sample_ens = qp.Ensemble(qp.hist,
+                                 data=dict(bins=self.zgrid, pdfs=np.atleast_2d(hist_vals)))
+        self.add_data('output', sample_ens)
+        # calculate error estimate based on samples, add to the single ensembe output and save
+        pdf_vals = sample_ens.pdf(self.bincents)
+        nz_vals = qp_d.pdf(self.bincents)
+        xlow = np.percentile(pdf_vals, 15.87, axis=0)
+        xhigh = np.percentile(pdf_vals, 84.13, axis=0)
+        sighigh = np.expand_dims(xhigh - nz_vals, -1).T
+        siglow = np.expand_dims(nz_vals - xlow, -1).T
+        ancil_dict = dict(sigmalow=siglow, sigmahigh=sighigh)
+        qp_d.set_ancil(ancil_dict)
+        self.add_data('single_NZ', qp_d)
