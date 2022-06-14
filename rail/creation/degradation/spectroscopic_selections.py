@@ -1,8 +1,8 @@
 """ Applying selection functions to catalog """
 
 import numpy as np
-from scipy.interpolate import interp1d, interp2d
-import pickle
+from scipy.interpolate import interp1d
+
 
 from rail.creation.degradation import Degrader
 import os
@@ -38,7 +38,7 @@ class SpecSelection(Degrader):
         """
 
         # check that highSNR is boolean
-        if (isinstance(self.config["N_tot"], int) is not True):
+        if isinstance(self.config["N_tot"], int) is not True:
             raise TypeError("Total number of selected sources must be an "
                             "integer.")
         if os.path.exists(self.config["success_rate_dir"]) is not True:
@@ -65,7 +65,7 @@ class SpecSelection(Degrader):
         Selection functions
         """
 
-    def downsampling_N_tot(self, data):
+    def downsampling_N_tot(self):
         """
         Method to randomly sample down the objects to a given
         number of data objects.
@@ -79,7 +79,8 @@ class SpecSelection(Degrader):
             return
         else:
             idx_selected = np.where(self.mask)[0]
-            idx_keep = np.random.choice(idx_selected, replace=False, size=N_tot)
+            idx_keep = np.random.choice(idx_selected, replace=False,
+                                        size=N_tot)
             # create a mask with only those entries enabled that have been
             # selected
             mask = np.zeros_like(self.mask)
@@ -99,7 +100,7 @@ class SpecSelection(Degrader):
 
         self.selection(data)
         if self.config["downsample"] is True:
-            self.downsampling_N_tot(data)
+            self.downsampling_N_tot()
 
         data_selected = data.iloc[np.where(self.mask == 1)[0]]
 
@@ -424,21 +425,22 @@ class SpecSelection_zCOSMOS(SpecSelection):
                 success_rate_dir, "zCOSMOS_z_sampling.txt"))
         y = np.loadtxt(os.path.join(
                 success_rate_dir, "zCOSMOS_I_sampling.txt"))
-            
+
         pixels_y = np.searchsorted(y, data["mag_i_lsst"])
         pixels_x = np.searchsorted(x, data["redshift"])
-            
+
         rates = np.loadtxt(os.path.join(
                 success_rate_dir, "zCOSMOS_success.txt"))
         ratio_list = []
-        for i in range(len(pixels_y)):
-            if (pixels_y[i] >= rates.shape[0]) or (pixels_x[i] >= rates.shape[1]):
+        for i, py in enumerate(pixels_y):
+            if (py >= rates.shape[0]) or \
+               (pixels_x[i] >= rates.shape[1]):
                 rate = 0
             else:
-                rate = rates[pixels_y[i]][pixels_x[i]]            
+                rate = rates[pixels_y[i]][pixels_x[i]]
             ratio_list.append(rate)
-            
-        ratio_list = np.array(ratio_list)        
+
+        ratio_list = np.array(ratio_list)
         randoms = np.random.uniform(size=data["mag_i_lsst"].size)
         mask = (randoms <= ratio_list)
         self.mask &= mask
@@ -456,7 +458,7 @@ class SpecSelection_zCOSMOS(SpecSelection):
 
         return printMsg
 
-    
+
 class SpecSelection_HSC(SpecSelection):
     """
     The class of spectroscopic selections with HSC
@@ -489,22 +491,23 @@ class SpecSelection_HSC(SpecSelection):
 
         rates = np.loadtxt(os.path.join(
                 success_rate_dir, "hsc_success.txt"))
-                
+
         pixels_y = np.searchsorted(y_edge, data["mag_g_lsst"]-data["mag_z_lsst"])
         pixels_x = np.searchsorted(x_edge, data["mag_i_lsst"])
-        
+
         pixels_y = pixels_y - 1
         pixels_x = pixels_x - 1
 
         ratio_list = []
-        for i in range(len(pixels_y)):
-            if (pixels_y[i] >= rates.shape[0]) or (pixels_x[i] >= rates.shape[1]):
+        for i, py in enumerate(pixels_y):
+            if (py[i] >= rates.shape[0]) or\
+               (pixels_x[i] >= rates.shape[1]):
                 rate = 0
             else:
-                rate = rates[pixels_y[i]][pixels_x[i]]            
+                rate = rates[pixels_y[i]][pixels_x[i]]
             ratio_list.append(rate)
-            
-        ratio_list = np.array(ratio_list)        
+
+        ratio_list = np.array(ratio_list)
         randoms = np.random.uniform(size=data["mag_i_lsst"].size)
         mask = (randoms <= ratio_list)
         self.mask &= mask
