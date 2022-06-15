@@ -211,6 +211,7 @@ class FZBoost(CatEstimator):
             iterator = self.input_iterator('input')
         else:  #pragma:  no cover
             test_data = self.get_data('input')
+        first = True
         for s, e, test_data in iterator:
             print(f"Process {self.rank} estimating PZ PDF for rows {s:,} - {e:,}")
             color_data = make_color_data(test_data, self.config.bands, self.config.err_bands,
@@ -220,7 +221,11 @@ class FZBoost(CatEstimator):
             qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=pdfs))
             zmode = qp_dstn.mode(grid=self.zgrid)
             qp_dstn.set_ancil(dict(zmode=zmode))
-            suffix = '_tmp_estimation.pickle'
-            self.save_chunk(qp_dstn, s, suffix)
-        self.output_chunks(suffix)
+            if first:
+                output_handle = self.add_handle('output', data = qp_dstn)
+                output_handle.initialize_write(self.input_lenght, communicator = self.comm)
+                first = False
+            output_handle.data=qp_dstn
+            output_handle.write_chunk(s, e)
 
+        output_handle.finalize_write()

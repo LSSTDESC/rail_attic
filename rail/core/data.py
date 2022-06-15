@@ -77,17 +77,38 @@ class DataHandle:
     def _write(cls, data, path, **kwargs):
         raise NotImplementedError("DataHandle._write")  #pragma: no cover
 
+    def initialize_write(self, data_lenght, **kwargs):
+        """Initialize file to be written by chunks"""
+        if self.path is None:
+            raise ValueError("TableHandle.write() called but path has not been specified")
+        self.groups, self.fileObj = self._initialize_write(self.data, self.path, data_lenght, **kwargs)
+
+    @classmethod
+    def _initialize_write(cls, data, path, data_lenght, **kwargs):
+        raise NotImplementedError("DataHandle._initialize_write") #pragma: no cover
+
     def write_chunk(self, start, end, **kwargs):
         """Write the data to the associatied file """
         if self.data is None:
             raise ValueError(f"TableHandle.write_chunk() called for path {self.path} with no data")
         if self.fileObj is None:
             raise ValueError(f"TableHandle.write_chunk() called before open for {self.tag} : {self.path}")
-        return self._write_chunk(self.data, self.fileObj, start, end, **kwargs)
+        return self._write_chunk(self.data, self.groups, start, end, **kwargs)
+
 
     @classmethod
     def _write_chunk(cls, data, fileObj, start, end, **kwargs):
         raise NotImplementedError("DataHandle._write_chunk")  #pragma: no cover
+
+    def finalize_write(self, **kwargs):
+        """Finalize and close file written by chunks"""
+        if self.fileObj is None:
+            raise ValueError(f"TableHandle.finalize_wite() called before open for {self.tag} : {self.path}")
+        self._finalize_write(self.data, self.fileObj, **kwargs)
+
+    @classmethod
+    def _finalize_write(cls, data, fileObj, **kwargs):
+        raise NotImplementedError("DataHandle._finalize_write")  #pragma: no cover
 
     def iterator(self, **kwargs):
         """Iterator over the data"""
@@ -199,7 +220,7 @@ class PqHandle(TableHandle):
 class QPHandle(DataHandle):
     """DataHandle for qp ensembles
     """
-    suffix = 'fits'
+    suffix = 'hdf5'
 
     @classmethod
     def _open(cls, path, **kwargs):
@@ -222,7 +243,21 @@ class QPHandle(DataHandle):
         """Write the data to the associatied file """
         return data.write_to(path)
 
+    @classmethod
+    def _initialize_write(cls, data, path, data_lenght, **kwargs):
+        if 'communicator' in kwargs:
+            comm = kwargs['communicator']
+        else:
+            comm = None
+        return data.initializeHdf5Write(path, data_lenght, comm)
 
+    @classmethod
+    def _write_chunk(cls, data, fileObj, start, end, **kwargs):
+        return data.writeHdf5Chunk(fileObj, start, end)
+
+    @classmethod
+    def _finalize_write(cls, data, fileObj, **kwargs):
+        return data.finalizeHdf5Write(fileObj)
 
 
 def default_model_read(modelfile):
