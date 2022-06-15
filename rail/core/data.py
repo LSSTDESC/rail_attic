@@ -80,7 +80,7 @@ class DataHandle:
 
     def initialize_write(self, data_lenght, **kwargs):
         """Initialize file to be written by chunks"""
-        if self.path is None:
+        if self.path is None:  #pragma: no cover
             raise ValueError("TableHandle.write() called but path has not been specified")
         self.groups, self.fileObj = self._initialize_write(self.data, self.path, data_lenght, **kwargs)
 
@@ -103,7 +103,7 @@ class DataHandle:
 
     def finalize_write(self, **kwargs):
         """Finalize and close file written by chunks"""
-        if self.fileObj is None:
+        if self.fileObj is None:  #pragma: no cover
             raise ValueError(f"TableHandle.finalize_wite() called before open for {self.tag} : {self.path}")
         self._finalize_write(self.data, self.fileObj, **kwargs)
 
@@ -207,7 +207,7 @@ class Hdf5Handle(TableHandle):
     def _write_chunk(cls, data, fileObj, groups, start, end, **kwargs):
         if groups is None:
             tables_io.io.writeDictToHdf5ChunkSingle(fileObj, data, start, end, **kwargs)
-        else:
+        else:  #pragma: no cover
             tables_io.io.writeDictToHdf5Chunk(groups, data, start, end, **kwargs)
 
 
@@ -247,8 +247,8 @@ class QPHandle(DataHandle):
     def _initialize_write(cls, data, path, data_lenght, **kwargs):
         if 'communicator' in kwargs:
             comm = kwargs['communicator']
-        else:
-            comm = None
+        else:  #pragma: no cover
+            comm = None 
         return data.initializeHdf5Write(path, data_lenght, comm)
 
     @classmethod
