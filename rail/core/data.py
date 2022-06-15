@@ -119,7 +119,12 @@ class DataHandle:
         return self._iterator(self.path, **kwargs)
 
     def size(self, **kwargs):
+        """Return the size of the data associated to this handle"""
         return self._size(self.path, **kwargs)
+
+    @classmethod
+    def _size(cls, path, **kwargs):
+        raise NotImplementedError("DataHandle._size")  #pragma: no cover
 
     @classmethod
     def _iterator(cls, path, **kwargs):
@@ -249,10 +254,7 @@ class QPHandle(DataHandle):
 
     @classmethod
     def _initialize_write(cls, data, path, data_lenght, **kwargs):
-        if 'communicator' in kwargs:
-            comm = kwargs['communicator']
-        else:  #pragma: no cover
-            comm = None 
+        comm = kwargs.get('communicator', None)
         return data.initializeHdf5Write(path, data_lenght, comm)
 
     @classmethod
@@ -436,6 +438,7 @@ class DataStore(dict):
             # Kludge to get docstrings to work
             if key in ['__objclass__']:
                 return None
+            raise KeyError from msg
 
     def __setattr__(self, key, value):
         """ Allow attribute-like parameter setting """

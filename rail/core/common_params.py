@@ -24,4 +24,3 @@ def copy_param(param_name):
 def set_param_default(param_name, default_value):
     """Change the default value of one of the shared parameters"""
     SHARED_PARAMS.get(param_name).set_default(default_value)
-

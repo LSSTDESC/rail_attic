@@ -206,26 +206,13 @@ class FZBoost(CatEstimator):
             raise ValueError("ref_band not present in bands list! ")
         self.zgrid = None
 
-    def run(self):
-        if self.config.hdf5_groupname:
-            iterator = self.input_iterator('input')
-        else:  #pragma:  no cover
-            test_data = self.get_data('input')
-        first = True
-        for s, e, test_data in iterator:
-            print(f"Process {self.rank} estimating PZ PDF for rows {s:,} - {e:,}")
-            color_data = make_color_data(test_data, self.config.bands, self.config.err_bands,
-                                         self.config.ref_band, self.config.nondetect_val)
-            pdfs, z_grid = self.model.predict(color_data, n_grid=self.config.nzbins)
-            self.zgrid = np.array(z_grid).flatten()
-            qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=pdfs))
-            zmode = qp_dstn.mode(grid=self.zgrid)
-            qp_dstn.set_ancil(dict(zmode=zmode))
-            if first:
-                output_handle = self.add_handle('output', data = qp_dstn)
-                output_handle.initialize_write(self.input_lenght, communicator = self.comm)
-                first = False
-            output_handle.data=qp_dstn
-            output_handle.write_chunk(s, e)
-
-        output_handle.finalize_write()
+    def _process_chunk(self, start, end, data, first):
+        print(f"Process {self.rank} estimating PZ PDF for rows {start:,} - {end:,}")
+        color_data = make_color_data(data, self.config.bands, self.config.err_bands,
+                                     self.config.ref_band, self.config.nondetect_val)
+        pdfs, z_grid = self.model.predict(color_data, n_grid=self.config.nzbins)
+        self.zgrid = np.array(z_grid).flatten()
+        qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=pdfs))
+        zmode = qp_dstn.mode(grid=self.zgrid)
+        qp_dstn.set_ancil(dict(zmode=zmode))
+        self._do_chunk_output(qp_dstn, start, end, first)
