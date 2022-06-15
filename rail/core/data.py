@@ -211,6 +211,10 @@ class Hdf5Handle(TableHandle):
             tables_io.io.writeDictToHdf5Chunk(groups, data, start, end, **kwargs)
 
 
+class FitsHandle(TableHandle):
+    """DataHandle for a table written to fits"""
+    suffix = 'fits'
+
 
 class PqHandle(TableHandle):
     """DataHandle for a parquet table"""
@@ -426,7 +430,12 @@ class DataStore(dict):
 
     def __getattr__(self, key):
         """ Allow attribute-like parameter access """
-        return self.__getitem__(key)
+        try:
+            return self.__getitem__(key)
+        except KeyError as msg:
+            # Kludge to get docstrings to work
+            if key in ['__objclass__']:
+                return None
 
     def __setattr__(self, key, value):
         """ Allow attribute-like parameter setting """

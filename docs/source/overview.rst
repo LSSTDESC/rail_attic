@@ -14,7 +14,7 @@ For a working example illustrating all four components of RAIL, see the `example
 
 A brief note on core DESC software dependencies
 ==========
-The `qp` Ensemble format is the expected default storage format for redshift information within DESC, and all redshift PDFs, for both individual galaxies and galaxy samples (such as tomographic bin members or galaxy cluster members), will be stored as `qp` Ensemble objects to be directly accesible to LSST-DESC pipelines, such as `TXPipe <https://github.com/LSSTDESC/TXPipe/>`_.
+The `qp` Ensemble format is the expected default storage format for redshift information within DESC, and all redshift PDFs, for both individual galaxies and galaxy samples (such as tomographic bin members or galaxy cluster members), will be stored as `qp` Ensemble objects to be directly accessible to LSST-DESC pipelines, such as `TXPipe <https://github.com/LSSTDESC/TXPipe/>`_.
 The use of a unified `qp` Ensemble as the output format enables a consistent evaluation of redshift uncertainties (see `the qp repository <https://github.com/LSSTDESC/qp`_ for more details, though in brief, `qp` enables transformation between different PDF parameterizations, computation of many useful metrics, and easy fileIO).
 
 `creation`
@@ -34,7 +34,7 @@ The normalizing flow model fits the joint distribution of redshift and photometr
 
 **Degradation modules**: 
 Degraders build upon the creator models of the probability space of redshift and photometry to emulate realistically complex imperfections, such as physical systematics, into mock data, which can be used to generate self-consistent photometric training/test set pairs.
-The high-dimensional probability density outlined in the `creation` directory can be modified to reproduce the realistic mismatches between training and test sets, for example inclusion of photometric errors due to observing effects, spectroscopic incompleteness from specific surveys, incorrect assigment of spectroscopic redshift due to line confusion, the effects of blending, etc.
+The high-dimensional probability density outlined in the `creation` directory can be modified to reproduce the realistic mismatches between training and test sets, for example inclusion of photometric errors due to observing effects, spectroscopic incompleteness from specific surveys, incorrect assignment of spectroscopic redshift due to line confusion, the effects of blending, etc.
 Training and test set data may be drawn from such probability spaces with systematics applied in isolation, which preserves the existence of true likelihoods and posteriors, though applying multiple degraders in series enables more complex selections to be built up. 
 
 **Degradation base design**: 
@@ -79,7 +79,7 @@ More wrapped estimator and summarizer codes are always welcome for inclusion in 
 `evaluation`
 ============
 
-The evalution module contains metrics for assesing the performance of redshift estimation codes.  
+The evaluation module contains metrics for assessing the performance of redshift estimation codes.  
 This can be done for "true" redshift draws from a distribution or catalog, or by comparing the marginalized "true" redshift likelihoods or posteriors from the creation module to the estimated PDFs.
 
 **Base design**: 
@@ -92,4 +92,4 @@ In the `example` directory, you can execute the evaluation/demo.ipynb jupyter no
 **Future extensions**: 
 We aim to greatly expand the library of available metrics and welcome input from the community in doing so.  
 An immediate extension would propagate estimated redshift posteriors to science-motivated metrics, and/or metrics related to computational requirements of the estimators. 
-Within DESC, development of sophisticated metrics propagating photo-z uncertainties through cosmological probe analysis pipelines is now under way as part of Dark Energy Redshift Assessment Infrastructure Layers (DERAIL).
+Within DESC, development of sophisticated metrics propagating photo-z uncertainties through cosmological probe analysis pipelines is now underway as part of Dark Energy Redshift Assessment Infrastructure Layers (DERAIL).

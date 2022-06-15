@@ -5,7 +5,7 @@ install_requires = [
     "h5py",
     "numpy",
     "pandas>=1.1",
-    "tables-io",
+    "tables-io>=0.7.5",
     "ceci",
     "qp @ git+https://github.com/LSSTDESC/qp",
 ]
