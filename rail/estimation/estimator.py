@@ -6,8 +6,9 @@ from rail.core.data import TableHandle, QPHandle, ModelHandle
 from rail.core.stage import RailStage
 
 
-class Estimator(RailStage):
-    """The base class for making photo-z posterior estimates.
+class CatEstimator(RailStage):
+    """The base class for making photo-z posterior estimates from catalog-like inputs
+    (i.e., tables with fluxes in photometric bands among the set of columns)
 
     Estimators use a generic "model", the details of which depends on the sub-class.
 
@@ -90,8 +91,10 @@ class Estimator(RailStage):
         return self.get_handle('output')
 
 
-class Informer(RailStage):
-    """The base class for informing models used to make photo-z posterior estimates.
+class CatInformer(RailStage):
+    """The base class for informing models used to make photo-z posterior estimates
+    from catalog-like inputs (i.e., tables with fluxes in photometric bands among
+    the set of columns).
 
     Estimators use a generic "model", the details of which depends on the sub-class.
     Most estimators will have associated Informer classes, which can be used to inform
@@ -102,7 +105,7 @@ class Informer(RailStage):
 
     Informer will produce as output a generic "model", the details of which depends on the sub-class.
 
-    They take as "input" tabular data, which is used to "inform" the model.
+    They take as "input" catalog-like tabular data, which is used to "inform" the model.
     """
 
     name = 'Informer'
@@ -143,3 +146,4 @@ class Informer(RailStage):
         self.set_data('input', training_data)
         self.run()
         self.finalize()
+        return self.get_handle('model')

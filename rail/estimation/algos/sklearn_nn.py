@@ -9,8 +9,7 @@ import numpy as np
 import sklearn.neural_network as sknn
 from sklearn.preprocessing import StandardScaler
 from ceci.config import StageParameter as Param
-from rail.estimation.estimator import Estimator, Informer
-import string
+from rail.estimation.estimator import CatEstimator, CatInformer
 import qp
 
 
@@ -46,7 +45,7 @@ def make_color_data(data_dict, bands, ref_band, nondet_val):
                 nondetmask = np.isnan(band)
             else: # pragma: no cover
                 nondetmask = np.isclose(band, nondet_val)
-            band[nondetmask] = 28.0    
+            band[nondetmask] = 28.0
         input_data = np.vstack((input_data, band1-band2))
     return input_data.T
 
@@ -59,7 +58,7 @@ def regularize_data(data):
     return regularized_data
 
 
-class Train_SimpleNN(Informer):
+class Inform_SimpleNN(CatInformer):
     """
     Subclass to train a simple point estimate Neural Net photoz
     rather than actually predict PDF, for now just predict point zb
@@ -67,8 +66,8 @@ class Train_SimpleNN(Informer):
     photo-z later.
     """
 
-    name = 'Train_SimpleNN'
-    config_options = Informer.config_options.copy()
+    name = 'Inform_SimpleNN'
+    config_options = CatInformer.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
                           nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
@@ -85,8 +84,8 @@ class Train_SimpleNN(Informer):
 
     def __init__(self, args, comm=None):
         """ Constructor:
-        Do Informer specific initialization """
-        Informer.__init__(self, args, comm=comm)
+        Do CatInformer specific initialization """
+        CatInformer.__init__(self, args, comm=comm)
         if self.config.ref_band not in self.config.bands:
             raise ValueError("ref_band not present in bands list! ")
 
@@ -110,7 +109,7 @@ class Train_SimpleNN(Informer):
         self.add_data('model', self.model)
 
 
-class SimpleNN(Estimator):
+class SimpleNN(CatEstimator):
     """
     Subclass to implement a simple point estimate Neural Net photoz
     rather than actually predict PDF, for now just predict point zb
@@ -118,7 +117,7 @@ class SimpleNN(Estimator):
     photo-z later.
     """
     name = 'SimpleNN'
-    config_options = Estimator.config_options.copy()
+    config_options = CatEstimator.config_options.copy()
     config_options.update(width=Param(float, 0.05, msg="The ad hoc base width of the PDFs"),
                           ref_band=Param(str, "mag_i_lsst", msg="reference magnitude"),
                           nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
@@ -126,8 +125,8 @@ class SimpleNN(Estimator):
 
     def __init__(self, args, comm=None):
         """ Constructor:
-        Do Estimator specific initialization """
-        Estimator.__init__(self, args, comm=comm)
+        Do CatEstimator specific initialization """
+        CatEstimator.__init__(self, args, comm=comm)
         if self.config.ref_band not in self.config.bands:
             raise ValueError("ref_band is not in list of bands!")
 

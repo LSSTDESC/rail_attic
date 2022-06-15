@@ -5,7 +5,7 @@ import pickle
 import numpy as np
 from types import GeneratorType
 from rail.core.stage import RailStage
-from rail.core.data import DataStore, DataHandle, TableHandle, Hdf5Handle, PqHandle, QPHandle, ModelHandle, FlowHandle
+from rail.core.data import DataStore, DataHandle, TableHandle, Hdf5Handle, FitsHandle, PqHandle, QPHandle, ModelHandle, FlowHandle
 from rail.core.utilStages import ColumnMapper, RowSelector, TableConverter
 
 
@@ -132,6 +132,17 @@ def test_hdf5_handle():
     data_check = read_chunked.read()
     assert np.allclose(data['id'], data_check['id'])
     os.remove(datapath_chunked)
+
+
+def test_fits_handle():
+    raildir = os.path.dirname(rail.__file__)
+    datapath = os.path.join(raildir, '..', 'tests', 'data', 'output_BPZ_lite.fits')
+    handle = do_data_handle(datapath, FitsHandle)
+    fitsfile = handle.open()
+    assert fitsfile
+    assert handle.fileObj is not None
+    handle.close()
+    assert handle.fileObj is None
 
 
 def test_model_handle():

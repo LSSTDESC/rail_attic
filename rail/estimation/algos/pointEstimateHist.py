@@ -4,22 +4,22 @@ A summarizer that simple makes a histogram of a point estimate
 
 import numpy as np
 from ceci.config import StageParameter as Param
-from rail.estimation.summarizer import PZtoNZSummarizer
+from rail.estimation.summarizer import PZSummarizer
 import qp
 
-class PointEstimateHist(PZtoNZSummarizer):
+class PointEstimateHist(PZSummarizer):
     """Summarizer which simply histograms a point estimate
     """
 
     name = 'PointEstimateHist'
-    config_options = PZtoNZSummarizer.config_options.copy()
+    config_options = PZSummarizer.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
                           nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
                           point_estimate=Param(str, 'zmode', msg="Which point estimate to use"))
 
     def __init__(self, args, comm=None):
-        PZtoNZSummarizer.__init__(self, args, comm=comm)
+        PZSummarizer.__init__(self, args, comm=comm)
         self.zgrid = None
 
     def run(self):

@@ -81,6 +81,20 @@ def test_InvRedshiftIncompleteness_returns_correct_shape(data):
     assert degraded_data.shape[0] < data.data.shape[0]
     assert degraded_data.shape[1] == data.data.shape[1]
     os.remove(degrader.get_output(degrader.get_aliased_tag('output'), final_name=True))
+    
+@pytest.mark.parametrize("redshift_cut,errortype", [(-1, ValueError)])
+def test_GridSelection_bad_params(redshift_cut, errortype):
+    """Test bad parameters that should raise ValueError"""
+    with pytest.raises(errortype):
+        GridSelection.make_stage(redshift_cut=redshift_cut)
+        
+def test_GridSelection_returns_correct_shape(data):
+    """Make sure returns 2 more columns, fewer rows"""
+    degrader = GridSelection.make_stage(redshift_cut = 1.)
+    degraded_data = degrader(data).data
+    assert degraded_data.shape[0] < data.data.shape[0]
+    assert degraded_data.shape[1] == data.data.shape[1]-2
+    os.remove(degrader.get_output(degrader.get_aliased_tag('output'), final_name=True))
 
 
 @pytest.mark.parametrize(
