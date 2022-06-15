@@ -32,6 +32,7 @@ class DataHandle:
         self.path = path
         self.creator = creator
         self.fileObj = None
+        self.groups = None
 
     def open(self, **kwargs):
         """Open and return the associated file
@@ -93,11 +94,11 @@ class DataHandle:
             raise ValueError(f"TableHandle.write_chunk() called for path {self.path} with no data")
         if self.fileObj is None:
             raise ValueError(f"TableHandle.write_chunk() called before open for {self.tag} : {self.path}")
-        return self._write_chunk(self.data, self.groups, start, end, **kwargs)
+        return self._write_chunk(self.data, self.fileObj, self.groups, start, end, **kwargs)
 
 
     @classmethod
-    def _write_chunk(cls, data, fileObj, start, end, **kwargs):
+    def _write_chunk(cls, data, fileObj, groups, start, end, **kwargs):
         raise NotImplementedError("DataHandle._write_chunk")  #pragma: no cover
 
     def finalize_write(self, **kwargs):
@@ -203,8 +204,11 @@ class Hdf5Handle(TableHandle):
     suffix = 'hdf5'
 
     @classmethod
-    def _write_chunk(cls, data, fileObj, start, end, **kwargs):
-        tables_io.io.writeDictToHdf5ChunkSingle(fileObj, data, start, end, **kwargs)
+    def _write_chunk(cls, data, fileObj, groups, start, end, **kwargs):
+        if groups is None:
+            tables_io.io.writeDictToHdf5ChunkSingle(fileObj, data, start, end, **kwargs)
+        else:
+            tables_io.io.writeDictToHdf5Chunk(groups, data, start, end, **kwargs)
 
 
 class FitsHandle(TableHandle):
@@ -252,7 +256,7 @@ class QPHandle(DataHandle):
         return data.initializeHdf5Write(path, data_lenght, comm)
 
     @classmethod
-    def _write_chunk(cls, data, fileObj, start, end, **kwargs):
+    def _write_chunk(cls, data, fileObj, groups, start, end, **kwargs):
         return data.writeHdf5Chunk(fileObj, start, end)
 
     @classmethod
