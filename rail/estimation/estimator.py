@@ -92,10 +92,7 @@ class CatEstimator(RailStage):
         return self.get_handle('output')
 
     def run(self):
-        if self.config.hdf5_groupname:
-            iterator = self.input_iterator('input')
-        else:  #pragma:  no cover
-            test_data = self.get_data('input')
+        iterator = self.input_iterator('input')
         first = True
         self._initialize_run()
         self._output_handle = None
