@@ -111,7 +111,7 @@ class CatEstimator(RailStage):
         self._output_handle.finalize_write()
 
     def _process_chunk(self, start, end, data, first):
-        raise NotImplementedError(f"{self.name}._process_chunk is not implemented")
+        raise NotImplementedError(f"{self.name}._process_chunk is not implemented")  #pragma: no cover
 
     def _do_chunk_output(self, qp_dstn, start, end, first):
         if first:
