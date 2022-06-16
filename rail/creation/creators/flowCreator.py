@@ -5,7 +5,7 @@ import numpy as np
 import qp
 from pzflow import Flow
 from rail.core.data import FlowHandle, PqHandle, QPHandle
-from rail.creation.creator import Creator, PosteriorCalculator
+from rail.creation.creators import Creator, PosteriorCalculator
 
 
 class FlowCreator(Creator):

@@ -24,7 +24,7 @@ class Creator(RailStage):
         """Initialize Creator"""
         RailStage.__init__(self, args, comm=comm)
 
-    def create(self, n_samples: int, seed: int = None, **kwargs) -> pd.DataFrame:
+    def sample(self, n_samples: int, seed: int = None, **kwargs) -> pd.DataFrame:
         """Draw samples from the model specified in the configuration.
 
         This is a method for running a Creator in interactive mode.
