@@ -221,13 +221,21 @@ class RailStage(PipelineStage):
         handle = self.get_handle(tag, allow_missing=True)
         if not handle.has_data:  #pragma: no cover
             handle.read()
-        self._input_length = handle.size(groupname=self.config.hdf5_groupname)
-        kwcopy = dict(groupname=self.config.hdf5_groupname,
-                      chunk_size=self.config.chunk_size,
-                      rank=self.rank,
-                      parallel_size=self.size)
-        kwcopy.update(**kwargs)
-        return handle.iterator(**kwcopy)
+        if self.config.hdf5_groupname:
+            self._input_length = handle.size(groupname=self.config.hdf5_groupname)
+            kwcopy = dict(groupname=self.config.hdf5_groupname,
+                          chunk_size=self.config.chunk_size,
+                          rank=self.rank,
+                          parallel_size=self.size)
+            kwcopy.update(**kwargs)
+            return handle.iterator(**kwcopy)
+        else:  #pragma:  no cover
+            test_data = self.get_data('input')
+            s = 0
+            e = len(list(test_data.items())[0][1])
+            self._input_length=e
+            iterator=[[s, e, test_data]]
+            return iterator
 
     def connect_input(self, other, inputTag=None, outputTag=None):
         """Connect another stage to this stage as an input
