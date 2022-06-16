@@ -124,6 +124,7 @@ class GridSelection(Degrader):
         flat_inds = [item for sublist in keep_inds for item in sublist]
         training_data = data_hsc_like.loc[flat_inds, :]
 
+        training_data = training_data[training_data['redshift'] > 0]
         # For the pessimistic choice, also remove galaxies with z > redshift_cut from the sample
         if not np.isclose(self.config['redshift_cut'], 100.):
             training_data = training_data[training_data['redshift'] <= self.config['redshift_cut']]
