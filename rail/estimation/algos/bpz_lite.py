@@ -225,7 +225,7 @@ class Inform_BPZ_lite(CatInformer):
 class BPZ_lite(CatEstimator):
     """CatEstimator subclass to implement basic marginalized PDF for BPZ
     """
-
+    name = 'BPZ_lite'
     config_options = CatEstimator.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="min z for grid"),
                           zmax=Param(float, 3.0, msg="max z for grid"),

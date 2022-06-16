@@ -53,6 +53,12 @@ class RailStage(PipelineStage):
 
     data_store = DATA_STORE()
 
+    def __init__(self, args, comm=None):
+        """ Constructor:
+        Do RailStage specific initialization """
+        PipelineStage.__init__(self, args, comm=comm)
+        self._input_length = None
+
     def get_handle(self, tag, path=None, allow_missing=False):
         """Gets a DataHandle associated to a particular tag
 
@@ -215,14 +221,14 @@ class RailStage(PipelineStage):
         handle = self.get_handle(tag, allow_missing=True)
         if not handle.has_data:  #pragma: no cover
             handle.read()
-        self.input_lenght = handle.size(groupname=self.config.hdf5_groupname)
+        self._input_length = handle.size(groupname=self.config.hdf5_groupname)
         kwcopy = dict(groupname=self.config.hdf5_groupname,
                       chunk_size=self.config.chunk_size,
                       rank=self.rank,
                       parallel_size=self.size)
         kwcopy.update(**kwargs)
         return handle.iterator(**kwcopy)
-        
+
     def connect_input(self, other, inputTag=None, outputTag=None):
         """Connect another stage to this stage as an input
 
