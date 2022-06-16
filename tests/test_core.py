@@ -126,11 +126,16 @@ def test_hdf5_handle():
             end = i+chunk_size
             if end > num_rows:
                 end = num_rows
-            handle_chunked.data = sliceDict(handle.data['photometry'], slice(start, end))
+            handle_chunked.set_data(sliceDict(handle.data['photometry'], slice(start, end)), partial=True)
             handle_chunked.write_chunk(start, end)
+    write_size = handle_chunked.size()
+    assert len(handle_chunked.data) <= 1000
+    data_called = handle_chunked()
+    assert len(data_called['id']) == write_size
     read_chunked = Hdf5Handle("read_chunked", None, path=datapath_chunked)
     data_check = read_chunked.read()
     assert np.allclose(data['id'], data_check['id'])
+    assert np.allclose(data_called['id'], data_check['id'])
     os.remove(datapath_chunked)
 
 
