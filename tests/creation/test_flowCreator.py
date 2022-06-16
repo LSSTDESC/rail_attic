@@ -2,12 +2,12 @@ import os
 import numpy as np
 import pzflow
 from pzflow.examples import get_example_flow, get_galaxy_data
-from rail.creation.engines import FlowEngine, FlowPosterior
+from rail.creation.creators import FlowCreator, FlowPosterior
 from rail.core.data import TableHandle
 from rail.core.stage import RailStage
 
-def test_flowengine_sample():
-    """Test that flow samples and flowEng samples are the same."""
+def test_flowcreator_sample():
+    """Test that flow samples and FlowCr samples are the same."""
 
     n_samples = 10
     seed = 0
@@ -15,24 +15,24 @@ def test_flowengine_sample():
     flow = get_example_flow()
     flow_samples = flow.sample(n_samples, seed=seed)
 
-    flowEng = FlowEngine.make_stage(flow=flow, n_samples=n_samples)
-    flowEng_samples = flowEng.sample(n_samples, seed=seed).data
+    FlowCr = FlowCreator.make_stage(flow=flow, n_samples=n_samples)
+    FlowCr_samples = FlowCr.sample(n_samples, seed=seed).data
 
     pzdir = os.path.dirname(pzflow.__file__)
     flow_path = os.path.join(pzdir, 'examples', 'example-flow.pkl')
     
-    flowEng2 = FlowEngine.make_stage(name="other_flow", 
+    FlowCr2 = FlowCreator.make_stage(name="other_flow", 
                                      flow_file=flow_path, n_samples=n_samples)
-    flowEng2_samples = flowEng2.sample(n_samples, seed=seed).data
+    FlowCr2_samples = FlowCr2.sample(n_samples, seed=seed).data
 
-    #assert flow_samples.equals(flowEng_samples)
-    #assert flow_samples.equals(flowEng2_samples)
-    os.remove(flowEng.get_output(flowEng.get_aliased_tag('output'), final_name=True))
-    os.remove(flowEng2.get_output(flowEng2.get_aliased_tag('output'), final_name=True))
+    #assert flow_samples.equals(FlowCr_samples)
+    #assert flow_samples.equals(FlowCr2_samples)
+    os.remove(FlowCr.get_output(FlowCr.get_aliased_tag('output'), final_name=True))
+    os.remove(FlowCr2.get_output(FlowCr2.get_aliased_tag('output'), final_name=True))
 
 
-def test_flowengine_pz_estimate():
-    """Test that flow posteriors and flowEng posteriors are the same."""
+def test_FlowCreator_pz_estimate():
+    """Test that flow posteriors and FlowCr posteriors are the same."""
 
     data = get_galaxy_data().iloc[:10, :]
     DS = RailStage.data_store

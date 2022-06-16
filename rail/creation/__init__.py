@@ -1,3 +1,3 @@
 """Modules to create synthetic data"""
-from .degradation import *
-from .engines import *
+from rail.creation.creators import *
+from rail.creation.degradation import *
