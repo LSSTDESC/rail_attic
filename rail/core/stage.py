@@ -235,6 +235,7 @@ class RailStage(PipelineStage):
             e = len(list(test_data.items())[0][1])
             self._input_length=e
             iterator=[[s, e, test_data]]
+            return iterator
 
     def connect_input(self, other, inputTag=None, outputTag=None):
         """Connect another stage to this stage as an input
