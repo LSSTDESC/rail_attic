@@ -115,6 +115,8 @@ def test_hdf5_handle():
     handle_chunked = Hdf5Handle("chunked", handle.data, path=datapath_chunked)
     from tables_io.arrayUtils import getGroupInputDataLength, sliceDict, getInitializationForODict
     num_rows = len(handle.data['photometry']['id'])
+    check_num_rows = len(handle()['photometry']['id'])
+    assert num_rows == check_num_rows
     chunk_size = 1000
     data = handle.data['photometry']
     init_dict = getInitializationForODict(data)
