@@ -154,6 +154,7 @@ class Inform_BPZ_lite(CatInformer):
                                            args=(zo, alpha, km, mag, self.mo),
                                            epsrel=1.e-5)
             loglike += -2. * np.log10(pz / norm)
+        print(f"Fitting dN/dz: loglike = {loglike} for parameters {params}")
         return loglike
 
     def _find_dndz_params(self):
@@ -225,7 +226,7 @@ class Inform_BPZ_lite(CatInformer):
 class BPZ_lite(CatEstimator):
     """CatEstimator subclass to implement basic marginalized PDF for BPZ
     """
-    name = 'BPZ_lite'
+    name = "BPZ_lite"
     config_options = CatEstimator.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="min z for grid"),
                           zmax=Param(float, 3.0, msg="max z for grid"),
@@ -486,6 +487,8 @@ class BPZ_lite(CatEstimator):
         zgrid = self.zgrid
         # Loop over all ng galaxies!
         for i in range(ng):
+            if i % 1000 == 0:
+                print(f"Estimating p(z) for galaxy {i+1} / {ng}")
             mag_0 = test_data['mags'][i, m_0_col]
             flux = test_data['flux'][i]
             flux_err = test_data['flux_err'][i]
