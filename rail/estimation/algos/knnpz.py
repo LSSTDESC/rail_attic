@@ -182,12 +182,12 @@ class KNearNeighPDF(CatEstimator):
         self.kdtree = self.model['kdtree']
         self.trainszs = self.model['truezs']
 
-    def _process_chunk(self, start, end, test_data, first):
+    def _process_chunk(self, start, end, data, first):
         """
         calculate and return PDFs for each galaxy using the trained flow
         """
         print(f"Process {self.rank} estimating PZ PDF for rows {start:,} - {end:,}")
-        test_df = pd.DataFrame(test_data)
+        test_df = pd.DataFrame(data)
         knn_df = test_df[self.usecols]
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
 

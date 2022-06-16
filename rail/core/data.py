@@ -33,6 +33,7 @@ class DataHandle:
         self.creator = creator
         self.fileObj = None
         self.groups = None
+        self.partial = False
 
     def open(self, **kwargs):
         """Open and return the associated file
@@ -59,8 +60,14 @@ class DataHandle:
         """Read and return the data from the associated file """
         if self.data is not None and not force:
             return self.data
-        self.data = self._read(self.path, **kwargs)
+        self.set_data(self._read(self.path, **kwargs))
         return self.data
+
+    def __call__(self, **kwargs):
+        """Return the data, re-reading the fill if needed"""
+        if self.has_data and not self.partial:
+            return self.data
+        return self.read(force=True, **kwargs)
 
     @classmethod
     def _read(cls, path, **kwargs):
@@ -117,6 +124,11 @@ class DataHandle:
         #    for i in range(1):
         #        yield i, -1, self.data
         return self._iterator(self.path, **kwargs)
+
+    def set_data(self, data, partial=False):
+        """Set the data for a chunk, and set the partial flag to true"""
+        self.data = data
+        self.partial = partial
 
     def size(self, **kwargs):
         """Return the size of the data associated to this handle"""

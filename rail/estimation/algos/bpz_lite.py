@@ -459,18 +459,13 @@ class BPZ_lite(CatEstimator):
 
         return post_z, zmode
 
-    def run(self):
+    def  _process_chunk(self, start, end, data, first):
         """
         This will likely mostly be copied from BPZPipe code
         """
-        if self.config.hdf5_groupname:
-            test_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  # pragma:  no cover
-            test_data = self.get_data('input')
-
         # replace non-detects, traditional BPZ had nondet=99 and err = maglim
         # put in that format here
-        test_data = self._preprocess_magnitudes(test_data)
+        test_data = self._preprocess_magnitudes(data)
         m_0_col = self.config.band_names.index(self.config.prior_band)
 
         nz = len(self.zgrid)
@@ -504,4 +499,4 @@ class BPZ_lite(CatEstimator):
         test_data.pop('mags', None)
         qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=pdfs))
         qp_dstn.set_ancil(dict(zmode=zmode))
-        self.add_data('output', qp_dstn)
+        self._do_chunk_output(qp_dstn, start, end, first)

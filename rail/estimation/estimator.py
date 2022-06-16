@@ -117,7 +117,7 @@ class CatEstimator(RailStage):
         if first:
             self._output_handle = self.add_handle('output', data = qp_dstn)
             self._output_handle.initialize_write(self._input_length, communicator = self.comm)
-        self._output_handle.data=qp_dstn
+        self._output_handle.set_data(qp_dstn, partial=True)
         self._output_handle.write_chunk(start, end)
 
 
