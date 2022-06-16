@@ -138,7 +138,7 @@ class RailStage(PipelineStage):
         handle = self.get_handle(tag, allow_missing=allow_missing)
         if not handle.has_data:
             handle.read()
-        return handle.data
+        return handle()
 
     def set_data(self, tag, data, path=None, do_read=True):
         """Sets the data associated to a particular tag

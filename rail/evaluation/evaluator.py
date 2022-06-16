@@ -118,7 +118,7 @@ class Evaluator(RailStage):
         for point_metric in point_metrics:
             if z_mode is None:
                 z_mode = pz_data.mode(grid=zgrid)
-            value = POINT_METRICS[point_metric](z_mode, z_true).evaluate()
+            value = POINT_METRICS[point_metric](np.squeeze(z_mode), z_true).evaluate()
             out_table[f'POINT_{point_metric}'] = [value]
 
         if self.config.do_cde:
