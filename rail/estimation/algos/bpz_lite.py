@@ -271,7 +271,7 @@ class BPZ_lite(CatEstimator):
         """Constructor, build the CatEstimator, then do BPZ specific setup
         """
         CatEstimator.__init__(self, args, comm=comm)
-        self.model = None
+        #self.model = None
 
         datapath = self.config['data_path']
         if datapath is None or datapath == "None":
