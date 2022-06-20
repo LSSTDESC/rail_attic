@@ -99,7 +99,6 @@ class Inform_DelightPZ(CatInformer):
 
         np.random.seed(87)
 
-        
     def inform(self, training_data):
         """Override the inform method because Delight doesn't have a model to return
 
@@ -112,8 +111,7 @@ class Inform_DelightPZ(CatInformer):
         self.set_data('input', training_data)
         self.run()
         self.finalize()
-        
-        
+
     def run(self):
         """Do all the annoying file IO stuff to ascii in current delight
            Then run delightApply to train the gauss. process
@@ -254,23 +252,18 @@ class delightPZ(CatEstimator):
         """
         return
 
-    def run(self):
+
+    def _process_chunk(self, start, end, data, first):
+      
         from delight.interfaces.rail.makeConfigParam import makeConfigParam
         from delight.interfaces.rail.convertDESCcat import convertDESCcatChunk
         from delight.interfaces.rail.templateFitting import templateFitting
         from delight.interfaces.rail.delightApply import delightApply
         from delight.interfaces.rail.getDelightRedshiftEstimation import getDelightRedshiftEstimation
 
-
-        # load data
-        if self.config.hdf5_groupname:
-            test_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  # pragma: no cover
-            test_data = self.get_data('input')
-
         print("\n\n\n Starting estimation...\n\n\n")
         self.chunknum += 1
-
+        print(f"Process {self.rank} estimating PZ PDF for rows {start:,} - {end:,}")
         msg = f" ESTIMATE : chunk number {self.chunknum}"
         logger.info(msg)
 
@@ -300,7 +293,7 @@ class delightPZ(CatEstimator):
             out.write(paramfile_txt)
 
         # convert the chunk data into the required  flux-redshift validation file for delight
-        indexes_sel = convertDESCcatChunk(delightparamfilechunk, test_data, self.chunknum,
+        indexes_sel = convertDESCcatChunk(delightparamfilechunk, data, self.chunknum,
                                           flag_filter_validation=self.flag_filter_validation,
                                           snr_cut_validation=self.snr_cut_validation)
 
@@ -312,9 +305,9 @@ class delightPZ(CatEstimator):
 
         # allow for either format for now
         try:
-            d = test_data['i_mag']
+            d = data['i_mag']
         except Exception:
-            d = test_data['mag_i_lsst']
+            d = data['mag_i_lsst']
 
         numzs = len(d)
 
@@ -325,4 +318,4 @@ class delightPZ(CatEstimator):
         qp_d = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid,
                                                 yvals=pdfs))
         qp_d.set_ancil(dict(zmode=zmode))
-        self.add_data('output', qp_d)
+        self._do_chunk_output(qp_d, start, end, first)
