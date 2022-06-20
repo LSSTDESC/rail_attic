@@ -17,7 +17,7 @@ class CatEstimator(RailStage):
 
     """
 
-    name = 'Estimator'
+    name = 'CatEstimator'
     config_options = RailStage.config_options.copy()
     config_options.update(chunk_size=10000, hdf5_groupname=str)
     inputs = [('model', ModelHandle),
@@ -27,6 +27,7 @@ class CatEstimator(RailStage):
     def __init__(self, args, comm=None):
         """Initialize Estimator"""
         RailStage.__init__(self, args, comm=comm)
+        self._output_handle = None
         self.model = None
         if not isinstance(args, dict):  #pragma: no cover
             args = vars(args)
@@ -89,6 +90,34 @@ class CatEstimator(RailStage):
         self.run()
         self.finalize()
         return self.get_handle('output')
+
+    def run(self):
+        iterator = self.input_iterator('input')
+        first = True
+        self._initialize_run()
+        self._output_handle = None
+        for s, e, test_data in iterator:
+            print(f"Process {self.rank} running estimator on chunk {s} - {e}")
+            self._process_chunk(s, e, test_data, first)
+            first = False
+        self._finalize_run()
+
+    def _initialize_run(self):
+        self._output_handle = None
+
+    def _finalize_run(self):
+        self._output_handle.finalize_write()
+
+    def _process_chunk(self, start, end, data, first):
+        raise NotImplementedError(f"{self.name}._process_chunk is not implemented")  #pragma: no cover
+
+    def _do_chunk_output(self, qp_dstn, start, end, first):
+        if first:
+            self._output_handle = self.add_handle('output', data = qp_dstn)
+            self._output_handle.initialize_write(self._input_length, communicator = self.comm)
+        self._output_handle.set_data(qp_dstn, partial=True)
+        self._output_handle.write_chunk(start, end)
+
 
 
 class CatInformer(RailStage):

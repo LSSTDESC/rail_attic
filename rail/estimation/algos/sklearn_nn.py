@@ -130,12 +130,8 @@ class SimpleNN(CatEstimator):
         if self.config.ref_band not in self.config.bands:
             raise ValueError("ref_band is not in list of bands!")
 
-    def run(self):
-        if self.config.hdf5_groupname:
-            test_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  #pragma:  no cover
-            test_data = self.get_data('input')
-        color_data = make_color_data(test_data, self.config.bands,
+    def _process_chunk(self, start, end, data, first):
+        color_data = make_color_data(data, self.config.bands,
                                      self.config.ref_band, self.config.nondetect_val)
         input_data = regularize_data(color_data)
         zmode = np.round(self.model.predict(input_data), 3)
@@ -143,4 +139,4 @@ class SimpleNN(CatEstimator):
         qp_dstn = qp.Ensemble(qp.stats.norm, data=dict(loc=np.expand_dims(zmode, -1), #pylint: disable=no-member
                                                        scale=np.expand_dims(widths, -1)))
         qp_dstn.set_ancil(dict(zmode=zmode))
-        self.add_data('output', qp_dstn)
+        self._do_chunk_output(qp_dstn, start, end, first)

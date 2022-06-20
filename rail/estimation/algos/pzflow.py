@@ -190,17 +190,12 @@ class PZFlowPDF(CatEstimator):
         self.allcols = allcols
         self.zgrid = None
 
-    def run(self):
+    def _process_chunk(self, start, end, data, first):
         """
         calculate and return PDFs for each galaxy using the trained flow
         """
-        if self.config.hdf5_groupname:
-            test_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  #pragma:  no cover
-            test_data = self.get_data('input')
-
         # flow expects dataframe
-        test_df = pd.DataFrame(test_data)
+        test_df = pd.DataFrame(data)
         if self.config.include_mag_errors:  #pragma: no cover
             # rename the error columns to end in _err!
             test_df.rename(columns=self.config.error_names_dict, inplace=True)
@@ -230,4 +225,4 @@ class PZFlowPDF(CatEstimator):
         zmode = np.array([self.zgrid[np.argmax(pdf)] for pdf in pdfs]).flatten()
         qp_distn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=pdfs))
         qp_distn.set_ancil(dict(zmode=zmode))
-        self.add_data('output', qp_distn)
+        self._do_chunk_output(qp_distn, start, end, first)
