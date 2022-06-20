@@ -487,8 +487,6 @@ class BPZ_lite(CatEstimator):
         zgrid = self.zgrid
         # Loop over all ng galaxies!
         for i in range(ng):
-            if i % 1000 == 0:
-                print(f"Estimating p(z) for galaxy {i+1} / {ng}")
             mag_0 = test_data['mags'][i, m_0_col]
             flux = test_data['flux'][i]
             flux_err = test_data['flux_err'][i]

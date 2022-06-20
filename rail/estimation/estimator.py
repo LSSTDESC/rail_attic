@@ -97,6 +97,7 @@ class CatEstimator(RailStage):
         self._initialize_run()
         self._output_handle = None
         for s, e, test_data in iterator:
+            print(f"Process {self.rank} running estimator on chunk {s} - {e}")
             self._process_chunk(s, e, test_data, first)
             first = False
         self._finalize_run()
