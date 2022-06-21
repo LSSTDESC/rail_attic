@@ -1,6 +1,7 @@
 """Degraders that emulate spectroscopic effects on photometry"""
 
 import numpy as np
+import pandas as pd
 import pickle
 import tables_io
 from rail.creation.degradation import Degrader
