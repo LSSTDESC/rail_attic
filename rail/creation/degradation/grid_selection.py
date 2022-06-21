@@ -180,8 +180,8 @@ class GridSelection(Degrader):
             number_to_keep = len(temp_data)*xratio
             if number_to_keep*factor <= len(temp_data):
                 number_to_keep = number_to_keep*factor
-            if number_to_keep*factor > len(temp_data):
-                number_to_keep = len(temp_data) # pragma: no cover
+            if number_to_keep*factor > len(temp_data): # pragma: no cover
+                number_to_keep = len(temp_data) 
 
             if int(number_to_keep) != number_to_keep:
                 random_num = np.random.uniform()
@@ -192,12 +192,12 @@ class GridSelection(Degrader):
             indices_to_list = list(temp_data.index.values)
             np.random.shuffle(indices_to_list)
 
-            if random_num > xratio:
+            if random_num > xratio: # pragma: no cover
                 for j in range(0, int(number_to_keep)):
-                    keep_inds.append(indices_to_list[j]) # pragma: no cover
+                    keep_inds.append(indices_to_list[j]) 
             
-            if random_num <= xratio:
-                for j in range(0, int(number_to_keep)+1): # pragma: no cover
+            if random_num <= xratio: # pragma: no cover
+                for j in range(0, int(number_to_keep)+1): 
                     keep_inds.append(indices_to_list[j])
 
         
