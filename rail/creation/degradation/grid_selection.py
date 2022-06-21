@@ -46,7 +46,7 @@ class GridSelection(Degrader):
 
         Degrader.__init__(self, args, comm=comm)
 
-        if self.config.redshift_cut < 0:
+        if self.config.pessimistic_redshift_cut < 0:
             raise ValueError("redshift cut must be positive")
         if (self.config.percentile_cut < 0) | (self.config.percentile_cut >= 100):
             raise ValueError('percentile cut off must be between 0 and 100')
