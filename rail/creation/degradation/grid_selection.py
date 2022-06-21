@@ -138,7 +138,7 @@ class GridSelection(Degrader):
                         max_specz[i][j] = percentile
 
         # If not using color-based redshift cut, max spec-z set to 100                
-        if not self.config.color_redshift_cut:
+        if not self.config.color_redshift_cut: # pragma: no cover
             max_specz = np.ones_like(ratios)
             max_specz = max_specz*100
             
@@ -173,7 +173,7 @@ class GridSelection(Degrader):
 
         if self.config.color_redshift_cut:
             factor = 27/17 #accounts for the fact that we select fewer galaxies with the color-based redshift cut
-        if not self.config.color_redshift_cut:
+        if not self.config.color_redshift_cut: # pragma: no cover
             factor = 1
         for xratio in unique_ratios:
             temp_data = data_hsc_like_redshift_cut[data_hsc_like_redshift_cut['ratios'] == xratio]
@@ -181,7 +181,7 @@ class GridSelection(Degrader):
             if number_to_keep*factor <= len(temp_data):
                 number_to_keep = number_to_keep*factor
             if number_to_keep*factor > len(temp_data):
-                number_to_keep = len(temp_data)
+                number_to_keep = len(temp_data) # pragma: no cover
 
             if int(number_to_keep) != number_to_keep:
                 random_num = np.random.uniform()
@@ -194,10 +194,10 @@ class GridSelection(Degrader):
 
             if random_num > xratio:
                 for j in range(0, int(number_to_keep)):
-                    keep_inds.append(indices_to_list[j])
+                    keep_inds.append(indices_to_list[j]) # pragma: no cover
             
             if random_num <= xratio:
-                for j in range(0, int(number_to_keep)+1):
+                for j in range(0, int(number_to_keep)+1): # pragma: no cover
                     keep_inds.append(indices_to_list[j])
 
         
