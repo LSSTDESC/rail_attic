@@ -5,7 +5,6 @@ import tables_io
 import pickle
 import qp
 
-from pzflow import Flow
 
 
 class DataHandle:
@@ -361,12 +360,14 @@ class FlowDict(dict):
 
     def __setitem__(self, key, value):
         """ Add a key-value pair, and check to make sure that the value is a `Flow` object """
+        from pzflow import Flow
         if not isinstance(value, Flow):  #pragma: no cover
             raise TypeError(f"Only values of type Flow can be added to a FlowFactory, not {type(value)}")
         return dict.__setitem__(self, key, value)
 
     def read(self, path, force=False):
         """ Read a `Flow` object from disk and add it to this dictionary """
+        from pzflow import Flow
         if force or path not in self:
             flow = Flow(file=path)
             self.__setitem__(path, flow)
