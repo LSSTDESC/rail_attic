@@ -235,8 +235,7 @@ class Inform_BPZ_lite(CatInformer):
         self.model = dict(fo_arr=self.fo_arr, kt_arr=self.kt_arr, zo_arr=zo_arr,
                           km_arr=km_arr, a_arr=a_arr, mo=self.config.m0,
                           nt_array=self.config.nt_array)
-        if self.rank == 0:
-            self.add_data('model', self.model)
+        self.add_data('model', self.model)
 
 
 class BPZ_lite(CatEstimator):
