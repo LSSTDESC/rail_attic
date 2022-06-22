@@ -48,7 +48,7 @@ class FlowEngine(Engine):
         flow = self.get_data('flow')
         if flow is None:  #pragma: no cover
             raise ValueError("Tried to run a FlowEngine before the Flow object is loaded")
-        self.add_data('output', flow.sample(self.config.n_samples, self.config.seed))
+        self.add_data('output', flow.sample(self.config.n_samples, seed=self.config.seed))
 
 
 class FlowPosterior(PosteriorEvaluator):
