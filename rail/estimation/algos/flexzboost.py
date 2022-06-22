@@ -7,10 +7,7 @@ p(z) shape) via cde-loss over a grid.
 """
 
 import numpy as np
-import flexcode
 import qp
-from flexcode.regression_models import XGBoost
-from flexcode.loss_functions import cde_loss
 # from numpy import inf
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatEstimator, CatInformer
@@ -141,6 +138,10 @@ class Inform_FZBoost(CatInformer):
     def run(self):
         """Train flexzboost model model
         """
+        import flexcode
+        from flexcode.regression_models import XGBoost
+        from flexcode.loss_functions import cde_loss
+
         if self.config.hdf5_groupname:
             training_data = self.get_data('input')[self.config.hdf5_groupname]
         else:  #pragma:  no cover

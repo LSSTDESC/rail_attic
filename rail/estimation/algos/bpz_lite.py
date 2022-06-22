@@ -29,7 +29,7 @@ import tables_io
 import rail
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatEstimator, CatInformer
-from desc_bpz.useful_py3 import get_str, get_data, match_resol
+from rail.core.data import TableHandle
 
 def_bands = ['u', 'g', 'r', 'i', 'z', 'y']
 def_bandnames = [f"mag_{band}_lsst" for band in def_bands]
@@ -314,6 +314,7 @@ class BPZ_lite(CatEstimator):
         self.modeldict = self.model
 
     def _load_templates(self):
+        from desc_bpz.useful_py3 import get_str, get_data, match_resol
 
         # The redshift range we will evaluate on
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)

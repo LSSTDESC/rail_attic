@@ -12,7 +12,6 @@ from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatEstimator, CatInformer
 
 from rail.evaluation.metrics.cdeloss import CDELoss
-from sklearn.neighbors import KDTree
 import pandas as pd
 import qp
 
@@ -89,6 +88,7 @@ class Inform_KNearNeighPDF(CatInformer):
         """
         train a KDTree on a fraction of the training data
         """
+        from sklearn.neighbors import KDTree
         if self.config.hdf5_groupname:
             training_data = self.get_data('input')[self.config.hdf5_groupname]
         else:  # pragma:  no cover
