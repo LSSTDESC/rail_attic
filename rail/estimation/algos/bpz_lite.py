@@ -148,13 +148,21 @@ class Inform_BPZ_lite(CatInformer):
         cutmags = self.mags[self.typmask]
         cutszs = self.szs[self.typmask]
         loglike = 0.0
-        for mag, sz in zip(cutmags, cutszs):
+        for i, (mag, sz) in enumerate(zip(cutmags, cutszs)):
+            if i % self.size != self.rank:
+                continue
             pz = nzfunc(sz, zo, alpha, km, mag, self.mo)
             norm, _ = scipy.integrate.quad(nzfunc, self.config.zmin, self.config.zmax,
                                            args=(zo, alpha, km, mag, self.mo),
                                            epsrel=1.e-5)
             loglike += -2. * np.log10(pz / norm)
-        print(f"Fitting dN/dz: loglike = {loglike} for parameters {params}")
+
+        if self.comm is not None:
+            # sum the log-like values from all the processes, to all the processes
+            loglike = self.comm.allreduce(loglike)
+
+        if self.rank == 0:
+            print(f"Fitting dN/dz: loglike = {loglike} for parameters {params}")
         return loglike
 
     def _find_dndz_params(self):
@@ -164,9 +172,14 @@ class Inform_BPZ_lite(CatInformer):
         a_arr = np.ones(self.ntyp)
         km_arr = np.ones(self.ntyp)
         for i in range(self.ntyp):
-            print(f"minimizing for type {i}")
+            if self.rank == 0:
+                print(f"minimizing for type {i}")
             self.typmask = (self.besttypes == i)
             dndzparams = np.hstack([self.config.init_zo, self.config.init_alpha, self.config.init_km])
+            # The parallelization of this stage only works because nelder-mead is deterministic
+            # so all the processes always end up with the same parameters each time. If you change to
+            # another minimizer that isn't deterministic then you need to change the parallel stuff in
+            # _dndz_likelihood.
             result = sciop.minimize(self._dndz_likelihood, dndzparams, method='nelder-mead').x
             zo_arr[i] = result[0]
             a_arr[i] = result[1]
@@ -208,19 +221,22 @@ class Inform_BPZ_lite(CatInformer):
         self.besttypes = broad_types[mask]
 
         numused = len(self.besttypes)
-        print(f"using {numused} galaxies in calculation")
+        if self.rank == 0:
+            print(f"using {numused} galaxies in calculation")
 
         self._find_fractions()
-        print("best values for fo and kt:")
-        print(self.fo_arr)
-        print(self.kt_arr)
+        if self.rank == 0:
+            print("best values for fo and kt:")
+            print(self.fo_arr)
+            print(self.kt_arr)
         zo_arr, km_arr, a_arr = self._find_dndz_params()
         a_arr = np.abs(a_arr)
 
         self.model = dict(fo_arr=self.fo_arr, kt_arr=self.kt_arr, zo_arr=zo_arr,
                           km_arr=km_arr, a_arr=a_arr, mo=self.config.m0,
                           nt_array=self.config.nt_array)
-        self.add_data('model', self.model)
+        if self.rank == 0:
+            self.add_data('model', self.model)
 
 
 class BPZ_lite(CatEstimator):
