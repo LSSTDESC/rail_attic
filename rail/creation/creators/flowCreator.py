@@ -1,11 +1,73 @@
 """This is the subclass of Creator that wraps a PZFlow Flow so that it can
 be used to generate synthetic data and calculate posteriors."""
 
+from ast import Param
 import numpy as np
 import qp
 from pzflow import Flow
 from rail.core.data import FlowHandle, PqHandle, QPHandle
-from rail.creation.creators import Creator, PosteriorCalculator
+from rail.creation.creators import Modeler, Creator, PosteriorCalculator
+
+
+class FlowModeler(Modeler):
+    """Modeler wrapper for a PZFlow Flow object.
+    
+    This class trains the flow.
+    """
+
+    name = 'FlowModeler'
+    inputs = [('catalog', SomeHandle)] # move this to the base class!!!!!!
+    outputs = [('flow', FlowHandle)]
+
+    config_options = CatInformer.config_options.copy()
+    config_options.update(
+        color_transform=Param(bool, True, msg="Whether to internally convert magnitudes to colors."),
+    )
+
+
+    def __init__(self, args, comm=None):
+        """Constructor
+        
+        Does standard Modeler initialization.
+        """
+
+        if self.config.color_transform:
+            # tell it which column to use as the reference magnitude
+            ref_idx = train_set.columns.get_loc("i")
+            # and which columns correspond to the magnitudes we want colors for
+            mag_idx = [train_set.columns.get_loc(band) for band in "ugrizy"]
+
+        # the next bijector is shift bounds
+        # we need to set the mins and maxes
+        # I am setting strict limits on redshift, but am adding some padding to
+        # the magnitudes and colors so that the flow can sample a little
+        colors = -np.diff(train_set[list("ugrizy")].to_numpy())
+        mins = np.concatenate(([0, train_set["i"].min()], colors.min(axis=0)))
+        maxs = np.concatenate(([3, train_set["i"].max()], colors.max(axis=0)))
+
+        # I will add 10% buffers to the mins and maxs in case that the train set
+        # doesn't cover the full range of the test set
+        ranges = maxs - mins
+        buffer = ranges / 10 / 2
+        buffer[0] = 0  # except no buffer for redshift!
+        mins -= buffer
+        maxs += buffer
+
+        # finally, the settings for the RQ-RSC
+        nlayers = train_set.shape[1]  # layers = number of dimensions
+        K = 16  # number of spline knots
+        transformed_dim = 1  # only transform one dimension at a time
+
+        # chain all the bijectors together
+        bijector = Chain(
+            ColorTransform(ref_idx, mag_idx),
+            ShiftBounds(mins, maxs),
+            RollingSplineCoupling(nlayers, K=K, transformed_dim=transformed_dim),
+        )
+
+        # build the flow
+        flow = Flow(train_set.columns, bijector=bijector)
+
 
 
 class FlowCreator(Creator):
