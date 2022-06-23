@@ -4,7 +4,7 @@ import ceci
 import rail
 from rail.core.stage import RailStage
 from rail.creation.degradation import LSSTErrorModel, InvRedshiftIncompleteness, LineConfusion, QuantityCut
-from rail.creation.engines.flowEngine import FlowEngine, FlowPosterior
+from rail.creation.creators.flowCreator import FlowCreator, FlowPosterior
 from rail.core.data import TableHandle
 from rail.core.stage import RailStage
 from rail.core.utilStages import ColumnMapper, TableConverter
@@ -20,7 +20,7 @@ def test_goldenspike():
     rename_dict = {f'mag_{band}_lsst_err':f'mag_err_{band}_lsst' for band in bands}
     post_grid = [float(x) for x in np.linspace(0., 5, 21)]
 
-    flow_engine_test = FlowEngine.make_stage(name='flow_engine_test', 
+    flow_creator_test = FlowCreator.make_stage(name='flow_creator_test', 
                                              flow=flow_file, n_samples=50)
       
     lsst_error_model_test = LSSTErrorModel.make_stage(name='lsst_error_model_test',
@@ -38,12 +38,12 @@ def test_goldenspike():
 
 
     pipe = ceci.Pipeline.interactive()
-    stages = [flow_engine_test, lsst_error_model_test, col_remapper_test, table_conv_test]
+    stages = [flow_creator_test, lsst_error_model_test, col_remapper_test, table_conv_test]
     for stage in stages:
         pipe.add_stage(stage)
 
 
-    lsst_error_model_test.connect_input(flow_engine_test)
+    lsst_error_model_test.connect_input(flow_creator_test)
     col_remapper_test.connect_input(lsst_error_model_test)
     #flow_post_test.connect_input(col_remapper_test, inputTag='input')
     table_conv_test.connect_input(col_remapper_test)

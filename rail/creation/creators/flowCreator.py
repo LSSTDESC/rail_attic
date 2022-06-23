@@ -1,33 +1,31 @@
-""" This is the subclass of Engine that wraps a pzflow Flow so that it can
-used to generate synthetic data """
+"""This is the subclass of Creator that wraps a PZFlow Flow so that it can
+be used to generate synthetic data and calculate posteriors."""
 
 import numpy as np
 import qp
+from pzflow import Flow
+from rail.core.data import FlowHandle, PqHandle, QPHandle
+from rail.creation.creators import Creator, PosteriorCalculator
 
-from rail.core.data import PqHandle, QPHandle, FlowHandle
-from rail.creation.engines import Engine, PosteriorEvaluator
+class FlowCreator(Creator):
+    """Creator wrapper for a PZFlow Flow object."""
 
-
-
-class FlowEngine(Engine):
-    """Engine wrapper for a pzflow Flow object."""
-
-    name = 'FlowEngine'
+    name = 'FlowCreator'
     inputs = [('flow', FlowHandle)]
     outputs = [('output', PqHandle)]
 
     def __init__(self, args, comm=None):
-        """ Constructor
+        """Constructor
 
-        Does standard Engine initialization and also gets the `Flow` object
+        Does standard Creator initialization and also gets the `Flow` object
         """
-        Engine.__init__(self, args, comm=comm)
+        Creator.__init__(self, args, comm=comm)
         if not isinstance(args, dict):
             args = vars(args)
         self.set_flow(**args)
 
     def set_flow(self, **kwargs):
-        """ Set the flow, either from an object or by loading from a file """
+        """Set the `Flow`, either from an object or by loading from a file."""
         flow = kwargs.get('flow')
         if flow is None:  #pragma: no cover
             return None
@@ -37,7 +35,7 @@ class FlowEngine(Engine):
         return self.set_data('flow', data=None, path=flow)
 
     def run(self):
-        """ Run method
+        """Run method
 
         Calls `Flow.sample` to use the `Flow` object to generate photometric data
 
@@ -47,12 +45,11 @@ class FlowEngine(Engine):
         """
         flow = self.get_data('flow')
         if flow is None:  #pragma: no cover
-            raise ValueError("Tried to run a FlowEngine before the Flow object is loaded")
-        self.add_data('output', flow.sample(self.config.n_samples, seed=self.config.seed))
+            raise ValueError("Tried to run a FlowCreator before the `Flow` model is loaded")
+        self.add_data('output', flow.sample(self.config.n_samples, self.config.seed))
 
-
-class FlowPosterior(PosteriorEvaluator):
-    """Engine wrapper for a pzflow Flow object
+class FlowPosterior(PosteriorCalculator):
+    """PosteriorCalculator wrapper for a PZFlow Flow object
 
     Parameters
     ----------
@@ -101,13 +98,15 @@ class FlowPosterior(PosteriorEvaluator):
     """
 
     name = 'FlowPosterior'
-    config_options = PosteriorEvaluator.config_options.copy()
-    config_options.update(grid=list,
-                          err_samples=10,
-                          seed=12345,
-                          marg_rules={"flag": np.nan, "mag_u_lsst": lambda row: np.linspace(25, 31, 10)},
-                          batch_size=10000,
-                          nan_to_zero=True)
+    config_options = PosteriorCalculator.config_options.copy()
+    config_options.update(
+        grid=list,
+        err_samples=10,
+        seed=12345,
+        marg_rules={"flag": np.nan, "mag_u_lsst": lambda row: np.linspace(25, 31, 10)},
+        batch_size=10000,
+        nan_to_zero=True,
+    )
 
     inputs = [('flow', FlowHandle),
               ('input', PqHandle)]
@@ -116,14 +115,14 @@ class FlowPosterior(PosteriorEvaluator):
     def __init__(self, args, comm=None):
         """ Constructor
 
-        Does standard Engine initialization and also gets the `Flow` object
+        Does standard PosteriorCalculator initialization
         """
-        PosteriorEvaluator.__init__(self, args, comm=comm)
+        PosteriorCalculator.__init__(self, args, comm=comm)
 
     def run(self):
-        """ Run method
+        """Run method
 
-        Calls `Flow.posterior` to use the `Flow` object to get the posterior disrtibution
+        Calls `Flow.posterior` to use the `Flow` object to get the posterior distribution
 
         Notes
         -----

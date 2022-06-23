@@ -1,7 +1,7 @@
 """RailStages that degrade synthetic samples of photometric data"""
 
-from .degrader import *
-from .quantityCut import *
-from .lsst_error_model import *
-from .spectroscopic_degraders import *
-from .grid_selection import *
+from rail.creation.degradation.degrader import *
+from rail.creation.degradation.grid_selection import *
+from rail.creation.degradation.lsst_error_model import *
+from rail.creation.degradation.quantityCut import *
+from rail.creation.degradation.spectroscopic_degraders import *
