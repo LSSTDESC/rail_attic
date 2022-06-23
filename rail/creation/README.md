@@ -4,28 +4,38 @@ The code here enables the generation of mock photometry corresponding to a fully
 
 ## Base design
 
-We will begin with a mock data set of galaxy redshifts and photometry, for example, the DC2 extragalactic catalog.
-Because any existing data set is limited in number and coverage in the 6+1 dimensional space of redshifts and photometry, we will expand that mock data set into a continuous probability density in the space of redshifts and photometry.
-This process may be done using a GAN to augment the data until it fills out the space, followed by a smoothing or interpolation of that space.
-Galaxy redshifts and photometry drawn from that joint probability density will have a true likelihood and a true posterior.
-This code may or may not be built off of existing tools made for the testing suite of [`chippr`](https://github.com/aimalz/chippr).
+The three aspects to RAIL's `creation` subpackage were originally inspired by the testing suite of [`chippr`](https://github.com/aimalz/chippr).
 
-## Future extensions
+### `Modeler`
+
+A `Modeler` is a stage that yields a forward model of photometry and redshift from which mock data can be drawn.
+It may be based on theory, e.g. spectral energy distribution (SED) modeling from stellar population synthesis (SPS), or empirical, based on an existing data set, e.g. the DC2 extragalactic catalog.
+The `Modeler` stage effectively informs whatever process it is that can generate a probability space of photometry and redshift.
+
+### `Creator`
+
+A `Creator` is a stage that samples mock data from the probabilistic forward model yielded by a `Modeler`.
+Because any existing data set is limited in number and coverage in the 6+1 dimensional space of redshifts and photometry, we expand that mock data set into a continuous probability density in the space of redshifts and photometry.
+
+### `PosteriorCalculator`
+
+Galaxy redshifts and photometry drawn from the joint probability density defined by the `Modeler` will have a true likelihood and a true posterior, which RAIL's `Estimator` algorithms aim to approximate for subsequent comparison.
+
+### Future extensions
 
 In the future, we may need to consider a probability space with more data dimensions, such as galaxy images and/or positions in order to consider codes that infer redshifts using photometric information and other sources of information.
 Similarly, to evaluate template-fitting codes, we will need to construct the joint probability space of redshifts and photometry from a mock data set of SEDs and redshifts, which could include complex effects like emission lines.
 
 # RAIL degradation modules
 
-The code in the degradation submodule enables the introduction of physical systematics into photometric training/test set pairs via the forward model of the `creation` modules.
-The high-dimensional probability density outlined in the `creation` directory can be modified in ways that reflect the realistic mismatches between training and test sets.
-Training and test set data will be drawn from such probability spaces with systematics applied in isolation, which preserves the existence of true likelihoods and posteriors.
+If the aforementioned three aspects of `rail.creation` ensured the self-consistency of mock data, this fourth class ensures realistic complexity via physically motivated forms of systematic error.
+Though the high-dimensional probability density outlined in the `creation` directory could be modified in ways that reflect the realistic mismatches between training and test sets, as is implemented in the testing suite for [`chippr`](https://github.com/aimalz/chippr), it is simpler and sufficient (for now) to perform this adjustment in the space of generated mock catalogs from a `Creator`.
 
 ## Base design
 
-An initial experimental design would correspond to a single training set and many test sets; the systematics that can be implemented under this scheme include imbalances between the training and test sets along the dimensions of brightness, color, and redshift.
+An initial experimental design would correspond to a single training set and many test sets; 
+the systematics that can be implemented under this scheme include imbalances between the training and test sets along the dimensions of brightness, color, and redshift.
 Though it is not realistic to think of the universe in this way, realistically complex effects can still be tested in this way.
-The "zeroth order" version of this infrastructure could be built using existing tools made for the testing suite of [`chippr`](https://github.com/aimalz/chippr).
 
 ## Future extensions
 

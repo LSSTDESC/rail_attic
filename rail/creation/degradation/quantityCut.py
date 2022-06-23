@@ -3,7 +3,7 @@
 from numbers import Number
 
 import numpy as np
-from rail.creation.degradation import Degrader
+from rail.creation import Degrader
 
 
 class QuantityCut(Degrader):

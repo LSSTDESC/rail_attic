@@ -6,7 +6,7 @@ import numpy as np
 import qp
 from pzflow import Flow
 from rail.core.data import FlowHandle, PqHandle, QPHandle
-from rail.creation.creators import Modeler, Creator, PosteriorCalculator
+from rail.creation.creator import Modeler, Creator, PosteriorCalculator
 
 
 class FlowModeler(Modeler):

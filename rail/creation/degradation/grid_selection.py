@@ -3,7 +3,7 @@
 import numpy as np
 import pickle
 import tables_io
-from rail.creation.degradation import Degrader
+from rail.creation import Degrader
 from ceci.config import StageParameter as Param
 
 
