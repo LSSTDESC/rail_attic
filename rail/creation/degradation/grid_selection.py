@@ -40,7 +40,8 @@ class GridSelection(Degrader):
                                            msg="path to ratio file"),
                           settings_file=Param(str, './examples/creation/data/HSC_grid_settings.pkl',
                                               msg='path to pickled parameters file'),
-                          random_seed=Param(int, 12345, msg="random seed for reproducibility"))
+                          random_seed=Param(int, 12345, msg="random seed for reproducibility"),
+                          scaling_factor=Param(float, 1.588, msg="multiplicative factor for ratios to adjust number of galaxies kept"))
 
     def __init__(self, args, comm=None):
 
@@ -160,7 +161,9 @@ class GridSelection(Degrader):
         keep_inds = []
 
         if self.config.color_redshift_cut:
-            factor = 27 / 17  # accounts for the fact that we select fewer galaxies with the color-based redshift cut
+            # multiplicative factor that can account for the fact that we select fewer galaxies
+            # with the color-based redshift cut after percentile cut is applied
+            factor = self.config.scaling_factor
         else:  # pragma: no cover
             factor = 1
         for xratio in unique_ratios:
