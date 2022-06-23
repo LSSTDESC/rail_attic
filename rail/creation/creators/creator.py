@@ -8,9 +8,38 @@ import pandas as pd
 import qp
 from rail.core.stage import RailStage
 
+class Modeler(RailStage):
+    """
+    Base class for creating a model of redshift and photometry.
+
+    """
+    name = 'Modeler'
+    config_options = RailStage.config_options.copy()
+    config_options.update(seed=12345)
+
+    def __init__(self, args, comm=None):
+        """Initialize Modeler"""
+        RailStage.__init__(self, args, comm=comm)
+
+    def fit_model(self, **kwargs):
+        """
+        Produce a creation model from which photometry and redshifts can be generated
+
+        Parameters
+        ----------
+        [The paramters depend entirely on the modeling approach!]
+
+        Returns
+        -------
+        [This will definitely be a file, but the filetype and format depend entirely on the modeling approach!]
+        """
+        self.config.update(**kwargs)
+        self.run()
+        self.finalize()
+        return self.get_handle('output')
 
 class Creator(RailStage):
-    """Base class for Creators that create synthetic photometric data.
+    """Base class for Creators that generate synthetic photometric data from a model.
 
     `Creator` will output a table of photometric data.  The details 
     will depend on the particular engine.
