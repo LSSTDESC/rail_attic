@@ -1,4 +1,4 @@
-from setuptools import setup, find_namespace_packages
+from setuptools import find_namespace_packages, setup
 
 # basic dependencies for all RAIL modules
 install_requires = [
@@ -11,7 +11,7 @@ install_requires = [
 ]
 
 # dependencies for the Creation module
-creation_extras = ["pzflow>=2.0.7,<3.0.0"]
+creation_extras = ["pzflow"]
 
 # dependencies required for all estimators in the Estimation module
 estimation_extras = [
@@ -63,14 +63,9 @@ extras_require["base"] = list(
 )
 
 extras_require["all"] = extras_require["full"] = extras_require["Full"] = list(
-    set(
-        (
-            extras_require["base"]
-            + extras_require["delight"]
-        )
-    )
+    set((extras_require["base"] + extras_require["delight"]))
 )
-        
+
 
 # setup the rail package!
 setup(
@@ -78,14 +73,27 @@ setup(
     author="The LSST DESC PZ WG",
     author_email="aimalz@nyu.edu",
     packages=find_namespace_packages(),
-    package_dir={'rail': './rail', 'rail.estimation':'./rail/estimation', 'rail.estimation.algos': './rail/estimation/algos'},
+    package_dir={
+        "rail": "./rail",
+        "rail.estimation": "./rail/estimation",
+        "rail.estimation.algos": "./rail/estimation/algos",
+    },
     package_data={
-        "": ["*.hdf5", "*.yaml", "*.sed", "*.res", "*.AB", "*.list", "*.columns", "*.pkl"],
+        "": [
+            "*.hdf5",
+            "*.yaml",
+            "*.sed",
+            "*.res",
+            "*.AB",
+            "*.list",
+            "*.columns",
+            "*.pkl",
+        ],
         "tests": ["*.hdf5", "*.yaml", "*.columns"],
         "rail/estimation/data/SED": ["*.sed", "*.list"],
         "rail/estimation/data/FILTER": ["*.res"],
         "rail/estimation/data/AB": ["*.AB"],
-        "examples/goldenspike/data":["*.pkl"],
+        "examples/goldenspike/data": ["*.pkl"],
     },
     include_package_data=True,
     license="BSD 3-Clause License",
@@ -100,13 +108,11 @@ setup(
         "Operating System :: OS Independent",
         "Programming Language :: Python",
     ],
-    entry_points={
-        'console_scripts':['rail=rail.main:main']
-    },
+    entry_points={"console_scripts": ["rail=rail.main:main"]},
     install_requires=install_requires,
     extras_require=extras_require,
     python_requires=">=3.5",
     setup_requires=["setuptools_scm", "pytest-runner"],
-    use_scm_version={"write_to":"rail/_version.py"},
+    use_scm_version={"write_to": "rail/_version.py"},
     tests_require=["pytest"],
 )
