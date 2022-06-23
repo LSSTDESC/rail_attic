@@ -57,7 +57,7 @@ class GridSelection(Degrader):
         200 bins in each direction. The ratio of of galaxies with spectroscopic redshifts (training galaxies) to
         galaxies with only photometry in HSC wide field (application galaxies) was computed for each pixel. We divide
         the data into the same pixels and randomly select galaxies into the training sample based on the HSC ratios.
-        If using a color-based redshift cut, galaxies with redshifts > the percentile cut are removed from the sample 
+        If using a color-based redshift cut, galaxies with redshifts > the percentile cut are removed from the sample
         before making the random selection.
         """
         np.random.seed(self.config.random_seed)
@@ -104,107 +104,92 @@ class GridSelection(Degrader):
         num_edges_x = ratios.shape[0] + 1
         y_edges = np.linspace(y_lims[0], y_lims[1], num_edges_y)
         x_edges = np.linspace(x_lims[0], x_lims[1], num_edges_x)
-        
-        #Calculate the max spec-z for each pixel from percentile_cut
-        if self.config.color_redshift_cut:
+
+        # Calculate the max spec-z for each pixel from percentile_cut
+        # If not using color-based redshift cut, max spec-z set to 100
+        if not self.config.color_redshift_cut:  # pragma: no cover
+            max_specz = np.ones_like(ratios) * 100.
+        else:
             percentile_cut = self.config['percentile_cut']
             hsc_spec_galaxies = pd.read_hdf(self.config['ratio_file'], 'data', 'r')
 
             hsc_spec_mags = hsc_spec_galaxies['mag'].to_numpy()
             hsc_spec_colors = hsc_spec_galaxies['color'].to_numpy()
-            hsc_spec_specz = hsc_spec_galaxies['specz'].to_numpy()
 
-            pixels_hsc_colors = np.searchsorted(y_edges, hsc_spec_colors)
-            pixels_hsc_mags = np.searchsorted(x_edges, hsc_spec_mags)
+            pixels_hsc_colors = np.searchsorted(y_edges, hsc_spec_colors) - 1
+            pixels_hsc_mags = np.searchsorted(x_edges, hsc_spec_mags) - 1
 
-            pixels_hsc_colors = pixels_hsc_colors - 1
-            pixels_hsc_mags = pixels_hsc_mags - 1
-
-            pixel_tot = (len(x_edges)-1)*pixels_hsc_mags + pixels_hsc_colors
-            hsc_spec_galaxies['total_pixel'] = pixel_tot #tags each galaxy with a single pixel number instead of one color and one magnitude
+            pixel_tot = (len(x_edges) - 1)*pixels_hsc_mags + pixels_hsc_colors
+            hsc_spec_galaxies['total_pixel'] = pixel_tot  # tags each galaxy with a single pixel number instead of one color and one magnitude
 
             unique_pixels = hsc_spec_galaxies['total_pixel'].unique()
 
-            max_specz = np.zeros((len(x_edges)-1, len(y_edges)-1))
-            for i in range(len(x_edges)-1):
-                for j in range(len(y_edges)-1):
-                    pixel = i*int(len(x_edges)-1) + j
-                    if not np.isin(pixel, unique_pixels):
-                        max_specz[i][j] = 0
-                    else:
+            max_specz = np.zeros((len(x_edges) - 1, len(y_edges) - 1))
+            for i in range(len(x_edges) - 1):
+                for j in range(len(y_edges) - 1):
+                    pixel = i * int(len(x_edges) - 1) + j
+                    if np.isin(pixel, unique_pixels):
                         temp_dict = hsc_spec_galaxies[hsc_spec_galaxies['total_pixel'] == pixel]
                         spec_zs = temp_dict['specz'].to_numpy()
                         percentile = np.percentile(spec_zs, percentile_cut)
                         max_specz[i][j] = percentile
 
-        # If not using color-based redshift cut, max spec-z set to 100                
-        if not self.config.color_redshift_cut: # pragma: no cover
-            max_specz = np.ones_like(ratios)
-            max_specz = max_specz*100
-            
-            
         # For each galaxy in data, identifies the pixel it belongs in, and adds the ratio for that pixel to a new column in data called 'ratios'
-        pixels_y = np.searchsorted(y_edges, y_vals)
-        pixels_x = np.searchsorted(x_edges, x_vals)
-
-        pixels_y = pixels_y - 1
-        pixels_x = pixels_x - 1
+        pixels_y = np.searchsorted(y_edges, y_vals) - 1
+        pixels_x = np.searchsorted(x_edges, x_vals) - 1
 
         ratio_list = []
         max_specz_list = []
         for i in range(len(pixels_y)):
             ratio_list.append(ratios[pixels_y[i]][pixels_x[i]])
             max_specz_list.append(max_specz[pixels_y[i]][pixels_x[i]])
-            
+
         data_hsc_like['ratios'] = ratio_list
         data_hsc_like['max_specz'] = max_specz_list
-        
-        #remove galaxies with redshifts higher than the color-based cutoff
+
+        # remove galaxies with redshifts higher than the color-based cutoff
         data_hsc_like_redshift_cut = data_hsc_like[data_hsc_like['redshift'] <= data_hsc_like['max_specz']]
-        
-        #If making a pessimistic redshift cut, do that now
+
+        # If making a pessimistic redshift cut, do that now
         if self.config['pessimistic_redshift_cut'] != 100:
             data_hsc_like_redshift_cut = data_hsc_like_redshift_cut[data_hsc_like_redshift_cut['redshift'] <= self.config['pessimistic_redshift_cut']]
-        
+
         # This picks galaxies for the training set
         unique_ratios = data_hsc_like['ratios'].unique()
 
         keep_inds = []
 
         if self.config.color_redshift_cut:
-            factor = 27/17 #accounts for the fact that we select fewer galaxies with the color-based redshift cut
-        if not self.config.color_redshift_cut: # pragma: no cover
+            factor = 27 / 17  # accounts for the fact that we select fewer galaxies with the color-based redshift cut
+        else:  # pragma: no cover
             factor = 1
         for xratio in unique_ratios:
             temp_data = data_hsc_like_redshift_cut[data_hsc_like_redshift_cut['ratios'] == xratio]
-            number_to_keep = len(temp_data)*xratio
-            if number_to_keep*factor <= len(temp_data):
-                number_to_keep = number_to_keep*factor
-            if number_to_keep*factor > len(temp_data): # pragma: no cover
-                number_to_keep = len(temp_data) 
+            number_to_keep = len(temp_data) * xratio
+            if number_to_keep * factor <= len(temp_data):
+                number_to_keep = number_to_keep * factor
+            else:  # pragma: no cover
+                number_to_keep = len(temp_data)
 
             if int(number_to_keep) != number_to_keep:
                 random_num = np.random.uniform()
-            if int(number_to_keep) == number_to_keep:
+            else:
                 random_num = 2
 
             number_to_keep = np.floor(number_to_keep)
             indices_to_list = list(temp_data.index.values)
             np.random.shuffle(indices_to_list)
 
-            if random_num > xratio: # pragma: no cover
-                for j in range(0, int(number_to_keep)):
-                    keep_inds.append(indices_to_list[j]) 
-            
-            if random_num <= xratio: # pragma: no cover
-                for j in range(0, int(number_to_keep)+1): 
+            if random_num > xratio:  # pragma: no cover
+                for j in range(int(number_to_keep)):
                     keep_inds.append(indices_to_list[j])
 
-        
+            else:  # pragma: no cover
+                for j in range(int(number_to_keep) + 1):
+                    keep_inds.append(indices_to_list[j])
+
         training_data = data_hsc_like_redshift_cut.loc[keep_inds, :]
-
         training_data = training_data[training_data['redshift'] > 0]
-
         training_data = training_data.drop(['x_vals', 'y_vals', 'ratios'], axis=1)
 
         self.add_data('output', training_data)
