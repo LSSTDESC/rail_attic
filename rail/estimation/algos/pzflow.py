@@ -11,9 +11,6 @@ from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatEstimator, CatInformer
 from rail.core.data import FlowHandle, TableHandle
 import pandas as pd
-from pzflow import Flow
-from pzflow.bijectors import Chain, ColorTransform, InvSoftplus
-from pzflow.bijectors import StandardScaler, RollingSplineCoupling
 import qp
 
 
@@ -119,6 +116,9 @@ class Inform_PZFlowPDF(CatInformer):
         train a flow based on the training data
         This is mostly based off of the pzflow example notebook
         """
+        from pzflow import Flow
+        from pzflow.bijectors import Chain, ColorTransform, InvSoftplus
+        from pzflow.bijectors import StandardScaler, RollingSplineCoupling
         if self.config.hdf5_groupname:
             training_data = self.get_data('input')[self.config.hdf5_groupname]
         else:  #pragma:  no cover

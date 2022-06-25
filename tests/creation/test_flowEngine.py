@@ -31,7 +31,7 @@ def test_flowengine_sample():
     os.remove(flowEng2.get_output(flowEng2.get_aliased_tag('output'), final_name=True))
 
 
-def test_flowengine_pz_estimate():
+def test_flowengine_pz_estimate(tmp_path):
     """Test that flow posteriors and flowEng posteriors are the same."""
 
     data = get_galaxy_data().iloc[:10, :]
@@ -46,9 +46,9 @@ def test_flowengine_pz_estimate():
 
     flow = get_example_flow()
     flow_pdfs = flow.posterior(data, column="redshift", grid=grid)
-    pzdir = os.path.dirname(pzflow.__file__)
-    flow_path = os.path.join(pzdir, 'examples', 'example-flow.pkl')
 
+    flow_path = tmp_path / "flow.pzflow.pkl"
+    flow.save(flow_path)
     flowPost = FlowPosterior.make_stage(name='flow',
                                         flow=flow_path,
                                         column="redshift",

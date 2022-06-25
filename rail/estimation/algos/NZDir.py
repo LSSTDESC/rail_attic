@@ -6,7 +6,6 @@ import numpy as np
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatEstimator, CatInformer
 import qp
-from sklearn.neighbors import NearestNeighbors
 import scipy.spatial
 import pandas as pd
 
@@ -46,6 +45,8 @@ class Inform_NZDir(CatInformer):
         CatInformer.__init__(self, args, comm=comm)
 
     def run(self):
+        from sklearn.neighbors import NearestNeighbors
+
         if self.config.hdf5_groupname:
             sz_data = self.get_data('input')[self.config.hdf5_groupname]
         else:  # pragma:  no cover
