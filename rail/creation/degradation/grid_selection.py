@@ -18,6 +18,8 @@ class GridSelection(Degrader):
     color_redshift_cut: True or false, implements color-based redshift cut. Default is True.
         If True, ratio_file must include second key called 'data' with magnitudes, colors and spec-z from the spectroscopic sample.
     percentile_cut: If using color-based redshift cut, percentile in spec-z above which redshifts will be cut from training sample. Default is 99.0
+    scaling_factor: Enables the user to adjust the ratios by this factor to change the overall number of galaxies kept.  For example, if you wish
+        to generate 100,00 galaxies but only 50,000 are selected by default, then you can adjust factor up by a factor of 2 to return more galaixes.
     pessimistic_redshift_cut: redshift above which all galaxies will be removed from training sample. Default is 100
     ratio_file: hdf5 file containing an array of spectroscpic vs. photometric galaxies in each pixel. Default is hsc_ratios.hdf5 for an HSC based selection
     settings_file: pickled dictionary containing information about colors and magnitudes used in defining the pixels. Dictionary must include the following keys:
@@ -108,6 +110,8 @@ class GridSelection(Degrader):
 
         # Calculate the max spec-z for each pixel from percentile_cut
         # If not using color-based redshift cut, max spec-z set to 100
+        # percentiles are determined from the HSC data, not the input
+        # data, which gives smoother distributions in many cases.
         if not self.config.color_redshift_cut:  # pragma: no cover
             max_specz = np.ones_like(ratios) * 100.
         else:
@@ -120,7 +124,7 @@ class GridSelection(Degrader):
             pixels_hsc_colors = np.searchsorted(y_edges, hsc_spec_colors) - 1
             pixels_hsc_mags = np.searchsorted(x_edges, hsc_spec_mags) - 1
 
-            pixel_tot = (len(x_edges) - 1)*pixels_hsc_mags + pixels_hsc_colors
+            pixel_tot = (len(x_edges) - 1) * pixels_hsc_mags + pixels_hsc_colors
             hsc_spec_galaxies['total_pixel'] = pixel_tot  # tags each galaxy with a single pixel number instead of one color and one magnitude
 
             unique_pixels = hsc_spec_galaxies['total_pixel'].unique()
