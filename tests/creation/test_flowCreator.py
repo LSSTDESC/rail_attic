@@ -46,9 +46,9 @@ def test_FlowCreator_pz_estimate():
 
     flow = get_example_flow()
     flow_pdfs = flow.posterior(data, column="redshift", grid=grid)
-    pzdir = os.path.dirname(pzflow.__file__)
-    flow_path = os.path.join(pzdir, 'examples', 'example-flow.pkl')
 
+    flow_path = tmp_path / "flow.pzflow.pkl"
+    flow.save(flow_path)
     flowPost = FlowPosterior.make_stage(name='flow',
                                         flow=flow_path,
                                         column="redshift",
