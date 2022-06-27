@@ -31,6 +31,11 @@ class GridSelection(Degrader):
       if y_band_2 is not set to '' then the y-band is assumed to be over color and is set to y_band_1 - y_band 2.
       'x_limits': 2-element list, this is a list of the lower and upper limits of the magnitude. Default for HSC is [13, 16],
       'y_limits': 2-element list, this is a list of the lower and upper limits of the color. Default for HSC is [-2, 6]}
+
+    NOTE: the default 'HSC' grid file, located in RAIL/examples/creation/data/hsc_ratios_and_specz.hdf5, is based on data from the
+    Second HSC Data Release, details of which can be found here:
+    Aihara, H., AlSayyad, Y., Ando, M., et al. 2019, PASJ, 71, 114
+    doi: 10.1093/pasj/psz103
     """
 
     name = 'GridSelection'
