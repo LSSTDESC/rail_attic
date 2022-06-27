@@ -96,33 +96,39 @@ def test_GridSelection_returns_correct_shape(data):
     assert degraded_data.shape[1] == data.data.shape[1]-2
     os.remove(degrader.get_output(degrader.get_aliased_tag('output'), final_name=True))
     
-def test_SpecSelection_WiggleZ(data):
-    degrader = SpecSelection_WiggleZ.make_stage()
-    degrader(data)
-    
-def test_SpecSelection_GAMA(data):
-    degrader = SpecSelection_GAMA.make_stage()
-    degrader(data)
-    
-def test_SpecSelection_BOSS(data):
-    degrader = SpecSelection_BOSS.make_stage()
-    degrader(data)
 
-def test_SpecSelection_DEEP2(data):
-    degrader = SpecSelection_DEEP2.make_stage()
-    degrader(data)
+def test_SpecSelection_WiggleZ(data):
     
-def test_SpecSelection_VVDSf02(data):
-    degrader = SpecSelection_VVDSf02.make_stage()
-    degrader(data)
+    bands = ['u','g','r','i','z','y']
+    band_dict = {band:f'mag_{band}_lsst' for band in bands}
+    rename_dict = {f'{band}_err':f'mag_err_{band}_lsst' for band in bands}
+    rename_dict.update({f'{band}':f'mag_{band}_lsst' for band in bands})
+    standard_colnames = [f'mag_{band}_lsst' for band in 'ugrizy']
     
-def test_SpecSelection_zCOSMOS(data):
-    degrader = SpecSelection_zCOSMOS.make_stage()
-    degrader(data)
+    col_remapper_test = ColumnMapper.make_stage(name='col_remapper_test', hdf5_groupname='',
+                                             columns=rename_dict)
+    data = col_remapper_test(data)
     
-def test_SpecSelection_HSC(data):
-    degrader = SpecSelection_HSC.make_stage()
-    degrader(data)
+    degrader_WiggleZ = SpecSelection_WiggleZ.make_stage()
+    degrader_WiggleZ(data)
+    
+    degrader_GAMA = SpecSelection_GAMA.make_stage()
+    degrader_GAMA(data)
+    
+    degrader_BOSS = SpecSelection_BOSS.make_stage()
+    degrader_BOSS(data)
+
+    degrader_DEEP2 = SpecSelection_DEEP2.make_stage()
+    degrader_DEEP2(data)
+    
+    degrader_VVDSf02 = SpecSelection_VVDSf02.make_stage()
+    degrader_VVDSf02(data)
+    
+    degrader_zCOSMOS = SpecSelection_zCOSMOS.make_stage()
+    degrader_zCOSMOS(data)
+    
+    degrader_HSC = SpecSelection_HSC.make_stage()
+    degrader_HSC(data)
     
 @pytest.mark.parametrize(
     "cuts,error",
