@@ -3,6 +3,8 @@ import fsps
 import numpy as np
 from astropy.table import Table
 from ceci.config import StageParameter as Param
+# from mpi4py import MPI
+
 
 class FSPSSedGenerator(Generator):
     """
@@ -15,8 +17,6 @@ class FSPSSedGenerator(Generator):
     Example: generator = SedGenerator(min_wavelength=2960,
                                       max_wavelength=10245)
 
-    add ability to have star-formation history tabulated
-
     Parameters
     ----------
     min_wavelength : positive float
@@ -28,7 +28,7 @@ class FSPSSedGenerator(Generator):
     """
 
     name = 'SedGenerator'
-    config_options = Generator.config_options.copy() # I would put minimal set of parameters to make it run
+    config_options = Generator.config_options.copy()  # I would put minimal set of parameters to make it run
     config_options.update(compute_vega_mags=Param(bool, False, msg='True/False for Vega/AB magnitudes'),
                           vactoair_flag=Param(bool, False, msg='True/False for air/vacuum wavelength'),
                           zcontinuous=Param(int, 1, msg='Flag for interpolation in metallicity of SSP before CSP'),
@@ -37,12 +37,16 @@ class FSPSSedGenerator(Generator):
                           add_stellar_remnants=Param(bool, True, msg='Turn on/off stellar remnants in stellar mass'),
                           compute_light_ages=Param(bool, False, msg='False/True for mass/light-weighted ages'),
                           nebemlineinspec=Param(bool, False, msg='True to include emission line fluxes in spectrum'),
-                          smooth_velocity=Param(bool, False, msg='True/False for smoothing in velocity/wavelength space'),
+                          smooth_velocity=Param(bool, True, msg='True/False for smoothing in '
+                                                                'velocity/wavelength space'),
+                          smooth_lsf=Param(bool, False, msg='True/False for smoothing SSPs by a wavelength dependent '
+                                                            'line spread function'),
                           imf_type=Param(int, 1, msg='IMF type, see FSPS manual, default Chabrier IMF'),
                           min_wavelength=Param(float, 3000, msg='minimum rest-frame wavelength'),
                           max_wavelength=Param(float, 10000, msg='maximum rest-frame wavelength'),
                           sfh_type=Param(int, 0, msg='star-formation history type, see FSPS manual, default SSP'),
-                          dust_type=Param(int, 2, msg='attenuation curve for dust type, see FSPS manual, default Calzetti'),
+                          dust_type=Param(int, 2, msg='attenuation curve for dust type, see FSPS manual, '
+                                                      'default Calzetti'),
                           metalname=Param(str, 'logzsol', msg='metallicity column name'),
                           agename=Param(str, 'tage', msg='age column name'),
                           veldispname=Param(str, 'sigma_smooth', msg='velocity dispersion column name'),
@@ -53,7 +57,8 @@ class FSPSSedGenerator(Generator):
                           tburstname=Param(str, 'tburst', msg='Universe age when the burst occurred'),
                           ebvname=Param(str, 'dust2', msg='attenuation of old stellar light, E(B-V)'),
                           fagnname=Param(str, 'fagn', msg='fraction bolometric luminosity due to AGN'),
-                          agntauname=Param(str, 'agn_tau', msg='optical depth of AGN dust torus'))  # unit test for all these values
+                          agntauname=Param(str, 'agn_tau', msg='optical depth of AGN dust torus'))
+    # unit test for all these values
 
     def __init__(self, args, comm=None):
         """
@@ -69,8 +74,8 @@ class FSPSSedGenerator(Generator):
 
     def _get_rest_frame_seds(self, ages, metallicities, velocity_dispersions, gas_ionizations, gas_metallicities,
                              tau_efolding_times, fracs_instantaneous_burst, ages_instantaneous_burst,
-                             e_b_v_attenuations, frac_luminosities_agn, opt_depths_agn,
-                             tabulated_sfh_file=None):  # add **kwargs
+                             e_b_v_attenuations, frac_luminosities_agn, opt_depths_agn, physical_units=False,
+                             tabulated_sfh_file=None, tabulated_lsf_file=None, **kwargs):
         """
         Parameters
         ----------
@@ -81,6 +86,14 @@ class FSPSSedGenerator(Generator):
         stellar library).
 
         """
+
+        # comm = MPI.COMM_WORLD  # access to the number of processes (ranks/processors) available to distribute work
+        # across, and information about each processor.
+        # rank = comm.Get_rank()  # identifier of the processor currently executing the code.
+        # size = comm.Get_size()  # total number of ranks, or processors, allocated to run our script.
+
+        # num_per_rank = len(ages) // size
+
         wavelengths = []
         fluxes = []
         for i in range(len(ages)):  # parallelise
@@ -93,6 +106,7 @@ class FSPSSedGenerator(Generator):
                                         compute_light_ages=self.config.compute_light_ages,
                                         nebemlineinspec=self.config.nebemlineinspec,
                                         smooth_velocity=self.config.smooth_velocity,
+                                        smooth_lsf=self.config.smooth_lsf,
                                         zred=0, logzsol=metallicities[i], imf_type=self.config.imf_type,
                                         sigma_smooth=velocity_dispersions[i],
                                         min_wave_smooth=self.config.min_wavelength,
@@ -102,27 +116,37 @@ class FSPSSedGenerator(Generator):
                                         tage=ages[i], fburst=fracs_instantaneous_burst[i],
                                         tburst=ages_instantaneous_burst[i],
                                         dust_type=self.config.dust_type, dust2=e_b_v_attenuations[i],
-                                        fagn=frac_luminosities_agn[i], agn_tau=opt_depths_agn[i])
+                                        fagn=frac_luminosities_agn[i], agn_tau=opt_depths_agn[i], **kwargs)
 
             if self.config.sfh_type == 3:
                 assert self.config.zcontinuous == 3, 'zcontinous parameter must be set to 3 when using tabular SFHs'
-                assert self.config.add_neb_emission == False, \
+                assert self.config.add_neb_emission is False, \
                     'add_neb_emission must be set to False when using tabular SFHs'
-                age_array, sfr_array, metal_array = np.loadtxt(tabulated_sfh_file)
+                age_array, sfr_array, metal_array = np.loadtxt(tabulated_sfh_file, usecols=(0, 1, 2))
                 sp.set_tabular_sfh(age_array, sfr_array, Z=metal_array)
 
-            wavelength, flux_solar_lum_over_angstrom = sp.get_spectrum(tage=ages[i], peraa=True)
+            if self.config.smooth_lsf is True:
+                assert self.config.smooth_velocity is True, 'lsf smoothing only works if smooth_velocity is True'
+                wave, sigma = np.loadtxt(tabulated_lsf_file, usecols=(0, 1))
+                sp.set_lsf(wave, sigma, wmin=self.config.min_wavelength, wmax=self.config.max_wavelength)
+
+            wavelength, flux_solar_lum_angstrom = sp.get_spectrum(tage=ages[i], peraa=True)
             selected_wave_range = np.where((wavelength >= self.config.min_wavelength) &
                                            (wavelength <= self.config.max_wavelength))
             wavelength = wavelength[selected_wave_range]
-            flux_solar_lum_over_angstrom = flux_solar_lum_over_angstrom[selected_wave_range]
             wavelengths.append(wavelength)
-            fluxes.append(flux_solar_lum_over_angstrom)
-            break
+
+            if physical_units:
+                flux_erg_s_angstrom = flux_solar_lum_angstrom * 3.846 * 10**33  # store solar luminosity into constant
+                # somewhere
+                fluxes.append(flux_erg_s_angstrom)
+            else:
+                flux_solar_lum_angstrom = flux_solar_lum_angstrom[selected_wave_range]
+                fluxes.append(flux_solar_lum_angstrom)
 
         return np.array(wavelengths), np.array(fluxes)
 
-    def run(self):
+    def run(self, **kwargs):
         """
         Run method
 
@@ -152,7 +176,8 @@ class FSPSSedGenerator(Generator):
         wavelengths, fluxes = self._get_rest_frame_seds(ages, metallicities, velocity_dispersions, gas_ionizations,
                                                         gas_metallicities, tau_efolding_times,
                                                         fracs_instantaneous_burst, ages_instantaneous_burst,
-                                                        e_b_v_attenuations, frac_luminosities_agn, opt_depths_agn)
+                                                        e_b_v_attenuations, frac_luminosities_agn, opt_depths_agn,
+                                                        **kwargs)
 
         output_table = Table([wavelengths, fluxes], names=('wavelength', 'spectrum'))
 
