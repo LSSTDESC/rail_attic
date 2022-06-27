@@ -283,13 +283,15 @@ def test_catch_bad_bands():
 
 def bpz_train_core(comm, ntarray):
     if comm is None:
-        print("Testing serial BPZ Training")
+        print("Testing serial BPZ Training with ntarray = ", ntarray)
+        name = "bpz_inform_serial"
     else:
-        print("Testing MPI BPZ training with size", comm.size)
+        print(f"Testing MPI BPZ training with size {comm.size} and array {ntarray}")
+        name = f"bpz_inform_{comm.size}"
     # first, train with two broad types
     train_config_dict = {'zmin': 0.0, 'zmax': 3.0, 'dz': 0.01, 'hdf5_groupname': 'photometry',
                          'nt_array': ntarray, 'type_file': 'tmp_broad_types.hdf5',
-                         'model': 'testmodel_bpz.pkl', 'comm':comm}
+                         'model': 'testmodel_bpz.pkl', 'comm':comm, 'name': name}
     if len(ntarray) == 2:
         broad_types = np.random.randint(2, size=100)
     else:
@@ -308,15 +310,21 @@ def bpz_train_core(comm, ntarray):
     train_stage = train_algo.make_stage(**train_config_dict)
     train_stage.inform(training_data)
 
-    if (comm is not None) and (comm.rank > 0):
-        return
+    if comm is not None:
+        comm.Barrier()
+        if comm.rank > 0:
+            return
 
     expected_keys = ['fo_arr', 'kt_arr', 'zo_arr', 'km_arr', 'a_arr', 'mo', 'nt_array']
+
     with open("testmodel_bpz.pkl", "rb") as f:
         tmpmodel = pickle.load(f)
+
     for key in expected_keys:
         assert key in tmpmodel.keys()
+
     os.remove("tmp_broad_types.hdf5")
+    os.remove("testmodel_bpz.pkl")
 
 
 @pytest.mark.timeout(300)
