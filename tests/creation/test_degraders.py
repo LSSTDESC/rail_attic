@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 from rail.core.data import DATA_STORE, TableHandle
 from rail.creation.degradation import *
-
+from rail.core.utilStages import ColumnMapper
 
 @pytest.fixture
 def data():
