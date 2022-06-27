@@ -8,7 +8,7 @@ run_params:
   data_mins: [0., 22.79, 24.04, 24.06, 23.62, 22.98, 22.05]
   data_maxs: [3., 27.79, 29.04, 29.06, 28.62, 27.98, 27.05]
   spline_knots: 16
-  
+
   soft_sharpness: 10
   soft_idx_col: 0
   redshift_column_name: redshift
