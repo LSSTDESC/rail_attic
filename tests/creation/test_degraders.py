@@ -95,9 +95,34 @@ def test_GridSelection_returns_correct_shape(data):
     assert degraded_data.shape[0] < data.data.shape[0]
     assert degraded_data.shape[1] == data.data.shape[1]-2
     os.remove(degrader.get_output(degrader.get_aliased_tag('output'), final_name=True))
-
+    
 def test_SpecSelection_WiggleZ(data):
     degrader = SpecSelection_WiggleZ.make_stage()
+    degrader(data)
+    
+def test_SpecSelection_GAMA(data):
+    degrader = SpecSelection_GAMA.make_stage()
+    degrader(data)
+    
+def test_SpecSelection_BOSS(data):
+    degrader = SpecSelection_BOSS.make_stage()
+    degrader(data)
+
+def test_SpecSelection_DEEP2(data):
+    degrader = SpecSelection_DEEP2.make_stage()
+    degrader(data)
+    
+def test_SpecSelection_VVDSf02(data):
+    degrader = SpecSelection_VVDSf02.make_stage()
+    degrader(data)
+    
+def test_SpecSelection_zCOSMOS(data):
+    degrader = SpecSelection_zCOSMOS.make_stage()
+    degrader(data)
+    
+def test_SpecSelection_HSC(data):
+    degrader = SpecSelection_HSC.make_stage()
+    degrader(data)
     
 @pytest.mark.parametrize(
     "cuts,error",
