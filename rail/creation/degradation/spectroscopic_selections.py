@@ -37,10 +37,9 @@ class SpecSelection(Degrader):
         Validate all the settings.
         """
 
-        # check that highSNR is boolean
-        if isinstance(self.config["N_tot"], int) is not True:
-            raise TypeError("Total number of selected sources must be an "
-                            "integer.")
+        if self.config["N_tot"]<0:
+            raise ValueError("Total number of selected sources must be a "
+                            "positive integer.")
         if os.path.exists(self.config["success_rate_dir"]) is not True:
             raise ValueError("Success rate path: "
                              + self.config["success_rate_dir"]
@@ -110,10 +109,6 @@ class SpecSelection(Degrader):
         """
         Define how the model is represented and printed.
         """
-        # start message
-        printMsg = "Applying the selection."
-
-        return printMsg
 
 
 class SpecSelection_WiggleZ(SpecSelection):
