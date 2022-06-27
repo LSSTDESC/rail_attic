@@ -97,7 +97,7 @@ def test_GridSelection_returns_correct_shape(data):
     os.remove(degrader.get_output(degrader.get_aliased_tag('output'), final_name=True))
     
 
-def test_SpecSelection_WiggleZ(data):
+def test_SpecSelection(data):
     
     bands = ['u','g','r','i','z','y']
     band_dict = {band:f'mag_{band}_lsst' for band in bands}
