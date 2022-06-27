@@ -111,24 +111,65 @@ def test_SpecSelection(data):
     
     degrader_WiggleZ = SpecSelection_WiggleZ.make_stage()
     degrader_WiggleZ(data)
+    degrader_WiggleZ.__repr__()
     
     degrader_GAMA = SpecSelection_GAMA.make_stage()
     degrader_GAMA(data)
+    degrader_GAMA.__repr__()
     
     degrader_BOSS = SpecSelection_BOSS.make_stage()
     degrader_BOSS(data)
+    degrader_BOSS.__repr__()
 
     degrader_DEEP2 = SpecSelection_DEEP2.make_stage()
     degrader_DEEP2(data)
+    degrader_DEEP2.__repr__()
     
     degrader_VVDSf02 = SpecSelection_VVDSf02.make_stage()
     degrader_VVDSf02(data)
+    degrader_VVDSf02.__repr__()
     
     degrader_zCOSMOS = SpecSelection_zCOSMOS.make_stage()
     degrader_zCOSMOS(data)
+    degrader_zCOSMOS.__repr__()
     
     degrader_HSC = SpecSelection_HSC.make_stage()
     degrader_HSC(data)
+    degrader_HSC.__repr__()
+    
+def test_SpecSelection_low_N_tot(data):
+    
+    bands = ['u','g','r','i','z','y']
+    band_dict = {band:f'mag_{band}_lsst' for band in bands}
+    rename_dict = {f'{band}_err':f'mag_err_{band}_lsst' for band in bands}
+    rename_dict.update({f'{band}':f'mag_{band}_lsst' for band in bands})
+    standard_colnames = [f'mag_{band}_lsst' for band in 'ugrizy']
+    
+    col_remapper_test = ColumnMapper.make_stage(name='col_remapper_test', hdf5_groupname='',
+                                             columns=rename_dict)
+    data = col_remapper_test(data)
+    
+    degrader_WiggleZ = SpecSelection_WiggleZ.make_stage(N_tot=1)
+    degrader_WiggleZ(data)
+    
+@pytest.mark.parametrize("N_tot, errortype", [(-1, ValueError)])
+def test_SpecSelection_bad_params(N_tot, errortype):
+    """Test bad parameters that should raise TypeError"""
+    with pytest.raises(errortype):
+        SpecSelection.make_stage(N_tot=N_tot)
+        
+@pytest.mark.parametrize("errortype", [(ValueError)])
+def test_SpecSelection_bad_colname(data, errortype):
+    """Test bad parameters that should raise TypeError"""
+    with pytest.raises(errortype):
+        degrader_WiggleZ = SpecSelection_WiggleZ.make_stage()
+        degrader_WiggleZ(data)
+
+@pytest.mark.parametrize("success_rate_dir, errortype", [("/this/path/should/not/exist", ValueError)])
+def test_SpecSelection_bad_path(success_rate_dir, errortype):
+    """Test bad parameters that should raise TypeError"""
+    with pytest.raises(errortype):
+        SpecSelection.make_stage(success_rate_dir=success_rate_dir)
     
 @pytest.mark.parametrize(
     "cuts,error",
