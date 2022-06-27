@@ -16,7 +16,7 @@ def data():
     
     # generate random normal data
     rng = np.random.default_rng(0)
-    x = rng.normal(loc=26, scale=1, size=(100, 7))
+    x = rng.normal(loc=26, scale=1, size=(100000, 7))
 
     # replace redshifts with reasonable values
     x[:, 0] = np.linspace(0, 2, x.shape[0])
