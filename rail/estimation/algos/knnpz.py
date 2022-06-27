@@ -12,7 +12,6 @@ from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatEstimator, CatInformer
 
 from rail.evaluation.metrics.cdeloss import CDELoss
-from sklearn.neighbors import KDTree
 import pandas as pd
 import qp
 
@@ -33,9 +32,9 @@ def_maglims = dict(mag_u_lsst=27.79,
 def _computecolordata(df, ref_column_name, column_names):
     newdict = {}
     newdict['x'] = df[ref_column_name]
-    nbands = len(column_names)-1
+    nbands = len(column_names) - 1
     for k in range(nbands):
-        newdict[f'x{k}'] = df[column_names[k]] - df[column_names[k+1]]
+        newdict[f'x{k}'] = df[column_names[k]] - df[column_names[k + 1]]
     newdf = pd.DataFrame(newdict)
     coldata = newdf.to_numpy()
     return coldata
@@ -43,9 +42,8 @@ def _computecolordata(df, ref_column_name, column_names):
 
 def _makepdf(dists, ids, szs, sigma):
     sigmas = np.full_like(dists, sigma)
-    weights = 1./dists
+    weights = 1. / dists
     weights /= weights.sum(axis=1, keepdims=True)
-    #norms = np.sum(weights, axis=1)
     means = szs[ids]
     pdfs = qp.Ensemble(qp.mixmod, data=dict(means=means, stds=sigmas, weights=weights))
     return pdfs
@@ -90,9 +88,10 @@ class Inform_KNearNeighPDF(CatInformer):
         """
         train a KDTree on a fraction of the training data
         """
+        from sklearn.neighbors import KDTree
         if self.config.hdf5_groupname:
             training_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  #pragma:  no cover
+        else:  # pragma:  no cover
             training_data = self.get_data('input')
         input_df = pd.DataFrame(training_data)
         knndf = input_df[self.config.column_names]
@@ -101,7 +100,7 @@ class Inform_KNearNeighPDF(CatInformer):
         # replace nondetects
         # will fancy this up later with a flow to sample from truth
         for col in self.config.column_names:
-            if np.isnan(self.config.nondetect_val): # pragma: no cover
+            if np.isnan(self.config.nondetect_val):  # pragma: no cover
                 knndf.loc[np.isnan(knndf[col]), col] = self.config.mag_limits[col]
             else:
                 knndf.loc[np.isclose(knndf[col], self.config.nondetect_val), col] = self.config.mag_limits[col]
@@ -128,7 +127,7 @@ class Inform_KNearNeighPDF(CatInformer):
         siggrid = np.linspace(self.config.sigma_grid_min, self.config.sigma_grid_max, self.config.ngrid_sigma)
         print("finding best fit sigma and NNeigh...")
         for sig in siggrid:
-            for nn in range(self.config.nneigh_min, self.config.nneigh_max+1):
+            for nn in range(self.config.nneigh_min, self.config.nneigh_max + 1):
                 # print(f"sigma: {sig} num neigh: {nn}...")
                 dists, idxs = tmpmodel.query(val_data, k=nn)
                 ens = _makepdf(dists, idxs, train_sz, sig)
@@ -146,7 +145,6 @@ class Inform_KNearNeighPDF(CatInformer):
         kdtree = KDTree(colordata, leaf_size=self.config.leaf_size)
         self.model = dict(kdtree=kdtree, bestsig=sigma, nneigh=numneigh, truezs=trainszs)
         self.add_data('model', self.model)
-
 
 
 class KNearNeighPDF(CatEstimator):
@@ -184,23 +182,19 @@ class KNearNeighPDF(CatEstimator):
         self.kdtree = self.model['kdtree']
         self.trainszs = self.model['truezs']
 
-    def run(self):
+    def _process_chunk(self, start, end, data, first):
         """
         calculate and return PDFs for each galaxy using the trained flow
         """
-        # flow expects dataframe
-        if self.config.hdf5_groupname:
-            test_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  #pragma:  no cover
-            test_data = self.get_data('input')
-        test_df = pd.DataFrame(test_data)
+        print(f"Process {self.rank} estimating PZ PDF for rows {start:,} - {end:,}")
+        test_df = pd.DataFrame(data)
         knn_df = test_df[self.usecols]
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
 
         # replace nondetects
         # will fancy this up later with a flow to sample from truth
         for col in self.config.column_names:
-            if np.isnan(self.config.nondetect_val): # pragma: no cover
+            if np.isnan(self.config.nondetect_val):  # pragma: no cover
                 knn_df.loc[np.isnan(knn_df[col]), col] = self.config.mag_limits[col]
             else:
                 knn_df.loc[np.isclose(knn_df[col], self.config.nondetect_val), col] = self.config.mag_limits[col]
@@ -210,4 +204,4 @@ class KNearNeighPDF(CatEstimator):
         test_ens = _makepdf(dists, idxs, self.trainszs, self.sigma)
         zmode = test_ens.mode(grid=self.zgrid)
         test_ens.set_ancil(dict(zmode=zmode))
-        self.add_data('output', test_ens)
+        self._do_chunk_output(test_ens, start, end, first)

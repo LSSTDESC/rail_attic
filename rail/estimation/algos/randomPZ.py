@@ -30,17 +30,13 @@ class RandomPZ(CatEstimator):
         CatEstimator.__init__(self, args, comm=comm)
         self.zgrid = None
 
-    def run(self):
-        if self.config.hdf5_groupname:
-            test_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  #pragma:  no cover
-            test_data = self.get_data('input')
+    def _process_chunk(self, start, end, data, first):
         pdf = []
         # allow for either format for now
         try:
-            d = test_data['i_mag']
+            d = data['i_mag']
         except Exception:
-            d = test_data['mag_i_lsst']
+            d = data['mag_i_lsst']
         numzs = len(d)
         zmode = np.round(np.random.uniform(0.0, self.config.rand_zmax, numzs), 3)
         widths = self.config.rand_width * (1.0 + zmode)
@@ -50,4 +46,4 @@ class RandomPZ(CatEstimator):
         qp_d = qp.Ensemble(qp.stats.norm, data=dict(loc=np.expand_dims(zmode, -1),  #pylint: disable=no-member
                                                     scale=np.expand_dims(widths, -1)))
         qp_d.set_ancil(dict(zmode=zmode))
-        self.add_data('output', qp_d)
+        self._do_chunk_output(qp_d, start, end, first)
