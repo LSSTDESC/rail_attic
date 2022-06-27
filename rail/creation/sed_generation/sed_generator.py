@@ -69,7 +69,8 @@ class FSPSSedGenerator(Generator):
 
     def _get_rest_frame_seds(self, ages, metallicities, velocity_dispersions, gas_ionizations, gas_metallicities,
                              tau_efolding_times, fracs_instantaneous_burst, ages_instantaneous_burst,
-                             e_b_v_attenuations, frac_luminosities_agn, opt_depths_agn):  # add **kwargs
+                             e_b_v_attenuations, frac_luminosities_agn, opt_depths_agn,
+                             tabulated_sfh_file=None):  # add **kwargs
         """
         Parameters
         ----------
@@ -97,6 +98,13 @@ class FSPSSedGenerator(Generator):
                                         tburst=ages_instantaneous_burst[i],
                                         dust_type=self.config.dust_type, dust2=e_b_v_attenuations[i],
                                         fagn=frac_luminosities_agn[i], agn_tau=opt_depths_agn[i])
+
+            if self.config.sfh_type == 3:
+                assert self.config.zcontinuous == 3, 'zcontinous parameter must be set to 3 when using tabular SFHs'
+                assert self.config.add_neb_emission == False, \
+                    'add_neb_emission must be set to False when using tabular SFHs'
+                age_array, sfr_array, metal_array = np.loadtxt(tabulated_sfh_file)
+                sp.set_tabular_sfh(age_array, sfr_array, Z=metal_array)
 
             wavelength, flux_solar_lum_over_angstrom = sp.get_spectrum(tage=ages[i], peraa=True)
             selected_wave_range = np.where((wavelength >= self.config.min_wavelength) &
