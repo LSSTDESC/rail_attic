@@ -2,79 +2,111 @@
 be used to generate synthetic data and calculate posteriors."""
 
 from ast import Param
+from sre_constants import MAGIC
+from xml.etree.ElementInclude import LimitedRecursiveIncludeError
+
 import numpy as np
 import qp
 from pzflow import Flow
-from rail.core.data import FlowHandle, PqHandle, QPHandle
-from rail.creation.creator import Modeler, Creator, PosteriorCalculator
+
+from rail.core.data import FlowHandle, PqHandle, QPHandle, TableHandle
+from rail.creation.creator import Creator, Modeler, PosteriorCalculator
 
 
 class FlowModeler(Modeler):
     """Modeler wrapper for a PZFlow Flow object.
-    
+
     This class trains the flow.
     """
 
-    name = 'FlowModeler'
-    inputs = [('catalog', SomeHandle)] # move this to the base class!!!!!!
-    outputs = [('flow', FlowHandle)]
+    name = "FlowModeler"
+    inputs = [("catalog", TableHandle)]  # move this to the base class!!!!!!
+    outputs = [("flow", FlowHandle)]
 
-    config_options = CatInformer.config_options.copy()
+    config_options = Modeler.config_options.copy()
     config_options.update(
-        color_transform=Param(bool, True, msg="Whether to internally convert magnitudes to colors."),
+        is_mags=Param(
+            bool,
+            True,
+            msg="Whether the photometry is magnitudes (versus colors).",
+        ),
+       ranges=Param(
+            list,
+            None, # should we default this?
+            msg=(
+                "The ranges of the values modeled by the flow. The list must "
+                "consist of (min, max) for each column you are modeling."
+            ),
+        ),
+        nlayers=Param(
+            int,
+            None,
+            msg=(
+                "The number of layers in the normalizing flow. "
+                "If None, defaults to the dimension of the data being modeled."
+            ),
+        ),
+        spline_knots=Param(
+            int,
+            16,
+            msg="The number of spline knots in the normalizing flow.",
+        ),
+        transformed_dim=Param(
+            int,
+            1,
+            msg="Number of dimensions to transform in each layer of the flow.",
+        ),
     )
-
 
     def __init__(self, args, comm=None):
         """Constructor
-        
+
         Does standard Modeler initialization.
         """
 
-        if self.config.color_transform:
+        # first let's pull out the ranges of each column of the data
+        mins = [Range[0] for Range in self.config.ranges]
+        maxs = [Range[1] for Range in self.config.ranges]
+
+        # now let's set up the RQ-RSC
+        nlayers = LENGTH OF THE COLUMNS PARAMETER # can make configurable from yaml if wanted
+        K = self.config.spline_knots
+        transformed_dim = self.config.transformed_dim
+
+        # if we are doing the color transform, there are a few more things to do...
+        if self.config.is_mags:
             # tell it which column to use as the reference magnitude
             ref_idx = train_set.columns.get_loc("i")
             # and which columns correspond to the magnitudes we want colors for
             mag_idx = [train_set.columns.get_loc(band) for band in "ugrizy"]
 
-        # the next bijector is shift bounds
-        # we need to set the mins and maxes
-        # I am setting strict limits on redshift, but am adding some padding to
-        # the magnitudes and colors so that the flow can sample a little
-        colors = -np.diff(train_set[list("ugrizy")].to_numpy())
-        mins = np.concatenate(([0, train_set["i"].min()], colors.min(axis=0)))
-        maxs = np.concatenate(([3, train_set["i"].max()], colors.max(axis=0)))
+            # convert ranges above to the corresponding color ranges
+            CONVERT MAG MINS AND MAXES TO COLOR MINS AND MAXES
 
-        # I will add 10% buffers to the mins and maxs in case that the train set
-        # doesn't cover the full range of the test set
-        ranges = maxs - mins
-        buffer = ranges / 10 / 2
-        buffer[0] = 0  # except no buffer for redshift!
-        mins -= buffer
-        maxs += buffer
-
-        # finally, the settings for the RQ-RSC
-        nlayers = train_set.shape[1]  # layers = number of dimensions
-        K = 16  # number of spline knots
-        transformed_dim = 1  # only transform one dimension at a time
-
-        # chain all the bijectors together
-        bijector = Chain(
-            ColorTransform(ref_idx, mag_idx),
-            ShiftBounds(mins, maxs),
-            RollingSplineCoupling(nlayers, K=K, transformed_dim=transformed_dim),
-        )
+            # chain all the bijectors together
+            bijector = Chain(
+                ColorTransform(ref_idx, mag_idx),
+                ShiftBounds(mins, maxs),
+                RollingSplineCoupling(nlayers, K=K, transformed_dim=transformed_dim),
+            )
+        # otherwise, we can just chain what we have
+        else:
+            bijector = Chain(
+                ShiftBounds(mins, maxs),
+                RollingSplineCoupling(nlayers, K=K, transformed_dim=transformed_dim),
+            )
 
         # build the flow
         flow = Flow(train_set.columns, bijector=bijector)
+        HOW TO SAVE THIS?
 
 
 class FlowCreator(Creator):
     """Creator wrapper for a PZFlow Flow object."""
 
-    name = 'FlowCreator'
-    inputs = [('flow', FlowHandle)]
-    outputs = [('output', PqHandle)]
+    name = "FlowCreator"
+    inputs = [("flow", FlowHandle)]
+    outputs = [("output", PqHandle)]
 
     def __init__(self, args, comm=None):
         """Constructor
@@ -88,13 +120,14 @@ class FlowCreator(Creator):
 
     def set_flow(self, **kwargs):
         """Set the `Flow`, either from an object or by loading from a file."""
-        flow = kwargs.get('flow')
-        if flow is None:  #pragma: no cover
+        flow = kwargs.get("flow")
+        if flow is None:  # pragma: no cover
             return None
         from pzflow import Flow
+
         if isinstance(flow, Flow):
-            return self.set_data('flow', flow)
-        return self.set_data('flow', data=None, path=flow)
+            return self.set_data("flow", flow)
+        return self.set_data("flow", data=None, path=flow)
 
     def run(self):
         """Run method
@@ -105,10 +138,13 @@ class FlowCreator(Creator):
         -----
         Puts the data into the data store under this stages 'output' tag
         """
-        flow = self.get_data('flow')
-        if flow is None:  #pragma: no cover
-            raise ValueError("Tried to run a FlowCreator before the `Flow` model is loaded")
-        self.add_data('output', flow.sample(self.config.n_samples, self.config.seed))
+        flow = self.get_data("flow")
+        if flow is None:  # pragma: no cover
+            raise ValueError(
+                "Tried to run a FlowCreator before the `Flow` model is loaded"
+            )
+        self.add_data("output", flow.sample(self.config.n_samples, self.config.seed))
+
 
 class FlowPosterior(PosteriorCalculator):
     """PosteriorCalculator wrapper for a PZFlow Flow object
@@ -159,7 +195,7 @@ class FlowPosterior(PosteriorCalculator):
 
     """
 
-    name = 'FlowPosterior'
+    name = "FlowPosterior"
     config_options = PosteriorCalculator.config_options.copy()
     config_options.update(
         grid=list,
@@ -170,12 +206,11 @@ class FlowPosterior(PosteriorCalculator):
         nan_to_zero=True,
     )
 
-    inputs = [('flow', FlowHandle),
-              ('input', PqHandle)]
-    outputs = [('output', QPHandle)]
+    inputs = [("flow", FlowHandle), ("input", PqHandle)]
+    outputs = [("output", QPHandle)]
 
     def __init__(self, args, comm=None):
-        """ Constructor
+        """Constructor
 
         Does standard PosteriorCalculator initialization
         """
@@ -192,10 +227,13 @@ class FlowPosterior(PosteriorCalculator):
         Puts the data into the data store under this stages 'output' tag
         """
 
-        data = self.get_data('input')
-        flow = self.get_data('flow')
-        if self.config.marg_rules is None:  #pragma: no cover
-            marg_rules = {"flag": np.nan, "mag_u_lsst": lambda row: np.linspace(25, 31, 10)}
+        data = self.get_data("input")
+        flow = self.get_data("flow")
+        if self.config.marg_rules is None:  # pragma: no cover
+            marg_rules = {
+                "flag": np.nan,
+                "mag_u_lsst": lambda row: np.linspace(25, 31, 10),
+            }
         else:
             marg_rules = self.config.marg_rules
 
@@ -210,5 +248,7 @@ class FlowPosterior(PosteriorCalculator):
             nan_to_zero=self.config.nan_to_zero,
         )
 
-        ensemble = qp.Ensemble(qp.interp, data={"xvals": self.config.grid, "yvals": pdfs})
-        self.add_data('output', ensemble)
+        ensemble = qp.Ensemble(
+            qp.interp, data={"xvals": self.config.grid, "yvals": pdfs}
+        )
+        self.add_data("output", ensemble)
