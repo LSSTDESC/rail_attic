@@ -75,6 +75,11 @@ class FSPSSedGenerator(Generator):
         Parameters
         ----------
 
+        When using the option for tabulated SFH, the user needs to provide a three column text file, containing
+        the time since the beginning of the Universe in Gyr, the SFR at each age in Msun/yr and the metallicity
+        at each age in absolute units (e.g., 0.019 for solar metallicity if using Padova isochrones and MILES
+        stellar library).
+
         """
         wavelengths = []
         fluxes = []
