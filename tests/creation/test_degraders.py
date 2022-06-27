@@ -96,7 +96,9 @@ def test_GridSelection_returns_correct_shape(data):
     assert degraded_data.shape[1] == data.data.shape[1]-2
     os.remove(degrader.get_output(degrader.get_aliased_tag('output'), final_name=True))
 
-
+def test_SpecSelection_WiggleZ(data):
+    degrader = SpecSelection_WiggleZ.make_stage()
+    
 @pytest.mark.parametrize(
     "cuts,error",
     [
