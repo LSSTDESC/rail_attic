@@ -500,7 +500,7 @@ class SpecSelection_HSC(SpecSelection):
 
         ratio_list = []
         for i, py in enumerate(pixels_y):
-            if (py[i] >= rates.shape[0]) or\
+            if (py >= rates.shape[0]) or\
                (pixels_x[i] >= rates.shape[1]):
                 rate = 0
             else:
