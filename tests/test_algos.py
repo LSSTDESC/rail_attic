@@ -281,63 +281,32 @@ def test_catch_bad_bands():
         sklearn_nn.SimpleNN.make_stage(hdf5_groupname='', **params)
 
 
-def bpz_train_core(comm, ntarray):
-    if comm is None:
-        print("Testing serial BPZ Training with ntarray = ", ntarray)
-        name = "bpz_inform_serial"
-    else:
-        print(f"Testing MPI BPZ training with size {comm.size} and array {ntarray}")
-        name = f"bpz_inform_{comm.size}"
-    # first, train with two broad types
-    train_config_dict = {'zmin': 0.0, 'zmax': 3.0, 'dz': 0.01, 'hdf5_groupname': 'photometry',
-                         'nt_array': ntarray, 'type_file': 'tmp_broad_types.hdf5',
-                         'model': 'testmodel_bpz.pkl', 'comm':comm, 'name': name}
-    if len(ntarray) == 2:
-        broad_types = np.random.randint(2, size=100)
-    else:
-        broad_types = np.zeros(100, dtype=int)
-    typedict = dict(types=broad_types)
-
-    if (comm is None) or (comm.rank == 0):
-        tables_io.write(typedict, "tmp_broad_types.hdf5")
-
-    if comm is not None:
-        comm.Barrier()
-
-    train_algo = bpz_lite.Inform_BPZ_lite
-    DS.clear()
-    training_data = DS.read_file('training_data', TableHandle, traindata)
-    train_stage = train_algo.make_stage(**train_config_dict)
-    train_stage.inform(training_data)
-
-    if comm is not None:
-        comm.Barrier()
-        if comm.rank > 0:
-            return
-
-    expected_keys = ['fo_arr', 'kt_arr', 'zo_arr', 'km_arr', 'a_arr', 'mo', 'nt_array']
-
-    with open("testmodel_bpz.pkl", "rb") as f:
-        tmpmodel = pickle.load(f)
-
-    for key in expected_keys:
-        assert key in tmpmodel.keys()
-
-    os.remove("tmp_broad_types.hdf5")
-    os.remove("testmodel_bpz.pkl")
-
-
-@pytest.mark.timeout(300)
 @pytest.mark.parametrize(
     "ntarray",
     [[8], [4, 4]]
 )
 def test_bpz_train(ntarray):
-    import mockmpi
-    bpz_train_core(None, ntarray)
-    mockmpi.mock_mpiexec(1, bpz_train_core, ntarray)
-    mockmpi.mock_mpiexec(2, bpz_train_core, ntarray)
-
+    # first, train with two broad types
+    train_config_dict = {'zmin': 0.0, 'zmax': 3.0, 'dz': 0.01, 'hdf5_groupname': 'photometry',
+                         'nt_array': ntarray, 'type_file': 'tmp_broad_types.hdf5',
+                         'model': 'testmodel_bpz.pkl'}
+    if len(ntarray) == 2:
+        broad_types = np.random.randint(2, size=100)
+    else:
+        broad_types = np.zeros(100, dtype=int)
+    typedict = dict(types=broad_types)
+    tables_io.write(typedict, "tmp_broad_types.hdf5")
+    train_algo = bpz_lite.Inform_BPZ_lite
+    DS.clear()
+    training_data = DS.read_file('training_data', TableHandle, traindata)
+    train_stage = train_algo.make_stage(**train_config_dict)
+    train_stage.inform(training_data)
+    expected_keys = ['fo_arr', 'kt_arr', 'zo_arr', 'km_arr', 'a_arr', 'mo', 'nt_array']
+    with open("testmodel_bpz.pkl", "rb") as f:
+        tmpmodel = pickle.load(f)
+    for key in expected_keys:
+        assert key in tmpmodel.keys()
+    os.remove("tmp_broad_types.hdf5")
 
 
 def test_bpz_lite():

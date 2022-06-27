@@ -142,28 +142,24 @@ class Inform_BPZ_lite(CatInformer):
             self.kt_arr = frac_results[self.ntyp - 1:]
 
     def _dndz_likelihood(self, params):
-        zo = params[0]
-        alpha = params[1]
-        km = params[2]
-        cutmags = self.mags[self.typmask]
-        cutszs = self.szs[self.typmask]
-        loglike = 0.0
-        for i, (mag, sz) in enumerate(zip(cutmags, cutszs)):
-            if i % self.size != self.rank:
-                continue
-            pz = nzfunc(sz, zo, alpha, km, mag, self.mo)
-            norm, _ = scipy.integrate.quad(nzfunc, self.config.zmin, self.config.zmax,
-                                           args=(zo, alpha, km, mag, self.mo),
-                                           epsrel=1.e-5)
-            loglike += -2. * np.log10(pz / norm)
+        mags = self.mags[self.typmask]
+        szs = self.szs[self.typmask]
 
-        if self.comm is not None:
-            # sum the log-like values from all the processes, to all the processes
-            loglike = self.comm.allreduce(loglike)
+        z0, alpha, km = params
+        zm = z0 + (km * (mags - self.mo))
 
-        if self.rank == 0:
-            print(f"Fitting dN/dz: loglike = {loglike} for parameters {params}")
-        return loglike
+        # The normalization to the likelihood, which is needed here
+        I = zm ** (alpha + 1) * scipy.special.gamma(1 + 1 / alpha) / alpha
+
+        # This is a vector of loglike per object
+        loglike = alpha * np.log(szs) - ((szs/zm)**alpha) - np.log(I)
+
+        # We are minimizing not maximizing so return the negative
+        mloglike = -(loglike.sum())
+
+        print(params, mloglike)
+        return mloglike
+
 
     def _find_dndz_params(self):
 
@@ -172,14 +168,9 @@ class Inform_BPZ_lite(CatInformer):
         a_arr = np.ones(self.ntyp)
         km_arr = np.ones(self.ntyp)
         for i in range(self.ntyp):
-            if self.rank == 0:
-                print(f"minimizing for type {i}")
+            print(f"minimizing for type {i}")
             self.typmask = (self.besttypes == i)
             dndzparams = np.hstack([self.config.init_zo, self.config.init_alpha, self.config.init_km])
-            # The parallelization of this stage only works because nelder-mead is deterministic
-            # so all the processes always end up with the same parameters each time. If you change to
-            # another minimizer that isn't deterministic then you need to change the parallel stuff in
-            # _dndz_likelihood.
             result = sciop.minimize(self._dndz_likelihood, dndzparams, method='nelder-mead').x
             zo_arr[i] = result[0]
             a_arr[i] = result[1]
@@ -221,14 +212,12 @@ class Inform_BPZ_lite(CatInformer):
         self.besttypes = broad_types[mask]
 
         numused = len(self.besttypes)
-        if self.rank == 0:
-            print(f"using {numused} galaxies in calculation")
+        print(f"using {numused} galaxies in calculation")
 
         self._find_fractions()
-        if self.rank == 0:
-            print("best values for fo and kt:")
-            print(self.fo_arr)
-            print(self.kt_arr)
+        print("best values for fo and kt:")
+        print(self.fo_arr)
+        print(self.kt_arr)
         zo_arr, km_arr, a_arr = self._find_dndz_params()
         a_arr = np.abs(a_arr)
 
