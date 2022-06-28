@@ -7,10 +7,7 @@ p(z) shape) via cde-loss over a grid.
 """
 
 import numpy as np
-import flexcode
 import qp
-from flexcode.regression_models import XGBoost
-from flexcode.loss_functions import cde_loss
 # from numpy import inf
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatEstimator, CatInformer
@@ -141,6 +138,10 @@ class Inform_FZBoost(CatInformer):
     def run(self):
         """Train flexzboost model model
         """
+        import flexcode
+        from flexcode.regression_models import XGBoost
+        from flexcode.loss_functions import cde_loss
+
         if self.config.hdf5_groupname:
             training_data = self.get_data('input')[self.config.hdf5_groupname]
         else:  #pragma:  no cover
@@ -206,16 +207,13 @@ class FZBoost(CatEstimator):
             raise ValueError("ref_band not present in bands list! ")
         self.zgrid = None
 
-    def run(self):
-        if self.config.hdf5_groupname:
-            test_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  #pragma:  no cover
-            test_data = self.get_data('input')
-        color_data = make_color_data(test_data, self.config.bands, self.config.err_bands,
+    def _process_chunk(self, start, end, data, first):
+        print(f"Process {self.rank} estimating PZ PDF for rows {start:,} - {end:,}")
+        color_data = make_color_data(data, self.config.bands, self.config.err_bands,
                                      self.config.ref_band, self.config.nondetect_val)
         pdfs, z_grid = self.model.predict(color_data, n_grid=self.config.nzbins)
         self.zgrid = np.array(z_grid).flatten()
         qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=pdfs))
         zmode = qp_dstn.mode(grid=self.zgrid)
         qp_dstn.set_ancil(dict(zmode=zmode))
-        self.add_data('output', qp_dstn)
+        self._do_chunk_output(qp_dstn, start, end, first)

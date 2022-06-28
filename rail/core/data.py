@@ -5,7 +5,6 @@ import tables_io
 import pickle
 import qp
 
-from pzflow import Flow
 
 
 class DataHandle:
@@ -32,6 +31,8 @@ class DataHandle:
         self.path = path
         self.creator = creator
         self.fileObj = None
+        self.groups = None
+        self.partial = False
 
     def open(self, **kwargs):
         """Open and return the associated file
@@ -58,8 +59,14 @@ class DataHandle:
         """Read and return the data from the associated file """
         if self.data is not None and not force:
             return self.data
-        self.data = self._read(self.path, **kwargs)
+        self.set_data(self._read(self.path, **kwargs))
         return self.data
+
+    def __call__(self, **kwargs):
+        """Return the data, re-reading the fill if needed"""
+        if self.has_data and not self.partial:
+            return self.data
+        return self.read(force=True, **kwargs)
 
     @classmethod
     def _read(cls, path, **kwargs):
@@ -77,17 +84,38 @@ class DataHandle:
     def _write(cls, data, path, **kwargs):
         raise NotImplementedError("DataHandle._write")  #pragma: no cover
 
+    def initialize_write(self, data_lenght, **kwargs):
+        """Initialize file to be written by chunks"""
+        if self.path is None:  #pragma: no cover
+            raise ValueError("TableHandle.write() called but path has not been specified")
+        self.groups, self.fileObj = self._initialize_write(self.data, self.path, data_lenght, **kwargs)
+
+    @classmethod
+    def _initialize_write(cls, data, path, data_lenght, **kwargs):
+        raise NotImplementedError("DataHandle._initialize_write") #pragma: no cover
+
     def write_chunk(self, start, end, **kwargs):
         """Write the data to the associatied file """
         if self.data is None:
             raise ValueError(f"TableHandle.write_chunk() called for path {self.path} with no data")
         if self.fileObj is None:
             raise ValueError(f"TableHandle.write_chunk() called before open for {self.tag} : {self.path}")
-        return self._write_chunk(self.data, self.fileObj, start, end, **kwargs)
+        return self._write_chunk(self.data, self.fileObj, self.groups, start, end, **kwargs)
+
 
     @classmethod
-    def _write_chunk(cls, data, fileObj, start, end, **kwargs):
+    def _write_chunk(cls, data, fileObj, groups, start, end, **kwargs):
         raise NotImplementedError("DataHandle._write_chunk")  #pragma: no cover
+
+    def finalize_write(self, **kwargs):
+        """Finalize and close file written by chunks"""
+        if self.fileObj is None:  #pragma: no cover
+            raise ValueError(f"TableHandle.finalize_wite() called before open for {self.tag} : {self.path}")
+        self._finalize_write(self.data, self.fileObj, **kwargs)
+
+    @classmethod
+    def _finalize_write(cls, data, fileObj, **kwargs):
+        raise NotImplementedError("DataHandle._finalize_write")  #pragma: no cover
 
     def iterator(self, **kwargs):
         """Iterator over the data"""
@@ -95,6 +123,19 @@ class DataHandle:
         #    for i in range(1):
         #        yield i, -1, self.data
         return self._iterator(self.path, **kwargs)
+
+    def set_data(self, data, partial=False):
+        """Set the data for a chunk, and set the partial flag to true"""
+        self.data = data
+        self.partial = partial
+
+    def size(self, **kwargs):
+        """Return the size of the data associated to this handle"""
+        return self._size(self.path, **kwargs)
+
+    @classmethod
+    def _size(cls, path, **kwargs):
+        raise NotImplementedError("DataHandle._size")  #pragma: no cover
 
     @classmethod
     def _iterator(cls, path, **kwargs):
@@ -166,18 +207,24 @@ class TableHandle(DataHandle):
         return tables_io.write(data, path, **kwargs)
 
     @classmethod
+    def _size(cls, path, **kwargs):
+        return tables_io.io.getInputDataLengthHdf5(path, **kwargs)
+
+    @classmethod
     def _iterator(cls, path, **kwargs):
         """Iterate over the data"""
         return tables_io.iteratorNative(path, **kwargs)
-
 
 class Hdf5Handle(TableHandle):
     """DataHandle for a table written to HDF5"""
     suffix = 'hdf5'
 
     @classmethod
-    def _write_chunk(cls, data, fileObj, start, end, **kwargs):
-        tables_io.io.writeDictToHdf5ChunkSingle(fileObj, data, start, end, **kwargs)
+    def _write_chunk(cls, data, fileObj, groups, start, end, **kwargs):
+        if groups is None:
+            tables_io.io.writeDictToHdf5ChunkSingle(fileObj, data, start, end, **kwargs)
+        else:  #pragma: no cover
+            tables_io.io.writeDictToHdf5Chunk(groups, data, start, end, **kwargs)
 
 
 class FitsHandle(TableHandle):
@@ -193,7 +240,7 @@ class PqHandle(TableHandle):
 class QPHandle(DataHandle):
     """DataHandle for qp ensembles
     """
-    suffix = 'fits'
+    suffix = 'hdf5'
 
     @classmethod
     def _open(cls, path, **kwargs):
@@ -216,7 +263,18 @@ class QPHandle(DataHandle):
         """Write the data to the associatied file """
         return data.write_to(path)
 
+    @classmethod
+    def _initialize_write(cls, data, path, data_lenght, **kwargs):
+        comm = kwargs.get('communicator', None)
+        return data.initializeHdf5Write(path, data_lenght, comm)
 
+    @classmethod
+    def _write_chunk(cls, data, fileObj, groups, start, end, **kwargs):
+        return data.writeHdf5Chunk(fileObj, start, end)
+
+    @classmethod
+    def _finalize_write(cls, data, fileObj, **kwargs):
+        return data.finalizeHdf5Write(fileObj)
 
 
 def default_model_read(modelfile):
@@ -302,12 +360,14 @@ class FlowDict(dict):
 
     def __setitem__(self, key, value):
         """ Add a key-value pair, and check to make sure that the value is a `Flow` object """
+        from pzflow import Flow
         if not isinstance(value, Flow):  #pragma: no cover
             raise TypeError(f"Only values of type Flow can be added to a FlowFactory, not {type(value)}")
         return dict.__setitem__(self, key, value)
 
     def read(self, path, force=False):
         """ Read a `Flow` object from disk and add it to this dictionary """
+        from pzflow import Flow
         if force or path not in self:
             flow = Flow(file=path)
             self.__setitem__(path, flow)
@@ -391,6 +451,7 @@ class DataStore(dict):
             # Kludge to get docstrings to work
             if key in ['__objclass__']:
                 return None
+            raise KeyError from msg
 
     def __setattr__(self, key, value):
         """ Allow attribute-like parameter setting """

@@ -29,7 +29,7 @@ import tables_io
 import rail
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatEstimator, CatInformer
-from desc_bpz.useful_py3 import get_str, get_data, match_resol
+from rail.core.data import TableHandle
 
 def_bands = ['u', 'g', 'r', 'i', 'z', 'y']
 def_bandnames = [f"mag_{band}_lsst" for band in def_bands]
@@ -154,6 +154,7 @@ class Inform_BPZ_lite(CatInformer):
                                            args=(zo, alpha, km, mag, self.mo),
                                            epsrel=1.e-5)
             loglike += -2. * np.log10(pz / norm)
+        print(f"Fitting dN/dz: loglike = {loglike} for parameters {params}")
         return loglike
 
     def _find_dndz_params(self):
@@ -225,7 +226,7 @@ class Inform_BPZ_lite(CatInformer):
 class BPZ_lite(CatEstimator):
     """CatEstimator subclass to implement basic marginalized PDF for BPZ
     """
-
+    name = "BPZ_lite"
     config_options = CatEstimator.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="min z for grid"),
                           zmax=Param(float, 3.0, msg="max z for grid"),
@@ -270,7 +271,7 @@ class BPZ_lite(CatEstimator):
         """Constructor, build the CatEstimator, then do BPZ specific setup
         """
         CatEstimator.__init__(self, args, comm=comm)
-        self.model = None
+        #self.model = None
 
         datapath = self.config['data_path']
         if datapath is None or datapath == "None":
@@ -297,6 +298,7 @@ class BPZ_lite(CatEstimator):
         self.modeldict = self.model
 
     def _load_templates(self):
+        from desc_bpz.useful_py3 import get_str, get_data, match_resol
 
         # The redshift range we will evaluate on
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
@@ -459,18 +461,13 @@ class BPZ_lite(CatEstimator):
 
         return post_z, zmode
 
-    def run(self):
+    def  _process_chunk(self, start, end, data, first):
         """
         This will likely mostly be copied from BPZPipe code
         """
-        if self.config.hdf5_groupname:
-            test_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  # pragma:  no cover
-            test_data = self.get_data('input')
-
         # replace non-detects, traditional BPZ had nondet=99 and err = maglim
         # put in that format here
-        test_data = self._preprocess_magnitudes(test_data)
+        test_data = self._preprocess_magnitudes(data)
         m_0_col = self.config.band_names.index(self.config.prior_band)
 
         nz = len(self.zgrid)
@@ -504,4 +501,4 @@ class BPZ_lite(CatEstimator):
         test_data.pop('mags', None)
         qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=pdfs))
         qp_dstn.set_ancil(dict(zmode=zmode))
-        self.add_data('output', qp_dstn)
+        self._do_chunk_output(qp_dstn, start, end, first)
