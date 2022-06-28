@@ -14,7 +14,7 @@ try:
 except ImportError:
     pass
 from rail.estimation.algos import bpz_lite, pzflow, knnpz
-import scipy
+import scipy.special
 sci_ver_str = scipy.__version__.split('.')
 
 
@@ -38,12 +38,10 @@ def one_algo(key, single_trainer, single_estimator, train_kwargs, estim_kwargs):
 
     if single_trainer is not None:
         train_pz = single_trainer.make_stage(**train_kwargs)
-        help(train_pz)
         train_pz.inform(training_data)
 
     pz = single_estimator.make_stage(name=key, **estim_kwargs)
     estim = pz.estimate(validation_data)
-    help(estim)
     
     copy_estim_kwargs = estim_kwargs.copy()
     model_file = copy_estim_kwargs.pop('model', 'None')
@@ -328,8 +326,7 @@ def test_bpz_lite():
                          'hdf5_groupname': 'photometry',
                          'nt_array': [8],
                          'model': 'testmodel_bpz.pkl'}
-    zb_expected = np.array([0.18, 2.89, 0.12, 0.19, 2.97, 2.78, 0.1, 0.23,
-                            2.98, 2.92])
+    zb_expected = np.array([0.16, 0.12, 0.14, 0.14, 0.06, 0.14, 0.12, 0.14, 0.06, 0.16])
     train_algo = None
     pz_algo = bpz_lite.BPZ_lite
     results, rerun_results, rerun3_results = one_algo("BPZ_lite", train_algo, pz_algo, train_config_dict, estim_config_dict)
