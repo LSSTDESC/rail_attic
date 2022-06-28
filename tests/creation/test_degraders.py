@@ -321,8 +321,8 @@ def test_SpecSelection_low_N_tot(data_forspec):
                                              columns=rename_dict)
     data_forspec = col_remapper_test(data_forspec)
     
-    degrader_WiggleZ = SpecSelection_WiggleZ.make_stage(N_tot=1)
-    degrader_WiggleZ(data_forspec)
+    degrader_HSC = SpecSelection_HSC.make_stage(N_tot=1)
+    degrader_HSC(data_forspec)
     
 @pytest.mark.parametrize("N_tot, errortype", [(-1, ValueError)])
 def test_SpecSelection_bad_params(N_tot, errortype):
