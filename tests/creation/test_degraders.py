@@ -309,7 +309,7 @@ def test_SpecSelection(data):
     degrader_HSC(data)
     degrader_HSC.__repr__()
     
-def test_SpecSelection_low_N_tot(data):
+def test_SpecSelection_low_N_tot(data_forspec):
     
     bands = ['u','g','r','i','z','y']
     band_dict = {band:f'mag_{band}_lsst' for band in bands}
