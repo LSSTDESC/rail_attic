@@ -25,7 +25,23 @@ def data():
     df = pd.DataFrame(x, columns=["redshift", "u", "g", "r", "i", "z", "y"])
     return DS.add_data('data', df, TableHandle, path='dummy.pd')
 
+@pytest.fixture
+def data_forspec():
+    """Some dummy data to use below."""
 
+    DS = DATA_STORE()
+    DS.__class__.allow_overwrite = True
+    
+    # generate random normal data
+    rng = np.random.default_rng(0)
+    x = rng.normal(loc=26, scale=1, size=(10000, 7))
+
+    # replace redshifts with reasonable values
+    x[:, 0] = np.linspace(0, 2, x.shape[0])
+
+    # return data in handle wrapping a pandas DataFrame
+    df = pd.DataFrame(x, columns=["redshift", "u", "g", "r", "i", "z", "y"])
+    return DS.add_data('data_forspec', df, TableHandle, path='dummy_forspec.pd')
 
 @pytest.mark.parametrize(
     "true_wavelen,wrong_wavelen,frac_wrong,errortype",
@@ -303,10 +319,10 @@ def test_SpecSelection_low_N_tot(data):
     
     col_remapper_test = ColumnMapper.make_stage(name='col_remapper_test', hdf5_groupname='',
                                              columns=rename_dict)
-    data = col_remapper_test(data)
+    data_forspec = col_remapper_test(data_forspec)
     
     degrader_WiggleZ = SpecSelection_WiggleZ.make_stage(N_tot=1)
-    degrader_WiggleZ(data)
+    degrader_WiggleZ(data_forspec)
     
 @pytest.mark.parametrize("N_tot, errortype", [(-1, ValueError)])
 def test_SpecSelection_bad_params(N_tot, errortype):
