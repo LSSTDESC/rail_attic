@@ -447,9 +447,9 @@ class DataStore(dict):
         """ Allow attribute-like parameter access """
         try:
             return self.__getitem__(key)
-        except KeyError as msg:
+        except KeyError as msg:  
             # Kludge to get docstrings to work
-            if key in ['__objclass__']:
+            if key in ['__objclass__']:  #pragma: no cover
                 return None
             raise KeyError from msg
 

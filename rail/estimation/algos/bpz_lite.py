@@ -42,7 +42,7 @@ def_maglims = dict(mag_u_lsst=27.79,
                    mag_y_lsst=27.05)
 
 
-def nzfunc(z, z0, alpha, km, m, m0):
+def nzfunc(z, z0, alpha, km, m, m0):  #pragma: no cover
     zm = z0 + (km * (m - m0))
     return np.power(z, alpha) * np.exp(-1. * np.power((z / zm), alpha))
 
@@ -328,7 +328,7 @@ class BPZ_lite(CatEstimator):
         for i, s in enumerate(spectra):
             for j, f in enumerate(filters):
                 model = f"{s}.{f}.AB"
-                if model not in ab_file_db:
+                if model not in ab_file_db:  #pragma: no cover
                     self._make_new_ab_file(s, f)
                 model_path = os.path.join(data_path, "AB", model)
                 zo, f_mod_0 = get_data(model_path, (0, 1))
@@ -336,7 +336,7 @@ class BPZ_lite(CatEstimator):
 
         return flux_templates
 
-    def _make_new_ab_file(self, spectrum, filter_):
+    def _make_new_ab_file(self, spectrum, filter_):  #pragma: no cover
         from desc_bpz.bpz_tools_py3 import ABflux
 
         new_file = f"{spectrum}.{filter_}.AB"
