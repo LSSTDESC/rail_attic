@@ -176,18 +176,13 @@ class NZDir(CatEstimator):
         # bootstrap the photometric data and re-run the ball tree query N times.
         ngal = len(self.szweights)
         nsamp = self.config.nsamples
-        bootstrap_indeces = np.random.randint(ngal,
-                                              size=ngal * nsamp).reshape([nsamp, ngal])
-        hist_vals = np.empty((0, self.config.nzbins))
+        hist_vals = np.empty((nsamp, self.config.nzbins))
         for i in range(nsamp):
-            uniq, cnts = np.unique(bootstrap_indeces[i], return_counts=True)
-            zarr = np.array([])
-            tmpweight = np.array([])
-            for un, ct in zip(uniq, cnts):
-                zarr = np.concatenate((zarr, np.repeat(self.szvec[un], ct)), axis=None)
-                tmpweight = np.concatenate((tmpweight, np.repeat(self.szweights[un] * weights[un], ct)), axis=None)
+            bootstrap_indices = np.random.randint(ngal, size=ngal)
+            zarr = self.szvec[bootstrap_indices]
+            tmpweight = self.szweights[bootstrap_indices] * weights[bootstrap_indices]
             tmp_hist_vals = np.histogram(zarr, bins=self.zgrid, weights=tmpweight)[0]
-            hist_vals = np.vstack((hist_vals, tmp_hist_vals))
+            hist_vals[i] = tmp_hist_vals
         sample_ens = qp.Ensemble(qp.hist, data=dict(bins=self.zgrid, pdfs=np.atleast_2d(hist_vals)))
 
         self.add_data('output', sample_ens)
