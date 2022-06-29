@@ -185,8 +185,8 @@ class NZDir(CatEstimator):
             tmpweight = np.array([])
             for un, ct in zip(uniq, cnts):
                 zarr = np.concatenate((zarr, np.repeat(self.szvec[un], ct)), axis=None)
-                tmpweight = np.concatenate((tmpweight, np.repeat(self.szweights[un], ct)), axis=None)
-            tmp_hist_vals = np.histogram(zarr, bins=self.zgrid, weights=weights * tmpweight)[0]
+                tmpweight = np.concatenate((tmpweight, np.repeat(self.szweights[un] * weights[un], ct)), axis=None)
+            tmp_hist_vals = np.histogram(zarr, bins=self.zgrid, weights=tmpweight)[0]
             hist_vals = np.vstack((hist_vals, tmp_hist_vals))
         sample_ens = qp.Ensemble(qp.hist, data=dict(bins=self.zgrid, pdfs=np.atleast_2d(hist_vals)))
 
