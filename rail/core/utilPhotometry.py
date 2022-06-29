@@ -180,7 +180,7 @@ class HyperbolicSmoothing(PhotormetryManipulator):
         """
         # get input data
         data = self.get_as_fluxes()
-        fields = np.zeros(len(data), dtype=np.int)  # placeholder
+        fields = np.zeros(len(data), dtype=int)  # placeholder
 
         # compute the optimal smoothing factor b for each photometric band
         stats = []
@@ -277,7 +277,7 @@ class HyperbolicMagnitudes(PhotormetryManipulator):
         data = self.get_as_fluxes()
         stats = self.get_data('parameters', allow_missing=True)
         self._check_filters(stats)
-        fields = np.zeros(len(data), dtype=np.int)  # placeholder for variable field/pointing depth
+        fields = np.zeros(len(data), dtype=int)  # placeholder for variable field/pointing depth
 
         # intialise the output data
         output = pd.DataFrame(index=data.index)  # allows joining on input
