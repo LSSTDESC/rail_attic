@@ -111,7 +111,7 @@ setup(
     entry_points={"console_scripts": ["rail=rail.main:main"]},
     install_requires=install_requires,
     extras_require=extras_require,
-    python_requires=">=3.5",
+    python_requires=">=3.8",
     setup_requires=["setuptools_scm", "pytest-runner"],
     use_scm_version={"write_to": "rail/_version.py"},
     tests_require=["pytest"],
