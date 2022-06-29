@@ -8,7 +8,7 @@ from types import GeneratorType
 from rail.core.stage import RailStage
 from rail.core.data import DataStore, DataHandle, TableHandle, Hdf5Handle, PqHandle, QPHandle, ModelHandle, FlowHandle
 from rail.core.utilStages import ColumnMapper, RowSelector, TableConverter
-from rail.core.utilPhotometry import HyperbolicSmoothing, HyperbolicMagnitudes
+from rail.core.utilPhotometry import PhotormetryManipulator, HyperbolicSmoothing, HyperbolicMagnitudes
 
 
 #def test_data_file():    
@@ -289,16 +289,45 @@ def load_result_smoothing():
     return DS.read_file("test_data", TableHandle, testFile).data
 
 
-@pytest.fixture
-def load_result_hyperbolic():
-    """load the hyperbolic magnitudes of an example patch of DC2"""
+def test_PhotormetryManipulator(hyperbolic_configuration):
     DS = RailStage.data_store
     DS.clear()
     DS.__class__.allow_overwrite = False
 
-    raildir = os.path.dirname(rail.__file__)
-    testFile = os.path.join(raildir, '..', 'tests', 'data', 'test_dc2_training_9816_hyperbolic.pq')
-    return DS.read_file("test_data", TableHandle, testFile).data
+    # NOTE: the __init__ machinery of HyperbolicSmoothing is identical to PhotormetryManipulator
+    # and is used as substitute since PhotormetryManipulator cannot be instantiated.
+    n_filters = len(hyperbolic_configuration["value_columns"])
+
+    # wrong number of "error_columns"
+    config = hyperbolic_configuration.copy()
+    config["error_columns"] = hyperbolic_configuration["error_columns"][:-1]
+    with pytest.raises(IndexError):
+        inst = HyperbolicSmoothing.make_stage(name='photormetry_manipulator', **config)
+
+    # wrong number of "zeropoints"
+    config = hyperbolic_configuration.copy()
+    config["zeropoints"] = np.arange(0, n_filters - 1)
+    with pytest.raises(IndexError):
+        inst = HyperbolicSmoothing.make_stage(name='photormetry_manipulator', **config)
+
+    # default values for "zeropoints"
+    config = hyperbolic_configuration.copy()
+    config.pop("zeropoints")  # should resort to default of 0.0
+    inst = HyperbolicSmoothing.make_stage(name='photormetry_manipulator', **config)
+    assert len(inst.zeropoints) == n_filters
+    assert all(zp == 0.0 for zp in inst.zeropoints)
+
+    # if_flux preserves the values
+    dummy_data = pd.DataFrame(dict(val=[1, 2, 3], err=[1, 2, 3]))
+    config = dict(
+        value_columns=["val"],
+        error_columns=["err"],
+        zeropoints=[0.0])
+    inst = HyperbolicSmoothing.make_stage(name='photormetry_manipulator', **config, is_flux=True)
+    inst.set_data('input', dummy_data)
+    data = inst.get_as_fluxes()
+    assert data.equals(dummy_data)
+
 
 
 def test_HyperbolicSmoothing(hyperbolic_configuration):
@@ -317,14 +346,14 @@ def test_HyperbolicSmoothing(hyperbolic_configuration):
     ).data
 
     stage_name, handle_name = 'hyperbolic_smoothing', 'parameters'
-    smooth = HyperbolicSmoothing.make_stage(name=stage_name, **hyperbolic_configuration)
-    try:
-        smooth.compute(test_data)
-        smooth_params = smooth.get_handle(handle_name).data
 
-        assert smooth_params.equals(result_smoothing)
-    finally:
-        os.remove(f'{handle_name}_{stage_name}.pq')
+    # test against prerecorded output
+    smooth = HyperbolicSmoothing.make_stage(name=stage_name, **hyperbolic_configuration)
+    smooth.compute(test_data)
+    smooth_params = smooth.get_handle(handle_name).data
+    assert smooth_params.equals(result_smoothing)
+
+    os.remove(f'{handle_name}_{stage_name}.pq')
 
 
 def test_HyperbolicMagnitudes(hyperbolic_configuration,):
@@ -347,11 +376,17 @@ def test_HyperbolicMagnitudes(hyperbolic_configuration,):
     ).data
 
     stage_name, handle_name = 'hyperbolic_magnitudes', 'output'
-    hypmag = HyperbolicMagnitudes.make_stage(name=stage_name, **hyperbolic_configuration)
-    try:
-        hypmag.compute(test_data, result_smoothing)
-        test_hypmags = hypmag.get_handle(handle_name).data
 
-        assert test_hypmags.equals(result_hyperbolic)
-    finally:
-        os.remove(f'{handle_name}_{stage_name}.pq')
+    # test against prerecorded output
+    hypmag = HyperbolicMagnitudes.make_stage(name=stage_name, **hyperbolic_configuration)
+    hypmag.compute(test_data, result_smoothing)
+    test_hypmags = hypmag.get_handle(handle_name).data
+    assert test_hypmags.equals(result_hyperbolic)
+
+    # check of input data columns against smoothing parameter table
+    smoothing = result_smoothing.copy().drop("mag_r_lsst")  # drop one filter from the set
+    hypmag = HyperbolicMagnitudes.make_stage(name=stage_name, **hyperbolic_configuration)
+    with pytest.raises(KeyError):
+        hypmag._check_filters(smoothing)
+
+    os.remove(f'{handle_name}_{stage_name}.pq')
