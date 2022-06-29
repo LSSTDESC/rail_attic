@@ -8,12 +8,9 @@ future update
 import numpy as np
 
 from ceci.config import StageParameter as Param
-from rail.estimation.estimator import Estimator, Informer
+from rail.estimation.estimator import CatEstimator, CatInformer
 from rail.core.data import FlowHandle, TableHandle
 import pandas as pd
-from pzflow import Flow
-from pzflow.bijectors import Chain, ColorTransform, InvSoftplus
-from pzflow.bijectors import StandardScaler, RollingSplineCoupling
 import qp
 
 
@@ -67,12 +64,12 @@ def_errornames=dict(mag_err_u_lsst="mag_u_lsst_err",
                     mag_err_y_lsst="mag_y_lsst_err")
 
 
-class Train_PZFlowPDF(Informer):
+class Inform_PZFlowPDF(CatInformer):
     """ Subclass to train a pzflow-based estimator
     """
-    name = 'Train_PZFlowPdf'
+    name = 'Inform_PZFlowPdf'
     outputs = [('model', FlowHandle)]
-    config_options = Informer.config_options.copy()
+    config_options = CatInformer.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="min z"),
                           zmax=Param(float, 3.0, msg="max_z"),
                           nzbins=Param(int, 301, msg="num z bins"),
@@ -101,9 +98,9 @@ class Train_PZFlowPDF(Informer):
 
 
     def __init__(self, args, comm=None):
-        """Constructor, build the Informer, then do PZFlow specific setup
+        """Constructor, build the CatInformer, then do PZFlow specific setup
         """
-        Informer.__init__(self, args, comm=comm)
+        CatInformer.__init__(self, args, comm=comm)
         usecols = self.config.column_names.copy()
         allcols = usecols.copy()
         if self.config.include_mag_errors:  # only include errors if option set
@@ -119,6 +116,9 @@ class Train_PZFlowPDF(Informer):
         train a flow based on the training data
         This is mostly based off of the pzflow example notebook
         """
+        from pzflow import Flow
+        from pzflow.bijectors import Chain, ColorTransform, InvSoftplus
+        from pzflow.bijectors import StandardScaler, RollingSplineCoupling
         if self.config.hdf5_groupname:
             training_data = self.get_data('input')[self.config.hdf5_groupname]
         else:  #pragma:  no cover
@@ -149,13 +149,13 @@ class Train_PZFlowPDF(Informer):
 
 
 
-class PZFlowPDF(Estimator):
-    """Estimator which uses PZFlow
+class PZFlowPDF(CatEstimator):
+    """CatEstimator which uses PZFlow
     """
     name = 'PZFlowPDF'
     inputs = [('model', FlowHandle),
               ('input', TableHandle)]
-    config_options = Estimator.config_options.copy()
+    config_options = CatEstimator.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
                           nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
@@ -178,7 +178,7 @@ class PZFlowPDF(Estimator):
 
 
     def __init__(self, args, comm=None):
-        Estimator.__init__(self, args, comm=comm)
+        CatEstimator.__init__(self, args, comm=comm)
         usecols = self.config.column_names.copy()
         allcols = usecols.copy()
         if self.config.include_mag_errors:  #pragma: no cover
@@ -190,17 +190,12 @@ class PZFlowPDF(Estimator):
         self.allcols = allcols
         self.zgrid = None
 
-    def run(self):
+    def _process_chunk(self, start, end, data, first):
         """
         calculate and return PDFs for each galaxy using the trained flow
         """
-        if self.config.hdf5_groupname:
-            test_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  #pragma:  no cover
-            test_data = self.get_data('input')
-
         # flow expects dataframe
-        test_df = pd.DataFrame(test_data)
+        test_df = pd.DataFrame(data)
         if self.config.include_mag_errors:  #pragma: no cover
             # rename the error columns to end in _err!
             test_df.rename(columns=self.config.error_names_dict, inplace=True)
@@ -230,4 +225,4 @@ class PZFlowPDF(Estimator):
         zmode = np.array([self.zgrid[np.argmax(pdf)] for pdf in pdfs]).flatten()
         qp_distn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=pdfs))
         qp_distn.set_ancil(dict(zmode=zmode))
-        self.add_data('output', qp_distn)
+        self._do_chunk_output(qp_distn, start, end, first)

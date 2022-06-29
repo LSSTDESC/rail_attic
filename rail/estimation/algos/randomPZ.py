@@ -7,18 +7,18 @@ random_width*(1+zmode).
 import numpy as np
 from scipy.stats import norm
 from ceci.config import StageParameter as Param
-from rail.estimation.estimator import Estimator
+from rail.estimation.estimator import CatEstimator
 from rail.core.data import TableHandle
 import qp
 
 
-class RandomPZ(Estimator):
-    """Random Estimator
+class RandomPZ(CatEstimator):
+    """Random CatEstimator
     """
 
     name = 'RandomPZ'
     inputs = [('input', TableHandle)]
-    config_options = Estimator.config_options.copy()
+    config_options = CatEstimator.config_options.copy()
     config_options.update(rand_width=Param(float, 0.025, "ad hock width of PDF"),
                           rand_zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           rand_zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
@@ -26,21 +26,17 @@ class RandomPZ(Estimator):
 
     def __init__(self, args, comm=None):
         """ Constructor:
-        Do Estimator specific initialization """
-        Estimator.__init__(self, args, comm=comm)
+        Do CatEstimator specific initialization """
+        CatEstimator.__init__(self, args, comm=comm)
         self.zgrid = None
 
-    def run(self):
-        if self.config.hdf5_groupname:
-            test_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  #pragma:  no cover
-            test_data = self.get_data('input')
+    def _process_chunk(self, start, end, data, first):
         pdf = []
         # allow for either format for now
         try:
-            d = test_data['i_mag']
+            d = data['i_mag']
         except Exception:
-            d = test_data['mag_i_lsst']
+            d = data['mag_i_lsst']
         numzs = len(d)
         zmode = np.round(np.random.uniform(0.0, self.config.rand_zmax, numzs), 3)
         widths = self.config.rand_width * (1.0 + zmode)
@@ -50,4 +46,4 @@ class RandomPZ(Estimator):
         qp_d = qp.Ensemble(qp.stats.norm, data=dict(loc=np.expand_dims(zmode, -1),  #pylint: disable=no-member
                                                     scale=np.expand_dims(widths, -1)))
         qp_d.set_ancil(dict(zmode=zmode))
-        self.add_data('output', qp_d)
+        self._do_chunk_output(qp_d, start, end, first)

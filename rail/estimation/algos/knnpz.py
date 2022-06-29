@@ -9,10 +9,9 @@ import numpy as np
 import copy
 
 from ceci.config import StageParameter as Param
-from rail.estimation.estimator import Estimator, Informer
+from rail.estimation.estimator import CatEstimator, CatInformer
 
 from rail.evaluation.metrics.cdeloss import CDELoss
-from sklearn.neighbors import KDTree
 import pandas as pd
 import qp
 
@@ -33,9 +32,9 @@ def_maglims = dict(mag_u_lsst=27.79,
 def _computecolordata(df, ref_column_name, column_names):
     newdict = {}
     newdict['x'] = df[ref_column_name]
-    nbands = len(column_names)-1
+    nbands = len(column_names) - 1
     for k in range(nbands):
-        newdict[f'x{k}'] = df[column_names[k]] - df[column_names[k+1]]
+        newdict[f'x{k}'] = df[column_names[k]] - df[column_names[k + 1]]
     newdf = pd.DataFrame(newdict)
     coldata = newdf.to_numpy()
     return coldata
@@ -43,19 +42,18 @@ def _computecolordata(df, ref_column_name, column_names):
 
 def _makepdf(dists, ids, szs, sigma):
     sigmas = np.full_like(dists, sigma)
-    weights = 1./dists
+    weights = 1. / dists
     weights /= weights.sum(axis=1, keepdims=True)
-    #norms = np.sum(weights, axis=1)
     means = szs[ids]
     pdfs = qp.Ensemble(qp.mixmod, data=dict(means=means, stds=sigmas, weights=weights))
     return pdfs
 
 
-class Train_KNearNeighPDF(Informer):
+class Inform_KNearNeighPDF(CatInformer):
     """Train a KNN-based estimator
     """
-    name = 'Train_KNearNeighPDF'
-    config_options = Informer.config_options.copy()
+    name = 'Inform_KNearNeighPDF'
+    config_options = CatInformer.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="min z"),
                           zmax=Param(float, 3.0, msg="max_z"),
                           nzbins=Param(int, 301, msg="num z bins"),
@@ -66,6 +64,7 @@ class Train_KNearNeighPDF(Informer):
                           ref_column_name=Param(str, 'mag_i_lsst', msg="name for reference column"),
                           column_names=Param(list, refcols,
                                              msg="column names to be used in NN, *ASSUMED TO BE IN INCREASING WL ORDER!*"),
+                          nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
                           mag_limits=Param(dict, def_maglims, msg="1 sigma mag limits"),
                           sigma_grid_min=Param(float, 0.01, msg="minimum value of sigma for grid check"),
                           sigma_grid_max=Param(float, 0.075, msg="maximum value of sigma for grid check"),
@@ -77,8 +76,8 @@ class Train_KNearNeighPDF(Informer):
 
     def __init__(self, args, comm=None):
         """ Constructor
-        Do Informer specific initialization, then check on bands """
-        Informer.__init__(self, args, comm=comm)
+        Do CatInformer specific initialization, then check on bands """
+        CatInformer.__init__(self, args, comm=comm)
 
         usecols = self.config.column_names.copy()
         usecols.append(self.config.redshift_column_name)
@@ -89,9 +88,10 @@ class Train_KNearNeighPDF(Informer):
         """
         train a KDTree on a fraction of the training data
         """
+        from sklearn.neighbors import KDTree
         if self.config.hdf5_groupname:
             training_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  #pragma:  no cover
+        else:  # pragma:  no cover
             training_data = self.get_data('input')
         input_df = pd.DataFrame(training_data)
         knndf = input_df[self.config.column_names]
@@ -100,7 +100,10 @@ class Train_KNearNeighPDF(Informer):
         # replace nondetects
         # will fancy this up later with a flow to sample from truth
         for col in self.config.column_names:
-            knndf.loc[np.isclose(knndf[col], 99.), col] = self.config.mag_limits[col]
+            if np.isnan(self.config.nondetect_val):  # pragma: no cover
+                knndf.loc[np.isnan(knndf[col]), col] = self.config.mag_limits[col]
+            else:
+                knndf.loc[np.isclose(knndf[col], self.config.nondetect_val), col] = self.config.mag_limits[col]
 
         trainszs = np.array(input_df[self.config.redshift_column_name])
         colordata = _computecolordata(knndf, self.config.ref_column_name, self.config.column_names)
@@ -124,7 +127,7 @@ class Train_KNearNeighPDF(Informer):
         siggrid = np.linspace(self.config.sigma_grid_min, self.config.sigma_grid_max, self.config.ngrid_sigma)
         print("finding best fit sigma and NNeigh...")
         for sig in siggrid:
-            for nn in range(self.config.nneigh_min, self.config.nneigh_max+1):
+            for nn in range(self.config.nneigh_min, self.config.nneigh_max + 1):
                 # print(f"sigma: {sig} num neigh: {nn}...")
                 dists, idxs = tmpmodel.query(val_data, k=nn)
                 ens = _makepdf(dists, idxs, train_sz, sig)
@@ -144,18 +147,18 @@ class Train_KNearNeighPDF(Informer):
         self.add_data('model', self.model)
 
 
-
-class KNearNeighPDF(Estimator):
+class KNearNeighPDF(CatEstimator):
     """KNN-based estimator
     """
     name = 'KNearNeighPDF'
-    config_options = Estimator.config_options.copy()
+    config_options = CatEstimator.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="min z"),
                           zmax=Param(float, 3.0, msg="max_z"),
                           nzbins=Param(int, 301, msg="num z bins"),
                           column_names=Param(list, refcols,
                                              msg="column names to be used in NN, *ASSUMED TO BE IN INCREASING WL ORDER!*"),
                           ref_column_name=Param(str, 'mag_i_lsst', msg="name for reference column"),
+                          nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
                           mag_limits=Param(dict, def_maglims, msg="1 sigma mag limits"),
                           redshift_column_name=Param(str, 'redshift', msg="name of redshift column"))
 
@@ -167,38 +170,38 @@ class KNearNeighPDF(Estimator):
         self.model = None
         self.trainszs = None
         self.zgrid = None
-        Estimator.__init__(self, args, comm=comm)
+        CatEstimator.__init__(self, args, comm=comm)
         usecols = self.config.column_names.copy()
         usecols.append(self.config.redshift_column_name)
         self.usecols = usecols
 
     def open_model(self, **kwargs):
-        Estimator.open_model(self, **kwargs)
+        CatEstimator.open_model(self, **kwargs)
         self.sigma = self.model['bestsig']
         self.numneigh = self.model['nneigh']
         self.kdtree = self.model['kdtree']
         self.trainszs = self.model['truezs']
 
-    def run(self):
+    def _process_chunk(self, start, end, data, first):
         """
         calculate and return PDFs for each galaxy using the trained flow
         """
-        # flow expects dataframe
-        if self.config.hdf5_groupname:
-            test_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  #pragma:  no cover
-            test_data = self.get_data('input')
-        test_df = pd.DataFrame(test_data)
+        print(f"Process {self.rank} estimating PZ PDF for rows {start:,} - {end:,}")
+        test_df = pd.DataFrame(data)
         knn_df = test_df[self.usecols]
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
 
         # replace nondetects
+        # will fancy this up later with a flow to sample from truth
         for col in self.config.column_names:
-            knn_df.loc[np.isclose(knn_df[col], 99.), col] = self.config.mag_limits[col]
+            if np.isnan(self.config.nondetect_val):  # pragma: no cover
+                knn_df.loc[np.isnan(knn_df[col]), col] = self.config.mag_limits[col]
+            else:
+                knn_df.loc[np.isclose(knn_df[col], self.config.nondetect_val), col] = self.config.mag_limits[col]
 
         testcolordata = _computecolordata(knn_df, self.config.ref_column_name, self.config.column_names)
         dists, idxs = self.kdtree.query(testcolordata, k=self.numneigh)
         test_ens = _makepdf(dists, idxs, self.trainszs, self.sigma)
         zmode = test_ens.mode(grid=self.zgrid)
         test_ens.set_ancil(dict(zmode=zmode))
-        self.add_data('output', test_ens)
+        self._do_chunk_output(test_ens, start, end, first)
