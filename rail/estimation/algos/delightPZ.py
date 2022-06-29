@@ -254,7 +254,7 @@ class delightPZ(CatEstimator):
 
 
     def _process_chunk(self, start, end, data, first):
-      
+
         from delight.interfaces.rail.makeConfigParam import makeConfigParam
         from delight.interfaces.rail.convertDESCcat import convertDESCcatChunk
         from delight.interfaces.rail.templateFitting import templateFitting
