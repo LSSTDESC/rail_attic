@@ -3,10 +3,12 @@ import rail
 import pytest
 import pickle
 import numpy as np
+import pandas as pd
 from types import GeneratorType
 from rail.core.stage import RailStage
 from rail.core.data import DataStore, DataHandle, TableHandle, Hdf5Handle, PqHandle, QPHandle, ModelHandle, FlowHandle
 from rail.core.utilStages import ColumnMapper, RowSelector, TableConverter
+from rail.core.utilPhotometry import HyperbolicSmoothing, HyperbolicMagnitudes
 
 
 #def test_data_file():    
@@ -264,17 +266,92 @@ def test_data_store():
     os.remove(datapath_pq_copy)
 
 
-def load_testdata():
+@pytest.fixture
+def hyperbolic_configuration():
+    """get the code configuration for the example data"""
+    lsst_bands = 'ugrizy'
+    return dict(
+        value_columns=[f"mag_{band}_lsst" for band in lsst_bands],
+        error_columns=[f"mag_err_{band}_lsst" for band in lsst_bands],
+        zeropoints=[0.0] * len(lsst_bands),
+        is_flux=False)
+
+
+@pytest.fixture
+def load_result_smoothing():
+    """load the smoothing parameters for an example patch of DC2"""
     DS = RailStage.data_store
     DS.clear()
     DS.__class__.allow_overwrite = False
+
     raildir = os.path.dirname(rail.__file__)
-    testFile = os.path.join(raildir, '..', 'tests', 'data', 'test_dc2_training_9816.pq')
-    return DS.read_file("test_data", TableHandle, testFile)
-
-def test_HyperbolicSmoothing():
-    data = load_testdata()
+    testFile = os.path.join(raildir, '..', 'tests', 'data', 'test_dc2_training_9816_smoothing_params.pq')
+    return DS.read_file("test_data", TableHandle, testFile).data
 
 
-def test_HyperbolicMagnitudes():
-    data = load_testdata()
+@pytest.fixture
+def load_result_hyperbolic():
+    """load the hyperbolic magnitudes of an example patch of DC2"""
+    DS = RailStage.data_store
+    DS.clear()
+    DS.__class__.allow_overwrite = False
+
+    raildir = os.path.dirname(rail.__file__)
+    testFile = os.path.join(raildir, '..', 'tests', 'data', 'test_dc2_training_9816_hyperbolic.pq')
+    return DS.read_file("test_data", TableHandle, testFile).data
+
+
+def test_HyperbolicSmoothing(hyperbolic_configuration):
+    DS = RailStage.data_store
+    DS.clear()
+    DS.__class__.allow_overwrite = False
+
+    raildir = os.path.dirname(rail.__file__)
+    test_data = DS.read_file(
+        "test_data", TableHandle, os.path.join(
+            raildir, '..', 'tests', 'data', 'test_dc2_training_9816.pq')
+    ).data
+    result_smoothing = DS.read_file(
+        "result_smoothing", TableHandle, os.path.join(
+            raildir, '..', 'tests', 'data', 'test_dc2_training_9816_smoothing_params.pq')
+    ).data
+
+    stage_name, handle_name = 'hyperbolic_smoothing', 'parameters'
+    smooth = HyperbolicSmoothing.make_stage(name=stage_name, **hyperbolic_configuration)
+    try:
+        smooth.compute(test_data)
+        smooth_params = smooth.get_handle(handle_name).data
+
+        assert smooth_params.equals(result_smoothing)
+    finally:
+        os.remove(f'{handle_name}_{stage_name}.pq')
+
+
+def test_HyperbolicMagnitudes(hyperbolic_configuration,):
+    DS = RailStage.data_store
+    DS.clear()
+    DS.__class__.allow_overwrite = False
+
+    raildir = os.path.dirname(rail.__file__)
+    test_data = DS.read_file(
+        "test_data", TableHandle, os.path.join(
+            raildir, '..', 'tests', 'data', 'test_dc2_training_9816.pq')
+    ).data
+    result_smoothing = DS.read_file(
+        "result_smoothing", TableHandle, os.path.join(
+            raildir, '..', 'tests', 'data', 'test_dc2_training_9816_smoothing_params.pq')
+    ).data
+    result_hyperbolic = DS.read_file(
+        "result_hyperbolic", TableHandle, os.path.join(
+            raildir, '..', 'tests', 'data', 'test_dc2_training_9816_hyperbolic.pq')
+    ).data
+
+    stage_name, handle_name = 'hyperbolic_magnitudes', 'output'
+    hypmag = HyperbolicMagnitudes.make_stage(name=stage_name, **hyperbolic_configuration)
+    try:
+        hypmag.compute(test_data, result_smoothing)
+        test_hypmags = hypmag.get_handle(handle_name).data
+
+        assert test_hypmags.equals(result_hyperbolic)
+    finally:
+        os.remove(f'{handle_name}_{stage_name}.pq')
