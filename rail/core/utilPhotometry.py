@@ -133,7 +133,7 @@ class PhotormetryManipulator(RailStage, ABC):
         return data
 
     @abstractmethod
-    def run(self):
+    def run(self):  # pragma: no cover
         """
         Implements the operation performed on the photometric data.
         """
@@ -142,7 +142,7 @@ class PhotormetryManipulator(RailStage, ABC):
         self.add_data('output', data)
 
     @abstractmethod
-    def compute(self, data):
+    def compute(self, data):  # pragma: no cover
         """
         Main method to call.
 
@@ -292,17 +292,11 @@ class HyperbolicMagnitudes(PhotormetryManipulator):
             # get the smoothing parameters
             stats_filt = hyperbolic.fill_missing_stats(stats.loc[val_col])
 
-            # compute normalised flux
-            ref_flux = stats_filt[hyperbolic.Keys.ref_flux]
-            if ref_flux.all() == 1.0:
-                norm_flux = data[val_col]
-                norm_flux_err = data[err_col]
-            else:
-                # map reference flux from fields/pointings to sources
-                ref_flux_per_source = hyperbolic.fields_to_source(
-                    stats_filt[hyperbolic.Keys.ref_flux], fields, index=data.index)
-                norm_flux = data[val_col] / ref_flux_per_source
-                norm_flux_err = data[err_col] / ref_flux_per_source
+            # map reference flux from fields/pointings to sources
+            ref_flux_per_source = hyperbolic.fields_to_source(
+                stats_filt[hyperbolic.Keys.ref_flux], fields, index=data.index)
+            norm_flux = data[val_col] / ref_flux_per_source
+            norm_flux_err = data[err_col] / ref_flux_per_source
 
             # compute the hyperbolic magnitudes
             hyp_mag = hyperbolic.compute_magnitude(
