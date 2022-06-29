@@ -39,14 +39,16 @@ class PointEstimateHist(PZSummarizer):
                            data=dict(bins=self.zgrid, pdfs=np.atleast_2d(single_hist)))
         bootstrap_indeces = np.random.randint(npdf,
                                               size=npdf * nsamp).reshape([nsamp, npdf])
-        hist_vals = np.empty((0, self.config.nzbins))
+        hist_vals = np.empty((nsamp, self.config.nzbins))
         for i in range(nsamp):
-            uniq, cnts = np.unique(bootstrap_indeces[i], return_counts=True)
-            zarr = np.array([])
+            bootstrap_indeces = np.random.randint(npdf, size=npdf)
+            uniq, cnts = np.unique(bootstrap_indeces, return_counts=True)
+            zarr = np.empty(npdf)
+            idx = 0
             for un, ct in zip(uniq, cnts):
-                zarr = np.concatenate((zarr, np.repeat(zb[un], ct)), axis=None)
-            tmp_hist_vals = np.histogram(zarr, bins=self.zgrid)[0]
-            hist_vals = np.vstack((hist_vals, tmp_hist_vals))
+                zarr[idx:idx+ct] = zb[un]
+                idx += ct
+            hist_vals[i] = np.histogram(zarr, bins=self.zgrid)[0]
         sample_ens = qp.Ensemble(qp.hist,
                                  data=dict(bins=self.zgrid, pdfs=np.atleast_2d(hist_vals)))
         self.add_data('output', sample_ens)
