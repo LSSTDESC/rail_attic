@@ -2,15 +2,12 @@ run_params:
   class_name: flowCreator
   run_name: test_flowCreator
   flow_seed: 0
-  ref_column_name: r
-  column_names: ['redshift', 'u', 'g', 'r', 'i', 'z', 'y']
-  is_mags: True
+  column_names:
+    phys_cols: ['redshift']
+    phot_cols: ['u', 'g', 'r', 'i', 'z', 'y']
+  calc_colors: True
+    ref_column_name: r
   data_mins: [0., 22.79, 24.04, 24.06, 23.62, 22.98, 22.05]
   data_maxs: [3., 27.79, 29.04, 29.06, 28.62, 27.98, 27.05]
   spline_knots: 16
-
-  soft_sharpness: 10
-  soft_idx_col: 0
-  redshift_column_name: redshift
   num_training_epochs: 30
-  inform_options: {'save_train': True, 'load_model': False, 'modelfile': 'PZflowPDF.pkl'}

@@ -26,20 +26,20 @@ class FlowModeler(Modeler):
     config_options = Modeler.config_options.copy()
     config_options.update(
         column_names=Param(
-            list,
-            ['redshift', 'u', 'g', 'r', 'i', 'z', 'y'],
+            dict,
+            {'phys_cols': ['redshift'], 'phot_cols': ['u', 'g', 'r', 'i', 'z', 'y']},
             msg="The column names of the input data.",
         ),
-        is_mags=Param(
+        calc_colors=Param(
             bool,
-            True,
-            msg="Whether the photometry is magnitudes (versus colors).",
+            False,
+            msg="Do you provide magnitudes but want to model colors?",
         ),
-        ref_column_name=Param(
-            str,
-            'r',
-            msg="The column name for themagnitude to use as an anchor for defining colors.",
-        ),
+        # ref_column_name=Param(
+        #     str,
+        #     'r',
+        #     msg="The column name for the magnitude to use as an anchor for defining colors.",
+        # ),
         data_mins=Param(
             list,
             None, # should we default this?
@@ -61,11 +61,6 @@ class FlowModeler(Modeler):
             16,
             msg="The number of spline knots in the normalizing flow.",
         ),
-        transformed_dim=Param(
-            int,
-            1,
-            msg="Number of dimensions to transform in each layer of the flow.",
-        ),
     )
 
     def __init__(self, args, comm=None):
@@ -80,18 +75,19 @@ class FlowModeler(Modeler):
 
         # now let's set up the RQ-RSC
         nlayers = len(self.config.column_names) # can make configurable from yaml if wanted
+        transformed_dim = 1 # can make configurable from yaml if wanted
         K = self.config.spline_knots
-        transformed_dim = self.config.transformed_dim
 
         # if we are doing the color transform, there are a few more things to do...
-        if self.config.is_mags:
+        if color_config := self.config["calc_colors"]:
             # tell it which column to use as the reference magnitude
-            ref_idx = train_set.columns.get_loc(self.config.ref_column_name)
+            ref_idx = train_set.columns.get_loc(color_config["ref_col"])
             # and which columns correspond to the magnitudes we want colors for
-            mag_idx = [train_set.columns.get_loc(band) for band in self.config.column_names]
+            mag_idx = [columns.get_loc(band) for band in color_config["bands"]]
 
             # convert ranges above to the corresponding color ranges
             CONVERT MAG MINS AND MAXES TO COLOR MINS AND MAXES
+            color_cols =
 
             # chain all the bijectors together
             bijector = Chain(
