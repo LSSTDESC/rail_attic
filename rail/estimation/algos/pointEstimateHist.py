@@ -37,8 +37,6 @@ class PointEstimateHist(PZSummarizer):
         single_hist = np.histogram(test_data.ancil[self.config.point_estimate], bins=self.zgrid)[0]
         qp_d = qp.Ensemble(qp.hist,
                            data=dict(bins=self.zgrid, pdfs=np.atleast_2d(single_hist)))
-        bootstrap_indeces = np.random.randint(npdf,
-                                              size=npdf * nsamp).reshape([nsamp, npdf])
         hist_vals = np.empty((nsamp, self.config.nzbins))
         for i in range(nsamp):
             bootstrap_indeces = np.random.randint(npdf, size=npdf)
