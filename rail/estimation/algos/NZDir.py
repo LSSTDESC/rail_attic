@@ -186,16 +186,4 @@ class NZDir(CatEstimator):
         sample_ens = qp.Ensemble(qp.hist, data=dict(bins=self.zgrid, pdfs=np.atleast_2d(hist_vals)))
 
         self.add_data('output', sample_ens)
-        # compute error estimate based on samples, add as ancil data to overall ensemble, then save
-        # compute 1 sigma uncertainties based on the N samples
-        # use the qp Ensemble so that we are certain that std normalization has been applied
-        pdf_vals = sample_ens.pdf(self.bincents)
-        nz_vals = qp_d.pdf(self.bincents)
-        xlow = np.percentile(pdf_vals, 15.87, axis=0)
-        xhigh = np.percentile(pdf_vals, 84.13, axis=0)
-        sighigh = np.expand_dims(xhigh - nz_vals, -1).T
-        siglow = np.expand_dims(nz_vals - xlow, -1).T
-        ancil_dict = dict(sigma_low=siglow, sigma_high=sighigh)
-        qp_d.set_ancil(ancil_dict)
-
         self.add_data('single_NZ', qp_d)

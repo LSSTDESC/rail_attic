@@ -69,14 +69,4 @@ class VarInferenceStack(PZSummarizer):
 
         sample_ens = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=sample_pz))
         self.add_data('output', sample_ens)
-
-        # now, compute 1 sigma error and add to the initial N(z) estimate
-        pdf_vals = sample_ens.pdf(self.zgrid)
-        nz_vals = qp_d.pdf(self.zgrid)
-        xlow = np.percentile(pdf_vals, 15.87, axis=0)
-        xhigh = np.percentile(pdf_vals, 84.13, axis=0)
-        sighigh = np.expand_dims(xhigh - nz_vals, -1).T
-        siglow = np.expand_dims(nz_vals - xlow, -1).T
-        ancil_dict = dict(sigma_low=siglow, sigma_high=sighigh)
-        qp_d.set_ancil(ancil_dict)
         self.add_data('single_NZ', qp_d)

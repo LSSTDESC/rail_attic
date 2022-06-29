@@ -46,19 +46,10 @@ class PointEstimateHist(PZSummarizer):
             zarr = np.empty(npdf)
             idx = 0
             for un, ct in zip(uniq, cnts):
-                zarr[idx:idx+ct] = zb[un]
+                zarr[idx:idx + ct] = zb[un]
                 idx += ct
             hist_vals[i] = np.histogram(zarr, bins=self.zgrid)[0]
         sample_ens = qp.Ensemble(qp.hist,
                                  data=dict(bins=self.zgrid, pdfs=np.atleast_2d(hist_vals)))
         self.add_data('output', sample_ens)
-        # calculate error estimate based on samples, add to the single ensembe output and save
-        pdf_vals = sample_ens.pdf(self.bincents)
-        nz_vals = qp_d.pdf(self.bincents)
-        xlow = np.percentile(pdf_vals, 15.87, axis=0)
-        xhigh = np.percentile(pdf_vals, 84.13, axis=0)
-        sighigh = np.expand_dims(xhigh - nz_vals, -1).T
-        siglow = np.expand_dims(nz_vals - xlow, -1).T
-        ancil_dict = dict(sigmalow=siglow, sigmahigh=sighigh)
-        qp_d.set_ancil(ancil_dict)
         self.add_data('single_NZ', qp_d)
