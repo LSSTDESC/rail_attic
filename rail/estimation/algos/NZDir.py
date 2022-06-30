@@ -105,6 +105,7 @@ class NZDir(CatEstimator):
     config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
                           nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
+                          seed=Param(int, 87, msg="random seed"),
                           usecols=Param(list, default_usecols, msg="columns from sz_date for Neighor calculation"),
                           leafsize=Param(int, 40, msg="leaf size for testdata KDTree"),
                           hdf5_groupname=Param(str, "photometry", msg="name of hdf5 group for data, if None, then set to ''"),
@@ -131,6 +132,7 @@ class NZDir(CatEstimator):
         self.sz_mag_data = self.model['sz_mag_data']
 
     def run(self):
+        np.random.seed(self.config.seed)
         if self.config.hdf5_groupname:
             test_data = self.get_data('input')[self.config.hdf5_groupname]
         else:  # pragma:  no cover
