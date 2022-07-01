@@ -3,7 +3,6 @@ import fsps
 import numpy as np
 from astropy.table import Table
 from ceci.config import StageParameter as Param
-# from mpi4py import MPI
 
 
 class FSPSSedGenerator(Generator):
@@ -74,7 +73,7 @@ class FSPSSedGenerator(Generator):
 
     def _get_rest_frame_seds(self, ages, metallicities, velocity_dispersions, gas_ionizations, gas_metallicities,
                              tau_efolding_times, fracs_instantaneous_burst, ages_instantaneous_burst,
-                             e_b_v_attenuations, frac_luminosities_agn, opt_depths_agn, physical_units=False,
+                             e_b_v_attenuations, frac_luminosities_agn, opt_depths_agn, physical_units=True,
                              tabulated_sfh_file=None, tabulated_lsf_file=None, **kwargs):
         """
         Parameters
@@ -87,16 +86,10 @@ class FSPSSedGenerator(Generator):
 
         """
 
-        # comm = MPI.COMM_WORLD  # access to the number of processes (ranks/processors) available to distribute work
-        # across, and information about each processor.
-        # rank = comm.Get_rank()  # identifier of the processor currently executing the code.
-        # size = comm.Get_size()  # total number of ranks, or processors, allocated to run our script.
+        wavelengths = {}
+        fluxes = {}
 
-        # num_per_rank = len(ages) // size
-
-        wavelengths = []
-        fluxes = []
-        for i in range(len(ages)):  # parallelise
+        for i in self.split_tasks_by_rank(range(len(ages))):
             sp = fsps.StellarPopulation(compute_vega_mags=self.config.compute_vega_mags,
                                         vactoair_flag=self.config.vactoair_flag,
                                         zcontinuous=self.config.zcontinuous,
@@ -125,28 +118,43 @@ class FSPSSedGenerator(Generator):
                 age_array, sfr_array, metal_array = np.loadtxt(tabulated_sfh_file, usecols=(0, 1, 2))
                 sp.set_tabular_sfh(age_array, sfr_array, Z=metal_array)
 
-            if self.config.smooth_lsf is True:
+            if self.config.smooth_lsf:
                 assert self.config.smooth_velocity is True, 'lsf smoothing only works if smooth_velocity is True'
                 wave, sigma = np.loadtxt(tabulated_lsf_file, usecols=(0, 1))
                 sp.set_lsf(wave, sigma, wmin=self.config.min_wavelength, wmax=self.config.max_wavelength)
 
             wavelength, flux_solar_lum_angstrom = sp.get_spectrum(tage=ages[i], peraa=True)
+
             selected_wave_range = np.where((wavelength >= self.config.min_wavelength) &
                                            (wavelength <= self.config.max_wavelength))
             wavelength = wavelength[selected_wave_range]
-            wavelengths.append(wavelength)
+            wavelengths[i] = wavelength
 
             if physical_units:
-                flux_erg_s_angstrom = flux_solar_lum_angstrom * 3.846 * 10**33  # store solar luminosity into constant
-                # somewhere
-                fluxes.append(flux_erg_s_angstrom)
+                solar_luminosity = 3.826 * 10**33  # erg s^-1
+                flux_erg_s_angstrom = flux_solar_lum_angstrom[selected_wave_range] * solar_luminosity
+                fluxes[i] = flux_erg_s_angstrom.astype('float64')
+
             else:
                 flux_solar_lum_angstrom = flux_solar_lum_angstrom[selected_wave_range]
-                fluxes.append(flux_solar_lum_angstrom)
+                fluxes[i] = flux_solar_lum_angstrom.astype('float64')
 
-        return np.array(wavelengths), np.array(fluxes)
+        if self.comm is not None:
+            wavelengths = self.comm.gather(wavelengths)
+            fluxes = self.comm.gather(fluxes)
 
-    def run(self, **kwargs):
+            if self.rank != 0:
+                return None, None
+
+            wavelengths = {k: v for a in wavelengths for k, v in a.items()}
+            fluxes = {k: v for a in fluxes for k, v in a.items()}
+
+        wavelengths = np.array([wavelengths[i] for i in range(len(ages))])
+        fluxes = np.array([fluxes[i] for i in range(len(ages))])
+
+        return wavelengths, fluxes
+
+    def run(self, physical_units=True, tabulated_sfh_file=None, tabulated_lsf_file=None, **kwargs):
         """
         Run method
 
@@ -159,7 +167,6 @@ class FSPSSedGenerator(Generator):
 
         data = self.get_data('input')
 
-        # get numpy array of magnitudes
         ages = data[self.config.agename]
         metallicities = data[self.config.metalname]
         velocity_dispersions = data[self.config.veldispname]
@@ -172,14 +179,14 @@ class FSPSSedGenerator(Generator):
         frac_luminosities_agn = data[self.config.fagnname]
         opt_depths_agn = data[self.config.agntauname]
 
-        # get observed magnitudes and magnitude errors
         wavelengths, fluxes = self._get_rest_frame_seds(ages, metallicities, velocity_dispersions, gas_ionizations,
                                                         gas_metallicities, tau_efolding_times,
                                                         fracs_instantaneous_burst, ages_instantaneous_burst,
                                                         e_b_v_attenuations, frac_luminosities_agn, opt_depths_agn,
-                                                        **kwargs)
+                                                        physical_units=physical_units,
+                                                        tabulated_sfh_file=tabulated_sfh_file,
+                                                        tabulated_lsf_file=tabulated_lsf_file, **kwargs)
 
-        output_table = Table([wavelengths, fluxes], names=('wavelength', 'spectrum'))
-
-        # convert in TableHandle
-        self.add_data('output', output_table)
+        if self.rank == 0:
+            output_table = Table([wavelengths, fluxes], names=('wavelength', 'spectrum'))
+            self.add_data('output', output_table)
