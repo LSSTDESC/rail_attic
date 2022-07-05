@@ -18,6 +18,7 @@ class PointEstimateHist(PZSummarizer):
     config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
                           nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
+                          seed=Param(int, 87, msg="random seed"),
                           point_estimate=Param(str, 'zmode', msg="Which point estimate to use"),
                           nsamples=Param(int, 1000, msg="Number of sample distributions to return"))
     outputs = [('output', QPHandle),
@@ -28,6 +29,7 @@ class PointEstimateHist(PZSummarizer):
         self.zgrid = None
 
     def run(self):
+        rng = np.random.default_rng(seed=self.config.seed)
         test_data = self.get_data('input')
         npdf = test_data.npdf
         zb = test_data.ancil['zmode']
@@ -39,13 +41,8 @@ class PointEstimateHist(PZSummarizer):
                            data=dict(bins=self.zgrid, pdfs=np.atleast_2d(single_hist)))
         hist_vals = np.empty((nsamp, self.config.nzbins))
         for i in range(nsamp):
-            bootstrap_indeces = np.random.randint(npdf, size=npdf)
-            uniq, cnts = np.unique(bootstrap_indeces, return_counts=True)
-            zarr = np.empty(npdf)
-            idx = 0
-            for un, ct in zip(uniq, cnts):
-                zarr[idx:idx + ct] = zb[un]
-                idx += ct
+            bootstrap_indeces = rng.integers(low=0, high=npdf, size=npdf)
+            zarr = zb[bootstrap_indeces]
             hist_vals[i] = np.histogram(zarr, bins=self.zgrid)[0]
         sample_ens = qp.Ensemble(qp.hist,
                                  data=dict(bins=self.zgrid, pdfs=np.atleast_2d(hist_vals)))

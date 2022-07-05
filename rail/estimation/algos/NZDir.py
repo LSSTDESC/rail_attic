@@ -132,7 +132,7 @@ class NZDir(CatEstimator):
         self.sz_mag_data = self.model['sz_mag_data']
 
     def run(self):
-        np.random.seed(self.config.seed)
+        rng = np.random.default_rng(seed=self.config.seed)
         if self.config.hdf5_groupname:
             test_data = self.get_data('input')[self.config.hdf5_groupname]
         else:  # pragma:  no cover
@@ -180,7 +180,7 @@ class NZDir(CatEstimator):
         nsamp = self.config.nsamples
         hist_vals = np.empty((nsamp, self.config.nzbins))
         for i in range(nsamp):
-            bootstrap_indices = np.random.randint(ngal, size=ngal)
+            bootstrap_indices = rng.integers(low=0, high=ngal, size=ngal)
             zarr = self.szvec[bootstrap_indices]
             tmpweight = self.szweights[bootstrap_indices] * weights[bootstrap_indices]
             tmp_hist_vals = np.histogram(zarr, bins=self.zgrid, weights=tmpweight)[0]

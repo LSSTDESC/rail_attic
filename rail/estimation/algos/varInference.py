@@ -36,6 +36,7 @@ class VarInferenceStack(PZSummarizer):
     config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
                           nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
+                          seed=Param(int, 87, msg="random seed"),
                           niter=Param(int, 100, msg="The number of iterations in the variational inference"),
                           nsamples=Param(int, 500, msg="The number of samples used in dirichlet uncertainty"))
     outputs = [('output', QPHandle),
@@ -46,6 +47,7 @@ class VarInferenceStack(PZSummarizer):
         self.zgrid = None
 
     def run(self):
+        rng = np.random.default_rng(seed=self.config.seed)
         test_data = self.get_data('input')
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
         pdf_vals = test_data.pdf(self.zgrid)
@@ -63,7 +65,7 @@ class VarInferenceStack(PZSummarizer):
         # old way of just spitting out a single distribution
         # qp_d = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=alpha_trace))
         # instead, sample and save the samples
-        sample_pz = dirichlet.rvs(alpha_trace, size=self.config.nsamples)
+        sample_pz = dirichlet.rvs(alpha_trace, size=self.config.nsamples, random_state=rng)
 
         qp_d = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=alpha_trace))
 
