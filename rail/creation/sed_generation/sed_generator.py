@@ -1,7 +1,7 @@
 from rail.creation.sed_generation.generator import Generator
 import fsps
 import numpy as np
-from astropy.table import Table
+from astropy.table import Table, hstack
 from ceci.config import StageParameter as Param
 
 
@@ -68,8 +68,9 @@ class FSPSSedGenerator(Generator):
         # validate parameters
         if self.config.min_wavelength < 0:
             raise ValueError("min_wavelength must be positive, not {self.config.min_wavelength}")
-        if self.config.max_wavelength < 0:
-            raise ValueError("max_wavelength must be positive, not {self.config.max_wavelength}")
+        if (self.config.max_wavelength < 0) | (self.config.max_wavelength <= self.config.min_wavelength):
+            raise ValueError("max_wavelength must be positive and greater than min_wavelength,"
+                             " not {self.config.max_wavelength}")
 
     def _get_rest_frame_seds(self, ages, metallicities, velocity_dispersions, gas_ionizations, gas_metallicities,
                              tau_efolding_times, fracs_instantaneous_burst, ages_instantaneous_burst,
@@ -189,4 +190,5 @@ class FSPSSedGenerator(Generator):
 
         if self.rank == 0:
             output_table = Table([wavelengths, fluxes], names=('wavelength', 'spectrum'))
-            self.add_data('output', output_table)
+            output_table_with_params = hstack([output_table, data])
+            self.add_data('output', output_table_with_params)
