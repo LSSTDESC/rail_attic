@@ -281,10 +281,6 @@ def test_SpecSelection(data):
                                              columns=rename_dict)
     data = col_remapper_test(data)
     
-    degrader_WiggleZ = SpecSelection_WiggleZ.make_stage()
-    degrader_WiggleZ(data)
-    degrader_WiggleZ.__repr__()
-    
     degrader_GAMA = SpecSelection_GAMA.make_stage()
     degrader_GAMA(data)
     degrader_GAMA.__repr__()
@@ -334,8 +330,8 @@ def test_SpecSelection_bad_params(N_tot, errortype):
 def test_SpecSelection_bad_colname(data, errortype):
     """Test bad parameters that should raise TypeError"""
     with pytest.raises(errortype):
-        degrader_WiggleZ = SpecSelection_WiggleZ.make_stage()
-        degrader_WiggleZ(data)
+        degrader_GAMA = SpecSelection_GAMA.make_stage()
+        degrader_GAMA(data)
 
 @pytest.mark.parametrize("success_rate_dir, errortype", [("/this/path/should/not/exist", ValueError)])
 def test_SpecSelection_bad_path(success_rate_dir, errortype):
