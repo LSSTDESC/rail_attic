@@ -26,7 +26,7 @@ class SpecSelection(Degrader):
     config_options.update(**{"success_rate_dir":
                              os.path.join(
                                  os.path.dirname(__file__),
-                                 "success_rate_data")})
+                                 "../../../examples/creation/data/success_rate_data")})
 
     def __init__(self, args, comm=None):
         Degrader.__init__(self, args, comm=comm)
