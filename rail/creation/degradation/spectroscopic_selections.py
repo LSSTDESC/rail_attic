@@ -2,8 +2,6 @@
 
 import numpy as np
 from scipy.interpolate import interp1d
-
-
 from rail.creation.degradation import Degrader
 import os
 
@@ -11,10 +9,14 @@ import os
 class SpecSelection(Degrader):
     """
     The super class of spectroscopic selections.
-
     Parameters
     ----------
-    colname: string, the name of the spec survey
+    N_tot: integer, total number of down-sampled, spec-selected galaxies.
+        If N_tot is greater than the number of spec-sepected galaxies, then
+        it will be ignored.
+    downsample: bool, if True, then downsample the pre-selected galaxies
+        to N_tot galaxies.
+    success_rate_dir: string, the path to the success rate files.
     """
 
     name = 'specselection'
@@ -61,16 +63,36 @@ class SpecSelection(Degrader):
 
     def selection(self, data):
         """
-        Selection functions
+        Selection functions. This should be overwritten by the subclasses 
+        corresponding to different spec selections.
         """
 
+    def invalid_cut(self, data):
+        """
+        This function removes entries in the data that have invalid magnitude values 
+        (99.0 or NaN)
+        """
+        self.mask &= (np.abs(data["mag_u_lsst"]) < 99.0) & \
+                    (~np.isnan(data["mag_u_lsst"]))
+        self.mask &= (np.abs(data["mag_g_lsst"]) < 99.0) & \
+                    (~np.isnan(data["mag_g_lsst"]))
+        self.mask &= (np.abs(data["mag_r_lsst"]) < 99.0) & \
+                    (~np.isnan(data["mag_r_lsst"]))
+        self.mask &= (np.abs(data["mag_i_lsst"]) < 99.0) & \
+                    (~np.isnan(data["mag_i_lsst"]))
+        self.mask &= (np.abs(data["mag_z_lsst"]) < 99.0) & \
+                    (~np.isnan(data["mag_z_lsst"]))
+        self.mask &= (np.abs(data["mag_y_lsst"]) < 99.0) & \
+                    (~np.isnan(data["mag_y_lsst"]))
+        
+        
     def downsampling_N_tot(self):
         """
         Method to randomly sample down the objects to a given
         number of data objects.
         """
         N_tot = self.config["N_tot"]
-        N_selected = np.where(self.mask)[0].size
+        N_selected = np.count_nonzero(self.mask)
         if N_tot > N_selected:
             print("Warning: N_tot is greater than the size of spec-selected " +
                   "sample ("+str(N_selected)+"). The spec-selected sample " +
@@ -96,7 +118,7 @@ class SpecSelection(Degrader):
         data = self.get_data('input', allow_missing=True)
         self.validate_colnames(data)
         self.mask = np.product(~np.isnan(data.to_numpy()), axis=1)
-
+        self.invalid_cut(data)
         self.selection(data)
         if self.config["downsample"] is True:
             self.downsampling_N_tot()
@@ -109,57 +131,6 @@ class SpecSelection(Degrader):
         """
         Define how the model is represented and printed.
         """
-
-
-class SpecSelection_WiggleZ(SpecSelection):
-    """
-    The class of spectroscopic selections with WiggleZ.
-    """
-
-    name = 'specselection_wigglez'
-
-    def selection(self, data):
-        """
-        WiggleZ selection function based on Drinkwater+10
-        """
-        print("Applying the selection from WiggleZ survey...")
-        # colour masking
-        colour_mask = (np.abs(data["mag_g_lsst"]) < 99.0) & \
-            (np.abs(data["mag_r_lsst"]) < 99.0)
-        colour_mask &= (np.abs(data["mag_r_lsst"]) < 99.0) & \
-            (np.abs(data["mag_i_lsst"]) < 99.0)
-        colour_mask &= (np.abs(data["mag_u_lsst"]) < 99.0) & \
-            (np.abs(data["mag_i_lsst"]) < 99.0)
-        colour_mask &= (np.abs(data["mag_g_lsst"]) < 99.0) & \
-            (np.abs(data["mag_i_lsst"]) < 99.0)
-        colour_mask &= (np.abs(data["mag_r_lsst"]) < 99.0) & \
-            (np.abs(data["mag_z_lsst"]) < 99.0)
-        # photometric cuts
-        # we cannot reproduce the FUV, NUV, S/N and position matching cuts
-        include = (
-            (data["mag_r_lsst"] > 20.0) &
-            (data["mag_r_lsst"] < 22.5))
-        exclude = (
-            (data["mag_g_lsst"] < 22.5) &
-            (data["mag_i_lsst"] < 21.5) &
-            (data["mag_r_lsst"]-data["mag_i_lsst"] <
-             (data["mag_g_lsst"]-data["mag_r_lsst"] - 0.1)) &
-            (data["mag_r_lsst"]-data["mag_i_lsst"] < 0.4) &
-            (data["mag_g_lsst"]-data["mag_r_lsst"] > 0.6) &
-            (data["mag_r_lsst"]-data["mag_z_lsst"] < 0.7 *
-             (data["mag_g_lsst"]-data["mag_r_lsst"])))
-        mask = (include & ~exclude)
-        # update the internal state
-        self.mask *= mask
-
-    def __repr__(self):
-        """
-        Define how the model is represented and printed.
-        """
-        # start message
-        printMsg = "Applying the WiggleZ selection."
-
-        return printMsg
 
 
 class SpecSelection_GAMA(SpecSelection):
@@ -175,7 +146,7 @@ class SpecSelection_GAMA(SpecSelection):
         """
 
         print("Applying the selection from GAMA survey...")
-        self.mask *= (data["mag_r_lsst"] < 17.7)
+        self.mask *= (data["mag_r_lsst"] < 19.87)
 
     def __repr__(self):
         """
@@ -255,16 +226,15 @@ class SpecSelection_DEEP2(SpecSelection):
         its cut at z~0.75 and the B-R/R-I distribution (Newman+13, Fig. 12)
         NOTE: We cannot apply the surface brightness cut and do not apply the
               Gaussian weighted sampling near the original colour cuts.
-
         """
         mask = (
             (data["mag_r_lsst"] > 18.5) &
-            (data["mag_r_lsst"] < 24.0) & (  # 24.1
-                (data["mag_g_lsst"]-data["mag_r_lsst"] < 2.0 * \
-                 (data["mag_r_lsst"]-data["mag_i_lsst"]) - 0.4) |
+            (data["mag_r_lsst"] < 24.1) & (  # 24.1
+                (data["mag_g_lsst"]-data["mag_r_lsst"] < 2.45 * \
+                 (data["mag_r_lsst"]-data["mag_i_lsst"]) - 0.2976) |
                 # 2.45, 0.2976
                 (data["mag_r_lsst"]-data["mag_i_lsst"] > 1.1) |
-                (data["mag_g_lsst"]-data["mag_r_lsst"] < 0.2)))  # 0.5
+                (data["mag_g_lsst"]-data["mag_r_lsst"] < 0.5)))  # 0.5
         # update the internal state
         self.mask &= mask
 
@@ -411,9 +381,7 @@ class SpecSelection_zCOSMOS(SpecSelection):
     def speczSuccess(self, data):
         """
         Spec-z success rate as function of redshift (x) and I_AB (y) read of
-        Figure 3 in Lilly+09 for zCOSMOS bright sample. Do a spline
-        interpolation of the 2D data and save it as pickle on the disk for
-        faster reloads
+        Figure 3 in Lilly+09 for zCOSMOS bright sample.
         """
         success_rate_dir = self.config["success_rate_dir"]
         x = np.loadtxt(os.path.join(
@@ -426,16 +394,16 @@ class SpecSelection_zCOSMOS(SpecSelection):
 
         rates = np.loadtxt(os.path.join(
                 success_rate_dir, "zCOSMOS_success.txt"))
-        ratio_list = []
+        ratio_list = np.zeros(len(pixels_y))
         for i, py in enumerate(pixels_y):
             if (py >= rates.shape[0]) or \
-               (pixels_x[i] >= rates.shape[1]):
-                rate = 0
+               (pixels_x[i] >= rates.shape[1]) or \
+                (py == 0) or \
+                (pixels_x[i] == 0):
+                ratio_list[i] = 0
             else:
-                rate = rates[pixels_y[i]][pixels_x[i]]
-            ratio_list.append(rate)
+                ratio_list[i] = rates[pixels_y[i]-1][pixels_x[i]-1]
 
-        ratio_list = np.array(ratio_list)
         randoms = np.random.uniform(size=data["mag_i_lsst"].size)
         mask = (randoms <= ratio_list)
         self.mask &= mask
@@ -493,16 +461,14 @@ class SpecSelection_HSC(SpecSelection):
         pixels_y = pixels_y - 1
         pixels_x = pixels_x - 1
 
-        ratio_list = []
+        ratio_list = np.zeros(len(pixels_y))
         for i, py in enumerate(pixels_y):
             if (py >= rates.shape[0]) or\
                (pixels_x[i] >= rates.shape[1]):
-                rate = 0
+                ratio_list[i] = 0
             else:
-                rate = rates[pixels_y[i]][pixels_x[i]]
-            ratio_list.append(rate)
+                ratio_list[i] = rates[pixels_y[i]][pixels_x[i]]
 
-        ratio_list = np.array(ratio_list)
         randoms = np.random.uniform(size=data["mag_i_lsst"].size)
         mask = (randoms <= ratio_list)
         self.mask &= mask
