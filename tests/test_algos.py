@@ -119,7 +119,7 @@ def test_flexzboost():
                          'regression_params': {'max_depth': 8,
                                                'objective':
                                                'reg:squarederror',
-                                               'nthread': 1},
+                                               'nthread': 4},
                          'hdf5_groupname': 'photometry',
                          'model': 'model.tmp'}
     estim_config_dict = {'hdf5_groupname': 'photometry',
