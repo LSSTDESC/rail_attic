@@ -104,7 +104,7 @@ class Inform_FZBoost(CatInformer):
                           bands=Param(list, def_bands, msg="bands to use in estimation"),
                           err_bands=Param(list, def_err_bands, msg="error column names to use in estimation"),
                           ref_band=Param(str, "mag_i_lsst", msg="band to use in addition to colors"),
-                          regression_params=Param(dict, {'max_depth': 8, 'objective': 'reg:squarederror', 'nthread': 1},
+                          regression_params=Param(dict, {'max_depth': 8, 'objective': 'reg:squarederror', 'nthread': 4},
                                                   msg="dictionary of options passed to flexcode, includes "
                                                   "max_depth (int), and objective, which should be set "
                                                   " to reg:squarederror"))
