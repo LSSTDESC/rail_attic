@@ -27,16 +27,19 @@ class Modeler(RailStage):
 
         Parameters
         ----------
-        [The paramters depend entirely on the modeling approach!]
+        [The parameters depend entirely on the modeling approach!]
 
         Returns
         -------
         [This will definitely be a file, but the filetype and format depend entirely on the modeling approach!]
         """
+        config_options = RailStage.config_options.copy()
+        inputs = [('base', DataHandle)]
+        outputs = [('model', ModelHandle)]
         self.config.update(**kwargs)
         self.run()
         self.finalize()
-        return self.get_handle('output')
+        return self.get_handle('model')
 
 class Creator(RailStage):
     """Base class for Creators that generate synthetic photometric data from a model.

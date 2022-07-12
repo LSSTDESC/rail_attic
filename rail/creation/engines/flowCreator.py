@@ -12,6 +12,12 @@ from pzflow import Flow
 from rail.core.data import FlowHandle, PqHandle, QPHandle, TableHandle
 from rail.creation.creator import Creator, Modeler, PosteriorCalculator
 
+def newrange(mins, maxs):
+    newmins, newmaxs = [], []
+    for i in range(len(mins) - 1):
+        newmins.append(mins[i] - maxs[i+1])
+        newmaxs.append(maxs[i] + mins[i+1])
+    return(newmins, newmaxs)
 
 class FlowModeler(Modeler):
     """Modeler wrapper for a PZFlow Flow object.
@@ -86,7 +92,7 @@ class FlowModeler(Modeler):
             mag_idx = [columns.get_loc(band) for band in color_config["bands"]]
 
             # convert ranges above to the corresponding color ranges
-            CONVERT MAG MINS AND MAXES TO COLOR MINS AND MAXES
+            # CONVERT MAG MINS AND MAXES TO COLOR MINS AND MAXES
             color_cols =
 
             # chain all the bijectors together
@@ -104,7 +110,28 @@ class FlowModeler(Modeler):
 
         # build the flow
         flow = Flow(train_set.columns, bijector=bijector)
-        HOW TO SAVE THIS?
+
+    def run(self):
+        """
+
+        """
+        if self.config.base:
+            training_data = self.get_data('base')[self.config.base]
+        else:  #pragma:  no cover
+            training_data = self.get_data('base')
+
+        if self.config.num_training_epochs  :
+            n_epoch = self.get_data('input')[self.config.num_training_epochs]
+        else:  #pragma:  no cover
+            n_epoch = self.get_data('input')
+
+
+        # train the flow
+        losses = flow.train(training_data, epochs=n_epoch, verbose=True)
+
+        # save the flow
+        self.add_data("output", flow)
+        flow.save(self.config.model_file)
 
 
 class FlowCreator(Creator):

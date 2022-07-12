@@ -11,3 +11,4 @@ run_params:
   data_maxs: [3., 27.79, 29.04, 29.06, 28.62, 27.98, 27.05]
   spline_knots: 16
   num_training_epochs: 30
+  modelfile': 'example_flow.pkl'

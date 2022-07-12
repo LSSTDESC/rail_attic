@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pzflow
 from pzflow.examples import get_example_flow, get_galaxy_data
-from rail.creation.engines import FlowCreator, FlowPosterior
+from rail.creation.engines import FlowModeler, FlowCreator, FlowPosterior
 from rail.core.data import TableHandle
 from rail.core.stage import RailStage
 
@@ -29,6 +29,11 @@ def test_flowcreator_sample():
     #assert flow_samples.equals(FlowCr2_samples)
     os.remove(FlowCr.get_output(FlowCr.get_aliased_tag('output'), final_name=True))
     os.remove(FlowCr2.get_output(FlowCr2.get_aliased_tag('output'), final_name=True))
+
+def test_flowcreator_model():
+    """Test that a model can be trained? [needs a real test comparing to values]"""
+    pass
+    # FlowMod = FlowModeler.make_stage(flow_file='')
 
 
 def test_FlowCreator_pz_estimate():
