@@ -496,6 +496,7 @@ class BPZ_lite(CatEstimator):
 
         pdfs = np.zeros((ng, nz))
         zmode = np.zeros(ng)
+        zmean = np.zeros(ng)
         flux_temps = self.flux_templates
         zgrid = self.zgrid
         # Loop over all ng galaxies!
@@ -507,10 +508,11 @@ class BPZ_lite(CatEstimator):
                                                    kernel, flux,
                                                    flux_err, mag_0,
                                                    zgrid)
+            zmean[i] = (zgrid * pdfs[i]).sum() / pdfs[i].sum()
         # remove the keys added to the data file by BPZ
         test_data.pop('flux', None)
         test_data.pop('flux_err', None)
         test_data.pop('mags', None)
         qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=pdfs))
-        qp_dstn.set_ancil(dict(zmode=zmode))
+        qp_dstn.set_ancil(dict(zmode=zmode, zmean=zmean))
         self._do_chunk_output(qp_dstn, start, end, first)
