@@ -56,7 +56,7 @@ class GridSelection(Degrader):
 
         if self.config.redshift_cut < 0:
             raise ValueError("redshift cut must be positive")
-        if (self.config.percentile_cut < 0) | (self.config.percentile_cut >= 100):
+        if (self.config.percentile_cut < 0) | (self.config.percentile_cut > 100):
             raise ValueError('percentile cut off must be between 0 and 100')
 
     def run(self):
@@ -161,7 +161,7 @@ class GridSelection(Degrader):
         data_hsc_like_redshift_cut = data_hsc_like[data_hsc_like['redshift'] <= data_hsc_like['max_specz']]
 
         # If making a redshift cut, do that now
-        if self.config['redshift_cut'] != 100:
+        if self.config['redshift_cut'] != 100:  # pragma: no cover
             data_hsc_like_redshift_cut = data_hsc_like_redshift_cut[data_hsc_like_redshift_cut['redshift'] <= self.config['redshift_cut']]
 
         # This picks galaxies for the training set
