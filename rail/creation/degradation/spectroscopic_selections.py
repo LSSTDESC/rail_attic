@@ -136,6 +136,7 @@ class SpecSelection(Degrader):
 class SpecSelection_GAMA(SpecSelection):
     """
     The class of spectroscopic selections with GAMA.
+    The GAMA survey covers an area of 286 deg^2, with ~238000 objects
     """
 
     name = 'specselection_gama'
@@ -161,15 +162,17 @@ class SpecSelection_GAMA(SpecSelection):
 class SpecSelection_BOSS(SpecSelection):
     """
     The class of spectroscopic selections with BOSS.
+    BOSS selection function is based on
+    http://www.sdss3.org/dr9/algorithms/boss_galaxy_ts.php
+    The selection has changed slightly compared to Dawson+13
+    BOSS covers an area of 9100 deg^2 with 893,319 galaxies.
     """
 
     name = 'specselection_boss'
 
     def selection(self, data):
         """
-        BOSS selection function based on
-        http://www.sdss3.org/dr9/algorithms/boss_galaxy_ts.php
-        The selection has changed slightly compared to Dawson+13
+        The BOSS selection function.
         """
 
         print("Applying the selection from BOSS survey...")
@@ -215,6 +218,7 @@ class SpecSelection_BOSS(SpecSelection):
 class SpecSelection_DEEP2(SpecSelection):
     """
     The class of spectroscopic selections with DEEP2.
+    DEEP2 has a sky coverage of 2.8 deg^2 with ~53000 spectra
     """
 
     name = 'specselection_deep2'
@@ -281,6 +285,7 @@ class SpecSelection_DEEP2(SpecSelection):
 class SpecSelection_VVDSf02(SpecSelection):
     """
     The class of spectroscopic selections with VVDSf02.
+    It covers an area of 0.5 deg^2 with ~10000 sources
     """
 
     name = 'specselection_VVDSf02'
@@ -364,6 +369,7 @@ class SpecSelection_VVDSf02(SpecSelection):
 class SpecSelection_zCOSMOS(SpecSelection):
     """
     The class of spectroscopic selections with zCOSMOS
+    It covers an area of 1.7 deg^2 with ~20000 galaxies.
     """
 
     name = 'specselection_zCOSMOS'
