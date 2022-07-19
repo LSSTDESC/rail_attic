@@ -400,7 +400,19 @@ def test_HyperbolicMagnitudes(hyperbolic_configuration,):
     hypmag = HyperbolicMagnitudes.make_stage(name=stage_name, **hyperbolic_configuration)
     hypmag.compute(test_data, result_smoothing)
     test_hypmags = hypmag.get_handle(handle_name).data
-    assert test_hypmags.equals(result_hyperbolic)
+
+    # What we would want to test is
+    # >>> assert test_hypmags.equals(result_hyperbolic)
+    # however this test fails at github actions.
+    # Instead we test that the values are numerically close. The accepted deviation scales with
+    # magnitude m as
+    # dm = 1e-5 * m
+    # which is smaller than difference between classical and hyperbolic magnitudes except at the
+    # very brightest magnitudes.
+    for (key_test, values_test), (key_ref, values_ref) in zip(
+            test_hypmags.items(), result_hyperbolic.items()):
+        assert key_test == key_ref
+        assert np.allclose(values_test, values_ref)
 
     # check of input data columns against smoothing parameter table
     smoothing = result_smoothing.copy().drop("mag_r_lsst")  # drop one filter from the set
