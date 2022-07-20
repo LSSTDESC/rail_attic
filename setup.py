@@ -10,6 +10,9 @@ install_requires = [
     "qp @ git+https://github.com/LSSTDESC/qp",
 ]
 
+# dependencies for the core module
+core_extras = ["hyperbolic @ git+https://github.com/jlvdb/hyperbolic"]
+
 # dependencies for the Creation module
 creation_extras = ["pzflow"]
 
@@ -44,6 +47,7 @@ evaluation_extras = ["seaborn"]
 
 # compile the extras_require dictionary
 extras_require = dict()
+extras_require["core"] = core_extras
 extras_require["creation"] = creation_extras
 extras_require["estimation"] = estimation_extras + list(
     set(sum(estimation_codes.values(), []))
@@ -55,7 +59,8 @@ extras_require["evaluation"] = evaluation_extras
 extras_require["base"] = list(
     set(
         (
-            extras_require["creation"]
+            extras_require["core"]
+            + extras_require["creation"]
             + extras_require["estimation"]
             + extras_require["evaluation"]
         )
