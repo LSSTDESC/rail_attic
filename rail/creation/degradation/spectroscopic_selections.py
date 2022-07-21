@@ -184,7 +184,7 @@ class SpecSelection_BOSS(SpecSelection):
         The BOSS selection function.
         """
         
-        nondetect_val = config.nondetect_val
+        nondetect_val = self.config.nondetect_val
         
         print("Applying the selection from BOSS survey...")
         mask = (np.abs(data["mag_g_lsst"]) < nondetect_val) & \
