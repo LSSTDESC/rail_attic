@@ -3,6 +3,7 @@
 import numpy as np
 from scipy.interpolate import interp1d
 from rail.creation.degradation import Degrader
+from ceci.config import StageParameter as Param
 import os
 
 
@@ -21,12 +22,18 @@ class SpecSelection(Degrader):
 
     name = 'specselection'
     config_options = Degrader.config_options.copy()
-    config_options.update(**{"N_tot": 10000})
-    config_options.update(**{"downsample": True})
-    config_options.update(**{"success_rate_dir":
-                             os.path.join(
+    config_options.update(N_tot=Param(int, 10000, msg="Number of selected sources"),
+                         nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
+                         downsample=Param(bool, True, msg="If true, downsample the selected sources into a total number of N_tot"),
+                         success_rate_dir=Param(str, os.path.join(
                                  os.path.dirname(__file__),
-                                 "../../../examples/creation/data/success_rate_data")})
+                                 "../../../examples/creation/data/success_rate_data"), msg="The path to the directory containing success rate files."))
+                                      #**{"N_tot": 10000})
+    #config_options.update(**{"downsample": True})
+    #config_options.update(**{"success_rate_dir":
+    #                         os.path.join(
+    #                             os.path.dirname(__file__),
+    #                            "../../../examples/creation/data/success_rate_data")})
 
     def __init__(self, args, comm=None):
         Degrader.__init__(self, args, comm=comm)
@@ -39,12 +46,12 @@ class SpecSelection(Degrader):
         Validate all the settings.
         """
 
-        if self.config["N_tot"]<0:
+        if self.config.N_tot<0:
             raise ValueError("Total number of selected sources must be a "
                             "positive integer.")
-        if os.path.exists(self.config["success_rate_dir"]) is not True:
+        if os.path.exists(self.config.success_rate_dir) is not True:
             raise ValueError("Success rate path: "
-                             + self.config["success_rate_dir"]
+                             + self.config.success_rate_dir
                              + " does not exist!")
 
     def validate_colnames(self, data):
@@ -70,19 +77,21 @@ class SpecSelection(Degrader):
     def invalid_cut(self, data):
         """
         This function removes entries in the data that have invalid magnitude values 
-        (99.0 or NaN)
+        (nondetect_val or NaN)
         """
-        self.mask &= (np.abs(data["mag_u_lsst"]) < 99.0) & \
+        nondetect_val = self.config.nondetect_val
+        
+        self.mask &= (np.abs(data["mag_u_lsst"]) < nondetect_val) & \
                     (~np.isnan(data["mag_u_lsst"]))
-        self.mask &= (np.abs(data["mag_g_lsst"]) < 99.0) & \
+        self.mask &= (np.abs(data["mag_g_lsst"]) < nondetect_val) & \
                     (~np.isnan(data["mag_g_lsst"]))
-        self.mask &= (np.abs(data["mag_r_lsst"]) < 99.0) & \
+        self.mask &= (np.abs(data["mag_r_lsst"]) < nondetect_val) & \
                     (~np.isnan(data["mag_r_lsst"]))
-        self.mask &= (np.abs(data["mag_i_lsst"]) < 99.0) & \
+        self.mask &= (np.abs(data["mag_i_lsst"]) < nondetect_val) & \
                     (~np.isnan(data["mag_i_lsst"]))
-        self.mask &= (np.abs(data["mag_z_lsst"]) < 99.0) & \
+        self.mask &= (np.abs(data["mag_z_lsst"]) < nondetect_val) & \
                     (~np.isnan(data["mag_z_lsst"]))
-        self.mask &= (np.abs(data["mag_y_lsst"]) < 99.0) & \
+        self.mask &= (np.abs(data["mag_y_lsst"]) < nondetect_val) & \
                     (~np.isnan(data["mag_y_lsst"]))
         
         
@@ -91,7 +100,7 @@ class SpecSelection(Degrader):
         Method to randomly sample down the objects to a given
         number of data objects.
         """
-        N_tot = self.config["N_tot"]
+        N_tot = self.config.N_tot
         N_selected = np.count_nonzero(self.mask)
         if N_tot > N_selected:
             print("Warning: N_tot is greater than the size of spec-selected " +
@@ -120,7 +129,7 @@ class SpecSelection(Degrader):
         self.mask = np.product(~np.isnan(data.to_numpy()), axis=1)
         self.invalid_cut(data)
         self.selection(data)
-        if self.config["downsample"] is True:
+        if self.config.downsample is True:
             self.downsampling_N_tot()
 
         data_selected = data.iloc[np.where(self.mask == 1)[0]]
@@ -136,6 +145,7 @@ class SpecSelection(Degrader):
 class SpecSelection_GAMA(SpecSelection):
     """
     The class of spectroscopic selections with GAMA.
+    The GAMA survey covers an area of 286 deg^2, with ~238000 objects
     """
 
     name = 'specselection_gama'
@@ -161,22 +171,26 @@ class SpecSelection_GAMA(SpecSelection):
 class SpecSelection_BOSS(SpecSelection):
     """
     The class of spectroscopic selections with BOSS.
+    BOSS selection function is based on
+    http://www.sdss3.org/dr9/algorithms/boss_galaxy_ts.php
+    The selection has changed slightly compared to Dawson+13
+    BOSS covers an area of 9100 deg^2 with 893,319 galaxies.
     """
 
     name = 'specselection_boss'
 
     def selection(self, data):
         """
-        BOSS selection function based on
-        http://www.sdss3.org/dr9/algorithms/boss_galaxy_ts.php
-        The selection has changed slightly compared to Dawson+13
+        The BOSS selection function.
         """
-
+        
+        nondetect_val = config.nondetect_val
+        
         print("Applying the selection from BOSS survey...")
-        mask = (np.abs(data["mag_g_lsst"]) < 99.0) & \
-            (np.abs(data["mag_r_lsst"]) < 99.0)
-        mask &= (np.abs(data["mag_r_lsst"]) < 99.0) & \
-            (np.abs(data["mag_i_lsst"]) < 99.0)
+        mask = (np.abs(data["mag_g_lsst"]) < nondetect_val) & \
+            (np.abs(data["mag_r_lsst"]) < nondetect_val)
+        mask &= (np.abs(data["mag_r_lsst"]) < nondetect_val) & \
+            (np.abs(data["mag_i_lsst"]) < nondetect_val)
         # cut quantities (unchanged)
         c_p = 0.7 * (data["mag_g_lsst"]-data["mag_r_lsst"]) + 1.2 * \
             (data["mag_r_lsst"]-data["mag_i_lsst"] - 0.18)
@@ -215,6 +229,7 @@ class SpecSelection_BOSS(SpecSelection):
 class SpecSelection_DEEP2(SpecSelection):
     """
     The class of spectroscopic selections with DEEP2.
+    DEEP2 has a sky coverage of 2.8 deg^2 with ~53000 spectra
     """
 
     name = 'specselection_deep2'
@@ -247,7 +262,7 @@ class SpecSelection_DEEP2(SpecSelection):
         success_R_bins = np.arange(18.9, 24.1 + 0.01, 0.2)
         success_R_centers = (success_R_bins[1:] + success_R_bins[:-1]) / 2.0
         # paper has given 1 - [sucess rate] in the histogram
-        success_rate_dir = self.config["success_rate_dir"]
+        success_rate_dir = self.config.success_rate_dir
         success_R_rate = np.loadtxt(os.path.join(success_rate_dir,
                                                  "DEEP2_success.txt"))
         # interpolate the success rate as probability of being selected with
@@ -281,6 +296,7 @@ class SpecSelection_DEEP2(SpecSelection):
 class SpecSelection_VVDSf02(SpecSelection):
     """
     The class of spectroscopic selections with VVDSf02.
+    It covers an area of 0.5 deg^2 with ~10000 sources
     """
 
     name = 'specselection_VVDSf02'
@@ -308,7 +324,7 @@ class SpecSelection_VVDSf02(SpecSelection):
         """
         success_I_bins = np.arange(17.0, 24.0 + 0.01, 0.5)
         success_I_centers = (success_I_bins[1:] + success_I_bins[:-1]) / 2.0
-        success_rate_dir = self.config["success_rate_dir"]
+        success_rate_dir = self.config.success_rate_dir
         success_I_rate = np.loadtxt(os.path.join(
                 success_rate_dir, "VVDSf02_I_success.txt"))
         # interpolate the success rate as probability of being selected with
@@ -364,6 +380,7 @@ class SpecSelection_VVDSf02(SpecSelection):
 class SpecSelection_zCOSMOS(SpecSelection):
     """
     The class of spectroscopic selections with zCOSMOS
+    It covers an area of 1.7 deg^2 with ~20000 galaxies.
     """
 
     name = 'specselection_zCOSMOS'
@@ -383,7 +400,7 @@ class SpecSelection_zCOSMOS(SpecSelection):
         Spec-z success rate as function of redshift (x) and I_AB (y) read of
         Figure 3 in Lilly+09 for zCOSMOS bright sample.
         """
-        success_rate_dir = self.config["success_rate_dir"]
+        success_rate_dir = self.config.success_rate_dir
         x = np.loadtxt(os.path.join(
                 success_rate_dir, "zCOSMOS_z_sampling.txt"))
         y = np.loadtxt(os.path.join(
@@ -446,7 +463,7 @@ class SpecSelection_HSC(SpecSelection):
         galaxies with only photometry in HSC wide field (application galaxies) was computed for each pixel. We divide
         the data into the same pixels and randomly select galaxies into the training sample based on the HSC ratios
         """
-        success_rate_dir = self.config["success_rate_dir"]
+        success_rate_dir = self.config.success_rate_dir
         x_edge = np.loadtxt(os.path.join(
                 success_rate_dir, "hsc_i_binedge.txt"))
         y_edge = np.loadtxt(os.path.join(
