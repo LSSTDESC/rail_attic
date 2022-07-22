@@ -475,12 +475,11 @@ class SpecSelection_HSC(SpecSelection):
         percentile_cut = self.config.percentile_cut
 
         mask_keep = np.ones_like(data[self.config.colnames['i']])
-        if percentile_cut != 100:
+        if percentile_cut != 100:   #pragma: no cover
             pixels_y_unique = np.unique(pixels_y)
             pixels_x_unique = np.unique(pixels_x)
 
             for y in pixels_y_unique:
-                print(y)
                 for x in pixels_x_unique:
                     ind_inpix = np.where((pixels_y==y) * (pixels_x==x))[0]
                     if ind_inpix.size == 0:
