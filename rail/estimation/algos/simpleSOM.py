@@ -7,6 +7,16 @@ from rail.core.data import QPHandle
 import qp
 
 
+def_bands = ['u', 'g', 'r', 'i', 'z', 'y']
+def_cols = [f"mag_{band}_lsst" for band in def_bands]
+def_maglims = dict(mag_u_lsst=27.79,
+                   mag_g_lsst=29.04,
+                   mag_r_lsst=29.06,
+                   mag_i_lsst=28.62,
+                   mag_z_lsst=27.98,
+                   mag_y_lsst=27.05)
+
+
 def _computemagcolordata(data, ref_column_name, column_names, justcolors):
     if not justcolors:
         coldata = np.array(data[ref_column_name])
@@ -57,14 +67,13 @@ class Inform_SimpleSOMSummarizer(CatInformer):
       pickle file containing the `minisom` SOM object that
     will be used by the estimation/summarization stage
     """
-    bands = ['u', 'g', 'r', 'i', 'z', 'y']
-    default_usecols = [f"mag_{band}_lsst" for band in bands]
-
     name = 'Inform_SimpleSOM'
     config_options = CatInformer.config_options.copy()
-    config_options.update(usecols=Param(list, default_usecols, msg="columns used to construct SOM"),
+    config_options.update(usecols=Param(list, def_cols, msg="columns used to construct SOM"),
                           use_only_colors=Param(bool, False, msg="if True, will construct SOM using all colors, if False, will use one magnitude and N-1 colors"),
                           ref_column_name=Param(str, 'mag_i_lsst', msg="name for mag column used if use_only_magnitudes is True"),
+                          nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
+                          mag_limits=Param(dict, def_maglims, msg="1 sigma mag limits"),
                           seed=Param(int, 0, msg="Random number seed"),
                           m_dim=Param(int, 31, msg="number of cells in SOM y dimension"),
                           n_dim=Param(int, 31, msg="number of cells in SOM x dimension"),
@@ -87,8 +96,17 @@ class Inform_SimpleSOMSummarizer(CatInformer):
             training_data = self.get_data('input')[self.config.hdf5_groupname]
         else:  # pragma:  no cover
             training_data = self.get_data('input')
+        # replace nondetects
+        for col in self.config.usecols:
+            if np.isnan(self.config.nondetect_val):  # pragma: no cover
+                mask = np.isnan(training_data[col])
+            else:
+                mask = np.isclose(training_data[col], self.config.nondetect_val)
+            training_data[col][mask] = self.config.mag_limits[col]
+
         colors = _computemagcolordata(training_data, self.config.ref_column_name,
                                       self.config.usecols, self.config.use_only_colors)
+
         som = MiniSom(self.config.n_dim, self.config.m_dim, colors.shape[1],
                       sigma=self.config.som_sigma,
                       learning_rate=self.config.som_learning_rate,
@@ -110,6 +128,10 @@ class SimpleSOMSummarizer(SZPZSummarizer):
     empirical N(z) consisting of the normalized histogram
     of spec-z values contained in the same SOM cell as
     each photometric galaxy.
+    Note that several parameters are stored in the model file,
+    e.g. the columns used. This ensures that the same columns
+    used in constructing the SOM are used when finding the
+    winning SOM cell with the test data.
 
     Parameters:
     -----------
@@ -140,6 +162,8 @@ class SimpleSOMSummarizer(SZPZSummarizer):
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
                           nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
                           hdf5_groupname=Param(str, "photometry", msg="name of hdf5 group for data, if None, then set to ''"),
+                          nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
+                          mag_limits=Param(dict, def_maglims, msg="1 sigma mag limits"),
                           use_only_colors=Param(bool, False, msg="if True, will construct SOM using all colors, if False, will use one magnitude and N-1 colors"),
                           spec_groupname=Param(str, "photometry", msg="name of hdf5 group for spec data, if None, then set to ''"),
                           seed=Param(int, 12345, msg="random seed"),
@@ -177,6 +201,19 @@ class SimpleSOMSummarizer(SZPZSummarizer):
         if self.config.redshift_colname not in spec_data.keys():  # pragma: no cover
             raise ValueError(f"redshift column {self.config.redshift_colname} not found in spec_data")
         sz = spec_data[self.config.redshift_colname]
+        for col in self.usecols:
+            if col not in test_data.keys():  # pragma: no cover
+                raise ValueError(f"data column {col} not found in test_data")
+
+        # replace nondetects
+        dsets = [test_data, spec_data]
+        for col in self.usecols:
+            for dset in dsets:
+                if np.isnan(self.config.nondetect_val):  # pragma: no cover
+                    mask = np.isnan(dset[col])
+                else:
+                    mask = np.isclose(dset[col], self.config.nondetect_val)
+                dset[col][mask] = self.config.mag_limits[col]
 
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins + 1)
         self.bincents = 0.5 * (self.zgrid[1:] + self.zgrid[:-1])
@@ -200,6 +237,7 @@ class SimpleSOMSummarizer(SZPZSummarizer):
                                            self.usecols, self.config.use_only_colors)
         spec_colors = _computemagcolordata(spec_data, self.ref_column_name,
                                            self.usecols, self.config.use_only_colors)
+
         phot_som_coords = np.array([self.som.winner(x) for x in phot_colors]).T
         spec_som_coords = np.array([self.som.winner(x) for x in spec_colors]).T
         phot_pixel_coords = np.ravel_multi_index(phot_som_coords, (self.n_dim, self.m_dim))
