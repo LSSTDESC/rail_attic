@@ -83,11 +83,9 @@ class SpecSelection(Degrader):
             if band not in self.config.colnames.keys():
                 continue
             colname = self.config.colnames[band]
-            if colname in data.columns:
-                self.mask &= (np.abs(data[colname]) < nondetect_val) & \
+            self.mask &= (np.abs(data[colname]) < nondetect_val) & \
                     (~np.isnan(data[colname]))
-            else:
-                continue
+            
 
     def downsampling_N_tot(self):
         """
