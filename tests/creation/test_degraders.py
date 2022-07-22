@@ -297,11 +297,15 @@ def test_SpecSelection(data):
     degrader_VVDSf02(data)
     degrader_VVDSf02.__repr__()
     
-    degrader_zCOSMOS = SpecSelection_zCOSMOS.make_stage()
+    degrader_zCOSMOS = SpecSelection_zCOSMOS.make_stage(colnames={'i':'i','redshift':'redshift'})
     degrader_zCOSMOS(data)
     degrader_zCOSMOS.__repr__()
     
     degrader_HSC = SpecSelection_HSC.make_stage()
+    degrader_HSC(data)
+    degrader_HSC.__repr__()
+    
+    degrader_HSC = SpecSelection_HSC.make_stage(percentile_cut=70)
     degrader_HSC(data)
     degrader_HSC.__repr__()
     
