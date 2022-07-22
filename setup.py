@@ -16,6 +16,7 @@ creation_extras = ["pzflow"]
 # dependencies required for all estimators in the Estimation module
 estimation_extras = [
     "matplotlib",
+    "minisom",
     "pyarrow",
     "pyyaml",
     "scipy>=1.5.2",
