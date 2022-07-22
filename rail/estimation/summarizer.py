@@ -141,7 +141,7 @@ class SZPZSummarizer(RailStage):
             The object encapsulating the trained model.
         """
         model = kwargs.get('model', None)
-        if model is None or model == 'None':
+        if model is None or model == 'None':  # pragma: no cover
             self.model = None
             return self.model
         if isinstance(model, str):
