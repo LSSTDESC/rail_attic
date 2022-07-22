@@ -297,7 +297,7 @@ def test_SpecSelection(data):
     degrader_VVDSf02(data)
     degrader_VVDSf02.__repr__()
     
-    degrader_zCOSMOS = SpecSelection_zCOSMOS.make_stage(colnames={'i':'lsst_i_mag','redshift':'redshift'})
+    degrader_zCOSMOS = SpecSelection_zCOSMOS.make_stage(colnames={'i':'mag_i_lsst','redshift':'redshift'})
     degrader_zCOSMOS(data)
     degrader_zCOSMOS.__repr__()
     
