@@ -27,13 +27,13 @@ class SpecSelection(Degrader):
                          downsample=Param(bool, True, msg="If true, downsample the selected sources into a total number of N_tot"),
                          success_rate_dir=Param(str, os.path.join(
                                  os.path.dirname(__file__),
-                                 "../../../examples/creation/data/success_rate_data"), msg="The path to the directory containing success rate files."))
-                                      #**{"N_tot": 10000})
-    #config_options.update(**{"downsample": True})
-    #config_options.update(**{"success_rate_dir":
-    #                         os.path.join(
-    #                             os.path.dirname(__file__),
-    #                            "../../../examples/creation/data/success_rate_data")})
+                                 "../../../examples/creation/data/success_rate_data"),
+                                                msg="The path to the directory containing success rate files."),
+                         percentile_cut=Param(int, 100, msg="cut redshifts above this percentile"),
+                         colnames=Param(dict, {**{band: 'mag_'+band+'_lsst' for band in 'ugrizy'},**{'redshift':'redshift'}},
+                                        msg="a dictionary that includes necessary columns\
+                         (magnitudes, colors and redshift) for selection. For magnitudes, the keys are ugrizy; for colors, the keys are, \
+                         for example, gr standing for g-r; for redshift, the key is 'redshift'"))
 
     def __init__(self, args, comm=None):
         Degrader.__init__(self, args, comm=comm)
@@ -56,45 +56,39 @@ class SpecSelection(Degrader):
 
     def validate_colnames(self, data):
         """
-        Validate the column names of data table to make sure they have
-        the format of mag_{band}_lsst, where band is in {ugrizy}
+        Validate the column names of data table to make sure they have necessary information
+        for each selection.
+        colnames: a list of column names.
         """
-        standard_colnames = [f'mag_{band}_lsst' for band in 'ugrizy']
-        check = all(item in data.columns for item in standard_colnames)
+        colnames=self.config.colnames.values()
+        check = all(item in data.columns for item in colnames)
         if check is not True:
-            raise ValueError("Column names in the data is not standardized." +
-                             "The standard column names should be " +
-                             str(standard_colnames)+". \n" +
-                             "You can make a ColumnMapper stage to change " +
-                             "column names.")
+            raise ValueError("Columns in the data are not enough for the selection." +
+                             "The data should contain " +
+                             str(list(colnames))+". \n")
 
     def selection(self, data):
         """
-        Selection functions. This should be overwritten by the subclasses 
+        Selection functions. This should be overwritten by the subclasses
         corresponding to different spec selections.
         """
 
     def invalid_cut(self, data):
         """
-        This function removes entries in the data that have invalid magnitude values 
+        This function removes entries in the data that have invalid magnitude values
         (nondetect_val or NaN)
         """
         nondetect_val = self.config.nondetect_val
-        
-        self.mask &= (np.abs(data["mag_u_lsst"]) < nondetect_val) & \
-                    (~np.isnan(data["mag_u_lsst"]))
-        self.mask &= (np.abs(data["mag_g_lsst"]) < nondetect_val) & \
-                    (~np.isnan(data["mag_g_lsst"]))
-        self.mask &= (np.abs(data["mag_r_lsst"]) < nondetect_val) & \
-                    (~np.isnan(data["mag_r_lsst"]))
-        self.mask &= (np.abs(data["mag_i_lsst"]) < nondetect_val) & \
-                    (~np.isnan(data["mag_i_lsst"]))
-        self.mask &= (np.abs(data["mag_z_lsst"]) < nondetect_val) & \
-                    (~np.isnan(data["mag_z_lsst"]))
-        self.mask &= (np.abs(data["mag_y_lsst"]) < nondetect_val) & \
-                    (~np.isnan(data["mag_y_lsst"]))
-        
-        
+        for band in 'ugrizy':
+            if band not in self.config.colnames.keys():
+                continue
+            colname = self.config.colnames[band]
+            if colname in data.columns:
+                self.mask &= (np.abs(data[colname]) < nondetect_val) & \
+                    (~np.isnan(data[colname]))
+            else:
+                continue
+
     def downsampling_N_tot(self):
         """
         Method to randomly sample down the objects to a given
@@ -146,6 +140,7 @@ class SpecSelection_GAMA(SpecSelection):
     """
     The class of spectroscopic selections with GAMA.
     The GAMA survey covers an area of 286 deg^2, with ~238000 objects
+    The necessary column is r band
     """
 
     name = 'specselection_gama'
@@ -154,9 +149,8 @@ class SpecSelection_GAMA(SpecSelection):
         """
         GAMA selection function
         """
-
         print("Applying the selection from GAMA survey...")
-        self.mask *= (data["mag_r_lsst"] < 19.87)
+        self.mask *= (data[self.config.colnames['r']] < 19.87)
 
     def __repr__(self):
         """
@@ -175,6 +169,7 @@ class SpecSelection_BOSS(SpecSelection):
     http://www.sdss3.org/dr9/algorithms/boss_galaxy_ts.php
     The selection has changed slightly compared to Dawson+13
     BOSS covers an area of 9100 deg^2 with 893,319 galaxies.
+    For BOSS selection, the data should at least include gri bands.
     """
 
     name = 'specselection_boss'
@@ -183,36 +178,30 @@ class SpecSelection_BOSS(SpecSelection):
         """
         The BOSS selection function.
         """
-        
-        nondetect_val = self.config.nondetect_val
-        
+
         print("Applying the selection from BOSS survey...")
-        mask = (np.abs(data["mag_g_lsst"]) < nondetect_val) & \
-            (np.abs(data["mag_r_lsst"]) < nondetect_val)
-        mask &= (np.abs(data["mag_r_lsst"]) < nondetect_val) & \
-            (np.abs(data["mag_i_lsst"]) < nondetect_val)
         # cut quantities (unchanged)
-        c_p = 0.7 * (data["mag_g_lsst"]-data["mag_r_lsst"]) + 1.2 * \
-            (data["mag_r_lsst"]-data["mag_i_lsst"] - 0.18)
-        c_r = (data["mag_r_lsst"]-data["mag_i_lsst"]) - \
-            (data["mag_g_lsst"]-data["mag_r_lsst"]) / 4.0 - 0.18
-        d_r = (data["mag_r_lsst"]-data["mag_i_lsst"]) - \
-            (data["mag_g_lsst"]-data["mag_r_lsst"]) / 8.0
+        c_p = 0.7 * (data[self.config.colnames['g']]-data[self.config.colnames['r']]) + 1.2 * \
+            (data[self.config.colnames['r']]-data[self.config.colnames['i']] - 0.18)
+        c_r = (data[self.config.colnames['r']]-data[self.config.colnames['i']]) - \
+            (data[self.config.colnames['g']]-data[self.config.colnames['r']]) / 4.0 - 0.18
+        d_r = (data[self.config.colnames['r']]-data[self.config.colnames['i']]) - \
+            (data[self.config.colnames['g']]-data[self.config.colnames['r']]) / 8.0
         # defining the LOWZ sample
         # we cannot apply the r_psf - r_cmod cut
         low_z = (
-            (data["mag_r_lsst"] > 16.0) &
-            (data["mag_r_lsst"] < 20.0) &  # 19.6
+            (data[self.config.colnames['r']] > 16.0) &
+            (data[self.config.colnames['r']] < 20.0) &  # 19.6
             (np.abs(c_r) < 0.2) &
-            (data["mag_r_lsst"] < 13.35 + c_p / 0.3))  # 13.5, 0.3
+            (data[self.config.colnames['r']] < 13.35 + c_p / 0.3))  # 13.5, 0.3
         # defining the CMASS sample
         # we cannot apply the i_fib2, i_psf - i_mod and z_psf - z_mod cuts
         cmass = (
-            (data["mag_i_lsst"] > 17.5) &
-            (data["mag_i_lsst"] < 20.1) &  # 19.9
+            (data[self.config.colnames['i']] > 17.5) &
+            (data[self.config.colnames['i']] < 20.1) &  # 19.9
             (d_r > 0.55) &
-            (data["mag_i_lsst"] < 19.98 + 1.6 * (d_r - 0.7)) &  # 19.86, 1.6, 0.8
-            ((data["mag_r_lsst"]-data["mag_i_lsst"]) < 2.0))
+            (data[self.config.colnames['i']] < 19.98 + 1.6 * (d_r - 0.7)) &  # 19.86, 1.6, 0.8
+            ((data[self.config.colnames['r']]-data[self.config.colnames['i']]) < 2.0))
         # NOTE: we ignore the CMASS sparse sample
         self.mask *= (low_z | cmass)
 
@@ -229,7 +218,10 @@ class SpecSelection_BOSS(SpecSelection):
 class SpecSelection_DEEP2(SpecSelection):
     """
     The class of spectroscopic selections with DEEP2.
-    DEEP2 has a sky coverage of 2.8 deg^2 with ~53000 spectra
+    DEEP2 has a sky coverage of 2.8 deg^2 with ~53000 spectra.
+    For DEEP2, one needs R band magnitude, B-R/R-I colors which are not available for the time being.
+    So we use LSST gri bands now. When the conversion degrader is ready, this subclass will be updated
+    accordingly.
     """
 
     name = 'specselection_deep2'
@@ -243,13 +235,13 @@ class SpecSelection_DEEP2(SpecSelection):
               Gaussian weighted sampling near the original colour cuts.
         """
         mask = (
-            (data["mag_r_lsst"] > 18.5) &
-            (data["mag_r_lsst"] < 24.1) & (  # 24.1
-                (data["mag_g_lsst"]-data["mag_r_lsst"] < 2.45 * \
-                 (data["mag_r_lsst"]-data["mag_i_lsst"]) - 0.2976) |
+            (data[self.config.colnames['r']] > 18.5) &
+            (data[self.config.colnames['r']] < 24.1) & (  # 24.1
+                (data[self.config.colnames['g']]-data[self.config.colnames['r']] < 2.45 * \
+                 (data[self.config.colnames['r']]-data[self.config.colnames['i']]) - 0.2976) |
                 # 2.45, 0.2976
-                (data["mag_r_lsst"]-data["mag_i_lsst"] > 1.1) |
-                (data["mag_g_lsst"]-data["mag_r_lsst"] < 0.5)))  # 0.5
+                (data[self.config.colnames['r']]-data[self.config.colnames['i']] > 1.1) |
+                (data[self.config.colnames['g']]-data[self.config.colnames['r']] < 0.5)))  # 0.5
         # update the internal state
         self.mask &= mask
 
@@ -272,7 +264,7 @@ class SpecSelection_DEEP2(SpecSelection):
             bounds_error=False, fill_value=(success_R_rate[0], 0.0))
         # Randomly sample objects according to their success rate
         random_draw = np.random.rand(len(data))
-        mask = random_draw < p_success_R(data["mag_r_lsst"])
+        mask = random_draw < p_success_R(data[self.config.colnames['r']])
         # update the internal state
         self.mask &= mask
 
@@ -296,7 +288,8 @@ class SpecSelection_DEEP2(SpecSelection):
 class SpecSelection_VVDSf02(SpecSelection):
     """
     The class of spectroscopic selections with VVDSf02.
-    It covers an area of 0.5 deg^2 with ~10000 sources
+    It covers an area of 0.5 deg^2 with ~10000 sources.
+    Necessary columns are i band magnitude and redshift.
     """
 
     name = 'specselection_VVDSf02'
@@ -308,7 +301,7 @@ class SpecSelection_VVDSf02(SpecSelection):
                of galaxies.
         update the internal state
         """
-        mask = (data["mag_i_lsst"] > 18.5) & (data["mag_i_lsst"] < 24.0)
+        mask = (data[self.config.colnames['i']] > 18.5) & (data[self.config.colnames['i']] < 24.0)
         # 17.5, 24.0
         self.mask &= mask
 
@@ -356,10 +349,10 @@ class SpecSelection_VVDSf02(SpecSelection):
         # Randomly sample objects according to their success rate
         random_draw = np.random.rand(len(data))
         iterator = zip(
-            [data["mag_i_lsst"] <= 22.5, data["mag_i_lsst"] > 22.5],
+            [data[self.config.colnames['i']] <= 22.5, data[self.config.colnames['i']] > 22.5],
             [p_success_z_bright, p_success_z_deep])
         for m, p_success_z in iterator:
-            mask[m] &= random_draw[m] < p_success_z(data["redshift"][m])
+            mask[m] &= random_draw[m] < p_success_z(data[self.config.colnames["redshift"]][m])
         # update the internal state
         self.mask &= mask
 
@@ -381,6 +374,7 @@ class SpecSelection_zCOSMOS(SpecSelection):
     """
     The class of spectroscopic selections with zCOSMOS
     It covers an area of 1.7 deg^2 with ~20000 galaxies.
+    For zCOSMOS, the data should at least include i band and redshift.
     """
 
     name = 'specselection_zCOSMOS'
@@ -391,7 +385,7 @@ class SpecSelection_zCOSMOS(SpecSelection):
         NOTE: This only includes zCOSMOS bright.
         update the internal state
         """
-        mask = (data["mag_i_lsst"] > 15.0) & (data["mag_i_lsst"] < 22.5)
+        mask = (data[self.config.colnames['i']] > 15.0) & (data[self.config.colnames['i']] < 22.5)
         # 15.0, 22.5
         self.mask &= mask
 
@@ -406,8 +400,8 @@ class SpecSelection_zCOSMOS(SpecSelection):
         y = np.loadtxt(os.path.join(
                 success_rate_dir, "zCOSMOS_I_sampling.txt"))
 
-        pixels_y = np.searchsorted(y, data["mag_i_lsst"])
-        pixels_x = np.searchsorted(x, data["redshift"])
+        pixels_y = np.searchsorted(y, data[self.config.colnames['i']])
+        pixels_x = np.searchsorted(x, data[self.config.colnames['redshift']])
 
         rates = np.loadtxt(os.path.join(
                 success_rate_dir, "zCOSMOS_success.txt"))
@@ -421,7 +415,7 @@ class SpecSelection_zCOSMOS(SpecSelection):
             else:
                 ratio_list[i] = rates[pixels_y[i]-1][pixels_x[i]-1]
 
-        randoms = np.random.uniform(size=data["mag_i_lsst"].size)
+        randoms = np.random.uniform(size=data[self.config.colnames['i']].size)
         mask = (randoms <= ratio_list)
         self.mask &= mask
 
@@ -442,6 +436,7 @@ class SpecSelection_zCOSMOS(SpecSelection):
 class SpecSelection_HSC(SpecSelection):
     """
     The class of spectroscopic selections with HSC
+    or HSC, the data should at least include giz bands and redshift.
     """
 
     name = 'specselection_HSC'
@@ -450,9 +445,9 @@ class SpecSelection_HSC(SpecSelection):
         """
         HSC galaxies were binned in color magnitude space with i-band mag from -2 to 6 and g-z color from 13 to 26.
         """
-        mask = (data["mag_i_lsst"] > 13.0) & (data["mag_i_lsst"] < 26.)
+        mask = (data[self.config.colnames['i']] > 13.0) & (data[self.config.colnames['i']] < 26.)
         self.mask &= mask
-        gz = data["mag_g_lsst"] - data["mag_z_lsst"]
+        gz = data[self.config.colnames['g']] - data[self.config.colnames['z']]
         mask = (gz > -2.) & (gz < 6.)
         self.mask &= mask
 
@@ -472,8 +467,29 @@ class SpecSelection_HSC(SpecSelection):
         rates = np.loadtxt(os.path.join(
                 success_rate_dir, "hsc_success.txt"))
 
-        pixels_y = np.searchsorted(y_edge, data["mag_g_lsst"]-data["mag_z_lsst"])
-        pixels_x = np.searchsorted(x_edge, data["mag_i_lsst"])
+        pixels_y = np.searchsorted(y_edge, data[self.config.colnames['g']]-data[self.config.colnames['z']])
+        pixels_x = np.searchsorted(x_edge, data[self.config.colnames['i']])
+
+        # Do the color-based, percentile-based redshift cut
+
+        percentile_cut = self.config.percentile_cut
+
+        mask_keep = np.ones_like(data[self.config.colnames['i']])
+        if percentile_cut != 100:
+            pixels_y_unique = np.unique(pixels_y)
+            pixels_x_unique = np.unique(pixels_x)
+
+            for y in pixels_y_unique:
+                print(y)
+                for x in pixels_x_unique:
+                    ind_inpix = np.where((pixels_y==y) * (pixels_x==x))[0]
+                    if ind_inpix.size == 0:
+                        continue
+                    redshifts = data[self.config.colnames['redshift']][ind_inpix]
+                    percentile = np.percentile(redshifts, percentile_cut)
+                    ind_remove = ind_inpix[redshifts>percentile]
+                    mask_keep[ind_remove] = 0
+            self.mask &= mask_keep
 
         pixels_y = pixels_y - 1
         pixels_x = pixels_x - 1
@@ -486,7 +502,7 @@ class SpecSelection_HSC(SpecSelection):
             else:
                 ratio_list[i] = rates[pixels_y[i]][pixels_x[i]]
 
-        randoms = np.random.uniform(size=data["mag_i_lsst"].size)
+        randoms = np.random.uniform(size=data[self.config.colnames['i']].size)
         mask = (randoms <= ratio_list)
         self.mask &= mask
 
