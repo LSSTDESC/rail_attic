@@ -23,15 +23,14 @@ class SpecSelection(Degrader):
     name = 'specselection'
     config_options = Degrader.config_options.copy()
     config_options.update(N_tot=Param(int, 10000, msg="Number of selected sources"),
-                         nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
-                         downsample=Param(bool, True, msg="If true, downsample the selected sources into a total number of N_tot"),
-                         success_rate_dir=Param(str, os.path.join(
-                                 os.path.dirname(__file__),
-                                 "../../../examples/creation/data/success_rate_data"),
-                                                msg="The path to the directory containing success rate files."),
-                         percentile_cut=Param(int, 100, msg="cut redshifts above this percentile"),
-                         colnames=Param(dict, {**{band: 'mag_'+band+'_lsst' for band in 'ugrizy'},**{'redshift':'redshift'}},
-                                        msg="a dictionary that includes necessary columns\
+                          nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
+                          downsample=Param(bool, True, msg="If true, downsample the selected sources into a total number of N_tot"),
+                          success_rate_dir=Param(str, os.path.join(os.path.dirname(__file__),
+                                                                   "../../../examples/creation/data/success_rate_data"),
+                                                 msg="The path to the directory containing success rate files."),
+                          percentile_cut=Param(int, 100, msg="cut redshifts above this percentile"),
+                          colnames=Param(dict, {**{band: 'mag_' + band + '_lsst' for band in 'ugrizy'}, **{'redshift': 'redshift'}},
+                                         msg="a dictionary that includes necessary columns\
                          (magnitudes, colors and redshift) for selection. For magnitudes, the keys are ugrizy; for colors, the keys are, \
                          for example, gr standing for g-r; for redshift, the key is 'redshift'"))
 
@@ -46,9 +45,9 @@ class SpecSelection(Degrader):
         Validate all the settings.
         """
 
-        if self.config.N_tot<0:
+        if self.config.N_tot < 0:
             raise ValueError("Total number of selected sources must be a "
-                            "positive integer.")
+                             "positive integer.")
         if os.path.exists(self.config.success_rate_dir) is not True:
             raise ValueError("Success rate path: "
                              + self.config.success_rate_dir
@@ -60,12 +59,12 @@ class SpecSelection(Degrader):
         for each selection.
         colnames: a list of column names.
         """
-        colnames=self.config.colnames.values()
+        colnames = self.config.colnames.values()
         check = all(item in data.columns for item in colnames)
         if check is not True:
             raise ValueError("Columns in the data are not enough for the selection." +
                              "The data should contain " +
-                             str(list(colnames))+". \n")
+                             str(list(colnames)) + ". \n")
 
     def selection(self, data):
         """
@@ -84,8 +83,7 @@ class SpecSelection(Degrader):
                 continue
             colname = self.config.colnames[band]
             self.mask &= (np.abs(data[colname]) < nondetect_val) & \
-                    (~np.isnan(data[colname]))
-            
+                (~np.isnan(data[colname]))
 
     def downsampling_N_tot(self):
         """
@@ -96,7 +94,7 @@ class SpecSelection(Degrader):
         N_selected = np.count_nonzero(self.mask)
         if N_tot > N_selected:
             print("Warning: N_tot is greater than the size of spec-selected " +
-                  "sample ("+str(N_selected)+"). The spec-selected sample " +
+                  "sample (" + str(N_selected) + "). The spec-selected sample " +
                   "is returned.")
             return
         else:
@@ -179,12 +177,12 @@ class SpecSelection_BOSS(SpecSelection):
 
         print("Applying the selection from BOSS survey...")
         # cut quantities (unchanged)
-        c_p = 0.7 * (data[self.config.colnames['g']]-data[self.config.colnames['r']]) + 1.2 * \
-            (data[self.config.colnames['r']]-data[self.config.colnames['i']] - 0.18)
-        c_r = (data[self.config.colnames['r']]-data[self.config.colnames['i']]) - \
-            (data[self.config.colnames['g']]-data[self.config.colnames['r']]) / 4.0 - 0.18
-        d_r = (data[self.config.colnames['r']]-data[self.config.colnames['i']]) - \
-            (data[self.config.colnames['g']]-data[self.config.colnames['r']]) / 8.0
+        c_p = 0.7 * (data[self.config.colnames['g']] - data[self.config.colnames['r']]) + 1.2 * \
+            (data[self.config.colnames['r']] - data[self.config.colnames['i']] - 0.18)
+        c_r = (data[self.config.colnames['r']] - data[self.config.colnames['i']]) - \
+            (data[self.config.colnames['g']] - data[self.config.colnames['r']]) / 4.0 - 0.18
+        d_r = (data[self.config.colnames['r']] - data[self.config.colnames['i']]) - \
+            (data[self.config.colnames['g']] - data[self.config.colnames['r']]) / 8.0
         # defining the LOWZ sample
         # we cannot apply the r_psf - r_cmod cut
         low_z = (
@@ -199,7 +197,7 @@ class SpecSelection_BOSS(SpecSelection):
             (data[self.config.colnames['i']] < 20.1) &  # 19.9
             (d_r > 0.55) &
             (data[self.config.colnames['i']] < 19.98 + 1.6 * (d_r - 0.7)) &  # 19.86, 1.6, 0.8
-            ((data[self.config.colnames['r']]-data[self.config.colnames['i']]) < 2.0))
+            ((data[self.config.colnames['r']] - data[self.config.colnames['i']]) < 2.0))
         # NOTE: we ignore the CMASS sparse sample
         self.mask *= (low_z | cmass)
 
@@ -235,11 +233,11 @@ class SpecSelection_DEEP2(SpecSelection):
         mask = (
             (data[self.config.colnames['r']] > 18.5) &
             (data[self.config.colnames['r']] < 24.1) & (  # 24.1
-                (data[self.config.colnames['g']]-data[self.config.colnames['r']] < 2.45 * \
-                 (data[self.config.colnames['r']]-data[self.config.colnames['i']]) - 0.2976) |
+                (data[self.config.colnames['g']] - data[self.config.colnames['r']] < 2.45 * \
+                 (data[self.config.colnames['r']] - data[self.config.colnames['i']]) - 0.2976) |
                 # 2.45, 0.2976
-                (data[self.config.colnames['r']]-data[self.config.colnames['i']] > 1.1) |
-                (data[self.config.colnames['g']]-data[self.config.colnames['r']] < 0.5)))  # 0.5
+                (data[self.config.colnames['r']] - data[self.config.colnames['i']] > 1.1) |
+                (data[self.config.colnames['g']] - data[self.config.colnames['r']] < 0.5)))  # 0.5
         # update the internal state
         self.mask &= mask
 
@@ -317,7 +315,7 @@ class SpecSelection_VVDSf02(SpecSelection):
         success_I_centers = (success_I_bins[1:] + success_I_bins[:-1]) / 2.0
         success_rate_dir = self.config.success_rate_dir
         success_I_rate = np.loadtxt(os.path.join(
-                success_rate_dir, "VVDSf02_I_success.txt"))
+            success_rate_dir, "VVDSf02_I_success.txt"))
         # interpolate the success rate as probability of being selected with
         # the probability at I > 24 being 0
         p_success_I = interp1d(
@@ -394,24 +392,24 @@ class SpecSelection_zCOSMOS(SpecSelection):
         """
         success_rate_dir = self.config.success_rate_dir
         x = np.loadtxt(os.path.join(
-                success_rate_dir, "zCOSMOS_z_sampling.txt"))
+            success_rate_dir, "zCOSMOS_z_sampling.txt"))
         y = np.loadtxt(os.path.join(
-                success_rate_dir, "zCOSMOS_I_sampling.txt"))
+            success_rate_dir, "zCOSMOS_I_sampling.txt"))
 
         pixels_y = np.searchsorted(y, data[self.config.colnames['i']])
         pixels_x = np.searchsorted(x, data[self.config.colnames['redshift']])
 
         rates = np.loadtxt(os.path.join(
-                success_rate_dir, "zCOSMOS_success.txt"))
+            success_rate_dir, "zCOSMOS_success.txt"))
         ratio_list = np.zeros(len(pixels_y))
         for i, py in enumerate(pixels_y):
             if (py >= rates.shape[0]) or \
                (pixels_x[i] >= rates.shape[1]) or \
-                (py == 0) or \
-                (pixels_x[i] == 0):
+               (py == 0) or \
+               (pixels_x[i] == 0):
                 ratio_list[i] = 0
             else:
-                ratio_list[i] = rates[pixels_y[i]-1][pixels_x[i]-1]
+                ratio_list[i] = rates[pixels_y[i] - 1][pixels_x[i] - 1]
 
         randoms = np.random.uniform(size=data[self.config.colnames['i']].size)
         mask = (randoms <= ratio_list)
@@ -458,14 +456,14 @@ class SpecSelection_HSC(SpecSelection):
         """
         success_rate_dir = self.config.success_rate_dir
         x_edge = np.loadtxt(os.path.join(
-                success_rate_dir, "hsc_i_binedge.txt"))
+            success_rate_dir, "hsc_i_binedge.txt"))
         y_edge = np.loadtxt(os.path.join(
-                success_rate_dir, "hsc_gz_binedge.txt"))
+            success_rate_dir, "hsc_gz_binedge.txt"))
 
         rates = np.loadtxt(os.path.join(
-                success_rate_dir, "hsc_success.txt"))
+            success_rate_dir, "hsc_success.txt"))
 
-        pixels_y = np.searchsorted(y_edge, data[self.config.colnames['g']]-data[self.config.colnames['z']])
+        pixels_y = np.searchsorted(y_edge, data[self.config.colnames['g']] - data[self.config.colnames['z']])
         pixels_x = np.searchsorted(x_edge, data[self.config.colnames['i']])
 
         # Do the color-based, percentile-based redshift cut
@@ -473,18 +471,18 @@ class SpecSelection_HSC(SpecSelection):
         percentile_cut = self.config.percentile_cut
 
         mask_keep = np.ones_like(data[self.config.colnames['i']])
-        if percentile_cut != 100:   #pragma: no cover
+        if percentile_cut != 100:   # pragma: no cover
             pixels_y_unique = np.unique(pixels_y)
             pixels_x_unique = np.unique(pixels_x)
 
             for y in pixels_y_unique:
                 for x in pixels_x_unique:
-                    ind_inpix = np.where((pixels_y==y) * (pixels_x==x))[0]
+                    ind_inpix = np.where((pixels_y == y) * (pixels_x == x))[0]
                     if ind_inpix.size == 0:
                         continue
                     redshifts = data[self.config.colnames['redshift']][ind_inpix]
                     percentile = np.percentile(redshifts, percentile_cut)
-                    ind_remove = ind_inpix[redshifts>percentile]
+                    ind_remove = ind_inpix[redshifts > percentile]
                     mask_keep[ind_remove] = 0
             self.mask &= mask_keep
 
