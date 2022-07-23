@@ -70,7 +70,7 @@ class Inform_SimpleSOMSummarizer(CatInformer):
     name = 'Inform_SimpleSOM'
     config_options = CatInformer.config_options.copy()
     config_options.update(usecols=Param(list, def_cols, msg="columns used to construct SOM"),
-                          use_only_colors=Param(bool, False, msg="if True, will construct SOM using all colors, if False, will use one magnitude and N-1 colors"),
+                          use_only_colors=Param(bool, True, msg="if True, will construct SOM using all colors, if False, will use one magnitude and N-1 colors"),
                           ref_column_name=Param(str, 'mag_i_lsst', msg="name for mag column used if use_only_magnitudes is True"),
                           nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
                           mag_limits=Param(dict, def_maglims, msg="1 sigma mag limits"),
@@ -117,7 +117,8 @@ class Inform_SimpleSOMSummarizer(CatInformer):
 
         modeldict = dict(som=som, usecols=self.config.usecols,
                          ref_column=self.config.ref_column_name,
-                         m_dim=self.config.m_dim, n_dim=self.config.n_dim)
+                         m_dim=self.config.m_dim, n_dim=self.config.n_dim,
+                         use_only_colors=self.config.use_only_colors)
         self.model = modeldict
         self.add_data('model', self.model)
 
@@ -164,7 +165,6 @@ class SimpleSOMSummarizer(SZPZSummarizer):
                           hdf5_groupname=Param(str, "photometry", msg="name of hdf5 group for data, if None, then set to ''"),
                           nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
                           mag_limits=Param(dict, def_maglims, msg="1 sigma mag limits"),
-                          use_only_colors=Param(bool, False, msg="if True, will construct SOM using all colors, if False, will use one magnitude and N-1 colors"),
                           spec_groupname=Param(str, "photometry", msg="name of hdf5 group for spec data, if None, then set to ''"),
                           seed=Param(int, 12345, msg="random seed"),
                           redshift_colname=Param(str, "redshift", msg="name of redshift column in specz file"),
@@ -184,6 +184,7 @@ class SimpleSOMSummarizer(SZPZSummarizer):
         SZPZSummarizer.open_model(self, **kwargs)
         self.som = self.model['som']
         self.usecols = self.model['usecols']
+        self.use_only_colors = self.model['use_only_colors']
         self.ref_column_name = self.model['ref_column']
         self.m_dim = self.model['m_dim']
         self.n_dim = self.model['n_dim']
@@ -234,9 +235,9 @@ class SimpleSOMSummarizer(SZPZSummarizer):
 
         # find the best cells for the photometric and spectrosopic datasets
         phot_colors = _computemagcolordata(test_data, self.ref_column_name,
-                                           self.usecols, self.config.use_only_colors)
+                                           self.usecols, self.use_only_colors)
         spec_colors = _computemagcolordata(spec_data, self.ref_column_name,
-                                           self.usecols, self.config.use_only_colors)
+                                           self.usecols, self.use_only_colors)
 
         phot_som_coords = np.array([self.som.winner(x) for x in phot_colors]).T
         spec_som_coords = np.array([self.som.winner(x) for x in spec_colors]).T
