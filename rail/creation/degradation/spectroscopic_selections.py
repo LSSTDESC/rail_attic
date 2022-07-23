@@ -15,6 +15,7 @@ class SpecSelection(Degrader):
     N_tot: integer, total number of down-sampled, spec-selected galaxies.
         If N_tot is greater than the number of spec-sepected galaxies, then
         it will be ignored.
+    nondetect_val: value to be removed for non detects
     downsample: bool, if True, then downsample the pre-selected galaxies
         to N_tot galaxies.
     success_rate_dir: string, the path to the success rate files.
@@ -23,12 +24,13 @@ class SpecSelection(Degrader):
                          (magnitudes, colors and redshift) for selection. For magnitudes, the keys are ugrizy; for colors, the keys are, \
                          for example, gr standing for g-r; for redshift, the key is 'redshift'.\
     random_seed: random seed for reproducibility.
-                         
+
     """
 
     name = 'specselection'
     config_options = Degrader.config_options.copy()
-    config_options.update(N_tot=Param(int, 10000, msg="Number of selected sources"), 
+    config_options.update(N_tot=Param(int, 10000, msg="Number of selected sources"),
+                          nondetect_val=Param(float, 99.0, msg="value to be removed for non detects"),
                           downsample=Param(bool, True, msg="If true, downsample the selected sources into a total number of N_tot"),
                           success_rate_dir=Param(str, os.path.join(os.path.dirname(__file__),
                                                                    "../../../examples/creation/data/success_rate_data"),
