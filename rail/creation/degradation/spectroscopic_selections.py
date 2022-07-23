@@ -18,6 +18,12 @@ class SpecSelection(Degrader):
     downsample: bool, if True, then downsample the pre-selected galaxies
         to N_tot galaxies.
     success_rate_dir: string, the path to the success rate files.
+    percentile_cut: If using color-based redshift cut, percentile in redshifts above which redshifts will be cut from the sample. Default is 100 (no cut)
+    colnames: a dictionary that includes necessary columns\
+                         (magnitudes, colors and redshift) for selection. For magnitudes, the keys are ugrizy; for colors, the keys are, \
+                         for example, gr standing for g-r; for redshift, the key is 'redshift'.\
+    random_seed: random seed for reproducibility.
+                         
     """
 
     name = 'specselection'
@@ -29,11 +35,12 @@ class SpecSelection(Degrader):
                                  os.path.dirname(__file__),
                                  "../../../examples/creation/data/success_rate_data"),
                                                 msg="The path to the directory containing success rate files."),
-                         percentile_cut=Param(int, 100, msg="cut redshifts above this percentile"),
+                         percentile_cut=Param(int, 100, msg="If using color-based redshift cut, percentile in redshifts above which redshifts will be cut from the sample. Default is 100 (no cut)"),
                          colnames=Param(dict, {**{band: 'mag_'+band+'_lsst' for band in 'ugrizy'},**{'redshift':'redshift'}},
                                         msg="a dictionary that includes necessary columns\
                          (magnitudes, colors and redshift) for selection. For magnitudes, the keys are ugrizy; for colors, the keys are, \
-                         for example, gr standing for g-r; for redshift, the key is 'redshift'"))
+                         for example, gr standing for g-r; for redshift, the key is 'redshift'"),
+                         random_seed=Param(int, 42, msg="random seed for reproducibility"))
 
     def __init__(self, args, comm=None):
         Degrader.__init__(self, args, comm=comm)
@@ -120,6 +127,7 @@ class SpecSelection(Degrader):
         self.validate_colnames(data)
         self.mask = np.product(~np.isnan(data.to_numpy()), axis=1)
         self.invalid_cut(data)
+        np.random.seed(self.config.random_seed)
         self.selection(data)
         if self.config.downsample is True:
             self.downsampling_N_tot()
@@ -393,10 +401,8 @@ class SpecSelection_zCOSMOS(SpecSelection):
         Figure 3 in Lilly+09 for zCOSMOS bright sample.
         """
         success_rate_dir = self.config.success_rate_dir
-        x = np.loadtxt(os.path.join(
-                success_rate_dir, "zCOSMOS_z_sampling.txt"))
-        y = np.loadtxt(os.path.join(
-                success_rate_dir, "zCOSMOS_I_sampling.txt"))
+        x = np.arange(0, 1.4, 0.00587002, dtype=np.float64)
+        y = np.arange(18, 22.4, 0.01464226, dtype=np.float64)
 
         pixels_y = np.searchsorted(y, data[self.config.colnames['i']])
         pixels_x = np.searchsorted(x, data[self.config.colnames['redshift']])
@@ -457,10 +463,8 @@ class SpecSelection_HSC(SpecSelection):
         the data into the same pixels and randomly select galaxies into the training sample based on the HSC ratios
         """
         success_rate_dir = self.config.success_rate_dir
-        x_edge = np.loadtxt(os.path.join(
-                success_rate_dir, "hsc_i_binedge.txt"))
-        y_edge = np.loadtxt(os.path.join(
-                success_rate_dir, "hsc_gz_binedge.txt"))
+        x_edge = np.linspace(13, 26, 201, endpoint=True)
+        y_edge = np.linspace(-2,6, 201, endpoint=True)
 
         rates = np.loadtxt(os.path.join(
                 success_rate_dir, "hsc_success.txt"))
