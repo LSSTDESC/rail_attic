@@ -217,7 +217,6 @@ class SimpleSOMSummarizer(SZPZSummarizer):
                 dset[col][mask] = self.config.mag_limits[col]
 
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins + 1)
-        self.bincents = 0.5 * (self.zgrid[1:] + self.zgrid[:-1])
         # assign weight vecs if present, else set all to 1.0
         # tested in example notebook, so just put a pragma no cover for if present
         if self.config.phot_weightcol == "":
@@ -266,10 +265,6 @@ class SimpleSOMSummarizer(SZPZSummarizer):
                 smask = (bs_specz_coords == pix)
                 pix_hist_vals, _ = np.histogram(bs_specz[smask], bins=self.zgrid, weights=bs_weights[smask])
                 tmp_hist_vals += pix_hist_vals * binpweight
-                # "dumb" version that just sticks in mean redshift rather than histogram
-                # meanz = np.mean(bs_specz[smask])
-                # szbin = np.searchsorted(self.bincents, meanz)
-                # tmp_hist_vals[szbin-1] += binpweight
             hist_vals[i, :] = tmp_hist_vals
 
         sample_ens = qp.Ensemble(qp.hist, data=dict(bins=self.zgrid, pdfs=np.atleast_2d(hist_vals)))
