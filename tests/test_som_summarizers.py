@@ -17,13 +17,13 @@ def one_algo(key, inform_class, summarizer_class, summary_kwargs):
     """
     spec_data = DS.read_file('spec_data', TableHandle, testszdata)
     phot_data = DS.read_file('phot_data', TableHandle, testphotdata)
-    informer = inform_class.make_stage(name=f"inform_{key}", model="tmpsom.pkl")
+    informer = inform_class.make_stage(name=f"inform_{key}", model="tmpsom.pkl", **summary_kwargs)
     informer.inform(spec_data)
     summarizerr = summarizer_class.make_stage(name=key, model=informer.get_handle('model'), **summary_kwargs)
     summary_ens = summarizerr.summarize(phot_data, spec_data)
     os.remove(summarizerr.get_output(summarizerr.get_aliased_tag('output'), final_name=True))
     # test loading model by name rather than via handle
-    summarizer2 = summarizer_class.make_stage(name=key, model='tmpsom.pkl', **summary_kwargs)
+    summarizer2 = summarizer_class.make_stage(name=key, model='tmpsom.pkl')
     summ_en = summarizer2.summarize(phot_data, spec_data)
     os.remove(summarizer2.get_output(summarizer2.get_aliased_tag('output'), final_name=True))
     os.remove("tmpsom.pkl")
@@ -41,4 +41,4 @@ def test_SimpeSOM_with_mag_and_colors():
     summary_config_dict = {'use_only_colors': False}
     inform_class = simpleSOM.Inform_SimpleSOMSummarizer
     summarizerclass = simpleSOM.SimpleSOMSummarizer
-    _ = one_algo("SimpleSOM", inform_class, summarizerclass, summary_config_dict)
+    _ = one_algo("SimpleSOM_wmag", inform_class, summarizerclass, summary_config_dict)
