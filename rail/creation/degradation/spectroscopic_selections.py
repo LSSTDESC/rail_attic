@@ -107,7 +107,7 @@ class SpecSelection(Degrader):
             return
         else:
             idx_selected = np.where(self.mask)[0]
-            idx_keep = np.random.choice(idx_selected, replace=False,
+            idx_keep = rng.choice(idx_selected, replace=False,
                                         size=N_tot)
             # create a mask with only those entries enabled that have been
             # selected
@@ -120,13 +120,12 @@ class SpecSelection(Degrader):
         """
         Run the selection
         """
-
+        rng = np.random.default_rng(seed=self.config.seed)
         # get the bands and bandNames present in the data
         data = self.get_data('input', allow_missing=True)
         self.validate_colnames(data)
         self.mask = np.product(~np.isnan(data.to_numpy()), axis=1)
         self.invalid_cut(data)
-        np.random.seed(self.config.random_seed)
         self.selection(data)
         if self.config.downsample is True:
             self.downsampling_N_tot()
@@ -268,7 +267,7 @@ class SpecSelection_DEEP2(SpecSelection):
             success_R_centers, success_R_rate, kind="quadratic",
             bounds_error=False, fill_value=(success_R_rate[0], 0.0))
         # Randomly sample objects according to their success rate
-        random_draw = np.random.rand(len(data))
+        random_draw = rng.random(len(data))
         mask = random_draw < p_success_R(data[self.config.colnames['r']])
         # update the internal state
         self.mask &= mask
@@ -331,7 +330,7 @@ class SpecSelection_VVDSf02(SpecSelection):
             success_I_centers, success_I_rate, kind="quadratic",
             bounds_error=False, fill_value=(success_I_rate[0], 0.0))
         # Randomly sample objects according to their success rate
-        random_draw = np.random.rand(len(data))
+        random_draw = rng.random(len(data))
         mask = random_draw < p_success_I(data["mag_i_lsst"])
         # Spec-z success rate as function of redshift read of Figure 13a/b in
         # LeFevre+13 for VVDS deep sample. The listing is split by i_AB into
@@ -352,7 +351,7 @@ class SpecSelection_VVDSf02(SpecSelection):
             success_z_deep_centers, success_z_deep_rate, kind="quadratic",
             bounds_error=False, fill_value=(success_z_deep_rate[0], 0.0))
         # Randomly sample objects according to their success rate
-        random_draw = np.random.rand(len(data))
+        random_draw = rng.random(len(data))
         iterator = zip(
             [data[self.config.colnames['i']] <= 22.5, data[self.config.colnames['i']] > 22.5],
             [p_success_z_bright, p_success_z_deep])
@@ -418,7 +417,7 @@ class SpecSelection_zCOSMOS(SpecSelection):
             else:
                 ratio_list[i] = rates[pixels_y[i] - 1][pixels_x[i] - 1]
 
-        randoms = np.random.uniform(size=data[self.config.colnames['i']].size)
+        randoms = rng.uniform(size=data[self.config.colnames['i']].size)
         mask = (randoms <= ratio_list)
         self.mask &= mask
 
@@ -502,7 +501,7 @@ class SpecSelection_HSC(SpecSelection):
             else:
                 ratio_list[i] = rates[pixels_y[i]][pixels_x[i]]
 
-        randoms = np.random.uniform(size=data[self.config.colnames['i']].size)
+        randoms = rng.uniform(size=data[self.config.colnames['i']].size)
         mask = (randoms <= ratio_list)
         self.mask &= mask
 
