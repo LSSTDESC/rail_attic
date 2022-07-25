@@ -5,7 +5,7 @@ name: rail
 
 on:
   push:
-    branches: [ issue/225/simplesom ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
