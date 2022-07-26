@@ -223,13 +223,13 @@ class SimpleSOMSummarizer(SZPZSummarizer):
             pweight = np.ones(len(test_data[self.usecols[0]]))
         elif self.config.phot_weightcol in test_data.keys():  # pragma: no cover
             pweight = np.array(test_data[self.config.phot_weightcol])
-        else:
+        else:  # pragma: no cover
             raise KeyError(f"photometric weight column {self.config.phot_weightcol} not present in data!")
         if self.config.spec_weightcol == "":
             sweight = np.ones(len(spec_data[self.usecols[0]]))
         elif self.config.spec_weightcol in test_data.keys():  # pragma: no cover
             sweight = np.array(spec_data[self.config.spec_weightcol])
-        else:
+        else:  # pragma: no cover
             raise KeyError(f"spectroscopic weight column {self.config.spec_weightcol} not present in data!")
 
         # find the best cells for the photometric and spectrosopic datasets
