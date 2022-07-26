@@ -10,11 +10,7 @@ from rail.core.stage import RailStage
 from rail.core.data import PqHandle
 
 class Degrader(RailStage):
-    """Base class Degraders, which apply various degradations to synthetic photometric data
-
-    Degraders take "input" data in the form of pandas dataframes in Parquet files and
-    provide as "output" another pandas dataframes written to Parquet files
-    """
+    """Base class Degraders, which apply various degradations to synthetic photometric data"""
 
     name = 'Degrader'
     config_options = RailStage.config_options.copy()
@@ -27,20 +23,7 @@ class Degrader(RailStage):
         RailStage.__init__(self, args, comm=comm)
 
     def __call__(self, sample: pd.DataFrame, seed: int = None) -> pd.DataFrame:
-        """The main interface method for `Degrader`
-
-        Applies degradation.
-
-        This will attach the sample to this `Degrader`
-        (for introspection and provenance tracking).
-
-        Then it will call the run() and finalize() methods, which need to
-        be implemented by the sub-classes.
-
-        The run() method will need to register the data that it creates to this Estimator
-        by using `self.add_data('output', output_data)`.
-
-        Finally, this will return a PqHandle providing access to that output data.
+        """Return a degraded sample.
 
         Parameters
         ----------
@@ -51,8 +34,8 @@ class Degrader(RailStage):
 
         Returns
         -------
-        output_data : `PqHandle`
-            A handle giving access to a pd.DataFrame with degraded sample
+        pd.DataFrame
+            The degraded sample
         """
         if seed is not None:
             self.config.seed = seed

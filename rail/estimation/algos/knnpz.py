@@ -9,7 +9,7 @@ import numpy as np
 import copy
 
 from ceci.config import StageParameter as Param
-from rail.estimation.estimator import CatEstimator, CatInformer
+from rail.estimation.estimator import Estimator, Informer
 
 from rail.evaluation.metrics.cdeloss import CDELoss
 from sklearn.neighbors import KDTree
@@ -51,11 +51,11 @@ def _makepdf(dists, ids, szs, sigma):
     return pdfs
 
 
-class Inform_KNearNeighPDF(CatInformer):
+class Train_KNearNeighPDF(Informer):
     """Train a KNN-based estimator
     """
-    name = 'Inform_KNearNeighPDF'
-    config_options = CatInformer.config_options.copy()
+    name = 'Train_KNearNeighPDF'
+    config_options = Informer.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="min z"),
                           zmax=Param(float, 3.0, msg="max_z"),
                           nzbins=Param(int, 301, msg="num z bins"),
@@ -66,7 +66,6 @@ class Inform_KNearNeighPDF(CatInformer):
                           ref_column_name=Param(str, 'mag_i_lsst', msg="name for reference column"),
                           column_names=Param(list, refcols,
                                              msg="column names to be used in NN, *ASSUMED TO BE IN INCREASING WL ORDER!*"),
-                          nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
                           mag_limits=Param(dict, def_maglims, msg="1 sigma mag limits"),
                           sigma_grid_min=Param(float, 0.01, msg="minimum value of sigma for grid check"),
                           sigma_grid_max=Param(float, 0.075, msg="maximum value of sigma for grid check"),
@@ -78,8 +77,8 @@ class Inform_KNearNeighPDF(CatInformer):
 
     def __init__(self, args, comm=None):
         """ Constructor
-        Do CatInformer specific initialization, then check on bands """
-        CatInformer.__init__(self, args, comm=comm)
+        Do Informer specific initialization, then check on bands """
+        Informer.__init__(self, args, comm=comm)
 
         usecols = self.config.column_names.copy()
         usecols.append(self.config.redshift_column_name)
@@ -101,10 +100,7 @@ class Inform_KNearNeighPDF(CatInformer):
         # replace nondetects
         # will fancy this up later with a flow to sample from truth
         for col in self.config.column_names:
-            if np.isnan(self.config.nondetect_val): # pragma: no cover
-                knndf.loc[np.isnan(knndf[col]), col] = self.config.mag_limits[col]
-            else:
-                knndf.loc[np.isclose(knndf[col], self.config.nondetect_val), col] = self.config.mag_limits[col]
+            knndf.loc[np.isclose(knndf[col], 99.), col] = self.config.mag_limits[col]
 
         trainszs = np.array(input_df[self.config.redshift_column_name])
         colordata = _computecolordata(knndf, self.config.ref_column_name, self.config.column_names)
@@ -149,18 +145,17 @@ class Inform_KNearNeighPDF(CatInformer):
 
 
 
-class KNearNeighPDF(CatEstimator):
+class KNearNeighPDF(Estimator):
     """KNN-based estimator
     """
     name = 'KNearNeighPDF'
-    config_options = CatEstimator.config_options.copy()
+    config_options = Estimator.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="min z"),
                           zmax=Param(float, 3.0, msg="max_z"),
                           nzbins=Param(int, 301, msg="num z bins"),
                           column_names=Param(list, refcols,
                                              msg="column names to be used in NN, *ASSUMED TO BE IN INCREASING WL ORDER!*"),
                           ref_column_name=Param(str, 'mag_i_lsst', msg="name for reference column"),
-                          nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
                           mag_limits=Param(dict, def_maglims, msg="1 sigma mag limits"),
                           redshift_column_name=Param(str, 'redshift', msg="name of redshift column"))
 
@@ -172,13 +167,13 @@ class KNearNeighPDF(CatEstimator):
         self.model = None
         self.trainszs = None
         self.zgrid = None
-        CatEstimator.__init__(self, args, comm=comm)
+        Estimator.__init__(self, args, comm=comm)
         usecols = self.config.column_names.copy()
         usecols.append(self.config.redshift_column_name)
         self.usecols = usecols
 
     def open_model(self, **kwargs):
-        CatEstimator.open_model(self, **kwargs)
+        Estimator.open_model(self, **kwargs)
         self.sigma = self.model['bestsig']
         self.numneigh = self.model['nneigh']
         self.kdtree = self.model['kdtree']
@@ -198,12 +193,8 @@ class KNearNeighPDF(CatEstimator):
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
 
         # replace nondetects
-        # will fancy this up later with a flow to sample from truth
         for col in self.config.column_names:
-            if np.isnan(self.config.nondetect_val): # pragma: no cover
-                knn_df.loc[np.isnan(knn_df[col]), col] = self.config.mag_limits[col]
-            else:
-                knn_df.loc[np.isclose(knn_df[col], self.config.nondetect_val), col] = self.config.mag_limits[col]
+            knn_df.loc[np.isclose(knn_df[col], 99.), col] = self.config.mag_limits[col]
 
         testcolordata = _computecolordata(knn_df, self.config.ref_column_name, self.config.column_names)
         dists, idxs = self.kdtree.query(testcolordata, k=self.numneigh)

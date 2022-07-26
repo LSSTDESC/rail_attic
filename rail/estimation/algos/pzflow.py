@@ -8,7 +8,7 @@ future update
 import numpy as np
 
 from ceci.config import StageParameter as Param
-from rail.estimation.estimator import CatEstimator, CatInformer
+from rail.estimation.estimator import Estimator, Informer
 from rail.core.data import FlowHandle, TableHandle
 import pandas as pd
 from pzflow import Flow
@@ -67,12 +67,12 @@ def_errornames=dict(mag_err_u_lsst="mag_u_lsst_err",
                     mag_err_y_lsst="mag_y_lsst_err")
 
 
-class Inform_PZFlowPDF(CatInformer):
+class Train_PZFlowPDF(Informer):
     """ Subclass to train a pzflow-based estimator
     """
-    name = 'Inform_PZFlowPdf'
+    name = 'Train_PZFlowPdf'
     outputs = [('model', FlowHandle)]
-    config_options = CatInformer.config_options.copy()
+    config_options = Informer.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="min z"),
                           zmax=Param(float, 3.0, msg="max_z"),
                           nzbins=Param(int, 301, msg="num z bins"),
@@ -101,9 +101,9 @@ class Inform_PZFlowPDF(CatInformer):
 
 
     def __init__(self, args, comm=None):
-        """Constructor, build the CatInformer, then do PZFlow specific setup
+        """Constructor, build the Informer, then do PZFlow specific setup
         """
-        CatInformer.__init__(self, args, comm=comm)
+        Informer.__init__(self, args, comm=comm)
         usecols = self.config.column_names.copy()
         allcols = usecols.copy()
         if self.config.include_mag_errors:  # only include errors if option set
@@ -149,13 +149,13 @@ class Inform_PZFlowPDF(CatInformer):
 
 
 
-class PZFlowPDF(CatEstimator):
-    """CatEstimator which uses PZFlow
+class PZFlowPDF(Estimator):
+    """Estimator which uses PZFlow
     """
     name = 'PZFlowPDF'
     inputs = [('model', FlowHandle),
               ('input', TableHandle)]
-    config_options = CatEstimator.config_options.copy()
+    config_options = Estimator.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
                           nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
@@ -178,7 +178,7 @@ class PZFlowPDF(CatEstimator):
 
 
     def __init__(self, args, comm=None):
-        CatEstimator.__init__(self, args, comm=comm)
+        Estimator.__init__(self, args, comm=comm)
         usecols = self.config.column_names.copy()
         allcols = usecols.copy()
         if self.config.include_mag_errors:  #pragma: no cover

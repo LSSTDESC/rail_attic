@@ -15,7 +15,7 @@ Last update   : February 25th 2022
 import sys
 import numpy as np
 from ceci.config import StageParameter as Param
-from rail.estimation.estimator import CatEstimator, CatInformer
+from rail.estimation.estimator import Estimator, Informer
 from rail.core.data import TableHandle
 
 import qp
@@ -57,13 +57,13 @@ logger = logging.getLogger(__name__)
 coloredlogs.install(level='DEBUG', logger=logger, fmt='%(asctime)s,%(msecs)03d %(programname)s %(name)s[%(process)d] %(levelname)s %(message)s')
 
 
-class Inform_DelightPZ(CatInformer):
+class TrainDelightPZ(Informer):
     """Train the Delight code, outputs are actually saved to files,
     which is fairly non-standard way currently
     """
-    name = 'Inform_DelightPZ'
+    name = 'TrainDelightPZ'
     outputs = []
-    config_options = CatInformer.config_options.copy()
+    config_options = Informer.config_options.copy()
     config_options.update(dlght_redshiftMin=Param(float, 0.01, msg='min redshift'),
                           dlght_redshiftMax=Param(float, 3.01, msg='max redshift'),
                           dlght_redshiftNumBinsGPpred=Param(int, 301, msg='num bins'),
@@ -71,7 +71,7 @@ class Inform_DelightPZ(CatInformer):
                           dlght_redshiftBinSize=Param(float, 0.01, msg='???'),
                           dlght_redshiftDisBinSize=Param(float, 0.2, msg='bad, shouldnt be here'),
                           bands_names=Param(str, "DC2LSST_u DC2LSST_g DC2LSST_r DC2LSST_i DC2LSST_z DC2LSST_y", msg='string with list of Filter names'),
-                          bands_path=Param(str, "./examples/estimation/data/FILTER", msg='string specifying path to filter directory'),
+                          bands_path=Param(str, "./rail/estimation/data/FILTER", msg='string specifying path to filter directory'),
                           bands_fmt=Param(str, "res", msg="string giving the file extension of the filters, not including the '.'"),
                           bands_numcoefs=Param(int, 15, msg='integer specifying number of coefs in approximation of filter'),
                           bands_verbose=Param(bool, True, msg='verbose'),
@@ -79,7 +79,7 @@ class Inform_DelightPZ(CatInformer):
                           bands_debug=Param(bool, True, msg='debug flag for filters'),
                           tempdir=Param(str, "./examples/estimation/tmp", msg='temp dir'),
                           tempdatadir=Param(str, "./examples/estimation/tmp/delight_data", msg='temp data dir'),
-                          sed_path=Param(str, "./examples/estimation/data/SED", msg='path to SED dir'),
+                          sed_path=Param(str, "./rail/estimation/data/SED", msg='path to SED dir'),
                           sed_name_list=Param(str, "El_B2004a Sbc_B2004a Scd_B2004a SB3_B2004a SB2_B2004a Im_B2004a ssp_25Myr_z008 ssp_5Myr_z008", msg='String with list of all SED names, with no file extension'),
                           sed_fmt=Param(str, "sed", msg="file extension of SED files (withough the '.', e.g dat or sed"),
                           prior_t_list=Param(str, "0.27 0.26 0.25 0.069 0.021 0.11 0.0061 0.0079", msg='String of numbers specifying prior type fracs MUST BE SAME LENGTH AS NUMBER OF SEDS'),
@@ -114,29 +114,14 @@ class Inform_DelightPZ(CatInformer):
 
     def __init__(self, args, comm=None):
         """ Constructor
-        Do CatInformer specific initialization, then check on bands """
-        CatInformer.__init__(self, args, comm=comm)
+        Do Informer specific initialization, then check on bands """
+        Informer.__init__(self, args, comm=comm)
         # counter on the chunk validation dataset
         self.chunknum = 0
         self.delightparamfile = self.config['delightparamfile']
 
         np.random.seed(87)
 
-        
-    def inform(self, training_data):
-        """Override the inform method because Delight doesn't have a model to return
-
-        Parameters
-        ----------
-        input_data : `dict` or `TableHandle`
-            dictionary of all input data, or a `TableHandle` providing access to it
-
-        """
-        self.set_data('input', training_data)
-        self.run()
-        self.finalize()
-        
-        
     def run(self):
         """Do all the annoying file IO stuff to ascii in current delight
            Then run delightApply to train the gauss. process
@@ -197,14 +182,14 @@ class Inform_DelightPZ(CatInformer):
         delightLearn(self.delightparamfile)
 
 
-class delightPZ(CatEstimator):
+class delightPZ(Estimator):
     """Run the delight scripts from the LSSTDESC fork of Delight
        Still has the ascii writeout stuff, so intermediate files are
        created that need to be cleaned up in the future
     """
     name = 'delightPZ'
     inputs = [('input', TableHandle)]
-    config_options = CatEstimator.config_options.copy()
+    config_options = Estimator.config_options.copy()
     config_options.update(dlght_redshiftMin=Param(float, 0.01, msg='min redshift'),
                           dlght_redshiftMax=Param(float, 3.01, msg='max redshift'),
                           dlght_redshiftNumBinsGPpred=Param(int, 301, msg='num bins'),
@@ -212,7 +197,7 @@ class delightPZ(CatEstimator):
                           dlght_redshiftBinSize=Param(float, 0.01, msg='???'),
                           dlght_redshiftDisBinSize=Param(float, 0.2, msg='bad, shouldnt be here'),
                           bands_names=Param(str, "DC2LSST_u DC2LSST_g DC2LSST_r DC2LSST_i DC2LSST_z DC2LSST_y", msg='string with list of Filter names'),
-                          bands_path=Param(str, "./examples/estimation/data/FILTER", msg='string specifying path to filter directory'),
+                          bands_path=Param(str, "./rail/estimation/data/FILTER", msg='string specifying path to filter directory'),
                           bands_fmt=Param(str, "res", msg="string giving the file extension of the filters, not including the '.'"),
                           bands_numcoefs=Param(int, 15, msg='integer specifying number of coefs in approximation of filter'),
                           bands_verbose=Param(bool, True, msg='verbose'),
@@ -220,7 +205,7 @@ class delightPZ(CatEstimator):
                           bands_debug=Param(bool, True, msg='debug flag for filters'),
                           tempdir=Param(str, "./examples/estimation/tmp", msg='temp dir'),
                           tempdatadir=Param(str, "./examples/estimation/tmp/delight_data", msg='temp data dir'),
-                          sed_path=Param(str, "./examples/estimation/data/SED", msg='path to SED dir'),
+                          sed_path=Param(str, "./rail/estimation/data/SED", msg='path to SED dir'),
                           sed_name_list=Param(str, "El_B2004a Sbc_B2004a Scd_B2004a SB3_B2004a SB2_B2004a Im_B2004a ssp_25Myr_z008 ssp_5Myr_z008", msg='String with list of all SED names, with no file extension'),
                           sed_fmt=Param(str, "sed", msg="file extension of SED files (withough the '.', e.g dat or sed"),
                           prior_t_list=Param(str, "0.27 0.26 0.25 0.069 0.021 0.11 0.0061 0.0079", msg='String of numbers specifying prior type fracs MUST BE SAME LENGTH AS NUMBER OF SEDS'),
@@ -253,8 +238,8 @@ class delightPZ(CatEstimator):
 
     def __init__(self, args, comm=None):
         """ Constructor:
-        Do CatEstimator specific initialization """
-        CatEstimator.__init__(self, args, comm=comm)
+        Do Estimator specific initialization """
+        Estimator.__init__(self, args, comm=comm)
         self.delightparamfile = self.config['delightparamfile']
         self.chunknum = 0
         self.delightindata = self.config['dlght_inputdata']
@@ -323,7 +308,7 @@ class delightPZ(CatEstimator):
         try:
             d = test_data['i_mag']
         except Exception:
-            d = test_data['mag_i_lsst']
+            d = test_data[self.mag_err_cols['i']]
 
         numzs = len(d)
 

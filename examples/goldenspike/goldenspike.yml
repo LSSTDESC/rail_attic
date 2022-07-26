@@ -42,7 +42,7 @@ stages:
 - classname: QuantityCut
   name: quantity_cut
   nprocess: 1
-- classname: Inform_trainZ
+- classname: Train_trainZ
   name: inform_trainZ
   nprocess: 1
 - classname: Estimator

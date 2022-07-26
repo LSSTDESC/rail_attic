@@ -20,7 +20,7 @@ flow_engine_test:
   aliases:
     output: output_flow_engine_test
   config: null
-  flow: ../goldenspike/data/pretrained_flow.pkl
+  flow: /Users/echarles/software/vro/RAIL/rail/../examples/goldenspike/data/pretrained_flow.pkl
   n_samples: 50
   name: flow_engine_test
   output_mode: default

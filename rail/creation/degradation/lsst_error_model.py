@@ -14,19 +14,18 @@ class LSSTErrorModel(Degrader):
     Implements the error model from the LSST Overview Paper:
     https://arxiv.org/abs/0805.2366
     Note however that this paper gives the high SNR approximation.
+    
     By default, this model uses the more accurate version of the error model
     where Eq. 5 = (N/S)^2, in flux, and the error is Gaussian in flux space.
     There is a flag allowing you to use the high SNR approximation instead.
     See the __init__ docstring.
-
-    In addition, this paper only gives the error estimation for point sources.
-    To account for extended elliptical sources, we follow:
-    http://arxiv.org/abs/2007.01846
-    We apply three methods to estimate the aperture sizes of the sources
-    according to the definitation of measured fluxes:
-    1) 'auto' model given by http://arxiv.org/abs/2007.01846;
-    2) 'gaap' model given by https://arxiv.org/abs/1902.11265;
-    3) 'point' model which is an estimation for point-sources
+    
+    Two additional error models for extended sources are implementes:
+    
+    1. MAG_AUTO: the error model used in https://arxiv.org/abs/2007.01846;
+    2. MAG_GAAP: magnitude error for Gaussian Aperture and PSF (GAaP) magnitude
+    from https://arxiv.org/abs/1902.11265
+    
 
     Create an instance by calling the class, then use the instance as a
     callable on pandas DataFrames.
@@ -34,6 +33,7 @@ class LSSTErrorModel(Degrader):
     Example usage:
     errModel = LSSTErrorModel()
     data_with_errs = errModel(data)
+
 
     Error model from the LSST Overview Paper:
     https://arxiv.org/abs/0805.2366
@@ -50,8 +50,7 @@ class LSSTErrorModel(Degrader):
     that the error model uses internally to search for parameters, and the
     corresponding dictionary values are the band names as they appear in
     your data set. By default, the LSST bands are named "u", "g", "r", "i",
-    "z", and "y". You can use the bandNames dictionary to alias them
-    differently.
+    "z", and "y". You can use the bandNames dictionary to alias them differently.
 
     For example, if in your DataFrame, the bands are named lsst_u, lsst_g, etc.
     you can set bandNames = {"u": "lsst_u", "g": "lsst_g", ...},
@@ -128,13 +127,15 @@ class LSSTErrorModel(Degrader):
         used to calculate (N/S)^2 in flux, and errors are Gaussian in flux
         space. If True, then Eq. 5 is used to calculate the squared error
         in magnitude space, and errors are Gaussian in magnitude space.
-    A_max: float, maximum GAaP aperture size (in arcmin)
-    A_min: float, minimum GAaP aperture size (in arcmin)
-    errortype: string, should be 'point', 'auto', or 'gaap'
-
+    errortype : string, default="point"
+        Sets the type of magnitude error. By default it is set to be that
+        for point sources. Alternatively it can be set as "gaap" or "auto"
+        representing two models for extended sources. For "gaap", the 
+        minimum and maximum aperture size should be provided (set to be
+        2.0 and 0.7 arcsec by default).
     """
 
-    name = 'LSSTErrorModel_extended'
+    name = 'LSSTErrorModel'
     config_options = Degrader.config_options.copy()
     config_options.update(**{
         "bandNames": {  # provided so you can alias the names of the bands
@@ -143,7 +144,7 @@ class LSSTErrorModel(Degrader):
                     "r": "r",
                     "i": "i",
                     "z": "z",
-                    "y": "y"},
+                    "y": "y",},
         "tvis": 30.0,  # exposure time for a single visit in seconds, p12
         "nYrObs": 10.0,  # number of years of observations
         "nVisYr": {  # mean number of visits per year in each filter (T1)
@@ -152,14 +153,14 @@ class LSSTErrorModel(Degrader):
                     "r": 18.4,
                     "i": 18.4,
                     "z": 16.0,
-                    "y": 16.0},
+                    "y": 16.0,},
         "gamma": {  # band dependent parameter (T2)
                     "u": 0.038,
                     "g": 0.039,
                     "r": 0.039,
                     "i": 0.039,
                     "z": 0.039,
-                    "y": 0.039},
+                    "y": 0.039,},
         "airmass": 1.2,  # fiducial airmass (T2)
         "extendedSource": 0.0,  # constant added to m5 for extended sources
         "sigmaSys": 0.005,  # expected irreducible error, p26
@@ -172,34 +173,29 @@ class LSSTErrorModel(Degrader):
                     "r": 24.44,
                     "i": 24.32,
                     "z": 24.16,
-                    "y": 23.73},
+                    "y": 23.73,},
         "msky": {  # median zenith sky brightness at Cerro Pachon (T2)
                     "u": 22.99,
                     "g": 22.26,
                     "r": 21.20,
                     "i": 20.48,
                     "z": 19.60,
-                    "y": 18.61},
+                    "y": 18.61,},
         "theta": {  # median zenith seeing FWHM, arcseconds (T2)
                     "u": 0.81,
                     "g": 0.77,
                     "r": 0.73,
                     "i": 0.71,
                     "z": 0.69,
-                    "y": 0.68},
+                    "y": 0.68,},
         "km": {  # atmospheric extinction (T2)
                     "u": 0.491,
                     "g": 0.213,
                     "r": 0.126,
                     "i": 0.096,
                     "z": 0.069,
-                    "y": 0.170},
-        "highSNR": False,
-        # aperture sizes
-        "A_min": 0.7,  # in arcsec, these default values need to be validated according
-                       # to LSST observation strategy.
-        "A_max": 2.0,
-        "errortype": "point"})
+                    "y": 0.170,},
+        "highSNR": False,})
 
     def __init__(self, args, comm=None):
         Degrader.__init__(self, args, comm=comm)
@@ -207,13 +203,13 @@ class LSSTErrorModel(Degrader):
         # validate the settings
         self._validate_settings()
 
-        # calculate the single-visit 5-sigma limiting magnitudes using the
-        # settings
+        # calculate the single-visit 5-sigma limiting magnitudes using the settings
         self._all_m5 = self._calculate_m5()
 
         # update the limiting magnitudes with any m5s passed
         if self.config.m5 is not None:
             self._all_m5.update(self.config.m5)
+
 
     def _validate_settings(self):
         """
@@ -221,12 +217,8 @@ class LSSTErrorModel(Degrader):
         """
 
         # check that highSNR is boolean
-        if not isinstance(self.config["highSNR"], bool):  # pragma: no cover
+        if not isinstance(self.config["highSNR"], bool):  #pragma: no cover
             raise TypeError("highSNR must be boolean.")
-
-        if self.config["errortype"] not in ["point", "gaap", "auto"]:
-            raise ValueError("errortype should be onr of 'point', 'gaap', "
-                             "'auto'")
 
         # check all the numbers
         for key in [
@@ -236,7 +228,7 @@ class LSSTErrorModel(Degrader):
             "extendedSource",
             "sigmaSys",
             "magLim",
-            "ndFlag","A_min","A_max"
+            "ndFlag",
         ]:
             # check they are numbers
             # note we also check if they're bools and np.nan's because these
@@ -246,11 +238,11 @@ class LSSTErrorModel(Degrader):
             is_nan = np.isnan(self.config[key])
             # ndFlag can be np.nan
             if key == "ndFlag":
-                if not (is_number or is_nan) or is_bool:  # pragma: no cover
+                if not (is_number or is_nan) or is_bool:  #pragma: no cover
                     raise TypeError(f"{key} must be a number or NaN.")
             # the others cannot
             else:
-                if not is_number or is_nan or is_bool:  # pragma: no cover
+                if not is_number or is_nan or is_bool:  #pragma: no cover
                     raise TypeError(f"{key} must be a number.")
             # if they are numbers, check that they are non-negative
             # except for magLim and ndFlag, which can be
@@ -259,7 +251,7 @@ class LSSTErrorModel(Degrader):
                     raise ValueError(f"{key} must be non-negative.")
 
         # make sure bandNames is a dictionary
-        if not isinstance(self.config["bandNames"], dict):  # pragma: no cover
+        if not isinstance(self.config["bandNames"], dict):  #pragma: no cover
             raise TypeError(
                 "bandNames must be a dictionary where the keys are the names "
                 "of the bands as used internally by the error model, and the "
@@ -362,8 +354,7 @@ class LSSTErrorModel(Degrader):
         # get the list of bands present in the data
         bandNames = list(set(self.config["bandNames"].values()).intersection(columns))
 
-        # sort bandNames to be in the same order provided in
-        # settings["bandNames"]
+        # sort bandNames to be in the same order provided in settings["bandNames"]
         bandNames = [
             band for band in self.config["bandNames"].values() if band in bandNames
         ]
@@ -377,54 +368,6 @@ class LSSTErrorModel(Degrader):
         ]
 
         return bands, bandNames
-
-    def _get_area_ratio_gaap(self, majors: np.ndarray, minors: np.ndarray,
-                             bands: list) -> np.ndarray:
-        """
-        Get the ratio between PSF area and galaxy aperture area for "gaap"
-        model.
-        """
-        theta_size = np.array([self.config["theta"][band] for band in bands])
-
-        hl_to_sigma = 1/0.675
-        fwhm_to_sigma = 1/2.355
-
-        theta_sigma = theta_size * fwhm_to_sigma
-        A_min_sigma = self.config["A_min"] * fwhm_to_sigma
-        A_max_sigma = self.config["A_max"] * fwhm_to_sigma
-
-        majors *= hl_to_sigma
-        minors *= hl_to_sigma
-
-        theta_sigma_, majors_ = np.meshgrid(theta_sigma, majors)
-        theta_sigma_, minors_ = np.meshgrid(theta_sigma, minors)
-
-        a_ap = np.sqrt(theta_sigma_**2+(majors_)**2+A_min_sigma**2)
-        a_ap[a_ap > A_max_sigma] = A_max_sigma
-
-        b_ap = np.sqrt(theta_sigma_**2+(minors_)**2+A_min_sigma**2)
-        b_ap[b_ap > A_max_sigma] = A_max_sigma
-
-        A_ap = np.pi * a_ap * b_ap
-        A_psf = np.pi * theta_sigma ** 2
-        return A_ap / A_psf
-
-    def _get_area_ratio_auto(self, majors: np.ndarray, minors: np.ndarray,
-                             bands: list) -> np.ndarray:
-        """
-        Get the ratio between PSF area and galaxy aperture area for "auto"
-        model
-        """
-        theta_size = np.array([self.config["theta"][band] for band in bands])
-
-        theta_size_, majors_ = np.meshgrid(theta_size, majors)
-        theta_size_, minors_ = np.meshgrid(theta_size, minors)
-
-        a_ap = np.sqrt(theta_size_**2+(2.5*majors_)**2)
-        b_ap = np.sqrt(theta_size_**2+(2.5*minors_)**2)
-        A_ap = np.pi * a_ap * b_ap
-        A_psf = np.pi * theta_size ** 2
-        return A_ap / A_psf
 
     def _get_NSR(self, mags: np.ndarray, bands: list) -> np.ndarray:
         """Calculate the noise-to-signal ratio using Eqs 4 and 5 from
@@ -462,8 +405,6 @@ class LSSTErrorModel(Degrader):
     def _get_obs_and_errs(
         self,
         mags: np.ndarray,
-        majors: np.ndarray,
-        minors: np.ndarray,
         bands: list,
         seed: Optional[int],
     ) -> Tuple[np.ndarray, np.ndarray]:
@@ -471,16 +412,8 @@ class LSSTErrorModel(Degrader):
 
         rng = np.random.default_rng(seed)
 
-        # get the aperture-psf ratio for all the galaxies
-        if self.config["errortype"] == "gaap":
-            a_ratio = self._get_area_ratio_gaap(majors, minors, bands)
-        elif self.config["errortype"] == "auto":
-            a_ratio = self._get_area_ratio_auto(majors, minors, bands)
-        else:
-            a_ratio = 1
-
         # get the NSR for all the galaxies
-        nsr = self._get_NSR(mags, bands) * np.sqrt(a_ratio)
+        nsr = self._get_NSR(mags, bands)
 
         if self.config["highSNR"]:
             # in the high SNR approximation, mag err ~ nsr, and we can
@@ -490,7 +423,7 @@ class LSSTErrorModel(Degrader):
             obsMags = rng.normal(loc=mags, scale=nsr)
 
             # decorrelate the magnitude errors from the true magnitudes
-            obsMagErrs = self._get_NSR(obsMags, bands) * np.sqrt(a_ratio)
+            obsMagErrs = self._get_NSR(obsMags, bands)
 
         else:
             # in the more accurate error model, we acknowledge err != nsr,
@@ -504,7 +437,7 @@ class LSSTErrorModel(Degrader):
                 obsMags = -2.5 * np.log10(obsFluxes)
 
             # decorrelate the magnitude errors from the true magnitudes
-            obsFluxNSR = self._get_NSR(obsMags, bands) * np.sqrt(a_ratio)
+            obsFluxNSR = self._get_NSR(obsMags, bands)
             obsMagErrs = 2.5 * np.log10(1 + obsFluxNSR)
 
         # flag magnitudes beyond magLim as non-detections
@@ -525,12 +458,9 @@ class LSSTErrorModel(Degrader):
         # get numpy array of magnitudes
         mags = data[bandNames].to_numpy()
 
-        majors = data['major'].to_numpy()
-        minors = data['minor'].to_numpy()
-
         # get observed magnitudes and magnitude errors
-        obsMags, obsMagErrs = self._get_obs_and_errs(mags, majors, minors,
-                                                     bands, self.config.seed)
+        obsMags, obsMagErrs = self._get_obs_and_errs(mags, bands, self.config.seed)
+
         # save the observations in a DataFrame
         obsData = data.copy()
         obsData[bandNames] = obsMags
@@ -620,14 +550,6 @@ class LSSTErrorModel(Degrader):
         printMsg += "Model for bands: "
         printMsg += ", ".join(settings["bandNames"].values()) + "\n"
 
-        # Error type
-        printMsg += "Type of magnitude error: "
-        printMsg += self.config['errortype'] + "\n"
-        if self.config['errortype'] == 'gaap':
-            printMsg += "With aperture sizes: " + "\n"
-            printMsg += "A_max = " + str(self.config['A_max']) + "\n"
-            printMsg += "A_min = " + str(self.config['A_min']) + "\n"
-        
         # print whether using the high SNR approximation
         if self.config["highSNR"]:
             printMsg += "Using the high SNR approximation\n\n"
@@ -704,9 +626,8 @@ class LSSTErrorModel(Degrader):
         m5 = self._calculate_m5()
         if len(m5) > 0:
             # Calculated m5
-            printMsg += "The following single-visit 5-sigma limiting \n"
-            printMsg += "magnitudes are calculated using the parameters \n"
-            printMsg += "that follow them:\n"
+            printMsg += "The following single-visit 5-sigma limiting magnitudes are\n"
+            printMsg += "calculated using the parameters that follow them:\n   "
             printMsg += (
                 ", ".join(
                     [

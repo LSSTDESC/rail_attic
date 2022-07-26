@@ -10,29 +10,23 @@ import qp
 from rail.core.stage import RailStage
 
 class Engine(RailStage):
-    """Base class for Engines that create synthetic photometric data
-
-    `Engine` will output a table of photometric data.  The details
-    will depend on the particular engine.
-    """
+    """Base class for Engines that create synthetic photometric data"""
 
     name = 'Engine'
     config_options = RailStage.config_options.copy()
     config_options.update(n_samples=int, seed=12345)
 
     def __init__(self, args, comm=None):
-        """Initialize Engine"""
+        """Initialize Engine that can sample galaxy data."""
         RailStage.__init__(self, args, comm=comm)
 
     def sample(self, n_samples: int, seed: int = None, **kwargs) -> pd.DataFrame:
-        """The main interface method for the photo-z creation `Engine`
-
-        Return a random sample of the distribution with size n_samples.
+        """Return a random sample of the distribution with size n_samples.
 
         Notes
         -----
-        This will put the keyword command line arguments into the stage configuraiton data.
-        That will make it available to the other methods.
+        This will put the command line arguments into this Stages configuraiton data.
+
         It will then call `self.run()` and return the `DataHandle` associated to the `output` tag
         """
         self.config['n_samples'] = n_samples

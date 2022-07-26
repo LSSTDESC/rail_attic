@@ -13,63 +13,39 @@ from flexcode.regression_models import XGBoost
 from flexcode.loss_functions import cde_loss
 # from numpy import inf
 from ceci.config import StageParameter as Param
-from rail.estimation.estimator import CatEstimator, CatInformer
+from rail.estimation.estimator import Estimator, Informer
+import string
 
-def_filt = ['u', 'g', 'r', 'i', 'z', 'y']
-def_bands = [f"mag_{band}_lsst" for band in def_filt]
-def_err_bands = [f"mag_err_{band}_lsst" for band in def_filt]
-def_maglims = dict(mag_u_lsst=27.79,
-                   mag_g_lsst=29.04,
-                   mag_r_lsst=29.06,
-                   mag_i_lsst=28.62,
-                   mag_z_lsst=27.98,
-                   mag_y_lsst=27.05)
-
-
-def make_color_data(data_dict, bands, err_bands, ref_band, nondetect_val):
+def make_color_data(data_dict, bands):
     """
     make a dataset consisting of the i-band mag and the five colors.
 
     Parameters
     -----------
     data_dict : `ndarray`
-      array of magnitudes and errors, with names mag_{bands[i]}_lsst
-      and mag_err_{bands[i]}_lsst respectively.
+      array of magnitudes and errors, with names specified in self.mag_cols
+      and self.mag_err_cols respectively.
 
     Returns
     --------
     input_data : `ndarray`
       array of imag and 5 colors
     """
-    input_data = data_dict[ref_band]
+    input_data = data_dict[self.mag_err_cols['i']]
     # make colors and append to input data
     for i in range(len(bands)-1):
-        band1name = bands[i]
-        band2name = bands[i+1]
-        err1name = err_bands[i]
-        err2name = err_bands[i+1]
-        band1 = data_dict[band1name]
-        band1err = data_dict[err1name]
-        band2 = data_dict[band2name]
-        band2err = data_dict[err2name]
+        band1 = data_dict[self.mag_cols[bands[i]]]
+        band1 = data_dict[self.mag_err_cols[bands[i]]]
+        band2 = data_dict[self.mag_cols[bands[i+1]]]
+        band2 = data_dict[self.mag_err_cols[bands[i+1]]]
         for j, xx in enumerate(band1):
-            if np.isnan(nondetect_val): # pragma: no cover
-                if np.isnan(xx):
-                    band1[j] = def_maglims[band1name]
-                    band1err[j] = 1.0
-            else:
-                if np.isclose(xx, nondetect_val, atol=.01):
-                    band1[j] = def_maglims[band1name]
-                    band1err[j] = 1.0
+            if np.isclose(xx, 99., atol=.01):
+                band1[j] = band1err[j]
+                band1err[j] = 1.0
         for j, xx in enumerate(band2):
-            if np.isnan(nondetect_val): # pragma: no cover
-                if np.isnan(xx):
-                    band2[j] = def_maglims[band2name]
-                    band2err[j] = 1.0
-            else:
-                if np.isclose(xx, 99., atol=0.01):  #pragma: no cover
-                    band2[j] = def_maglims[band2name]
-                    band2err[j] = 1.0
+            if np.isclose(xx, 99., atol=0.01):  #pragma: no cover
+                band2[j] = band2err[j]
+                band2err[j] = 1.0
 
         input_data = np.vstack((input_data, band1-band2))
         color_err = np.sqrt((band1err)**2 + (band2err)**2)
@@ -78,15 +54,14 @@ def make_color_data(data_dict, bands, err_bands, ref_band, nondetect_val):
 
 
 
-class Inform_FZBoost(CatInformer):
-    """ Train a FZBoost CatEstimator
+class Train_FZBoost(Informer):
+    """ Train a FZBoost Estimator
     """
-    name = 'Inform_FZBoost'
-    config_options = CatInformer.config_options.copy()
+    name = 'Train_FZBoost'
+    config_options = Informer.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
                           nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
-                          nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
                           trainfrac=Param(float, 0.75,
                                           msg="fraction of training "
                                           "data to use for training (rest used for bump thresh "
@@ -104,9 +79,7 @@ class Inform_FZBoost(CatInformer):
                           nsharp=Param(int, 15, msg="number of search points in sharpening fit"),
                           max_basis=Param(int, 35, msg="maximum number of basis funcitons to use in density estimate"),
                           basis_system=Param(str, 'cosine', msg="type of basis sytem to use with flexcode"),
-                          bands=Param(list, def_bands, msg="bands to use in estimation"),
-                          err_bands=Param(list, def_err_bands, msg="error column names to use in estimation"),
-                          ref_band=Param(str, "mag_i_lsst", msg="band to use in addition to colors"),
+                          bands=Param(str, 'ugrizy', msg="bands to use in estimation"),
                           regression_params=Param(dict, {'max_depth': 8, 'objective': 'reg:squarederror'},
                                                   msg="dictionary of options passed to flexcode, includes "
                                                   "max_depth (int), and objective, which should be set "
@@ -115,10 +88,10 @@ class Inform_FZBoost(CatInformer):
 
     def __init__(self, args, comm=None):
         """ Constructor
-        Do CatInformer specific initialization, then check on bands """
-        CatInformer.__init__(self, args, comm=comm)
-        if self.config.ref_band not in self.config.bands:
-            raise ValueError("ref_band not present in bands list! ")
+        Do Informer specific initialization, then check on bands """
+        Informer.__init__(self, args, comm=comm)
+        if not all(c in string.ascii_letters for c in self.config.bands):
+            raise ValueError("'bands' option should be letters only (no spaces or commas etc)")
 
     @staticmethod
     def split_data(fz_data, sz_data, trainfrac):
@@ -147,8 +120,7 @@ class Inform_FZBoost(CatInformer):
             training_data = self.get_data('input')
         speczs = training_data['redshift']
         print("stacking some data...")
-        color_data = make_color_data(training_data, self.config.bands, self.config.err_bands,
-                                     self.config.ref_band, self.config.nondetect_val)
+        color_data = make_color_data(training_data, self.config.bands)
         train_dat, val_dat, train_sz, val_sz = self.split_data(color_data,
                                                                speczs,
                                                                self.config.trainfrac)
@@ -187,23 +159,20 @@ class Inform_FZBoost(CatInformer):
         self.add_data('model', self.model)
 
 
-class FZBoost(CatEstimator):
-    """FZBoost-based CatEstimator
+class FZBoost(Estimator):
+    """FZBoost-based Estimator
     """
     name = 'FZBoost'
-    config_options = CatEstimator.config_options.copy()
+    config_options = Estimator.config_options.copy()
     config_options.update(nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
-                          nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
-                          bands=Param(list, def_bands, msg="bands to use in estimation"),
-                          err_bands=Param(list, def_err_bands, msg="error column names to use in estimation"),
-                          ref_band=Param(str, "mag_i_lsst", msg="band to use in addition to colors"))
+                          bands=Param(str, 'ugrizy', msg="bands to use in estimation"))
 
     def __init__(self, args, comm=None):
         """ Constructor:
-        Do CatEstimator specific initialization """
-        CatEstimator.__init__(self, args, comm=comm)
-        if self.config.ref_band not in self.config.bands:
-            raise ValueError("ref_band not present in bands list! ")
+        Do Estimator specific initialization """
+        Estimator.__init__(self, args, comm=comm)
+        if not all(c in string.ascii_letters for c in self.config.bands):
+            raise ValueError("'bands' option should be letters only (no spaces or commas etc)")
         self.zgrid = None
 
     def run(self):
@@ -211,8 +180,7 @@ class FZBoost(CatEstimator):
             test_data = self.get_data('input')[self.config.hdf5_groupname]
         else:  #pragma:  no cover
             test_data = self.get_data('input')
-        color_data = make_color_data(test_data, self.config.bands, self.config.err_bands,
-                                     self.config.ref_band, self.config.nondetect_val)
+        color_data = make_color_data(test_data, self.config.bands)
         pdfs, z_grid = self.model.predict(color_data, n_grid=self.config.nzbins)
         self.zgrid = np.array(z_grid).flatten()
         qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=pdfs))

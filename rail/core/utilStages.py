@@ -10,13 +10,6 @@ from rail.core.data import PqHandle, Hdf5Handle
 class ColumnMapper(RailStage):
     """Utility stage that remaps the names of columns.
 
-    Notes
-    -----
-    1. This operates on pandas dataframs in parquet files.
-
-    2. In short, this does:
-    `output_data = input_data.rename(columns=self.config.columns, inplace=self.config.inplace)`
-
     """
     name = 'ColumnMapper'
     config_options = RailStage.config_options.copy()
@@ -58,14 +51,7 @@ class ColumnMapper(RailStage):
 
 
 class RowSelector(RailStage):
-    """Utility Stage that sub-selects rows from a table by index
-
-    Notes
-    -----
-    1. This operates on pandas dataframs in parquet files.
-
-    2. In short, this does:
-    `output_data = input_data[self.config.start:self.config.stop]`
+    """Utility stage that remaps the names of columns.
 
     """
     name = 'RowSelector'
@@ -79,7 +65,7 @@ class RowSelector(RailStage):
 
     def run(self):
         data = self.get_data('input', allow_missing=True)
-        out_data = data.iloc[self.config.start:self.config.stop]
+        out_data = data.iloc[3:4]
         self.add_data('output', out_data)
 
     def __repr__(self):  # pragma: no cover
@@ -106,11 +92,7 @@ class RowSelector(RailStage):
 
 
 class TableConverter(RailStage):
-    """Utility stage that converts tables from one format to anothe
-
-    FIXME, this is hardwired to convert parquet tables to Hdf5Tables.
-    It would be nice to have more options here.
-    """
+    """Utility stage that converts tables from one format to another"""
     name = 'TableConverter'
     config_options = RailStage.config_options.copy()
     config_options.update(output_format=str)

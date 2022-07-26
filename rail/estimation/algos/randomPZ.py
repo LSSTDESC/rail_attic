@@ -7,18 +7,18 @@ random_width*(1+zmode).
 import numpy as np
 from scipy.stats import norm
 from ceci.config import StageParameter as Param
-from rail.estimation.estimator import CatEstimator
+from rail.estimation.estimator import Estimator
 from rail.core.data import TableHandle
 import qp
 
 
-class RandomPZ(CatEstimator):
-    """Random CatEstimator
+class RandomPZ(Estimator):
+    """Random Estimator
     """
 
     name = 'RandomPZ'
     inputs = [('input', TableHandle)]
-    config_options = CatEstimator.config_options.copy()
+    config_options = Estimator.config_options.copy()
     config_options.update(rand_width=Param(float, 0.025, "ad hock width of PDF"),
                           rand_zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           rand_zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
@@ -26,8 +26,8 @@ class RandomPZ(CatEstimator):
 
     def __init__(self, args, comm=None):
         """ Constructor:
-        Do CatEstimator specific initialization """
-        CatEstimator.__init__(self, args, comm=comm)
+        Do Estimator specific initialization """
+        Estimator.__init__(self, args, comm=comm)
         self.zgrid = None
 
     def run(self):
@@ -40,7 +40,7 @@ class RandomPZ(CatEstimator):
         try:
             d = test_data['i_mag']
         except Exception:
-            d = test_data['mag_i_lsst']
+            d = test_data[self.mag_err_cols['i']]
         numzs = len(d)
         zmode = np.round(np.random.uniform(0.0, self.config.rand_zmax, numzs), 3)
         widths = self.config.rand_width * (1.0 + zmode)

@@ -1,6 +1,6 @@
 config: pipe_example_config.yml
 inputs:
-  flow: ../goldenspike/data/pretrained_flow.pkl
+  flow: /Users/echarles/software/vro/RAIL/rail/../examples/goldenspike/data/pretrained_flow.pkl
 log_dir: .
 modules: rail
 output_dir: .
