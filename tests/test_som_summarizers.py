@@ -38,7 +38,7 @@ def test_SimpleSOM():
 
     
 def test_SimpeSOM_with_mag_and_colors():
-    summary_config_dict = {'m_dim': 21, 'n_dim' : 21, 'use_only_colors': True}
+    summary_config_dict = {'m_dim': 21, 'n_dim' : 21, 'use_only_colors': False}
     inform_class = simpleSOM.Inform_SimpleSOMSummarizer
     summarizerclass = simpleSOM.SimpleSOMSummarizer
     _ = one_algo("SimpleSOM_wmag", inform_class, summarizerclass, summary_config_dict)
