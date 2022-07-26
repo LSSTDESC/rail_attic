@@ -75,7 +75,7 @@ class FSPSSedGenerator(Generator):
     def _get_rest_frame_seds(self, ages, metallicities, velocity_dispersions, gas_ionizations, gas_metallicities,
                              tau_efolding_times, fracs_instantaneous_burst, ages_instantaneous_burst,
                              e_b_v_attenuations, frac_luminosities_agn, opt_depths_agn, physical_units=True,
-                             tabulated_sfh_file=None, tabulated_lsf_file=None, **kwargs):
+                             tabulated_sfh_file=None, tabulated_lsf_file=None):
         """
         Parameters
         ----------
@@ -110,7 +110,7 @@ class FSPSSedGenerator(Generator):
                                         tage=ages[i], fburst=fracs_instantaneous_burst[i],
                                         tburst=ages_instantaneous_burst[i],
                                         dust_type=self.config.dust_type, dust2=e_b_v_attenuations[i],
-                                        fagn=frac_luminosities_agn[i], agn_tau=opt_depths_agn[i], **kwargs)
+                                        fagn=frac_luminosities_agn[i], agn_tau=opt_depths_agn[i])
 
             if self.config.sfh_type == 3:
                 assert self.config.zcontinuous == 3, 'zcontinous parameter must be set to 3 when using tabular SFHs'
@@ -155,7 +155,7 @@ class FSPSSedGenerator(Generator):
 
         return wavelengths, fluxes
 
-    def run(self, physical_units=True, tabulated_sfh_file=None, tabulated_lsf_file=None, **kwargs):
+    def run(self):
         """
         Run method
 
@@ -184,9 +184,9 @@ class FSPSSedGenerator(Generator):
                                                         gas_metallicities, tau_efolding_times,
                                                         fracs_instantaneous_burst, ages_instantaneous_burst,
                                                         e_b_v_attenuations, frac_luminosities_agn, opt_depths_agn,
-                                                        physical_units=physical_units,
-                                                        tabulated_sfh_file=tabulated_sfh_file,
-                                                        tabulated_lsf_file=tabulated_lsf_file, **kwargs)
+                                                        physical_units=self.config.physical_units,
+                                                        tabulated_sfh_file=self.config.tabulated_sfh_file,
+                                                        tabulated_lsf_file=self.config.tabulated_lsf_file)
 
         if self.rank == 0:
             output_table = Table([wavelengths, fluxes], names=('wavelength', 'spectrum'))

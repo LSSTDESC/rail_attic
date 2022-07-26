@@ -25,7 +25,7 @@ class Generator(RailStage):
         """Initialize Generator that can create rest-frame SEDs"""
         RailStage.__init__(self, args, comm=comm)
 
-    def __call__(self, sample, seed: int = None):
+    def __call__(self, sample, seed: int = None, physical_units=True, tabulated_sfh_file=None, tabulated_lsf_file=None):
         """The main interface method for `Generator`
 
         Generate SEDs.
@@ -53,9 +53,22 @@ class Generator(RailStage):
         output_data : `TableHandle`
             A handle giving access to an astropy.table with rest-frame SEDs
         """
+
+        self.config.physical_units = physical_units
+
         if seed is not None:
             self.config.seed = seed
+        if tabulated_sfh_file is not None:
+            self.config.tabulated_sfh_file = tabulated_sfh_file
+        else:
+            self.config.tabulated_sfh_file = None
+        if tabulated_lsf_file is not None:
+            self.config.tabulated_lsf_file = tabulated_lsf_file
+        else:
+            self.config.tabulated_lsf_file = None
+
         self.set_data('input', sample)
         self.run()
         self.finalize()
+
         return self.get_handle('output')
