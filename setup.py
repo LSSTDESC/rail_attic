@@ -14,7 +14,8 @@ install_requires = [
 core_extras = ["hyperbolic @ git+https://github.com/jlvdb/hyperbolic"]
 
 # dependencies for the Creation module
-creation_extras = ["pzflow"]
+creation_extras = ["pzflow",
+                   "fsps @ git+https://github.com/torluca/python-fsps-lite.git"]
 
 # dependencies required for all estimators in the Estimation module
 estimation_extras = [
