@@ -1,23 +1,14 @@
 """This is the subclass of Creator that wraps a PZFlow Flow so that it can
 be used to generate synthetic data and calculate posteriors."""
 
-from ast import Param
-from sre_constants import MAGIC
-from xml.etree.ElementInclude import LimitedRecursiveIncludeError
-
 import numpy as np
 import qp
+from ceci.config import StageParameter as Param
 from pzflow import Flow
-
+from pzflow.bijectors import Chain, ColorTransform, RollingSplineCoupling, ShiftBounds
 from rail.core.data import FlowHandle, PqHandle, QPHandle, TableHandle
 from rail.creation.creator import Creator, Modeler, PosteriorCalculator
 
-def newrange(mins, maxs):
-    newmins, newmaxs = [], []
-    for i in range(len(mins) - 1):
-        newmins.append(mins[i] - maxs[i+1])
-        newmaxs.append(maxs[i] + mins[i+1])
-    return(newmins, newmaxs)
 
 class FlowModeler(Modeler):
     """Modeler wrapper for a PZFlow Flow object.
@@ -31,41 +22,49 @@ class FlowModeler(Modeler):
 
     config_options = Modeler.config_options.copy()
     config_options.update(
+        phys_cols=Param(
+            dict,
+            {"redshift": [0.0, 3.0]},
+            msg="Names of non-photometry columns and their corresponding [min, max] values.",
+        ),
+        phot_cols=Param(
+            dict,
+            {
+                "u": [22.79, 27.79],
+                "g": [24.04, 29.04],
+                "r": [24.06, 29.06],
+                "i": [23.62, 28.62],
+                "z": [22.98, 27.98],
+                "y": [22.05, 27.05],
+            },
+            msg="Names of photometry columns and their corresponding [min, max] values.",
+        ),
         column_names=Param(
             dict,
-            {'phys_cols': ['redshift'], 'phot_cols': ['u', 'g', 'r', 'i', 'z', 'y']},
+            {"phys_cols": ["redshift"], "phot_cols": ["u", "g", "r", "i", "z", "y"]},
             msg="The column names of the input data.",
         ),
         calc_colors=Param(
-            bool,
-            False,
-            msg="Do you provide magnitudes but want to model colors?",
-        ),
-        # ref_column_name=Param(
-        #     str,
-        #     'r',
-        #     msg="The column name for the magnitude to use as an anchor for defining colors.",
-        # ),
-        data_mins=Param(
-            list,
-            None, # should we default this?
+            dict,
+            {"ref_column_name": "r"},
             msg=(
-                "The minima of the values modeled by the flow. The list must "
-                "be in the same order of the columns you are modeling."
-            ),
-        ),
-        data_maxs=Param(
-            list,
-            None,  # should we default this?
-            msg=(
-                "The maxima of the values modeled by the flow. The list must "
-                "be in the same order of the columns you are modeling."
+                "Whether to internally calculate colors (if phot_cols are magnitudes). "
+                "Assumes that you want to calculate colors from adjacent columns in "
+                "phot_cols. If you do not want to calculate colors, set False. Else, "
+                "provide a dictionary {'ref_column_name': band}, where band is a string "
+                "corresponding to the column in phot_cols you want to save as the "
+                "overall galaxy magnitude."
             ),
         ),
         spline_knots=Param(
             int,
             16,
             msg="The number of spline knots in the normalizing flow.",
+        ),
+        num_training_epochs=Param(
+            int,
+            30,
+            msg="The number of training epochs.",
         ),
     )
 
@@ -74,64 +73,83 @@ class FlowModeler(Modeler):
 
         Does standard Modeler initialization.
         """
+        # get the columns we are modeling
+        phys_cols = self.config.phys_cols
+        phot_cols = self.config.phot_cols
 
-        # first let's pull out the ranges of each column of the data
-        mins = self.config.data_mins
-        maxs = self.config.data_maxs
+        # assemble the list of column names
+        column_names = list(phys_cols) + list(phot_cols)
 
         # now let's set up the RQ-RSC
-        nlayers = len(self.config.column_names) # can make configurable from yaml if wanted
-        transformed_dim = 1 # can make configurable from yaml if wanted
+        nlayers = len(column_names)  # can make configurable from yaml if wanted
+        transformed_dim = 1  # can make configurable from yaml if wanted
         K = self.config.spline_knots
+        rsc = RollingSplineCoupling(nlayers, K=K, transformed_dim=transformed_dim)
 
-        # if we are doing the color transform, there are a few more things to do...
         if color_config := self.config["calc_colors"]:
             # tell it which column to use as the reference magnitude
-            ref_idx = train_set.columns.get_loc(color_config["ref_col"])
+            ref_idx = column_names.index(color_config["ref_column_name"])
             # and which columns correspond to the magnitudes we want colors for
-            mag_idx = [columns.get_loc(band) for band in color_config["bands"]]
+            mag_idx = [column_names.index(band) for band in phot_cols]
 
-            # convert ranges above to the corresponding color ranges
-            # CONVERT MAG MINS AND MAXES TO COLOR MINS AND MAXES
-            color_cols =
+            # convert magnitude ranges to color ranges
+            mag_ranges = np.array([val for val in phot_cols.values()])
+            color_ranges = mag_ranges[:-1] - mag_ranges[1:, ::-1]
+            mins = [col_range[0] for col_range in phys_cols.values()] + list(
+                color_ranges[:, 0]
+            )
+            maxs = [col_range[1] for col_range in phys_cols.values()] + list(
+                color_ranges[:, 1]
+            )
 
             # chain all the bijectors together
             bijector = Chain(
                 ColorTransform(ref_idx, mag_idx),
                 ShiftBounds(mins, maxs),
-                RollingSplineCoupling(nlayers, K=K, transformed_dim=transformed_dim),
+                rsc,
             )
-        # otherwise, we can just chain what we have
         else:
+            # get the list of mins and maxes
+            mins = [
+                col_range[0]
+                for columns in [phys_cols, phot_cols]
+                for col_range in columns.values()
+            ]
+            maxs = [
+                col_range[1]
+                for columns in [phys_cols, phot_cols]
+                for col_range in columns.values()
+            ]
+
+            # chain the bijectors
             bijector = Chain(
                 ShiftBounds(mins, maxs),
-                RollingSplineCoupling(nlayers, K=K, transformed_dim=transformed_dim),
+                rsc,
             )
 
         # build the flow
-        flow = Flow(train_set.columns, bijector=bijector)
+        self.flow = Flow(column_names, bijector=bijector)
 
     def run(self):
-        """
-
-        """
+        """ """
         if self.config.base:
-            training_data = self.get_data('base')[self.config.base]
-        else:  #pragma:  no cover
-            training_data = self.get_data('base')
+            training_data = self.get_data("base")[self.config.base]
+        else:  # pragma:  no cover
+            training_data = self.get_data("base")
 
-        if self.config.num_training_epochs  :
-            n_epoch = self.get_data('input')[self.config.num_training_epochs]
-        else:  #pragma:  no cover
-            n_epoch = self.get_data('input')
-
+        if self.config.num_training_epochs:
+            n_epoch = self.get_data("input")[self.config.num_training_epochs]
+        else:  # pragma:  no cover
+            n_epoch = self.get_data("input")
 
         # train the flow
-        losses = flow.train(training_data, epochs=n_epoch, verbose=True)
+        losses = self.flow.train(training_data, epochs=n_epoch, verbose=True)
 
         # save the flow
-        self.add_data("output", flow)
-        flow.save(self.config.model_file)
+        self.add_data("output", self.flow)
+        self.flow.save(self.config.model_file)
+
+        # NEED TO SAVE THE LOSSES TOO SO WE CAN PLOT THEM
 
 
 class FlowCreator(Creator):
