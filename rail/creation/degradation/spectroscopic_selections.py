@@ -305,7 +305,7 @@ class SpecSelection_VVDSf02(SpecSelection):
                of galaxies.
         update the internal state
         """
-        mask = (data[self.config.colnames['i']] > 18.5) & (data[self.config.colnames['i']] < 24.0)
+        mask = (data[self.config.colnames['i']] > 17.5) & (data[self.config.colnames['i']] < 24.0)
         # 17.5, 24.0
         self.mask &= mask
 
