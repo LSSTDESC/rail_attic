@@ -1,0 +1,127 @@
+# if run estimation is true, run as normal, if False, Evaluation will try to
+# load results from previous estimation run using these parameters
+run_estimation: True
+base_yaml: ./configs/base.yaml
+#save all the pdfs for each code? Will be written to `results/estimation_results_base_[code]`
+save_pdfs: True
+estimation_results_base: goldspike_test
+#  name for metrics summary file
+# yaml config for each code we want to run:
+estimators:
+  BPZ_lite:
+    run_params:
+      class_name: BPZ_lite
+      run_name: BPZ_lite
+      zmin: 0.0
+      zmax: 3.0
+      dz: 0.01
+      columns_file: ../estimation/configs/test_bpz.columns
+      spectra_file: SED/CWWSB4.list
+      madau_reddening: no
+      bands: ugrizy
+      prior_band: i
+      prior_file: hdfn_gen
+      p_min: 0.005
+      gauss_kernel: 0.06
+      zp_errors: [0.03, 0.02, 0.02, 0.02, 0.02, 0.03]
+      mag_err_min: 0.005
+      inform_options:
+        save_train: False
+        load_model: False
+        modelfile: BPZpriormodel.out
+  FZBoost:
+    run_params:
+      class_name: FZBoost
+      run_name: FZBoost
+      zmin: 0.0
+      zmax: 3.0
+      nzbins: 301
+      trainfrac: 0.75
+      bumpmin: 0.02
+      bumpmax: 0.35
+      nbump: 20
+      sharpmin: 0.7
+      sharpmax: 2.1
+      nsharp: 15
+      max_basis: 35
+      basis_system: cosine
+      regression_params: 
+        max_depth: 8
+        objective: reg:squarederror
+      inform_options:
+        save_train: True 
+        load_model: False
+        modelfile: creation_trained_fzb_model.pkl
+  trainZ:
+    run_params:
+      class_name: trainZ
+      run_name: trainZ
+      zmin: 0.0
+      zmax: 3.0
+      nzbins: 301
+      inform_options:
+        save_train: False
+        load_model: False
+        modelfile: trainZmodel.pkl
+  KNearNeighPDF:
+    run_params:
+      class_name: KNearNeighPDF
+      run_name: test_KNearNeighPDF
+      zmin: 0.0
+      zmax: 3.0
+      nzbins: 301
+      trainfrac: 0.75
+      ref_column_name: mag_i_lsst
+      column_names: ['mag_u_lsst', 'mag_g_lsst', 'mag_r_lsst', 'mag_i_lsst', 'mag_z_lsst', 'mag_y_lsst']
+      mag_limits:
+        mag_u_lsst: 27.79
+        mag_g_lsst: 29.04
+        mag_r_lsst: 29.06
+        mag_i_lsst: 28.62
+        mag_z_lsst: 27.98
+        mag_y_lsst: 27.05
+      sigma_grid_min: 0.01
+      sigma_grid_max: 0.05
+      ngrid_sigma: 17
+      leaf_size: 15
+      nneigh_min: 3
+      nneigh_max: 9
+      redshift_column_name: redshift
+      inform_options:
+        save_train: False
+        load_model: False
+        modelfile: KNearNeighPDF.pkl
+  PZFlowPDF:
+    run_params:
+      class_name: PZFlowPDF
+      run_name: PZFlowPDF
+      zmin: 0.0
+      zmax: 3.0
+      nzbins: 301
+      flow_seed: 0
+      ref_column_name: mag_i_lsst
+      column_names: ['mag_u_lsst', 'mag_g_lsst', 'mag_r_lsst', 'mag_i_lsst', 'mag_z_lsst', 'mag_y_lsst']
+      mag_limits:
+        mag_u_lsst: 27.79
+        mag_g_lsst: 29.04
+        mag_r_lsst: 29.06
+        mag_i_lsst: 28.62
+        mag_z_lsst: 27.98
+        mag_y_lsst: 27.05
+      include_mag_errors: True
+      error_names_dict:
+        mag_err_u_lsst: "mag_u_lsst_err"
+        mag_err_g_lsst: "mag_g_lsst_err"
+        mag_err_r_lsst: "mag_r_lsst_err"
+        mag_err_i_lsst: "mag_i_lsst_err"
+        mag_err_z_lsst: "mag_z_lsst_err"
+        mag_err_y_lsst: "mag_y_lsst_err"
+      n_error_samples: 3
+      soft_sharpness: 10
+      soft_idx_col: 0
+      redshift_column_name: redshift
+      num_training_epochs: 250
+      inform_options:
+        save_train: False
+        load_model: False
+        modelfile': PZflowPDF.pkl

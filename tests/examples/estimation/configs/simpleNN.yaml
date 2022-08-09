@@ -1,0 +1,10 @@
+run_params:
+  class_name: simpleNN
+  run_name: test_simpleNN
+  width: 0.065
+  zmin: 0.0
+  zmax: 3.0
+  nzbins: 301
+  bands: ugrizy
+  max_iter: 250
+  inform_options: {'save_train': False, 'modelfile': 'simpleNN.pkl', 'load_model': False}

@@ -5,9 +5,9 @@ import pickle
 import numpy as np
 from types import GeneratorType
 from rail.core.stage import RailStage
-from rail.core.data import DataStore, DataHandle, TableHandle, Hdf5Handle, PqHandle, QPHandle, ModelHandle, FlowHandle
+from rail.core.data import DataStore, DataHandle, TableHandle, Hdf5Handle, FitsHandle, PqHandle, QPHandle, ModelHandle, FlowHandle
 from rail.core.utilStages import ColumnMapper, RowSelector, TableConverter
-
+from rail.core.common_params import SHARED_PARAMS, copy_param, set_param_default
 
 #def test_data_file():    
 #    with pytest.raises(ValueError) as errinfo:
@@ -115,6 +115,8 @@ def test_hdf5_handle():
     handle_chunked = Hdf5Handle("chunked", handle.data, path=datapath_chunked)
     from tables_io.arrayUtils import getGroupInputDataLength, sliceDict, getInitializationForODict
     num_rows = len(handle.data['photometry']['id'])
+    check_num_rows = len(handle()['photometry']['id'])
+    assert num_rows == check_num_rows
     chunk_size = 1000
     data = handle.data['photometry']
     init_dict = getInitializationForODict(data)
@@ -126,12 +128,28 @@ def test_hdf5_handle():
             end = i+chunk_size
             if end > num_rows:
                 end = num_rows
-            handle_chunked.data = sliceDict(handle.data['photometry'], slice(start, end))
+            handle_chunked.set_data(sliceDict(handle.data['photometry'], slice(start, end)), partial=True)
             handle_chunked.write_chunk(start, end)
+    write_size = handle_chunked.size()
+    assert len(handle_chunked.data) <= 1000
+    data_called = handle_chunked()
+    assert len(data_called['id']) == write_size
     read_chunked = Hdf5Handle("read_chunked", None, path=datapath_chunked)
     data_check = read_chunked.read()
     assert np.allclose(data['id'], data_check['id'])
+    assert np.allclose(data_called['id'], data_check['id'])
     os.remove(datapath_chunked)
+
+
+def test_fits_handle():
+    raildir = os.path.dirname(rail.__file__)
+    datapath = os.path.join(raildir, '..', 'tests', 'data', 'output_BPZ_lite.fits')
+    handle = do_data_handle(datapath, FitsHandle)
+    fitsfile = handle.open()
+    assert fitsfile
+    assert handle.fileObj is not None
+    handle.close()
+    assert handle.fileObj is None
 
 
 def test_model_handle():
@@ -262,3 +280,18 @@ def test_data_store():
     
     os.remove(datapath_hdf5_copy)
     os.remove(datapath_pq_copy)
+
+
+def test_common_params():
+
+    par = copy_param('zmin')
+    assert par.default == 0.0
+    assert par.value == 0.0
+    assert par.dtype == float
+
+    set_param_default('zmin', 0.1)
+    par = copy_param('zmin')
+    assert par.default == 0.1
+    assert par.value == 0.1
+    assert par.dtype == float
+ 

@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 from rail.core.data import DATA_STORE, TableHandle
 from rail.creation.degradation import *
-
+from rail.core.utilStages import ColumnMapper
 
 @pytest.fixture
 def data():
@@ -25,7 +25,23 @@ def data():
     df = pd.DataFrame(x, columns=["redshift", "u", "g", "r", "i", "z", "y"])
     return DS.add_data('data', df, TableHandle, path='dummy.pd')
 
+@pytest.fixture
+def data_forspec():
+    """Some dummy data to use below."""
 
+    DS = DATA_STORE()
+    DS.__class__.allow_overwrite = True
+    
+    # generate random normal data
+    rng = np.random.default_rng(0)
+    x = rng.normal(loc=26, scale=1, size=(200000, 7))
+
+    # replace redshifts with reasonable values
+    x[:, 0] = np.linspace(0, 2, x.shape[0])
+
+    # return data in handle wrapping a pandas DataFrame
+    df = pd.DataFrame(x, columns=["redshift", "u", "g", "r", "i", "z", "y"])
+    return DS.add_data('data_forspec', df, TableHandle, path='dummy_forspec.pd')
 
 @pytest.mark.parametrize(
     "true_wavelen,wrong_wavelen,frac_wrong,errortype",
@@ -81,6 +97,23 @@ def test_InvRedshiftIncompleteness_returns_correct_shape(data):
     assert degraded_data.shape[0] < data.data.shape[0]
     assert degraded_data.shape[1] == data.data.shape[1]
     os.remove(degrader.get_output(degrader.get_aliased_tag('output'), final_name=True))
+    
+@pytest.mark.parametrize("percentile_cut,pessimistic_redshift_cut,errortype", [(-1, 1, ValueError), (101, 1, ValueError), (99, -1, ValueError)])
+def test_GridSelection_bad_params(percentile_cut, pessimistic_redshift_cut, errortype):
+    """Test bad parameters that should raise ValueError"""
+    with pytest.raises(errortype):
+        GridSelection.make_stage(percentile_cut=percentile_cut, pessimistic_redshift_cut=pessimistic_redshift_cut)
+        
+def test_GridSelection_returns_correct_shape(data):
+    import pdb
+    """Make sure returns 2 more columns, fewer rows"""
+    degrader = GridSelection.make_stage(pessimistic_redshift_cut = 1.)
+    degraded_data = degrader(data).data
+    #pdb.set_trace()
+    assert degraded_data.shape[0] < data.data.shape[0]
+    assert degraded_data.shape[1] == data.data.shape[1] - 1
+    os.remove(degrader.get_output(degrader.get_aliased_tag('output'), final_name=True))
+
 
 
 @pytest.mark.parametrize(
@@ -235,3 +268,77 @@ def test_random_seed(degrader, data):
     degraded_data3 = degrader(data, seed=1).data.to_numpy()
     assert not degraded_data1.equals(degraded_data3)
     os.remove(degrader.get_output(degrader.get_aliased_tag('output'), final_name=True))
+
+def test_SpecSelection(data):
+    
+    bands = ['u','g','r','i','z','y']
+    band_dict = {band:f'mag_{band}_lsst' for band in bands}
+    rename_dict = {f'{band}_err':f'mag_err_{band}_lsst' for band in bands}
+    rename_dict.update({f'{band}':f'mag_{band}_lsst' for band in bands})
+    standard_colnames = [f'mag_{band}_lsst' for band in 'ugrizy']
+    
+    col_remapper_test = ColumnMapper.make_stage(name='col_remapper_test', hdf5_groupname='',
+                                             columns=rename_dict)
+    data = col_remapper_test(data)
+    
+    degrader_GAMA = SpecSelection_GAMA.make_stage()
+    degrader_GAMA(data)
+    degrader_GAMA.__repr__()
+    
+    degrader_BOSS = SpecSelection_BOSS.make_stage()
+    degrader_BOSS(data)
+    degrader_BOSS.__repr__()
+
+    degrader_DEEP2 = SpecSelection_DEEP2.make_stage()
+    degrader_DEEP2(data)
+    degrader_DEEP2.__repr__()
+    
+    degrader_VVDSf02 = SpecSelection_VVDSf02.make_stage()
+    degrader_VVDSf02(data)
+    degrader_VVDSf02.__repr__()
+    
+    degrader_zCOSMOS = SpecSelection_zCOSMOS.make_stage(colnames={'i':'mag_i_lsst','redshift':'redshift'})
+    degrader_zCOSMOS(data)
+    degrader_zCOSMOS.__repr__()
+    
+    degrader_HSC = SpecSelection_HSC.make_stage()
+    degrader_HSC(data)
+    degrader_HSC.__repr__()
+    
+    degrader_HSC = SpecSelection_HSC.make_stage(percentile_cut=70)
+    degrader_HSC(data)
+    degrader_HSC.__repr__()
+    
+def test_SpecSelection_low_N_tot(data_forspec):
+    
+    bands = ['u','g','r','i','z','y']
+    band_dict = {band:f'mag_{band}_lsst' for band in bands}
+    rename_dict = {f'{band}_err':f'mag_err_{band}_lsst' for band in bands}
+    rename_dict.update({f'{band}':f'mag_{band}_lsst' for band in bands})
+    standard_colnames = [f'mag_{band}_lsst' for band in 'ugrizy']
+    
+    col_remapper_test = ColumnMapper.make_stage(name='col_remapper_test', hdf5_groupname='',
+                                             columns=rename_dict)
+    data_forspec = col_remapper_test(data_forspec)
+    
+    degrader_zCOSMOS = SpecSelection_zCOSMOS.make_stage(N_tot=1)
+    degrader_zCOSMOS(data_forspec)
+    
+@pytest.mark.parametrize("N_tot, errortype", [(-1, ValueError)])
+def test_SpecSelection_bad_params(N_tot, errortype):
+    """Test bad parameters that should raise TypeError"""
+    with pytest.raises(errortype):
+        SpecSelection.make_stage(N_tot=N_tot)
+        
+@pytest.mark.parametrize("errortype", [(ValueError)])
+def test_SpecSelection_bad_colname(data, errortype):
+    """Test bad parameters that should raise TypeError"""
+    with pytest.raises(errortype):
+        degrader_GAMA = SpecSelection_GAMA.make_stage()
+        degrader_GAMA(data)
+
+@pytest.mark.parametrize("success_rate_dir, errortype", [("/this/path/should/not/exist", ValueError)])
+def test_SpecSelection_bad_path(success_rate_dir, errortype):
+    """Test bad parameters that should raise TypeError"""
+    with pytest.raises(errortype):
+        SpecSelection.make_stage(success_rate_dir=success_rate_dir)

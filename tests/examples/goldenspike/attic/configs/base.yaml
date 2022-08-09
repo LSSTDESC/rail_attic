@@ -1,0 +1,8 @@
+base_config:
+  trainfile: ./creation_data/train_data.hdf5
+  testfile: ./creation_data/test_data.hdf5
+  hdf5_groupname: null #yaml uses null for None!
+  chunk_size: 10000
+  configpath: ./configs
+  outpath: ./estimation_results
+  output_format: qp

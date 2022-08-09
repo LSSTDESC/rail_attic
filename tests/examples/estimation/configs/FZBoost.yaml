@@ -1,0 +1,18 @@
+run_params:
+  class_name: FZBoost
+  run_name: test_FZBoost
+  zmin: 0.0
+  zmax: 3.0
+  nzbins: 301
+  bands: ugrizy
+  trainfrac: 0.75
+  bumpmin: 0.02
+  bumpmax: 0.35
+  nbump: 20
+  sharpmin: 0.7
+  sharpmax: 2.1
+  nsharp: 15
+  max_basis: 35
+  basis_system: cosine
+  regression_params: {'max_depth': 8,'objective':'reg:squarederror'}
+  inform_options: {'save_train': False, 'load_model': False}

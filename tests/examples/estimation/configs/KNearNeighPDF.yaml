@@ -1,0 +1,24 @@
+run_params:
+  class_name: KNearNeighPDF
+  run_name: test_KNearNeighPDF
+  zmin: 0.0
+  zmax: 3.0
+  nzbins: 301
+  trainfrac: 0.75
+  ref_column_name: mag_i_lsst
+  column_names: ['mag_u_lsst', 'mag_g_lsst', 'mag_r_lsst', 'mag_i_lsst', 'mag_z_lsst', 'mag_y_lsst']
+  mag_limits:
+    mag_u_lsst: 27.79
+    mag_g_lsst: 29.04
+    mag_r_lsst: 29.06
+    mag_i_lsst: 28.62
+    mag_z_lsst: 27.98
+    mag_y_lsst: 27.05
+  sigma_grid_min: 0.01
+  sigma_grid_max: 0.05
+  ngrid_sigma: 17
+  leaf_size: 15
+  nneigh_min: 3
+  nneigh_max: 9
+  redshift_column_name: redshift
+  inform_options: {'save_train': False, 'load_model': True, 'modelfile': 'KNearNeighPDF.pkl'}
