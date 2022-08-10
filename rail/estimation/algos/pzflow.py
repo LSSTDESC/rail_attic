@@ -121,7 +121,7 @@ class Inform_PZFlowPDF(CatInformer):
         from pzflow.bijectors import StandardScaler, RollingSplineCoupling
         if self.config.hdf5_groupname:
             training_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  #pragma:  no cover
+        else:  #pragma: no cover
             training_data = self.get_data('input')
 
         input_df = pd.DataFrame(training_data)

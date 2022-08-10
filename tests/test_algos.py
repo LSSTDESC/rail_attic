@@ -8,6 +8,8 @@ import yaml
 import tables_io
 from rail.core.stage import RailStage
 from rail.core.data import DataStore, TableHandle
+from rail.core.algo_utils import one_algo
+from rail.core.utils import RAILDIR
 from rail.estimation.algos import randomPZ, sklearn_nn, flexzboost, trainZ
 try:
     from rail.estimation.algos import delightPZ
@@ -18,64 +20,10 @@ import scipy.special
 sci_ver_str = scipy.__version__.split('.')
 
 
-traindata = 'tests/data/training_100gal.hdf5'
-validdata = 'tests/data/validation_10gal.hdf5'
+traindata = os.path.join(RAILDIR, 'tests/data/training_100gal.hdf5')
+validdata = os.path.join(RAILDIR, 'tests/data/validation_10gal.hdf5')
 DS = RailStage.data_store
 DS.__class__.allow_overwrite = True
-
-
-def one_algo(key, single_trainer, single_estimator, train_kwargs, estim_kwargs):
-    """
-    A basic test of running an estimator subclass
-    Run inform, write temporary trained model to
-    'tempmodelfile.tmp', run photo-z algorithm.
-    Then, load temp modelfile and re-run, return
-    both datasets.
-    """
-    DS.clear()
-    training_data = DS.read_file('training_data', TableHandle, traindata)
-    validation_data = DS.read_file('validation_data', TableHandle, validdata)
-
-    if single_trainer is not None:
-        train_pz = single_trainer.make_stage(**train_kwargs)
-        train_pz.inform(training_data)
-
-    pz = single_estimator.make_stage(name=key, **estim_kwargs)
-    estim = pz.estimate(validation_data)
-    
-    copy_estim_kwargs = estim_kwargs.copy()
-    model_file = copy_estim_kwargs.pop('model', 'None')
-
-    if model_file != 'None':
-        copy_estim_kwargs['model'] = model_file
-        pz_2 = single_estimator.make_stage(name=f"{pz.name}_copy", **copy_estim_kwargs)
-        estim_2 = pz_2.estimate(validation_data)
-    else:
-        pz_2 = None
-        estim_2 = estim
-
-    if single_trainer is not None and 'model' in single_trainer.output_tags():
-        copy3_estim_kwargs = estim_kwargs.copy()
-        copy3_estim_kwargs['model'] = train_pz.get_handle('model')
-        pz_3 = single_estimator.make_stage(name=f"{pz.name}_copy3", **copy3_estim_kwargs)
-        estim_3 = pz_3.estimate(validation_data)
-    else:
-        pz_3 = None
-        estim_3 = estim
-
-    os.remove(pz.get_output(pz.get_aliased_tag('output'), final_name=True))
-    if pz_2 is not None:
-        os.remove(pz_2.get_output(pz_2.get_aliased_tag('output'), final_name=True))
-
-    if pz_3 is not None:
-        os.remove(pz_3.get_output(pz_3.get_aliased_tag('output'), final_name=True))
-    model_file = estim_kwargs.get('model', 'None')
-    if model_file != 'None':
-        try:
-            os.remove(model_file)
-        except FileNotFoundError:
-            pass
-    return estim.data, estim_2.data, estim_3.data
 
 
 def test_random_pz():
@@ -199,31 +147,6 @@ def test_train_pz():
     results, rerun_results, rerun3_results = one_algo("TrainZ", train_algo, pz_algo, train_config_dict, estim_config_dict)
     assert np.isclose(results.ancil['zmode'], zb_expected).all()
     assert np.isclose(results.ancil['zmode'], rerun_results.ancil['zmode']).all()
-
-
-@pytest.mark.skipif('rail.estimation.algos.delightPZ' not in sys.modules,
-                    reason="delightPZ not installed!")
-def test_delight():
-    with open("./tests/delightPZ.yaml", "r") as f:
-        config_dict = yaml.safe_load(f)
-    config_dict['model_file'] = "None"
-    config_dict['hdf5_groupname'] = 'photometry'
-    train_algo = delightPZ.Inform_DelightPZ
-    pz_algo = delightPZ.delightPZ
-    results, rerun_results, rerun3_results = one_algo("Delight", train_algo, pz_algo, config_dict, config_dict)
-    zb_expected = np.array([0.18, 0.01, -1., -1., 0.01, -1., -1., -1., 0.01, 0.01])
-    assert np.isclose(results.ancil['zmode'], zb_expected, atol=0.03).all()
-    assert np.isclose(results.ancil['zmode'], rerun_results.ancil['zmode']).all()
-    # get delight to clean up after itself
-    for pattern in ['rail/estimation/data/SED/ssp_*Myr_z008_fluxredshiftmod.txt',
-                    'rail/estimation/data/SED/*_B2004a_fluxredshiftmod.txt',
-                    'rail/estimation/data/FILTER/DC2LSST_*_gaussian_coefficients.txt',
-                    'examples/estimation/tmp/delight_data/galaxies*.txt',
-                    'parametersTest*.cfg']:
-        files = glob.glob(pattern)
-        for file_ in files:
-            os.remove(file_)
-    os.removedirs('examples/estimation/tmp/delight_data')
 
 
 @pytest.mark.skipif(int(sci_ver_str[0]) < 2 and int(sci_ver_str[1]) < 8,

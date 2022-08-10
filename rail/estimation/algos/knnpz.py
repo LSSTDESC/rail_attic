@@ -90,7 +90,7 @@ class Inform_KNearNeighPDF(CatInformer):
         from sklearn.neighbors import KDTree
         if self.config.hdf5_groupname:
             training_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  # pragma:  no cover
+        else:  # pragma: no cover
             training_data = self.get_data('input')
         knndf = pd.DataFrame(training_data, columns=self.config.column_names)
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)

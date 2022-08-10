@@ -50,7 +50,7 @@ class Inform_NZDir(CatInformer):
 
         if self.config.hdf5_groupname:
             sz_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  # pragma:  no cover
+        else:  # pragma: no cover
             sz_data = self.get_data('input')
         # if no weights specified, which is the default
         # set all weights to 1.0 if weights not present in keys
@@ -136,7 +136,7 @@ class NZDir(CatEstimator):
         rng = np.random.default_rng(seed=self.config.seed)
         if self.config.hdf5_groupname:
             test_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  # pragma:  no cover
+        else:  # pragma: no cover
             test_data = self.get_data('input')
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins + 1)
         self.bincents = 0.5 * (self.zgrid[1:] + self.zgrid[:-1])

@@ -5,15 +5,19 @@
 \rm -rf examples/core/*.out
 \rm -rf examples/core/*.pq
 \rm -rf examples/core/*.hdf5
+\rm -rf examples/core/knnpz.pkl
 \rm -rf examples/core/pipe_saved*.yml
-\rm -rf examples/creation/output_*
+\rm -rf examples/creation/output*
 \rm -rf examples/estimation/TEMPZFILE.out
+\rm -rf examples/estimation/*.hdf5
 \rm -rf examples/estimation/demo_knn.pkl
 \rm -rf examples/estimation/tmp
-\rm -rf examples/estimation/output*.fits
+\rm -rf examples/estimation/output*
+\rm -rf examples/evaluation/output*
 \rm -rf examples/goldenspike/output_*
 \rm -rf examples/goldenspike/*.out
 \rm -rf examples/goldenspike/*.pkl
+\rm -rf examples/goldenspike/single_*.hdf5
 \rm -rf examples/goldenspike/tmp_*.yml
 \rm -rf model.tmp model_train_z.tmp output_*.fits
 \rm -rf parametersTest.cfg

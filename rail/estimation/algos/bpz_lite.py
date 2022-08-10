@@ -28,6 +28,7 @@ import qp
 import tables_io
 import rail
 from ceci.config import StageParameter as Param
+from rail.core.utils import RAILDIR
 from rail.estimation.estimator import CatEstimator, CatInformer
 
 def_bands = ['u', 'g', 'r', 'i', 'z', 'y']
@@ -199,7 +200,7 @@ class Inform_BPZ_lite(CatInformer):
         self.m0 = self.config.m0
         if self.config.hdf5_groupname:
             training_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  # pragma:  no cover
+        else:  # pragma: no cover
             training_data = self.get_data('input')
 
         ngal = len(training_data[self.config.prior_band])
@@ -287,8 +288,7 @@ class BPZ_lite(CatEstimator):
 
         datapath = self.config['data_path']
         if datapath is None or datapath == "None":
-            railpath = os.path.dirname(rail.__file__)
-            tmpdatapath = os.path.join(railpath, "../examples/estimation/data")
+            tmpdatapath = os.path.join(RAILDIR, "examples/estimation/data")
             os.environ["BPZDATAPATH"] = tmpdatapath
             self.data_path = tmpdatapath
         else:  # pragma: no cover

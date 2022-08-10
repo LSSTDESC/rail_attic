@@ -229,7 +229,7 @@ class RailStage(PipelineStage):
                           parallel_size=self.size)
             kwcopy.update(**kwargs)
             return handle.iterator(**kwcopy)
-        else:  #pragma:  no cover
+        else:  #pragma: no cover
             test_data = self.get_data('input')
             s = 0
             e = len(list(test_data.items())[0][1])

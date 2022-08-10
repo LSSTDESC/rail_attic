@@ -5,7 +5,7 @@ import numpy as np
 import qp
 
 from rail.core.data import PqHandle, QPHandle, FlowHandle
-from rail.creation.engines import Engine, PosteriorEvaluator
+from rail.creation.engines.engine import Engine, PosteriorEvaluator
 
 
 

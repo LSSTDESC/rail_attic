@@ -8,13 +8,14 @@ from rail.creation.engines.flowEngine import FlowEngine, FlowPosterior
 from rail.core.data import TableHandle
 from rail.core.stage import RailStage
 from rail.core.utilStages import ColumnMapper, TableConverter
+from rail.core.utils import RAILDIR
+
 
 def test_goldenspike():
     DS = RailStage.data_store
     DS.__class__.allow_overwrite = True
 
-    RAIL_DIR = os.path.join(os.path.dirname(rail.__file__), '..')
-    flow_file = os.path.join(RAIL_DIR, 'examples/goldenspike/data/pretrained_flow.pkl')
+    flow_file = os.path.join(RAILDIR, 'examples/goldenspike/data/pretrained_flow.pkl')
     bands = ['u','g','r','i','z','y']
     band_dict = {band:f'mag_{band}_lsst' for band in bands}
     rename_dict = {f'mag_{band}_lsst_err':f'mag_err_{band}_lsst' for band in bands}

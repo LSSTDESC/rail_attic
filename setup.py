@@ -8,6 +8,8 @@ install_requires = [
     "tables-io>=0.7.5",
     "ceci",
     "qp @ git+https://github.com/LSSTDESC/qp",
+    "pyyaml",
+    "scipy>=1.5.2",
 ]
 
 # dependencies for the core module
@@ -17,32 +19,17 @@ core_extras = ["hyperbolic @ git+https://github.com/jlvdb/hyperbolic"]
 creation_extras = ["pzflow"]
 
 # dependencies required for all estimators in the Estimation module
-estimation_extras = [
-    "matplotlib",
-    "pyarrow",
-    "pyyaml",
-    "scipy>=1.5.2",
-    "tables",
-]
+estimation_extras = []
+
 # dependencies for specific estimators in the Estimation module
 estimation_codes = {
     "bpz": ["DESC_BPZ @ git+https://github.com/LSSTDESC/DESC_BPZ"],
     "flex": ["FlexCode[all]"],
     "NN": ["sklearn"],
 }
-# dependencies for Delight, separate out because it can be a
-# pain to install on Mac due to dropped default openmp
-delight_extras = [
-    "coloredlogs",
-    "corner",
-    "cython",
-    "emcee",
-    "delight @ git+https://github.com/LSSTDESC/Delight",
-]
-
 
 # dependencies for the Evaluation module
-evaluation_extras = ["seaborn"]
+evaluation_extras = []
 
 
 # compile the extras_require dictionary
@@ -52,7 +39,6 @@ extras_require["creation"] = creation_extras
 extras_require["estimation"] = estimation_extras + list(
     set(sum(estimation_codes.values(), []))
 )
-extras_require["delight"] = delight_extras
 for key, values in estimation_codes.items():
     extras_require[key] = estimation_extras + values
 extras_require["evaluation"] = evaluation_extras
@@ -67,9 +53,7 @@ extras_require["base"] = list(
     )
 )
 
-extras_require["all"] = extras_require["full"] = extras_require["Full"] = list(
-    set((extras_require["base"] + extras_require["delight"]))
-)
+extras_require["all"] = extras_require["full"] = extras_require["Full"] = extras_require["base"]
 
 
 # setup the rail package!
