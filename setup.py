@@ -10,6 +10,9 @@ install_requires = [
     "qp @ git+https://github.com/LSSTDESC/qp",
 ]
 
+# dependencies for the core module
+core_extras = ["hyperbolic @ git+https://github.com/jlvdb/hyperbolic"]
+
 # dependencies for the Creation module
 creation_extras = ["pzflow"]
 
@@ -44,6 +47,7 @@ evaluation_extras = ["seaborn"]
 
 # compile the extras_require dictionary
 extras_require = dict()
+extras_require["core"] = core_extras
 extras_require["creation"] = creation_extras
 extras_require["estimation"] = estimation_extras + list(
     set(sum(estimation_codes.values(), []))
@@ -55,7 +59,8 @@ extras_require["evaluation"] = evaluation_extras
 extras_require["base"] = list(
     set(
         (
-            extras_require["creation"]
+            extras_require["core"]
+            + extras_require["creation"]
             + extras_require["estimation"]
             + extras_require["evaluation"]
         )
@@ -111,7 +116,7 @@ setup(
     entry_points={"console_scripts": ["rail=rail.main:main"]},
     install_requires=install_requires,
     extras_require=extras_require,
-    python_requires=">=3.5",
+    python_requires=">=3.8",
     setup_requires=["setuptools_scm", "pytest-runner"],
     use_scm_version={"write_to": "rail/_version.py"},
     tests_require=["pytest"],

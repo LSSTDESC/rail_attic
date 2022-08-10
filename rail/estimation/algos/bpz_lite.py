@@ -29,7 +29,7 @@ import tables_io
 import rail
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatEstimator, CatInformer
-from rail.core.data import TableHandle
+
 
 def_bands = ['u', 'g', 'r', 'i', 'z', 'y']
 def_bandnames = [f"mag_{band}_lsst" for band in def_bands]
@@ -42,7 +42,7 @@ def_maglims = dict(mag_u_lsst=27.79,
                    mag_y_lsst=27.05)
 
 
-def nzfunc(z, z0, alpha, km, m, m0):
+def nzfunc(z, z0, alpha, km, m, m0):  #pragma: no cover
     zm = z0 + (km * (m - m0))
     return np.power(z, alpha) * np.exp(-1. * np.power((z / zm), alpha))
 
@@ -105,7 +105,16 @@ class Inform_BPZ_lite(CatInformer):
         """Init function, init config stuff
         """
         CatInformer.__init__(self, args, comm=comm)
-        self.mo = self.config.m0
+
+        self.fo_arr = None
+        self.kt_arr = None
+        self.typmask = None
+        self.ntyp = None
+        self.mags = None
+        self.szs = None
+        self.besttypes = None
+        self.m0 = self.config.m0
+
 
     def _frac_likelihood(self, frac_params):
         ngal = len(self.mags)
@@ -113,7 +122,8 @@ class Inform_BPZ_lite(CatInformer):
         foarr = frac_params[:self.ntyp - 1]
         ktarr = frac_params[self.ntyp - 1:]
         for i in range(self.ntyp - 1):
-            probs[i, :] = [foarr[i] * np.exp(-1. * ktarr[i] * (mag - self.mo)) for mag in self.mags]
+
+            probs[i, :] = [foarr[i] * np.exp(-1. * ktarr[i] * (mag - self.m0)) for mag in self.mags]
         # set the probability of last element to 1 - sum of the others to keep normalized
         # this is the weird way BPZ does things, though it does it with the last
         probs[self.ntyp - 1, :] = 1. - np.sum(probs[:-1, :], axis=0)
@@ -142,20 +152,25 @@ class Inform_BPZ_lite(CatInformer):
             self.kt_arr = frac_results[self.ntyp - 1:]
 
     def _dndz_likelihood(self, params):
-        zo = params[0]
-        alpha = params[1]
-        km = params[2]
-        cutmags = self.mags[self.typmask]
-        cutszs = self.szs[self.typmask]
-        loglike = 0.0
-        for mag, sz in zip(cutmags, cutszs):
-            pz = nzfunc(sz, zo, alpha, km, mag, self.mo)
-            norm, _ = scipy.integrate.quad(nzfunc, self.config.zmin, self.config.zmax,
-                                           args=(zo, alpha, km, mag, self.mo),
-                                           epsrel=1.e-5)
-            loglike += -2. * np.log10(pz / norm)
-        print(f"Fitting dN/dz: loglike = {loglike} for parameters {params}")
-        return loglike
+
+        mags = self.mags[self.typmask]
+        szs = self.szs[self.typmask]
+
+        z0, alpha, km = params
+        zm = z0 + (km * (mags - self.m0))
+
+        # The normalization to the likelihood, which is needed here
+        I = zm ** (alpha + 1) * scipy.special.gamma(1 + 1 / alpha) / alpha
+
+        # This is a vector of loglike per object
+        loglike = alpha * np.log(szs) - ((szs/zm)**alpha) - np.log(I)
+
+        # We are minimizing not maximizing so return the negative
+        mloglike = -(loglike.sum())
+
+        print(params, mloglike)
+        return mloglike
+
 
     def _find_dndz_params(self):
 
@@ -185,6 +200,8 @@ class Inform_BPZ_lite(CatInformer):
     def run(self):
         """compute the best fit prior parameters
         """
+
+        self.m0 = self.config.m0
         if self.config.hdf5_groupname:
             training_data = self.get_data('input')[self.config.hdf5_groupname]
         else:  # pragma:  no cover
@@ -324,7 +341,7 @@ class BPZ_lite(CatEstimator):
         for i, s in enumerate(spectra):
             for j, f in enumerate(filters):
                 model = f"{s}.{f}.AB"
-                if model not in ab_file_db:
+                if model not in ab_file_db:  #pragma: no cover
                     self._make_new_ab_file(s, f)
                 model_path = os.path.join(data_path, "AB", model)
                 zo, f_mod_0 = get_data(model_path, (0, 1))
@@ -332,7 +349,7 @@ class BPZ_lite(CatEstimator):
 
         return flux_templates
 
-    def _make_new_ab_file(self, spectrum, filter_):
+    def _make_new_ab_file(self, spectrum, filter_):  #pragma: no cover
         from desc_bpz.bpz_tools_py3 import ABflux
 
         new_file = f"{spectrum}.{filter_}.AB"
@@ -484,6 +501,7 @@ class BPZ_lite(CatEstimator):
 
         pdfs = np.zeros((ng, nz))
         zmode = np.zeros(ng)
+        zmean = np.zeros(ng)
         flux_temps = self.flux_templates
         zgrid = self.zgrid
         # Loop over all ng galaxies!
@@ -495,10 +513,13 @@ class BPZ_lite(CatEstimator):
                                                    kernel, flux,
                                                    flux_err, mag_0,
                                                    zgrid)
+
+            zmean[i] = (zgrid * pdfs[i]).sum() / pdfs[i].sum()
         # remove the keys added to the data file by BPZ
         test_data.pop('flux', None)
         test_data.pop('flux_err', None)
         test_data.pop('mags', None)
         qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=pdfs))
-        qp_dstn.set_ancil(dict(zmode=zmode))
+
+        qp_dstn.set_ancil(dict(zmode=zmode, zmean=zmean))
         self._do_chunk_output(qp_dstn, start, end, first)

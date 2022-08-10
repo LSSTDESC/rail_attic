@@ -20,7 +20,8 @@ class GridSelection(Degrader):
     percentile_cut: If using color-based redshift cut, percentile in spec-z above which redshifts will be cut from training sample. Default is 99.0
     scaling_factor: Enables the user to adjust the ratios by this factor to change the overall number of galaxies kept.  For example, if you wish
         to generate 100,00 galaxies but only 50,000 are selected by default, then you can adjust factor up by a factor of 2 to return more galaixes.
-    pessimistic_redshift_cut: redshift above which all galaxies will be removed from training sample. Default is 100
+
+    redshift_cut: redshift above which all galaxies will be removed from training sample. Default is 100
     ratio_file: hdf5 file containing an array of spectroscpic vs. photometric galaxies in each pixel. Default is hsc_ratios.hdf5 for an HSC based selection
     settings_file: pickled dictionary containing information about colors and magnitudes used in defining the pixels. Dictionary must include the following keys:
       'x_band_1': string, this is the band used for the magnitude in the color magnitude diagram. Default for HSC is 'i'.
@@ -54,9 +55,9 @@ class GridSelection(Degrader):
 
         Degrader.__init__(self, args, comm=comm)
 
-        if self.config.pessimistic_redshift_cut < 0:
+        if self.config.redshift_cut < 0:
             raise ValueError("redshift cut must be positive")
-        if (self.config.percentile_cut < 0) | (self.config.percentile_cut >= 100):
+        if (self.config.percentile_cut < 0) | (self.config.percentile_cut > 100):
             raise ValueError('percentile cut off must be between 0 and 100')
 
     def run(self):
@@ -160,9 +161,9 @@ class GridSelection(Degrader):
         # remove galaxies with redshifts higher than the color-based cutoff
         data_hsc_like_redshift_cut = data_hsc_like[data_hsc_like['redshift'] <= data_hsc_like['max_specz']]
 
-        # If making a pessimistic redshift cut, do that now
-        if self.config['pessimistic_redshift_cut'] != 100:
-            data_hsc_like_redshift_cut = data_hsc_like_redshift_cut[data_hsc_like_redshift_cut['redshift'] <= self.config['pessimistic_redshift_cut']]
+        # If making a redshift cut, do that now
+        if self.config['redshift_cut'] != 100:  # pragma: no cover
+            data_hsc_like_redshift_cut = data_hsc_like_redshift_cut[data_hsc_like_redshift_cut['redshift'] <= self.config['redshift_cut']]
 
         # This picks galaxies for the training set
         unique_ratios = data_hsc_like['ratios'].unique()
