@@ -252,7 +252,7 @@ def test_LSSTErrorModel_extended(data):
     n_samples = len(data.data)
     rng = np.random.default_rng(0)
     data.data['major'] = np.abs(rng.normal(loc=0.01, scale=0.1, size=n_samples)) # add major and minor axes
-    b_to_a = 1 - 0.5*rng.rand(n_samples)
+    b_to_a = 1 - 0.5*rng.random(n_samples)
     data.data['minor'] = data.data['major'] * b_to_a 
 
     errorModel_auto = LSSTErrorModel.make_stage(name='error_model_auto',
