@@ -1,15 +1,13 @@
 """Core code for RAIL"""
 
-__all__ = ["__version__"]
-
-import os
-from importlib.metadata import PackageNotFoundError, version
-
-__version__: str
-"""The application version string (PEP 440 / SemVer compatible)."""
+def find_version():
+    # setuptools_scm should install a
+    # file _version alongside this one.
+    from . import _version
+    return _version.version
 
 try:
-    __version__ = version(__name__)
-except PackageNotFoundError:
-    # package is not installed
-    __version__ = "0.0.0"
+    __version__ = find_version()
+except: # pragma: no cover
+    __version__ = "unknown"
+
