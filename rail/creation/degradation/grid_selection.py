@@ -20,7 +20,6 @@ class GridSelection(Degrader):
     percentile_cut: If using color-based redshift cut, percentile in spec-z above which redshifts will be cut from training sample. Default is 99.0
     scaling_factor: Enables the user to adjust the ratios by this factor to change the overall number of galaxies kept.  For example, if you wish
         to generate 100,00 galaxies but only 50,000 are selected by default, then you can adjust factor up by a factor of 2 to return more galaixes.
-
     redshift_cut: redshift above which all galaxies will be removed from training sample. Default is 100
     ratio_file: hdf5 file containing an array of spectroscpic vs. photometric galaxies in each pixel. Default is hsc_ratios.hdf5 for an HSC based selection
     settings_file: pickled dictionary containing information about colors and magnitudes used in defining the pixels. Dictionary must include the following keys:

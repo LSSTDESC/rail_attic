@@ -98,7 +98,6 @@ def test_InvRedshiftIncompleteness_returns_correct_shape(data):
     assert degraded_data.shape[1] == data.data.shape[1]
     os.remove(degrader.get_output(degrader.get_aliased_tag('output'), final_name=True))
     
-
 @pytest.mark.parametrize("percentile_cut,redshift_cut,errortype", [(-1, 1, ValueError), (101, 1, ValueError), (99, -1, ValueError)])
 def test_GridSelection_bad_params(percentile_cut, redshift_cut, errortype):
     """Test bad parameters that should raise ValueError"""

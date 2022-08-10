@@ -14,7 +14,6 @@ try:
 except ImportError:
     pass
 from rail.estimation.algos import bpz_lite, pzflow, knnpz
-
 import scipy.special
 sci_ver_str = scipy.__version__.split('.')
 
@@ -39,12 +38,10 @@ def one_algo(key, single_trainer, single_estimator, train_kwargs, estim_kwargs):
 
     if single_trainer is not None:
         train_pz = single_trainer.make_stage(**train_kwargs)
-        help(train_pz)
         train_pz.inform(training_data)
 
     pz = single_estimator.make_stage(name=key, **estim_kwargs)
     estim = pz.estimate(validation_data)
-
     
     copy_estim_kwargs = estim_kwargs.copy()
     model_file = copy_estim_kwargs.pop('model', 'None')
@@ -269,7 +266,6 @@ def test_KNearNeigh():
     assert np.isclose(results.ancil['zmode'], rerun_results.ancil['zmode']).all()
 
 
-
 def test_catch_bad_bands():
     params = dict(bands='u,g,r,i,z,y')
     with pytest.raises(ValueError):
@@ -329,7 +325,6 @@ def test_bpz_lite():
                          'hdf5_groupname': 'photometry',
                          'nt_array': [8],
                          'model': 'testmodel_bpz.pkl'}
-
     zb_expected = np.array([0.16, 0.12, 0.14, 0.14, 0.06, 0.14, 0.12, 0.14, 0.06, 0.16])
     train_algo = None
     pz_algo = bpz_lite.BPZ_lite

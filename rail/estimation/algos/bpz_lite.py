@@ -30,7 +30,6 @@ import rail
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatEstimator, CatInformer
 
-
 def_bands = ['u', 'g', 'r', 'i', 'z', 'y']
 def_bandnames = [f"mag_{band}_lsst" for band in def_bands]
 def_errnames = [f"mag_err_{band}_lsst" for band in def_bands]
@@ -105,7 +104,6 @@ class Inform_BPZ_lite(CatInformer):
         """Init function, init config stuff
         """
         CatInformer.__init__(self, args, comm=comm)
-
         self.fo_arr = None
         self.kt_arr = None
         self.typmask = None
@@ -122,7 +120,6 @@ class Inform_BPZ_lite(CatInformer):
         foarr = frac_params[:self.ntyp - 1]
         ktarr = frac_params[self.ntyp - 1:]
         for i in range(self.ntyp - 1):
-
             probs[i, :] = [foarr[i] * np.exp(-1. * ktarr[i] * (mag - self.m0)) for mag in self.mags]
         # set the probability of last element to 1 - sum of the others to keep normalized
         # this is the weird way BPZ does things, though it does it with the last
@@ -152,7 +149,6 @@ class Inform_BPZ_lite(CatInformer):
             self.kt_arr = frac_results[self.ntyp - 1:]
 
     def _dndz_likelihood(self, params):
-
         mags = self.mags[self.typmask]
         szs = self.szs[self.typmask]
 
@@ -200,7 +196,6 @@ class Inform_BPZ_lite(CatInformer):
     def run(self):
         """compute the best fit prior parameters
         """
-
         self.m0 = self.config.m0
         if self.config.hdf5_groupname:
             training_data = self.get_data('input')[self.config.hdf5_groupname]
@@ -513,13 +508,11 @@ class BPZ_lite(CatEstimator):
                                                    kernel, flux,
                                                    flux_err, mag_0,
                                                    zgrid)
-
             zmean[i] = (zgrid * pdfs[i]).sum() / pdfs[i].sum()
         # remove the keys added to the data file by BPZ
         test_data.pop('flux', None)
         test_data.pop('flux_err', None)
         test_data.pop('mags', None)
         qp_dstn = qp.Ensemble(qp.interp, data=dict(xvals=self.zgrid, yvals=pdfs))
-
         qp_dstn.set_ancil(dict(zmode=zmode, zmean=zmean))
         self._do_chunk_output(qp_dstn, start, end, first)

@@ -125,7 +125,6 @@ class Inform_KNearNeighPDF(CatInformer):
         print("finding best fit sigma and NNeigh...")
         for sig in siggrid:
             for nn in range(self.config.nneigh_min, self.config.nneigh_max + 1):
-
                 dists, idxs = tmpmodel.query(val_data, k=nn)
                 ens = _makepdf(dists, idxs, train_sz, sig)
                 cdelossobj = CDELoss(ens, self.zgrid, val_sz)
@@ -183,7 +182,6 @@ class KNearNeighPDF(CatEstimator):
         calculate and return PDFs for each galaxy using the trained flow
         """
         print(f"Process {self.rank} estimating PZ PDF for rows {start:,} - {end:,}")
-
         knn_df = pd.DataFrame(data, columns=self.usecols)
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
 

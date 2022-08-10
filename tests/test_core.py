@@ -8,7 +8,6 @@ from types import GeneratorType
 from rail.core.stage import RailStage
 from rail.core.data import DataStore, DataHandle, TableHandle, Hdf5Handle, FitsHandle, PqHandle, QPHandle, ModelHandle, FlowHandle
 from rail.core.utilStages import ColumnMapper, RowSelector, TableConverter
-
 from rail.core.utilPhotometry import PhotormetryManipulator, HyperbolicSmoothing, HyperbolicMagnitudes
 from rail.core.common_params import SHARED_PARAMS, copy_param, set_param_default
 
@@ -286,7 +285,6 @@ def test_data_store():
     os.remove(datapath_pq_copy)
 
 
-
 @pytest.fixture
 def hyperbolic_configuration():
     """get the code configuration for the example data"""
@@ -437,4 +435,4 @@ def test_common_params():
     assert par.default == 0.1
     assert par.value == 0.1
     assert par.dtype == float
-
+ 

@@ -120,14 +120,12 @@ class SpecSelection(Degrader):
         """
         Run the selection
         """
-
         self.rng = np.random.default_rng(seed=self.config.seed)
         # get the bands and bandNames present in the data
         data = self.get_data('input', allow_missing=True)
         self.validate_colnames(data)
         self.mask = np.product(~np.isnan(data.to_numpy()), axis=1)
         self.invalid_cut(data)
-
         self.selection(data)
         if self.config.downsample is True:
             self.downsampling_N_tot()
@@ -269,7 +267,6 @@ class SpecSelection_DEEP2(SpecSelection):
             success_R_centers, success_R_rate, kind="quadratic",
             bounds_error=False, fill_value=(success_R_rate[0], 0.0))
         # Randomly sample objects according to their success rate
-
         random_draw = self.rng.random(len(data))
         mask = random_draw < p_success_R(data[self.config.colnames['r']])
         # update the internal state
@@ -308,7 +305,6 @@ class SpecSelection_VVDSf02(SpecSelection):
                of galaxies.
         update the internal state
         """
-
         mask = (data[self.config.colnames['i']] > 17.5) & (data[self.config.colnames['i']] < 24.0)
         # 17.5, 24.0
         self.mask &= mask
@@ -334,7 +330,6 @@ class SpecSelection_VVDSf02(SpecSelection):
             success_I_centers, success_I_rate, kind="quadratic",
             bounds_error=False, fill_value=(success_I_rate[0], 0.0))
         # Randomly sample objects according to their success rate
-
         random_draw = self.rng.random(len(data))
         mask = random_draw < p_success_I(data["mag_i_lsst"])
         # Spec-z success rate as function of redshift read of Figure 13a/b in
@@ -356,7 +351,6 @@ class SpecSelection_VVDSf02(SpecSelection):
             success_z_deep_centers, success_z_deep_rate, kind="quadratic",
             bounds_error=False, fill_value=(success_z_deep_rate[0], 0.0))
         # Randomly sample objects according to their success rate
-
         random_draw = self.rng.random(len(data))
         iterator = zip(
             [data[self.config.colnames['i']] <= 22.5, data[self.config.colnames['i']] > 22.5],
@@ -422,7 +416,6 @@ class SpecSelection_zCOSMOS(SpecSelection):
                 ratio_list[i] = 0
             else:
                 ratio_list[i] = rates[pixels_y[i] - 1][pixels_x[i] - 1]
-
 
         randoms = self.rng.uniform(size=data[self.config.colnames['i']].size)
         mask = (randoms <= ratio_list)
@@ -507,7 +500,6 @@ class SpecSelection_HSC(SpecSelection):
                 ratio_list[i] = 0
             else:
                 ratio_list[i] = rates[pixels_y[i]][pixels_x[i]]
-
 
         randoms = self.rng.uniform(size=data[self.config.colnames['i']].size)
         mask = (randoms <= ratio_list)
