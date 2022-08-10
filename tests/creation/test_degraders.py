@@ -246,7 +246,30 @@ def test_LSSTErrorModel_get_limiting_mags(highSNR):
         NSR = degrader._get_NSR(limiting_mags, degrader.config["bandNames"].keys())
         assert np.allclose(1 / NSR, SNR)
 
+        
 
+def test_LSSTErrorModel_extended(data):
+    n_samples = len(data.data)
+    data.data['major'] = np.abs(np.random.normal(loc=0.01, scale=0.1, size=n_samples)) # add major and minor axes
+    b_to_a = 1 - 0.5*np.random.rand(n_samples)
+    data.data['minor'] = data.data['major'] * b_to_a 
+
+    errorModel_auto = LSSTErrorModel.make_stage(name='error_model_auto',
+                                                errortype="auto")
+    errorModel_auto(data)
+    errorModel_auto.__repr__()
+    
+    errorModel_gaap = LSSTErrorModel.make_stage(name='error_model_gaap',
+                                                errortype="gaap")
+    errorModel_gaap(data)
+    errorModel_gaap.__repr__()
+
+@pytest.mark.parametrize("errtype, errortype", [("sakana", ValueError)])
+def test_LSSTErrorModel_bad_type(errtype, errortype):
+    """Test bad parameters that should raise ValueError"""
+    with pytest.raises(errortype):
+        LSSTErrorModel.make_stage(errortype=errtype)
+    
 @pytest.mark.parametrize(
     "degrader",
     [
