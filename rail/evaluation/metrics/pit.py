@@ -19,7 +19,7 @@ def PITMetaMetric(cls):
     return cls
 
 
-class PIT(MetricEvaluator):
+class UnconditionPIT(MetricEvaluator):
     """ Probability Integral Transform """
 
     def __init__(self, qp_ens, ztrue):
@@ -82,6 +82,69 @@ class PIT(MetricEvaluator):
     #                                      savefig=savefig)
     #     return fig_filename
 
+
+class ConditionPIT(MetricEvaluator):
+    def __init__(self):
+        print()
+        # reading and storing
+        # input are PDFs evaluated with a photo=z method on representative sample of objects,
+        # features and ztrue (zspec for real data).
+        # calculate uncondition pit on the fly because it's input to training
+        # up to block 10 in bitrateep notebook goes outside, but the standard scaling will be done inside init
+        # because the scaler itself is needed for both training and evaluation
+        # pit_calib = get_pit(cde_calib, z_grid, z_calib)
+        # pit_test = get_pit(cde_test, z_grid, z_test)
+
+    def train(self):
+        # training, hyperparameters need to be tuned
+        # rhat, _, _ = train_local_pit(X=x_calib,
+        #                              pit_values=pit_calib,
+        #                              patience=10,
+        #                              n_epochs=10000,
+        #                              lr=0.001,
+        #                              weight_decay=0.01,
+        #                              batch_size=2048,
+        #                              frac_mlp_train=0.9,
+        #                              lr_decay=0.95,
+        #                              trace_func=print,
+        #                              oversample=1,
+        #                              n_alpha=201,
+        #                              checkpt_path="./checkpoint_GPZ_wide_CDE_1024x512x512.pt",
+        #                              hidden_layers=[256, 256, 256])
+        print()
+
+    def evaluate(self):
+        print()
+        # we just need the features X since the model has been trained in the function train and we just need to
+        # run the model on the features to obtain directly the calibrated PDFs.
+        # evaluation
+        # alphas = np.linspace(0.0, 1, 201)
+        # pit_local = get_local_pit(rhat,x_test,alphas=alphas, batch_size=100)
+
+    def diagnostics(self):
+        # P-P plot creation, not one for every galaxy but something clever
+        # rng = np.random.default_rng(42)
+        #
+        # random_idx = rng.choice(len(x_test), 25, replace=False)
+        #
+        # fig, axs = plt.subplots(5,5, figsize=(15, 15))
+        # axs = np.ravel(axs)
+        #
+        # for count, index in enumerate(random_idx):
+        #     axs[count].scatter(alphas, pit_local[index], s=1)
+        #     #axs[count].scatter(cdf_test[index], pit_local_fit[index], c="C1")
+        #     #axs[count].plot(z_grid, cdf_test[index], c="k")
+        #     axs[count].plot(np.linspace(0, 1, 10), np.linspace(0, 1, 10), color="k", ls="--")
+        #     axs[count].set_xlim(0, 1)
+        #     axs[count].set_ylim(0, 1)
+        #     axs[count].set_aspect("equal")
+        # fig.suptitle("Local P-P plot", fontsize=30)
+        #
+        # fig.text(0.5,-0.05,"Theoretical P", fontsize=30)
+        # fig.text(-0.05,0.5,"Empirical P", rotation=90, fontsize=30)
+        # plt.tight_layout()
+        # plt.show()
+        print()
 
 class PITMeta():
     """ A superclass for metrics of the PIT"""
