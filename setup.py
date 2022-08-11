@@ -4,7 +4,7 @@ import os
 # basic dependencies for all RAIL modules
 install_requires = [
     "h5py",
-    "numpy<1.23",
+    "numpy",
     "pandas>=1.1",
     "tables-io>=0.7.5",
     "ceci",
