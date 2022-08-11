@@ -31,11 +31,11 @@ def test_FSPSSedGenerator_bad_tabulated_sfh_params(settings, error):
     with pytest.raises(error):
         DS = RailStage.data_store
         DS.__class__.allow_overwrite = True
-        dummy_io_data = tables_io.read('tests/data/test_fsps_sed_gen.fits')
+        dummy_io_data = tables_io.read('tests/data/test_fsps_sed_generator.fits')
         sed_generation_test = FSPSSedGenerator.make_stage(name='sed_generator_test', zcontinuous=1,
-                                                          add_neb_emission=True, **settings)
+                                                          add_neb_emission=True, physical_units=True, **settings)
         sed_generation_test.add_data('input', dummy_io_data)
-        sed_generation_test.run(physical_units=True)
+        sed_generation_test.run()
 
 
 @pytest.mark.parametrize(
@@ -49,20 +49,20 @@ def test_FSPSSedGenerator_bad_tabulated_lsf_params(settings, error):
     with pytest.raises(error):
         DS = RailStage.data_store
         DS.__class__.allow_overwrite = True
-        dummy_io_data = tables_io.read('tests/data/test_fsps_sed_gen.fits')
+        dummy_io_data = tables_io.read('tests/data/test_fsps_sed_generator.fits')
         sed_generation_test = FSPSSedGenerator.make_stage(name='sed_generator_test', smooth_velocity=False,
-                                                          **settings)
+                                                          physical_units=True, **settings)
         sed_generation_test.add_data('input', dummy_io_data)
-        sed_generation_test.run(physical_units=True)
+        sed_generation_test.run()
 
 
 def test_FSPSSedGenerator_output_table():
     DS = RailStage.data_store
     DS.__class__.allow_overwrite = True
-    dummy_io_data = tables_io.read('tests/data/test_fsps_sed_gen.fits')
-    sed_generation_test = FSPSSedGenerator.make_stage(name='sed_generator_test')
+    dummy_io_data = tables_io.read('tests/data/test_fsps_sed_generator.fits')
+    sed_generation_test = FSPSSedGenerator.make_stage(name='sed_generator_test', physical_units=True,)
     sed_generation_test.add_data('input', dummy_io_data)
-    sed_generation_test.run(physical_units=True)
+    sed_generation_test.run()
     out_table = sed_generation_test.get_data('output')
 
     assert 'wavelength' in out_table.colnames
