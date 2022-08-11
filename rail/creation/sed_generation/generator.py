@@ -8,8 +8,8 @@ from rail.core.stage import RailStage
 from rail.core.data import TableHandle, FitsHandle
 
 
-class Generator(RailStage):
-    """Base class Generators, which generates synthetic rest-frame SEDs
+class SedGenerator(RailStage):
+    """Base class SedGenerator, which generates synthetic rest-frame SEDs
 
     Generators take "input" data in the form of files passed to table_io and
     provide as "output" another table_io readable file

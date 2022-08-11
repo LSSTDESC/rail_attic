@@ -1,11 +1,11 @@
-from rail.creation.sed_generation.generator import Generator
+from rail.creation.sed_generation.generator import SedGenerator
 import fsps
 import numpy as np
 from astropy.table import Table, hstack
 from ceci.config import StageParameter as Param
 
 
-class FSPSSedGenerator(Generator):
+class FSPSSedGenerator(SedGenerator):
     """
     Generator that creates rest-frame SEDs with FSPS.
     Install FSPS with the following commands:
@@ -27,7 +27,7 @@ class FSPSSedGenerator(Generator):
     """
 
     name = 'SedGenerator'
-    config_options = Generator.config_options.copy()  # I would put minimal set of parameters to make it run
+    config_options = SedGenerator.config_options.copy()  # I would put minimal set of parameters to make it run
     config_options.update(compute_vega_mags=Param(bool, False, msg='True/False for Vega/AB magnitudes'),
                           vactoair_flag=Param(bool, False, msg='True/False for air/vacuum wavelength'),
                           zcontinuous=Param(int, 1, msg='Flag for interpolation in metallicity of SSP before CSP'),
@@ -64,7 +64,7 @@ class FSPSSedGenerator(Generator):
         Parameters
         ----------
         """
-        Generator.__init__(self, args, comm=comm)
+        SedGenerator.__init__(self, args, comm=comm)
         # validate parameters
         if self.config.min_wavelength < 0:
             raise ValueError("min_wavelength must be positive, not {self.config.min_wavelength}")
