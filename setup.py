@@ -1,4 +1,5 @@
 from setuptools import find_namespace_packages, setup
+import os
 
 # basic dependencies for all RAIL modules
 install_requires = [
@@ -14,8 +15,10 @@ install_requires = [
 core_extras = ["hyperbolic @ git+https://github.com/jlvdb/hyperbolic"]
 
 # dependencies for the Creation module
-creation_extras = ["pzflow",
-                   "fsps @ git+https://github.com/torluca/python-fsps-lite.git"]
+cwd = os.getcwd()
+os.environ["SPS_HOME"] = "{}/fsps".format(cwd)
+os.system('git clone https://github.com/cconroy20/fsps.git $SPS_HOME')
+creation_extras = ["pzflow", "fsps"]
 
 # dependencies required for all estimators in the Estimation module
 estimation_extras = [
