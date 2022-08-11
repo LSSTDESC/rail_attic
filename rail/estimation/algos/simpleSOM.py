@@ -3,7 +3,7 @@ from minisom import MiniSom
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatInformer
 from rail.estimation.summarizer import SZPZSummarizer
-from rail.core.data import QPHandle
+from rail.core.data import QPHandle, TableHandle
 import qp
 
 
@@ -172,7 +172,8 @@ class SimpleSOMSummarizer(SZPZSummarizer):
                           spec_weightcol=Param(str, "", msg="name of specz weight col, if present"),
                           nsamples=Param(int, 20, msg="number of bootstrap samples to generate"))
     outputs = [('output', QPHandle),
-               ('single_NZ', QPHandle)]
+               ('single_NZ', QPHandle),
+               ('uncovered_cell_file', TableHandle)]
 
     def __init__(self, args, comm=None):
         self.zgrid = None
@@ -247,6 +248,7 @@ class SimpleSOMSummarizer(SZPZSummarizer):
         phot_pixel_set = set(phot_pixel_coords)
         spec_pixel_set = set(spec_pixel_coords)
         uncovered_pixels = phot_pixel_set - spec_pixel_set
+        bad_pix = dict(uncovered_pixels=np.array(list(uncovered_pixels)))
         print("the following pixels contain photometric data but not spectroscopic data:")
         print(uncovered_pixels)
         useful_pixels = phot_pixel_set - uncovered_pixels
@@ -272,3 +274,4 @@ class SimpleSOMSummarizer(SZPZSummarizer):
         qp_d = qp.Ensemble(qp.hist, data=dict(bins=self.zgrid, pdfs=fid_hist))
         self.add_data('output', sample_ens)
         self.add_data('single_NZ', qp_d)
+        self.add_data('uncovered_cell_file', bad_pix)
