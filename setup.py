@@ -15,8 +15,7 @@ install_requires = [
 core_extras = ["hyperbolic @ git+https://github.com/jlvdb/hyperbolic"]
 
 # dependencies for the Creation module
-cwd = os.getcwd()
-os.environ["SPS_HOME"] = "{}/fsps".format(cwd)
+os.environ["SPS_HOME"] = "/opt/hostedtoolcache/Python/fsps"
 os.system('git clone https://github.com/cconroy20/fsps.git $SPS_HOME')
 creation_extras = ["pzflow", "fsps"]
 

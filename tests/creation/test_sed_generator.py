@@ -1,3 +1,6 @@
+import os
+os.environ["SPS_HOME"] = "/opt/hostedtoolcache/Python/fsps"
+
 import tables_io
 from rail.creation.sed_generation.sed_generator import FSPSSedGenerator
 import pytest
