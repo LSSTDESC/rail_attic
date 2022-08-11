@@ -1,11 +1,12 @@
 import os
-import platform
-
-python_version = platform.python_version()
-python_version_tuple = platform.python_version_tuple()
-os.environ["SPS_HOME"] = "/opt/hostedtoolcache/Python/{}/x64/lib/" \
-                         "python{}.{}/site-packages/fsps".format(python_version, python_version_tuple[0],
-                                                                 python_version_tuple[1])
+#import platform
+#
+#python_version = platform.python_version()
+#python_version_tuple = platform.python_version_tuple()
+#os.environ["SPS_HOME"] = "/opt/hostedtoolcache/Python/{}/x64/lib/" \
+#                         "python{}.{}/site-packages/fsps".format(python_version, python_version_tuple[0],
+#                                                                 python_version_tuple[1])
+os.environ["SPS_HOME"] = "tests/data/libfspslite"
 
 import tables_io
 from rail.creation.sed_generation.sed_generator import FSPSSedGenerator
