@@ -1,12 +1,10 @@
 from setuptools import find_namespace_packages, setup
-import os
 
 # basic dependencies for all RAIL modules
 install_requires = [
     "h5py",
     "numpy<1.23",
     "pandas>=1.1",
-    "astropy>=5.0",
     "tables-io>=0.7.5",
     "ceci",
     "qp @ git+https://github.com/LSSTDESC/qp",
@@ -16,7 +14,6 @@ install_requires = [
 core_extras = ["hyperbolic @ git+https://github.com/jlvdb/hyperbolic"]
 
 # dependencies for the Creation module
-os.environ["SPS_HOME"] = "tests/data/libfspslite"
 creation_extras = ["pzflow",
                    "fsps @ git+https://github.com/torluca/python-fsps-lite.git"]
 
