@@ -23,8 +23,6 @@ estimation_extras = []
 
 # dependencies for specific estimators in the Estimation module
 estimation_codes = {
-    "bpz": ["DESC_BPZ @ git+https://github.com/LSSTDESC/DESC_BPZ"],
-    "flex": ["FlexCode[all]"],
     "NN": ["sklearn"],
 }
 

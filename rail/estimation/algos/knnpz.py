@@ -172,6 +172,8 @@ class KNearNeighPDF(CatEstimator):
 
     def open_model(self, **kwargs):
         CatEstimator.open_model(self, **kwargs)
+        if self.model is None:
+            return
         self.sigma = self.model['bestsig']
         self.numneigh = self.model['nneigh']
         self.kdtree = self.model['kdtree']
