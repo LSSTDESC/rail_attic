@@ -22,3 +22,4 @@ DESC_BPZ@git+https://github.com/LSSTDESC/DESC_BPZ
 FlexCode
 h5py
 minisom
+hyperbolic@git+https://github.com/jlvdb/hyperbolic
