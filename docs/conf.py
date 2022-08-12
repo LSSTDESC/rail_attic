@@ -232,7 +232,7 @@ for entry in config:
 # -- Compile the examples into rst----------------------------------------
 outdir = 'compiled-demos-examples/'
 nbconvert_opts = ['--to rst',
-                  '--ExecutePreprocessor.kernel_name=python3.8',
+                  '--ExecutePreprocessor.kernel_name=python3',
                   # '--execute',
                   f'--output-dir {outdir}']
 
