@@ -7,6 +7,26 @@ from ceci import PipelineStage
 from rail.core.data import DATA_STORE, DataHandle
 
 
+class StageIO:
+
+    def __init__(self, parent):
+        self._parent = parent
+
+    def __getattr__(self, item):
+        return self._parent.get_handle(item, allow_missing=True)
+
+
+class RailStageBuild:
+
+    def __init__(self, stage_class, **kwargs):
+        self.stage_class = stage_class
+        self._kwargs = kwargs
+
+    def build(self, name):
+        stage = self.stage_class.make_and_connect(name=name, **self._kwargs)
+        return stage
+        
+
 class RailStage(PipelineStage):
     """Base class for rail stages
 
@@ -58,7 +78,35 @@ class RailStage(PipelineStage):
         Do RailStage specific initialization """
         PipelineStage.__init__(self, args, comm=comm)
         self._input_length = None
+        self.io = StageIO(self)
 
+    @classmethod
+    def make_and_connect(cls, **kwargs):
+        """Make a stage and connects it to other stages
+
+        Parameters
+        ----------
+        connection : dict[str, DataHandle]
+            Input connections for this stage
+
+        Keywords
+        --------
+        Used to set stage configuration
+        
+        Returns
+        -------
+        A stage
+        """
+        connections = kwargs.pop('connections', {})
+        stage = cls.make_stage(**kwargs)
+        for key, val in connections.items():
+            stage.set_data(key, val, do_read=False)
+        return stage
+
+    @classmethod
+    def build(cls, **kwargs):
+        return RailStageBuild(cls, **kwargs)
+    
     def get_handle(self, tag, path=None, allow_missing=False):
         """Gets a DataHandle associated to a particular tag
 
