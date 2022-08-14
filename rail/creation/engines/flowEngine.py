@@ -7,7 +7,7 @@ from ceci.config import StageParameter as Param
 from pzflow import Flow
 from pzflow.bijectors import Chain, ColorTransform, RollingSplineCoupling, ShiftBounds
 from rail.core.data import FlowHandle, PqHandle, QPHandle, TableHandle
-from rail.creation.creator import Creator, Modeler, PosteriorCalculator
+from rail.creation.engine import Creator, Modeler, PosteriorCalculator
 
 
 class FlowModeler(Modeler):
