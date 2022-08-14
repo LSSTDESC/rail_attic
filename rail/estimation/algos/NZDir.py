@@ -5,6 +5,7 @@ Implement simple version of TxPipe NZDir summarizer
 import numpy as np
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatEstimator, CatInformer
+from rail.core.data import QPHandle
 import qp
 import scipy.spatial
 import pandas as pd
@@ -105,10 +106,14 @@ class NZDir(CatEstimator):
     config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
                           nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
+                          seed=Param(int, 87, msg="random seed"),
                           usecols=Param(list, default_usecols, msg="columns from sz_date for Neighor calculation"),
                           leafsize=Param(int, 40, msg="leaf size for testdata KDTree"),
                           hdf5_groupname=Param(str, "photometry", msg="name of hdf5 group for data, if None, then set to ''"),
-                          phot_weightcol=Param(str, "", msg="name of photometry weight, if present"))
+                          phot_weightcol=Param(str, "", msg="name of photometry weight, if present"),
+                          nsamples=Param(int, 20, msg="number of bootstrap samples to generate"))
+    outputs = [('output', QPHandle),
+               ('single_NZ', QPHandle)]
 
     def __init__(self, args, comm=None):
         self.zgrid = None
@@ -128,11 +133,13 @@ class NZDir(CatEstimator):
         self.sz_mag_data = self.model['sz_mag_data']
 
     def run(self):
+        rng = np.random.default_rng(seed=self.config.seed)
         if self.config.hdf5_groupname:
             test_data = self.get_data('input')[self.config.hdf5_groupname]
         else:  # pragma:  no cover
             test_data = self.get_data('input')
-        self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
+        self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins + 1)
+        self.bincents = 0.5 * (self.zgrid[1:] + self.zgrid[:-1])
 
         # assign weight vecs if present, else set all to 1.0
         # tested in example notebook, so just put a pragma no cover for if present
@@ -163,7 +170,23 @@ class NZDir(CatEstimator):
             bins=self.zgrid,
             weights=weights * self.szweights,
         )
-        # make the ensembles of the histograms
         qp_d = qp.Ensemble(qp.hist,
                            data=dict(bins=self.zgrid, pdfs=hist_data[0]))
-        self.add_data('output', qp_d)
+
+        # add a bootstrap sampling
+        # The way things are set up, it is easier and faster to bootstrap the spec-z gals
+        # and weights, but if we wanted to be more like the other bootstraps we should really
+        # bootstrap the photometric data and re-run the ball tree query N times.
+        ngal = len(self.szweights)
+        nsamp = self.config.nsamples
+        hist_vals = np.empty((nsamp, self.config.nzbins))
+        for i in range(nsamp):
+            bootstrap_indices = rng.integers(low=0, high=ngal, size=ngal)
+            zarr = self.szvec[bootstrap_indices]
+            tmpweight = self.szweights[bootstrap_indices] * weights[bootstrap_indices]
+            tmp_hist_vals = np.histogram(zarr, bins=self.zgrid, weights=tmpweight)[0]
+            hist_vals[i] = tmp_hist_vals
+        sample_ens = qp.Ensemble(qp.hist, data=dict(bins=self.zgrid, pdfs=np.atleast_2d(hist_vals)))
+
+        self.add_data('output', sample_ens)
+        self.add_data('single_NZ', qp_d)

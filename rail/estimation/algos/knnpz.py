@@ -60,7 +60,6 @@ class Inform_KNearNeighPDF(CatInformer):
                           trainfrac=Param(float, 0.75,
                                           msg="fraction of training data used to make tree, rest used to set best sigma"),
                           seed=Param(int, 0, msg="Random number seed for NN training"),
-                          random_seed=Param(int, 87, msg="random seed for reproducibility"),
                           ref_column_name=Param(str, 'mag_i_lsst', msg="name for reference column"),
                           column_names=Param(list, refcols,
                                              msg="column names to be used in NN, *ASSUMED TO BE IN INCREASING WL ORDER!*"),
@@ -93,8 +92,7 @@ class Inform_KNearNeighPDF(CatInformer):
             training_data = self.get_data('input')[self.config.hdf5_groupname]
         else:  # pragma:  no cover
             training_data = self.get_data('input')
-        input_df = pd.DataFrame(training_data)
-        knndf = input_df[self.config.column_names]
+        knndf = pd.DataFrame(training_data, columns=self.config.column_names)
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
 
         # replace nondetects
@@ -105,18 +103,17 @@ class Inform_KNearNeighPDF(CatInformer):
             else:
                 knndf.loc[np.isclose(knndf[col], self.config.nondetect_val), col] = self.config.mag_limits[col]
 
-        trainszs = np.array(input_df[self.config.redshift_column_name])
+        trainszs = np.array(training_data[self.config.redshift_column_name])
         colordata = _computecolordata(knndf, self.config.ref_column_name, self.config.column_names)
         nobs = colordata.shape[0]
-        np.random.seed(self.config.seed)  # set seed for reproducibility
-        perm = np.random.permutation(nobs)
+        rng = np.random.default_rng
+        perm = rng().permutation(nobs)
         ntrain = round(nobs * self.config.trainfrac)
         xtrain_data = colordata[perm[:ntrain]]
         train_data = copy.deepcopy(xtrain_data)
         val_data = colordata[perm[ntrain:]]
         xtrain_sz = trainszs[perm[:ntrain]].copy()
         train_sz = np.array(copy.deepcopy(xtrain_sz))
-        np.savetxt("TEMPZFILE.out", train_sz)
         val_sz = np.array(trainszs[perm[ntrain:]])
         print(f"split into {len(train_sz)} training and {len(val_sz)} validation samples")
         tmpmodel = KDTree(train_data, leaf_size=self.config.leaf_size)
@@ -128,12 +125,10 @@ class Inform_KNearNeighPDF(CatInformer):
         print("finding best fit sigma and NNeigh...")
         for sig in siggrid:
             for nn in range(self.config.nneigh_min, self.config.nneigh_max + 1):
-                # print(f"sigma: {sig} num neigh: {nn}...")
                 dists, idxs = tmpmodel.query(val_data, k=nn)
                 ens = _makepdf(dists, idxs, train_sz, sig)
                 cdelossobj = CDELoss(ens, self.zgrid, val_sz)
                 cdeloss = cdelossobj.evaluate().statistic
-                # print(f"sigma: {sig} num neigh: {nn} loss: {cdeloss}")
                 if cdeloss < bestloss:
                     bestsig = sig
                     bestnn = nn
@@ -187,8 +182,7 @@ class KNearNeighPDF(CatEstimator):
         calculate and return PDFs for each galaxy using the trained flow
         """
         print(f"Process {self.rank} estimating PZ PDF for rows {start:,} - {end:,}")
-        test_df = pd.DataFrame(data)
-        knn_df = test_df[self.usecols]
+        knn_df = pd.DataFrame(data, columns=self.usecols)
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
 
         # replace nondetects
