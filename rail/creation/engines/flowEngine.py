@@ -17,7 +17,7 @@ class FlowModeler(Modeler):
     """
 
     name = "FlowModeler"
-    inputs = [("base", TableHandle)]  # move this to the base class!!!!!!
+    inputs = [("input", TableHandle)]
     outputs = [("model", FlowHandle)]
 
     config_options = Modeler.config_options.copy()
@@ -135,7 +135,7 @@ class FlowModeler(Modeler):
     def run(self):
         """ """
         # get the catalog
-        catalog = self.get_data("base")
+        catalog = self.get_data("input")
 
         # train the flow
         losses = self.flow.train(
@@ -155,7 +155,7 @@ class FlowCreator(Creator):
     """Creator wrapper for a PZFlow Flow object."""
 
     name = "FlowCreator"
-    inputs = [("flow", FlowHandle)]
+    inputs = [("model", FlowHandle)]
     outputs = [("output", PqHandle)]
 
     def __init__(self, args, comm=None):
@@ -164,20 +164,6 @@ class FlowCreator(Creator):
         Does standard Creator initialization and also gets the `Flow` object
         """
         Creator.__init__(self, args, comm=comm)
-        if not isinstance(args, dict):
-            args = vars(args)
-        self.set_flow(**args)
-
-    def set_flow(self, **kwargs):
-        """Set the `Flow`, either from an object or by loading from a file."""
-        flow = kwargs.get("flow")
-        if flow is None:  # pragma: no cover
-            return None
-        from pzflow import Flow
-
-        if isinstance(flow, Flow):
-            return self.set_data("flow", flow)
-        return self.set_data("flow", data=None, path=flow)
 
     def run(self):
         """Run method
@@ -188,7 +174,7 @@ class FlowCreator(Creator):
         -----
         Puts the data into the data store under this stages 'output' tag
         """
-        flow = self.get_data("flow")
+        flow = self.get_data("model")
         if flow is None:  # pragma: no cover
             raise ValueError(
                 "Tried to run a FlowCreator before the `Flow` model is loaded"
@@ -256,7 +242,7 @@ class FlowPosterior(PosteriorCalculator):
         nan_to_zero=True,
     )
 
-    inputs = [("flow", FlowHandle), ("input", PqHandle)]
+    inputs = [("model", FlowHandle), ("input", PqHandle)]
     outputs = [("output", QPHandle)]
 
     def __init__(self, args, comm=None):
@@ -278,7 +264,7 @@ class FlowPosterior(PosteriorCalculator):
         """
 
         data = self.get_data("input")
-        flow = self.get_data("flow")
+        flow = self.get_data("model")
         if self.config.marg_rules is None:  # pragma: no cover
             marg_rules = {
                 "flag": np.nan,
