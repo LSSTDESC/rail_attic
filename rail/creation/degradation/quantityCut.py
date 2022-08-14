@@ -12,7 +12,8 @@ class QuantityCut(Degrader):
     Note if a galaxy fails any of the cuts on any one of its columns, that
     galaxy is removed from the sample.
     """
-    name = 'QuantityCut'
+
+    name = "QuantityCut"
     config_options = Degrader.config_options.copy()
     config_options.update(cuts=dict)
 
@@ -24,7 +25,7 @@ class QuantityCut(Degrader):
         """
         Degrader.__init__(self, args, comm=comm)
         self.cuts = None
-        self.set_cuts(self.config['cuts'])
+        self.set_cuts(self.config["cuts"])
 
     def set_cuts(self, cuts: dict):
         """
@@ -42,7 +43,7 @@ class QuantityCut(Degrader):
         """
 
         # check that cuts is a dictionary
-        if not isinstance(cuts, dict):  #pragma: no cover
+        if not isinstance(cuts, dict):  # pragma: no cover
             raise TypeError("cuts must be a dictionary.")
 
         # validate all the cuts and standardize format in dictionary
@@ -78,7 +79,7 @@ class QuantityCut(Degrader):
                 raise TypeError(bad_cut_msg)
 
     def run(self):
-        """ Run method
+        """Run method
 
         Applies cuts
 
@@ -87,23 +88,26 @@ class QuantityCut(Degrader):
         Get the input data from the data store under this stages 'input' tag
         Puts the data into the data store under this stages 'output' tag
         """
-        data = self.get_data('input')
+        data = self.get_data("input")
 
         # get overlap of columns from data and columns on which to make cuts
         columns = set(self.cuts.keys()).intersection(data.columns)
 
-        # generate a pandas query from the cuts
-        query = [
-            f"{col} > {self.cuts[col][0]} & {col} < {self.cuts[col][1]}"
-            for col in columns
-        ]
-        query = " & ".join(query)
+        if len(columns) == 0:
+            self.add_data("output", data)
+        else:
+            # generate a pandas query from the cuts
+            query = [
+                f"{col} > {self.cuts[col][0]} & {col} < {self.cuts[col][1]}"
+                for col in columns
+            ]
+            query = " & ".join(query)
 
-        out_data = data.query(query)
-        self.add_data('output', out_data)
+            out_data = data.query(query)
+            self.add_data("output", out_data)
 
     def __repr__(self):  # pragma: no cover
-        """ Pretty print this object """
+        """Pretty print this object"""
         printMsg = "Degrader that applies the following cuts to a pandas DataFrame:\n"
         printMsg += "{column: (min, max), ...}\n"
         printMsg += self.cuts.__str__()

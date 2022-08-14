@@ -17,36 +17,31 @@ class FlowModeler(Modeler):
     """
 
     name = "FlowModeler"
-    inputs = [("catalog", TableHandle)]  # move this to the base class!!!!!!
-    outputs = [("flow", FlowHandle)]
+    inputs = [("base", TableHandle)]  # move this to the base class!!!!!!
+    outputs = [("model", FlowHandle)]
 
     config_options = Modeler.config_options.copy()
     config_options.update(
         phys_cols=Param(
             dict,
-            {"redshift": [0.0, 3.0]},
+            {"redshift": [0, 3]},
             msg="Names of non-photometry columns and their corresponding [min, max] values.",
         ),
         phot_cols=Param(
             dict,
             {
-                "u": [22.79, 27.79],
-                "g": [24.04, 29.04],
-                "r": [24.06, 29.06],
-                "i": [23.62, 28.62],
-                "z": [22.98, 27.98],
-                "y": [22.05, 27.05],
+                "mag_u_lsst": [17, 35],
+                "mag_g_lsst": [16, 32],
+                "mag_r_lsst": [15, 30],
+                "mag_i_lsst": [15, 30],
+                "mag_z_lsst": [14, 29],
+                "mag_y_lsst": [14, 28],
             },
             msg="Names of photometry columns and their corresponding [min, max] values.",
         ),
-        column_names=Param(
-            dict,
-            {"phys_cols": ["redshift"], "phot_cols": ["u", "g", "r", "i", "z", "y"]},
-            msg="The column names of the input data.",
-        ),
         calc_colors=Param(
             dict,
-            {"ref_column_name": "r"},
+            {"ref_column_name": "mag_i_lsst"},
             msg=(
                 "Whether to internally calculate colors (if phot_cols are magnitudes). "
                 "Assumes that you want to calculate colors from adjacent columns in "
@@ -66,6 +61,11 @@ class FlowModeler(Modeler):
             30,
             msg="The number of training epochs.",
         ),
+        flow_seed=Param(
+            int,
+            0,
+            msg="The random seed for training.",
+        ),
     )
 
     def __init__(self, args, comm=None):
@@ -73,6 +73,8 @@ class FlowModeler(Modeler):
 
         Does standard Modeler initialization.
         """
+        Modeler.__init__(self, args, comm=comm)
+
         # get the columns we are modeling
         phys_cols = self.config.phys_cols
         phot_cols = self.config.phot_cols
@@ -132,22 +134,19 @@ class FlowModeler(Modeler):
 
     def run(self):
         """ """
-        if self.config.base:
-            training_data = self.get_data("base")[self.config.base]
-        else:  # pragma:  no cover
-            training_data = self.get_data("base")
-
-        if self.config.num_training_epochs:
-            n_epoch = self.get_data("input")[self.config.num_training_epochs]
-        else:  # pragma:  no cover
-            n_epoch = self.get_data("input")
+        # get the catalog
+        catalog = self.get_data("base")
 
         # train the flow
-        losses = self.flow.train(training_data, epochs=n_epoch, verbose=True)
+        losses = self.flow.train(
+            catalog,
+            epochs=self.config.num_training_epochs,
+            verbose=True,
+            seed=self.config.flow_seed,
+        )
 
         # save the flow
-        self.add_data("output", self.flow)
-        self.flow.save(self.config.model_file)
+        self.add_data("model", self.flow)
 
         # NEED TO SAVE THE LOSSES TOO SO WE CAN PLOT THEM
 

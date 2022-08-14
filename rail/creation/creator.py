@@ -6,16 +6,21 @@ to the distribution defined by the creator.
 
 import pandas as pd
 import qp
+from rail.core.data import ModelHandle, TableHandle
 from rail.core.stage import RailStage
+
 
 class Modeler(RailStage):
     """
     Base class for creating a model of redshift and photometry.
 
     """
-    name = 'Modeler'
+
+    name = "Modeler"
     config_options = RailStage.config_options.copy()
     config_options.update(seed=12345)
+    inputs = [("base", TableHandle)]
+    outputs = [("model", ModelHandle)]
 
     def __init__(self, args, comm=None):
         """Initialize Modeler"""
@@ -33,22 +38,20 @@ class Modeler(RailStage):
         -------
         [This will definitely be a file, but the filetype and format depend entirely on the modeling approach!]
         """
-        config_options = RailStage.config_options.copy()
-        inputs = [('base', DataHandle)]
-        outputs = [('model', ModelHandle)]
         self.config.update(**kwargs)
         self.run()
         self.finalize()
-        return self.get_handle('model')
+        return self.get_handle("model")
+
 
 class Creator(RailStage):
     """Base class for Creators that generate synthetic photometric data from a model.
 
-    `Creator` will output a table of photometric data.  The details 
+    `Creator` will output a table of photometric data.  The details
     will depend on the particular engine.
     """
 
-    name = 'Creator'
+    name = "Creator"
     config_options = RailStage.config_options.copy()
     config_options.update(n_samples=int, seed=12345)
 
@@ -79,14 +82,14 @@ class Creator(RailStage):
         This method puts `n_samples` and `seed` into the stage configuration
         data, which makes them available to other methods.
         It then calls the `run` method, which must be defined by a subclass.
-        Finally, the `DataHandle` associated to the `output` tag is returned. 
+        Finally, the `DataHandle` associated to the `output` tag is returned.
         """
-        self.config['n_samples'] = n_samples
-        self.config['seed'] = seed
+        self.config["n_samples"] = n_samples
+        self.config["seed"] = seed
         self.config.update(**kwargs)
         self.run()
         self.finalize()
-        return self.get_handle('output')
+        return self.get_handle("output")
 
 
 class PosteriorCalculator(RailStage):
@@ -96,12 +99,12 @@ class PosteriorCalculator(RailStage):
     The posteriors will be contained in a qp Ensemble.
     """
 
-    name = 'PosteriorCalculator'
+    name = "PosteriorCalculator"
     config_options = RailStage.config_options.copy()
     config_options.update(column=str)
 
     def __init__(self, args, comm=None):
-        """Initialize PosteriorCalculator """
+        """Initialize PosteriorCalculator"""
         RailStage.__init__(self, args, comm=comm)
 
     def get_posterior(self, data: pd.DataFrame, column: str, **kwargs) -> qp.Ensemble:
@@ -124,9 +127,9 @@ class PosteriorCalculator(RailStage):
 
         It will then call `self.run()` and return the `DataHandle` associated to the `output` tag
         """
-        self.set_data('input', data)
+        self.set_data("input", data)
         self.config.update(column=column)
         self.config.update(**kwargs)
         self.run()
         self.finalize()
-        return self.get_handle('output')
+        return self.get_handle("output")
