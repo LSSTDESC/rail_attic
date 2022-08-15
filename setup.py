@@ -3,7 +3,7 @@ from setuptools import find_namespace_packages, setup
 # basic dependencies for all RAIL modules
 install_requires = [
     "h5py",
-    "numpy<1.23",
+    "numpy",
     "pandas>=1.1",
     "tables-io>=0.7.5",
     "ceci",
@@ -21,7 +21,7 @@ estimation_extras = [
     "matplotlib",
     "pyarrow",
     "pyyaml",
-    "scipy>=1.5.2",
+    "scipy>=1.9.0",
     "tables",
 ]
 # dependencies for specific estimators in the Estimation module
