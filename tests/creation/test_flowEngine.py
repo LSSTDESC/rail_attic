@@ -17,7 +17,7 @@ def test_flowcreator_sample():
     flow = get_example_flow()
     flow_samples = flow.sample(n_samples, seed=seed)
 
-    FlowCr = FlowCreator.make_stage(flow=flow, n_samples=n_samples)
+    FlowCr = FlowCreator.make_stage(model=flow, n_samples=n_samples)
     FlowCr_samples = FlowCr.sample(n_samples, seed=seed).data
 
     pzdir = os.path.dirname(pzflow.__file__)
@@ -53,11 +53,11 @@ def test_FlowCreator_pz_estimate(tmp_path):
     flow = get_example_flow()
     flow_pdfs = flow.posterior(data, column="redshift", grid=grid)
 
-    flow_path = tmp_path / "flow.pzflow.pkl"
+    flow_path = str(tmp_path / "flow.pzflow.pkl")
     flow.save(flow_path)
     flowPost = FlowPosterior.make_stage(
         name="flow",
-        flow=flow_path,
+        model=flow_path,
         column="redshift",
         grid=grid,
         marg_rules={"flag": np.nan, "u": lambda row: np.linspace(25, 31, 10)},
@@ -65,7 +65,7 @@ def test_FlowCreator_pz_estimate(tmp_path):
 
     flowPost2 = FlowPosterior.make_stage(
         name="flow2",
-        flow=flow,
+        model=flow,
         column="redshift",
         grid=grid,
         marg_rules={"flag": np.nan, "u": lambda row: np.linspace(25, 31, 10)},

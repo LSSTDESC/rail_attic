@@ -8,6 +8,7 @@ from rail.creation.degradation.spectroscopic_degraders import (
     LineConfusion,
 )
 from rail.creation.degradation.spectroscopic_selections import (
+    SpecSelection,
     SpecSelection_BOSS,
     SpecSelection_DEEP2,
     SpecSelection_GAMA,

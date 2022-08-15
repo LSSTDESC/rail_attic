@@ -14,12 +14,13 @@ def test_goldenspike():
 
     RAIL_DIR = os.path.join(os.path.dirname(rail.__file__), "..")
     flow_file = os.path.join(RAIL_DIR, "examples/goldenspike/data/pretrained_flow.pkl")
+    print("\n\n\n\n\n\n\n\n\n", flow_file, "\n\n\n\n\n\n\n\n\n")
     bands = ["u", "g", "r", "i", "z", "y"]
     band_dict = {band: f"mag_{band}_lsst" for band in bands}
     rename_dict = {f"mag_{band}_lsst_err": f"mag_err_{band}_lsst" for band in bands}
 
     flow_creator_test = FlowCreator.make_stage(
-        name="flow_creator_test", flow=flow_file, n_samples=50
+        name="flow_creator_test", model=flow_file, n_samples=50
     )
 
     lsst_error_model_test = LSSTErrorModel.make_stage(
@@ -49,7 +50,7 @@ def test_goldenspike():
     table_conv_test.connect_input(col_remapper_test)
 
     pipe.initialize(
-        dict(flow=flow_file), dict(output_dir=".", log_dir=".", resume=False), None
+        dict(model=flow_file), dict(output_dir=".", log_dir=".", resume=False), None
     )
 
     pipe.save("stage.yaml")
