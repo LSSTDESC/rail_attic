@@ -1,6 +1,6 @@
 run_params:
-  class_name: flowCreator
-  run_name: test_flowCreator
+  class_name: flowModeler
+  run_name: test_flowModeler
   flow_seed: 0
   phys_cols:
     "redshift": [0., 3.]
