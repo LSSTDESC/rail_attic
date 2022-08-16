@@ -96,12 +96,19 @@ class FlowModeler(Modeler):
 
             # convert magnitude ranges to color ranges
             mag_ranges = np.array([val for val in phot_cols.values()])
+            ref_mag_range = mag_ranges[
+                list(phot_cols).index(color_config["ref_column_name"])
+            ]
             color_ranges = mag_ranges[:-1] - mag_ranges[1:, ::-1]
-            mins = [col_range[0] for col_range in phys_cols.values()] + list(
-                color_ranges[:, 0]
+            mins = (
+                [col_range[0] for col_range in phys_cols.values()]
+                + [ref_mag_range[0]]
+                + list(color_ranges[:, 0])
             )
-            maxs = [col_range[1] for col_range in phys_cols.values()] + list(
-                color_ranges[:, 1]
+            maxs = (
+                [col_range[1] for col_range in phys_cols.values()]
+                + [ref_mag_range[1]]
+                + list(color_ranges[:, 1])
             )
 
             # chain all the bijectors together
