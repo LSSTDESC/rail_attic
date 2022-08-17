@@ -2,7 +2,7 @@
 
 import os
 from ceci.config import StageParameter as Param
-from ceci import PipelineStage
+from ceci import PipelineStage, MiniPipeline
 
 from rail.core.data import DATA_STORE, DataHandle
 
@@ -52,7 +52,7 @@ class RailStageBuild:
         return stage        
 
 
-class RailPipeline(ceci.MiniPipeline):
+class RailPipeline(MiniPipeline):
     """A pipeline intended for interactive use
 
     Mainly this allows for more concise pipeline specification, along the lines of:
@@ -64,14 +64,14 @@ class RailPipeline(ceci.MiniPipeline):
     """
     
     def __init__(self):
-        ceci.MiniPipeline.__init__(self, [], dict(name='mini'))
+        MiniPipeline.__init__(self, [], dict(name='mini'))
         
     def __setattr__(self, name, value):
         if isinstance(value, RailStageBuild):
             stage = value.build(name)
             self.add_stage(stage)
             return stage
-        return ceci.MiniPipeline.__setattr__(self, name, value)
+        return MiniPipeline.__setattr__(self, name, value)
     
 
 class RailStage(PipelineStage):
