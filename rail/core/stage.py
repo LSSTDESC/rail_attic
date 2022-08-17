@@ -7,6 +7,73 @@ from ceci import PipelineStage
 from rail.core.data import DATA_STORE, DataHandle
 
 
+class StageIO:
+    """A small utility class for Stage Input/ Output
+
+    This make it possible to get access to stage inputs and outputs
+    as attributes rather that by using the get_handle() method.
+
+    In short it maps
+
+    a_stage.get_handle('input', allow_missing=True) to a_stage.input 
+    
+    This allows users to be more concise when writing pipelines.
+    """
+    def __init__(self, parent):
+        self._parent = parent
+
+    def __getattr__(self, item):
+        return self._parent.get_handle(item, allow_missing=True)
+
+
+class RailStageBuild:
+    """A small utility class that building stages
+    
+    This provides a mechasim to get the name of the stage from the 
+    attribute name in the Pipeline the stage belongs to.
+
+    I.e., we can do:
+
+    a_pipe.stage_name = StageClass.build(...)
+
+    And get a stage named 'stage_name', rather than having to do:
+
+    a_stage = StageClass.make_stage(..)
+    a_pipe.add_stage(a_stage)
+    """
+    def __init__(self, stage_class, **kwargs):
+        self.stage_class = stage_class
+        self._kwargs = kwargs
+
+    def build(self, name):
+        """Actually build the stage, this is called by the pipeline the stage 
+        belongs to"""
+        stage = self.stage_class.make_and_connect(name=name, **self._kwargs)
+        return stage        
+
+
+class RailPipeline(ceci.MiniPipeline):
+    """A pipeline intended for interactive use
+
+    Mainly this allows for more concise pipeline specification, along the lines of:
+
+    self.stage_1 = Stage1Class.build(...)
+    self.stage_2 = Stage2Class.build(connections=dict(input=self.stage1.io.output), ...)
+
+    And end up with a fully specified pipeline.
+    """
+    
+    def __init__(self):
+        ceci.MiniPipeline.__init__(self, [], dict(name='mini'))
+        
+    def __setattr__(self, name, value):
+        if isinstance(value, RailStageBuild):
+            stage = value.build(name)
+            self.add_stage(stage)
+            return stage
+        return ceci.MiniPipeline.__setattr__(self, name, value)
+    
+
 class RailStage(PipelineStage):
     """Base class for rail stages
 
@@ -58,7 +125,35 @@ class RailStage(PipelineStage):
         Do RailStage specific initialization """
         PipelineStage.__init__(self, args, comm=comm)
         self._input_length = None
-    
+        self.io = StageIO(self)
+
+    @classmethod
+    def make_and_connect(cls, **kwargs):
+        """Make a stage and connects it to other stages
+
+        Parameters
+        ----------
+        connection : dict[str, DataHandle]
+            Input connections for this stage
+
+        Keywords
+        --------
+        Used to set stage configuration
+
+        Returns
+        -------
+        A stage
+        """
+        connections = kwargs.pop('connections', {})
+        stage = cls.make_stage(**kwargs)
+        for key, val in connections.items():
+            stage.set_data(key, val, do_read=False)
+        return stage
+
+    @classmethod
+    def build(cls, **kwargs):
+        return RailStageBuild(cls, **kwargs)
+
     def get_handle(self, tag, path=None, allow_missing=False):
         """Gets a DataHandle associated to a particular tag
 
