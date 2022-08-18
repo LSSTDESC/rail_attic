@@ -168,4 +168,3 @@ def test_catch_bad_bands():
         sklearn_nn.Inform_SimpleNN.make_stage(hdf5_groupname='', **params)
     with pytest.raises(ValueError):
         sklearn_nn.SimpleNN.make_stage(hdf5_groupname='', **params)
-

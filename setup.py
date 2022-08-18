@@ -56,7 +56,7 @@ extras_require["all"] = extras_require["full"] = extras_require["Full"] = extras
 
 # setup the rail package!
 setup(
-    name="rail",
+    name="pz-rail",
     author="The LSST DESC PZ WG",
     author_email="aimalz@nyu.edu",
     packages=find_namespace_packages(),

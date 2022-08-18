@@ -78,6 +78,9 @@ class DataHandle:
             raise ValueError("TableHandle.write() called but path has not been specified")
         if self.data is None:
             raise ValueError(f"TableHandle.write() called for path {self.path} with no data")
+        outdir = os.path.dirname(os.path.abspath(self.path))
+        if not os.path.exists(outdir):  #pragma: no cover
+            os.makedirs(outdir, exist_ok=True)        
         return self._write(self.data, self.path, **kwargs)
 
     @classmethod
