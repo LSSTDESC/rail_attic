@@ -1,14 +1,8 @@
-import numpy as np
+"""Utility functions to test alogrithms"""
 import os
-import sys
-import glob
-import pickle
-import pytest
-import yaml
-import tables_io
 from rail.core.stage import RailStage
 from rail.core.utils import RAILDIR
-from rail.core.data import DataStore, TableHandle
+from rail.core.data import TableHandle
 import scipy.special
 sci_ver_str = scipy.__version__.split('.')
 
@@ -37,7 +31,7 @@ def one_algo(key, single_trainer, single_estimator, train_kwargs, estim_kwargs):
 
     pz = single_estimator.make_stage(name=key, **estim_kwargs)
     estim = pz.estimate(validation_data)
-    
+
     copy_estim_kwargs = estim_kwargs.copy()
     model_file = copy_estim_kwargs.pop('model', 'None')
 

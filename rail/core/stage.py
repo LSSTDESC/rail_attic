@@ -15,8 +15,8 @@ class StageIO:
 
     In short it maps
 
-    a_stage.get_handle('input', allow_missing=True) to a_stage.input 
-    
+    a_stage.get_handle('input', allow_missing=True) to a_stage.input
+
     This allows users to be more concise when writing pipelines.
     """
     def __init__(self, parent):
@@ -28,8 +28,8 @@ class StageIO:
 
 class RailStageBuild:
     """A small utility class that building stages
-    
-    This provides a mechasim to get the name of the stage from the 
+
+    This provides a mechasim to get the name of the stage from the
     attribute name in the Pipeline the stage belongs to.
 
     I.e., we can do:
@@ -46,10 +46,10 @@ class RailStageBuild:
         self._kwargs = kwargs
 
     def build(self, name):
-        """Actually build the stage, this is called by the pipeline the stage 
+        """Actually build the stage, this is called by the pipeline the stage
         belongs to"""
         stage = self.stage_class.make_and_connect(name=name, **self._kwargs)
-        return stage        
+        return stage
 
 
 class RailPipeline(MiniPipeline):
@@ -62,17 +62,17 @@ class RailPipeline(MiniPipeline):
 
     And end up with a fully specified pipeline.
     """
-    
+
     def __init__(self):
         MiniPipeline.__init__(self, [], dict(name='mini'))
-        
+
     def __setattr__(self, name, value):
         if isinstance(value, RailStageBuild):
             stage = value.build(name)
             self.add_stage(stage)
             return stage
         return MiniPipeline.__setattr__(self, name, value)
-    
+
 
 class RailStage(PipelineStage):
     """Base class for rail stages
@@ -152,6 +152,7 @@ class RailStage(PipelineStage):
 
     @classmethod
     def build(cls, **kwargs):
+        """Return an object that can be used to build a stage"""
         return RailStageBuild(cls, **kwargs)
 
     def get_handle(self, tag, path=None, allow_missing=False):

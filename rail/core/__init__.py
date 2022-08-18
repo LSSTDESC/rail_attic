@@ -10,4 +10,3 @@ try:
     __version__ = find_version()
 except: # pragma: no cover
     __version__ = "unknown"
-
