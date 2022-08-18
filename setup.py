@@ -22,7 +22,7 @@ estimation_extras = [
     "minisom",
     "pyarrow",
     "pyyaml",
-    "scipy>=1.8",
+    "scipy>=1.9.0",
     "tables",
 ]
 # dependencies for specific estimators in the Estimation module
