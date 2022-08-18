@@ -335,7 +335,7 @@ def test_PhotormetryManipulator(hyperbolic_configuration):
     inst = HyperbolicSmoothing.make_stage(name='photormetry_manipulator', **config, is_flux=True)
     inst.set_data('input', dummy_data)
     data = inst.get_as_fluxes()
-    assert data.equals(dummy_data)
+    assert np.allclose(data, dummy_data)
 
 
 
@@ -359,7 +359,7 @@ def test_HyperbolicSmoothing(hyperbolic_configuration):
     smooth = HyperbolicSmoothing.make_stage(name=stage_name, **hyperbolic_configuration)
     smooth.compute(test_data)
     smooth_params = smooth.get_handle(handle_name).data
-    assert smooth_params.equals(result_smoothing)
+    assert np.allclose(smooth_params, result_smoothing)
 
     os.remove(f'{handle_name}_{stage_name}.pq')
 
