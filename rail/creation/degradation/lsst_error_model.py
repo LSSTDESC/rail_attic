@@ -27,7 +27,7 @@ class LSSTErrorModel(Degrader):
     2) 'gaap' model given by https://arxiv.org/abs/1902.11265
     In order to use these methods, your dataframe of galaxy data must include columns
     named "major" and "minor", which are the semi-major and minor axes of the galaxies
-    in arcseconds.
+    in arcseconds. For the cosmoDC2 catalog, they are the half-light radii.
 
     Create an instance by calling the class, then use the instance as a
     callable on pandas DataFrames.
@@ -389,16 +389,16 @@ class LSSTErrorModel(Degrader):
         A_max_sigma = self.config["A_max"] * fwhm_to_sigma
 
         # calculate the area of the psf in each band
-        A_psf = np.pi * theta_sigma**2
+        A_psf = np.pi * A_max_sigma ** 2
 
-        # convert the semi-major and minor axes to the same unit system
+        # convert the half-light radii to the sigma of semi-major and minor axis
         majors *= hl_to_sigma
         minors *= hl_to_sigma
 
         # calculate the area of the galaxy aperture in each band
         a_ap = np.sqrt(
             theta_sigma[None, :] ** 2 + majors[:, None] ** 2 + A_min_sigma**2
-        )
+        ) 
         a_ap[a_ap > A_max_sigma] = A_max_sigma
         b_ap = np.sqrt(
             theta_sigma[None, :] ** 2 + minors[:, None] ** 2 + A_min_sigma**2
