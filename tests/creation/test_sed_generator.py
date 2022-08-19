@@ -1,5 +1,6 @@
 import os
-os.environ["SPS_HOME"] = "/opt/hostedtoolcache/Python/fsps"
+if "SPS_HOME" not in os.environ:
+    os.environ["SPS_HOME"] = "/opt/hostedtoolcache/Python/fsps"
 
 import tables_io
 from rail.creation.sed_generation.sed_generator import FSPSSedGenerator
@@ -33,7 +34,9 @@ def test_FSPSSedGenerator_bad_tabulated_sfh_params(settings, error):
         DS.__class__.allow_overwrite = True
         dummy_io_data = tables_io.read('tests/data/test_fsps_sed.fits')
         sed_generation_test = FSPSSedGenerator.make_stage(name='sed_generator_test', zcontinuous=1,
-                                                          add_neb_emission=True, physical_units=True, **settings)
+                                                          add_neb_emission=True, physical_units=True,
+                                                          tabulated_sfh_file=None, tabulated_lsf_file=None,
+                                                          **settings)
         sed_generation_test.add_data('input', dummy_io_data)
         sed_generation_test.run()
 
@@ -51,7 +54,8 @@ def test_FSPSSedGenerator_bad_tabulated_lsf_params(settings, error):
         DS.__class__.allow_overwrite = True
         dummy_io_data = tables_io.read('tests/data/test_fsps_sed.fits')
         sed_generation_test = FSPSSedGenerator.make_stage(name='sed_generator_test', smooth_velocity=False,
-                                                          physical_units=True, **settings)
+                                                          physical_units=True, tabulated_sfh_file=None,
+                                                          tabulated_lsf_file=None, **settings)
         sed_generation_test.add_data('input', dummy_io_data)
         sed_generation_test.run()
 
@@ -60,7 +64,8 @@ def test_FSPSSedGenerator_output_table():
     DS = RailStage.data_store
     DS.__class__.allow_overwrite = True
     dummy_io_data = tables_io.read('tests/data/test_fsps_sed.fits')
-    sed_generation_test = FSPSSedGenerator.make_stage(name='sed_generator_test', physical_units=True,)
+    sed_generation_test = FSPSSedGenerator.make_stage(name='sed_generator_test', physical_units=True,
+                                                      tabulated_sfh_file=None, tabulated_lsf_file=None)
     sed_generation_test.add_data('input', dummy_io_data)
     sed_generation_test.run()
     out_table = sed_generation_test.get_data('output')
