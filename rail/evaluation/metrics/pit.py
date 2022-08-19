@@ -4,6 +4,12 @@ from scipy import stats
 import qp
 from .base import MetricEvaluator
 from rail.evaluation.utils import stat_and_pval, stat_crit_sig
+from sklearn.preprocessing import StandardScaler
+from condition_pit_utils.mlp_training import train_local_pit, load_model, get_local_pit, trapz_grid
+from joblib import Parallel, delayed
+from condition_pit_utils.ispline import fit_cdf
+from tqdm import trange
+import matplotlib.pyplot as plt
 import warnings
 
 default_quants = np.linspace(0, 1, 100)
@@ -84,8 +90,11 @@ class UnconditionPIT(MetricEvaluator):
 
 
 class ConditionPIT(MetricEvaluator):
-    def __init__(self):
-        print()
+    def __init__(self, qp_ens_cde_calib, qp_ens_cde_test, z_grid, z_true_calib, z_true_test,
+                 features_calib, features_test):
+        super().__init__(qp_ens_cde_calib)
+
+        # cde conditional density estimate
         # reading and storing
         # input are PDFs evaluated with a photo=z method on representative sample of objects,
         # features and ztrue (zspec for real data).
@@ -94,57 +103,87 @@ class ConditionPIT(MetricEvaluator):
         # because the scaler itself is needed for both training and evaluation
         # pit_calib = get_pit(cde_calib, z_grid, z_calib)
         # pit_test = get_pit(cde_test, z_grid, z_test)
+        # the train are going to be those galaxies that have spectroscopic redshifts, test the others
 
-    def train(self):
+        # single leading underscore is indicates to the user of the class that the attribute should only be accessed
+        # by the class's internals (or perhaps those of a subclass) and that they need not directly access it
+        # and probably shouldn't modify it. when you import everything from the
+        # class you don't import objects whose name starts with an underscore
+        self._qp_ens_cde_test = qp_ens_cde_test
+        self._zgrid = z_grid
+        self._ztrue_calib = z_true_calib
+        self._ztrue_test = z_true_test
+        self._features_calib = features_calib
+        self._features_test = features_test
+
+        # now let's apply the standard scaler
+        scaler = StandardScaler()
+        self.x_calib = scaler.fit_transform(self._features_calib.values) # with or without the underscore?
+        self.x_test = scaler.transform(self._features_test.values)
+
+        # now let's do pit using the unconditional pit coded above
+        uncond_pit_calib_class = UnconditionPIT(self._qp_ens, self._ztrue_calib)
+        self.uncond_pit_calib = uncond_pit_calib_class.evaluate(eval_grid=self._zgrid)
+        uncond_pit_test_class = UnconditionPIT(self._qp_ens_cde_test, self._ztrue_test)
+        self.uncond_pit_test = uncond_pit_test_class.evaluate(eval_grid=self._zgrid)
+
+    def train(self, patience=10, n_epochs=10000, lr=0.001, weight_decay=0.01, batch_size=2048, frac_mlp_train=0.9,
+              lr_decay=0.95, oversample=50, n_alpha=201, checkpt_path="./checkpoint_GPZ_wide_CDE_1024x512x512.pt",
+              hidden_layers=None):
         # training, hyperparameters need to be tuned
-        # rhat, _, _ = train_local_pit(X=x_calib,
-        #                              pit_values=pit_calib,
-        #                              patience=10,
-        #                              n_epochs=10000,
-        #                              lr=0.001,
-        #                              weight_decay=0.01,
-        #                              batch_size=2048,
-        #                              frac_mlp_train=0.9,
-        #                              lr_decay=0.95,
-        #                              trace_func=print,
-        #                              oversample=1,
-        #                              n_alpha=201,
-        #                              checkpt_path="./checkpoint_GPZ_wide_CDE_1024x512x512.pt",
-        #                              hidden_layers=[256, 256, 256])
-        print()
+        if hidden_layers is None:
+            hidden_layers = [256, 256, 256]
+        rhat, _, _ = train_local_pit(X=self.x_calib, pit_values=self.uncond_pit_calib, patience=patience,
+                                     n_epochs=n_epochs, lr=lr, weight_decay=weight_decay, batch_size=batch_size,
+                                     frac_mlp_train=frac_mlp_train, lr_decay=lr_decay, trace_func=print,
+                                     oversample=oversample, n_alpha=n_alpha, checkpt_path=checkpt_path,
+                                     hidden_layers=hidden_layers)
 
-    def evaluate(self):
-        print()
-        # we just need the features X since the model has been trained in the function train and we just need to
+    def evaluate(self, model_checkpt_path, model_hidden_layers=None, nn_type='monotonic', batch_size=100, num_basis=40,
+                 num_cores=1):
+        # we just need the features X test since the model has been trained in the function train and we just need to
         # run the model on the features to obtain directly the calibrated PDFs.
-        # evaluation
-        # alphas = np.linspace(0.0, 1, 201)
-        # pit_local = get_local_pit(rhat,x_test,alphas=alphas, batch_size=100)
+        # get pit local and ispline fits
+
+        if model_hidden_layers is None:
+            model_hidden_layers = [1024, 512, 512]
+
+        rhat = load_model(input_size=self.x_test.shape[1] + 1, hidden_layers=model_hidden_layers,
+                          checkpt_path=model_checkpt_path, nn_type=nn_type)
+        self.alphas = np.linspace(0.0, 1, len(self._zgrid))
+        self.pit_local = get_local_pit(rhat, self.x_test, alphas=self.alphas, batch_size=batch_size)
+
+        self.cdf_test = trapz_grid(self._qp_ens_cde_test, self._zgrid)
+        self.cdf_test[self.cdf_test > 1] = 1
+
+        pit_local_fit, _, _ = zip(*Parallel(n_jobs=num_cores)(
+            delayed(fit_cdf)(self.alphas, self.pit_local[i, :], self.cdf_test[i, :], num_basis=num_basis) for i in
+            trange(len(self.pit_local))))
+        self.pit_local_fit = np.array(pit_local_fit)
+
+        return self.pit_local, self.pit_local_fit
 
     def diagnostics(self):
         # P-P plot creation, not one for every galaxy but something clever
-        # rng = np.random.default_rng(42)
-        #
-        # random_idx = rng.choice(len(x_test), 25, replace=False)
-        #
-        # fig, axs = plt.subplots(5,5, figsize=(15, 15))
-        # axs = np.ravel(axs)
-        #
-        # for count, index in enumerate(random_idx):
-        #     axs[count].scatter(alphas, pit_local[index], s=1)
-        #     #axs[count].scatter(cdf_test[index], pit_local_fit[index], c="C1")
-        #     #axs[count].plot(z_grid, cdf_test[index], c="k")
-        #     axs[count].plot(np.linspace(0, 1, 10), np.linspace(0, 1, 10), color="k", ls="--")
-        #     axs[count].set_xlim(0, 1)
-        #     axs[count].set_ylim(0, 1)
-        #     axs[count].set_aspect("equal")
-        # fig.suptitle("Local P-P plot", fontsize=30)
-        #
-        # fig.text(0.5,-0.05,"Theoretical P", fontsize=30)
-        # fig.text(-0.05,0.5,"Empirical P", rotation=90, fontsize=30)
-        # plt.tight_layout()
-        # plt.show()
-        print()
+        rng = np.random.default_rng(42)
+        random_idx = rng.choice(len(self.x_test), 25, replace=False)
+        fig, axs = plt.subplots(5,5, figsize=(15, 15))
+        axs = np.ravel(axs)
+
+        for count, index in enumerate(random_idx):
+            axs[count].scatter(self.alphas, self.pit_local[index], s=1)
+            axs[count].scatter(self.cdf_test[index], self.pit_local_fit[index], c="C1")
+            axs[count].plot(self._zgrid, self.cdf_test[index], c="k")
+            axs[count].plot(np.linspace(0, 1, 10), np.linspace(0, 1, 10), color="k", ls="--")
+            axs[count].set_xlim(0, 1)
+            axs[count].set_ylim(0, 1)
+            axs[count].set_aspect("equal")
+        fig.suptitle("Local P-P plot", fontsize=30)
+
+        fig.text(0.5,-0.05,"Theoretical P", fontsize=30)
+        fig.text(-0.05,0.5,"Empirical P", rotation=90, fontsize=30)
+        plt.tight_layout()
+        plt.show()
 
 class PITMeta():
     """ A superclass for metrics of the PIT"""
