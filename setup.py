@@ -26,7 +26,7 @@ estimation_extras = [
     "matplotlib",
     "pyarrow",
     "pyyaml",
-    "scipy>=1.5.2",
+    "scipy>=1.9.0",
     "tables",
 ]
 # dependencies for specific estimators in the Estimation module
