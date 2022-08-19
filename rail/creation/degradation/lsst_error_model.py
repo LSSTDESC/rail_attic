@@ -389,7 +389,7 @@ class LSSTErrorModel(Degrader):
         A_max_sigma = self.config["A_max"] * fwhm_to_sigma
 
         # calculate the area of the psf in each band
-        A_psf = np.pi * A_max_sigma ** 2
+        A_psf = np.pi * theta_sigma ** 2
 
         # convert the half-light radii to the sigma of semi-major and minor axis
         majors *= hl_to_sigma
