@@ -7,6 +7,7 @@ install_requires = [
     "numpy",
     "pandas>=1.1",
     "tables-io>=0.7.5",
+    "astropy",
     "ceci",
     "qp @ git+https://github.com/LSSTDESC/qp",
 ]
@@ -15,8 +16,9 @@ install_requires = [
 core_extras = ["hyperbolic @ git+https://github.com/jlvdb/hyperbolic"]
 
 # dependencies for the Creation module
-os.environ["SPS_HOME"] = "/opt/hostedtoolcache/Python/fsps"
-os.system('git clone https://github.com/cconroy20/fsps.git $SPS_HOME')
+if "SPS_HOME" not in os.environ:
+    os.environ["SPS_HOME"] = "/opt/hostedtoolcache/Python/fsps"
+    os.system('git clone https://github.com/cconroy20/fsps.git $SPS_HOME')
 creation_extras = ["pzflow", "fsps"]
 
 # dependencies required for all estimators in the Estimation module
