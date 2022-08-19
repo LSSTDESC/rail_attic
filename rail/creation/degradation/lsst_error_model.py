@@ -380,7 +380,7 @@ class LSSTErrorModel(Degrader):
         # get the psf size for each band
         theta_size = np.array([self.config["theta"][band] for band in bands])
 
-        hl_to_sigma = 1 / 1.35  # half IQR to Gaussian sigma
+        hl_to_sigma = 1 / 0.6745  # half IQR to Gaussian sigma
         fwhm_to_sigma = 1 / 2.355
 
         # convert PSF FWHM to a Gaussian sigma
@@ -415,9 +415,12 @@ class LSSTErrorModel(Degrader):
         """Get the ratio between PSF area and galaxy aperture area for "auto" model."""
         # get the psf size for each band
         theta_size = np.array([self.config["theta"][band] for band in bands])
-
+        fwhm_to_sigma = 1 / 2.355
+        
+        # convert PSF FWHM to a Gaussian sigma
+        theta_sigma = theta_size * fwhm_to_sigma
         # calculate the area of the psf in each band
-        A_psf = np.pi * theta_size**2
+        A_psf = np.pi * theta_sigma**2
 
         # calculate the area of the galaxy aperture in each band
         a_ap = np.sqrt(theta_size[None, :] ** 2 + (2.5 * majors[:, None]) ** 2)
