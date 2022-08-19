@@ -129,10 +129,37 @@ class SimpleSOMSummarizer(SZPZSummarizer):
     empirical N(z) consisting of the normalized histogram
     of spec-z values contained in the same SOM cell as
     each photometric galaxy.
+    There are some general guidelines to choosing the geometry
+    and number of total cells in the SOM.  This paper:
+    http://www.giscience2010.org/pdfs/paper_230.pdf
+    recommends 5*sqrt(num rows * num data columns) as a rough
+    guideline.  Some authors state that a SOM with one
+    dimension roughly twice as long as the other are better,
+    while others find that square SOMs with equal X and Y
+    dimensions are best, the user can set the dimensions
+    using the n_dim and m_dim parameters.
+    For more discussion on SOMs and photo-z calibration, see
+    the KiDS paper on the topic:
+    http://arxiv.org/abs/1909.09632
+    particularly the appendices.
     Note that several parameters are stored in the model file,
     e.g. the columns used. This ensures that the same columns
     used in constructing the SOM are used when finding the
     winning SOM cell with the test data.
+    Two additional files are also written out:
+    `cellid_output` outputs the 'winning' SOM cell for each
+    photometric galaxy, in both raveled and 2D SOM cell
+    coordinates.  If the objectID or galaxy_id is present
+    they will also be included in this file, if not the
+    coordinates will be written in the same order in which
+    the data is read in.
+    `uncovered_cell_file` outputs the raveled cell
+    IDs of cells that contain photometric
+    galaxies but no corresponding spectroscopic objects,
+    these objects should be removed from the sample as they
+    cannot be accounted for properly in the summarizer.
+    Some iteration on data cuts may be necessary to
+    remove/mitigate these 'uncovered' objects.
 
     Parameters:
     -----------
@@ -163,6 +190,7 @@ class SimpleSOMSummarizer(SZPZSummarizer):
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
                           nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
                           hdf5_groupname=Param(str, "photometry", msg="name of hdf5 group for data, if None, then set to ''"),
+                          objid_name=Param(str, "", "name of ID column, if present will be written to cellid_output"),
                           nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
                           mag_limits=Param(dict, def_maglims, msg="1 sigma mag limits"),
                           spec_groupname=Param(str, "photometry", msg="name of hdf5 group for spec data, if None, then set to ''"),
@@ -173,6 +201,7 @@ class SimpleSOMSummarizer(SZPZSummarizer):
                           nsamples=Param(int, 20, msg="number of bootstrap samples to generate"))
     outputs = [('output', QPHandle),
                ('single_NZ', QPHandle),
+               ('cellid_output', TableHandle),
                ('uncovered_cell_file', TableHandle)]
 
     def __init__(self, args, comm=None):
@@ -206,6 +235,12 @@ class SimpleSOMSummarizer(SZPZSummarizer):
         for col in self.usecols:
             if col not in test_data.keys():  # pragma: no cover
                 raise ValueError(f"data column {col} not found in test_data")
+
+        # make dictionary of ID data to be written out with cell IDs
+        id_dict = {}
+        if self.config.objid_name != "":
+            if self.config.objid_name in test_data.keys():
+                id_dict[self.config.objid_name] = test_data[self.config.objid_name]
 
         # replace nondetects
         dsets = [test_data, spec_data]
@@ -243,6 +278,13 @@ class SimpleSOMSummarizer(SZPZSummarizer):
         spec_som_coords = np.array([self.som.winner(x) for x in spec_colors]).T
         phot_pixel_coords = np.ravel_multi_index(phot_som_coords, (self.n_dim, self.m_dim))
         spec_pixel_coords = np.ravel_multi_index(spec_som_coords, (self.n_dim, self.m_dim))
+
+        # add id coords to id_dict for writeout
+        xcoord, ycoord = phot_som_coords
+        id_dict['coord0'] = xcoord
+        id_dict['coord1'] = ycoord
+        id_dict['ravel_coord'] = phot_pixel_coords
+
         num_pixels = self.n_dim * self.m_dim
         ngal = len(spec_pixel_coords)
         phot_pixel_set = set(phot_pixel_coords)
@@ -275,3 +317,4 @@ class SimpleSOMSummarizer(SZPZSummarizer):
         self.add_data('output', sample_ens)
         self.add_data('single_NZ', qp_d)
         self.add_data('uncovered_cell_file', bad_pix)
+        self.add_data('cellid_output', id_dict)
