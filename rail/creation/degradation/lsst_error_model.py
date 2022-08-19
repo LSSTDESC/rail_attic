@@ -389,7 +389,7 @@ class LSSTErrorModel(Degrader):
         A_max_sigma = self.config["A_max"] * fwhm_to_sigma
 
         # calculate the area of the psf in each band
-        A_psf = np.pi * theta_sigma ** 2
+        A_psf = np.pi * theta_sigma**2
 
         # convert the half-light radii to the sigma of semi-major and minor axis
         majors *= hl_to_sigma
@@ -398,7 +398,7 @@ class LSSTErrorModel(Degrader):
         # calculate the area of the galaxy aperture in each band
         a_ap = np.sqrt(
             theta_sigma[None, :] ** 2 + majors[:, None] ** 2 + A_min_sigma**2
-        ) 
+        )
         a_ap[a_ap > A_max_sigma] = A_max_sigma
         b_ap = np.sqrt(
             theta_sigma[None, :] ** 2 + minors[:, None] ** 2 + A_min_sigma**2
@@ -416,7 +416,7 @@ class LSSTErrorModel(Degrader):
         # get the psf size for each band
         theta_size = np.array([self.config["theta"][band] for band in bands])
         fwhm_to_sigma = 1 / 2.355
-        
+
         # convert PSF FWHM to a Gaussian sigma
         theta_sigma = theta_size * fwhm_to_sigma
         # calculate the area of the psf in each band
@@ -631,6 +631,9 @@ class LSSTErrorModel(Degrader):
             printMsg += "Using the high SNR approximation\n\n"
         else:
             printMsg += "\n"
+
+        # print which error mode we are using
+        printMsg += f"Using error type {settings['errorType']}\n"
 
         # exposure time
         printMsg += f"Exposure time = {settings['tvis']} s\n"
