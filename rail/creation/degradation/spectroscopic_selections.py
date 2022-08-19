@@ -12,8 +12,8 @@ class SpecSelection(Degrader):
     The super class of spectroscopic selections.
     Parameters
     ----------
-    N_tot: integer, total number of down-sampled, spec-selected galaxies.
-        If N_tot is greater than the number of spec-sepected galaxies, then
+    N_tot: integer, total number of down-sampled, spec-selected galaxies.\
+        If N_tot is greater than the number of spec-sepected galaxies, then\
         it will be ignored.
     nondetect_val: value to be removed for non detects
     downsample: bool, if True, then downsample the pre-selected galaxies
@@ -235,8 +235,11 @@ class SpecSelection_DEEP2(SpecSelection):
         Applying DEEP2 photometric cut based on Newman+13.
         This modified selection gives the best match to the data n(z) with
         its cut at z~0.75 and the B-R/R-I distribution (Newman+13, Fig. 12)
-        NOTE: We cannot apply the surface brightness cut and do not apply the
-              Gaussian weighted sampling near the original colour cuts.
+
+        Notes
+        -----
+        We cannot apply the surface brightness cut and do not apply the
+        Gaussian weighted sampling near the original colour cuts.
         """
         mask = (
             (data[self.config.colnames['r']] > 18.5) &
@@ -301,10 +304,12 @@ class SpecSelection_VVDSf02(SpecSelection):
     def photometryCut(self, data):
         """
         Photometric cut of VVDS 2h-field based on LeFèvre+05.
-        NOTE: The oversight of 1.0 magnitudes on the bright end misses 0.2 %
-               of galaxies.
-        update the internal state
+
+        Notes
+        -----
+        The oversight of 1.0 magnitudes on the bright end misses 0.2% of galaxies.
         """
+        # update the internal state
         mask = (data[self.config.colnames['i']] > 17.5) & (data[self.config.colnames['i']] < 24.0)
         # 17.5, 24.0
         self.mask &= mask
@@ -312,9 +317,13 @@ class SpecSelection_VVDSf02(SpecSelection):
     def speczSuccess(self, data):
         """
         Success rate of VVDS 2h-field
-        NOTE: We use a redshift-based and I-band based success rate
-               independently here since we do not know their correlation,
-               which makes the success rate worse than in reality.
+
+        Notes
+        -----
+        We use a redshift-based and I-band based success rate
+        independently here since we do not know their correlation,
+        which makes the success rate worse than in reality.
+
         Spec-z success rate as function of i_AB read of Figure 16 in
         LeFevre+05 for the VVDS 2h field. Values are binned in steps of
         0.5 mag with the first starting at 17 and the last bin ending at 24.

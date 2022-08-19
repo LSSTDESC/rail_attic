@@ -200,7 +200,7 @@ def run_apidoc(_):
     cur_dir = os.path.normpath(os.path.dirname(__file__))
     output_path = os.path.join(cur_dir, 'api')
     modules = os.path.normpath(os.path.join(cur_dir, "../rail"))
-    paramlist = ['--separate', '--no-toc', '-f', '-M', '-o', output_path, modules]
+    paramlist = ['--separate', '--implicit-namespaces', '--no-toc', '-f', '-M', '-o', output_path, modules]
     apidoc_main(paramlist)
 
 def setup(app):

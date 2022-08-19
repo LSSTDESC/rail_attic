@@ -6,7 +6,7 @@ install_requires = [
     "numpy",
     "pandas>=1.1",
     "tables-io>=0.7.5",
-    "ceci",
+    "ceci>=1.10.1",
     "qp @ git+https://github.com/LSSTDESC/qp",
     "pyyaml",
     "scipy>=1.9.0",

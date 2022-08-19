@@ -17,8 +17,9 @@ class VarInferenceStack(PZSummarizer):
     """Variational inference summarizer based on notebook created by Markus Rau
     The summzarizer is appropriate for the likelihoods returned by
     template-based codes, for which the NaiveSummarizer are not appropriate.
-    Parameters:
-    -----------
+
+    Parameters
+    ----------
     zmin: float
       minimum z for redshift grid
     zmax: float

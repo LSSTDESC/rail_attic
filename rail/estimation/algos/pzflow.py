@@ -15,17 +15,18 @@ import qp
 
 
 def computemeanstd(df):
-    """
-      compute colors from the magnitudes and compute their
-      means and stddevs for data whitening
+    """Compute colors from the magnitudes and compute their
+    means and stddevs for data whitening
+
     Parameters
     ----------
     df: pandas dataframe
-      ordered dict of raw input data
+        ordered dict of raw input data
+
     Returns
     -------
     means, stds: numpy arrays
-      means and stddevs for the mags and colors
+         means and stddevs for the mags and colors
     """
     tmpdict = {}
     tmpdict['redshift'] = df['redshift']

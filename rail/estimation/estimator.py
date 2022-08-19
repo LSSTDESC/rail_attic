@@ -36,8 +36,8 @@ class CatEstimator(RailStage):
     def open_model(self, **kwargs):
         """Load the mode and/or attach it to this Estimator
 
-        Keywords
-        --------
+        Parameters
+        ----------
         model : `object`, `str` or `ModelHandle`
             Either an object with a trained model,
             a path pointing to a file that can be read to obtain the trained model,

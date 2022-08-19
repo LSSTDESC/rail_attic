@@ -32,13 +32,16 @@ class QuantityCut(Degrader):
         ----------
         cuts : dict
             A dictionary of cuts to make on the data.
-            The keys should be the names of columns you wish to make cuts on.
-            The values should be either:
-                - a number, which is the maximum value. I.e. if the dictionary
-                contains "i": 25, then values of i > 25 are cut from the sample.
-                - an iterable, which is the range of acceptable values.
-                I.e. if the dictionary contains "redshift": (1.5, 2.3), then
-                redshifts outside that range are cut from the sample.
+
+        Notes
+        -----
+        The cut keys should be the names of columns you wish to make cuts on.
+        The cut values should be either:
+        - a number, which is the maximum value. I.e. if the dictionary
+        contains "i": 25, then values of i > 25 are cut from the sample.
+        - an iterable, which is the range of acceptable values.
+        I.e. if the dictionary contains "redshift": (1.5, 2.3), then
+        redshifts outside that range are cut from the sample.
         """
 
         # check that cuts is a dictionary
