@@ -380,7 +380,7 @@ class LSSTErrorModel(Degrader):
         # get the psf size for each band
         theta_size = np.array([self.config["theta"][band] for band in bands])
 
-        hl_to_sigma = 1 / 0.675  # half IQR to Gaussian sigma
+        hl_to_sigma = 1 / 1.35  # half IQR to Gaussian sigma
         fwhm_to_sigma = 1 / 2.355
 
         # convert PSF FWHM to a Gaussian sigma
