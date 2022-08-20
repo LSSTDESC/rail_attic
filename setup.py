@@ -19,6 +19,7 @@ creation_extras = ["pzflow"]
 # dependencies required for all estimators in the Estimation module
 estimation_extras = [
     "matplotlib",
+    "minisom",
     "pyarrow",
     "pyyaml",
     "scipy>=1.9.0",
@@ -28,7 +29,7 @@ estimation_extras = [
 estimation_codes = {
     "bpz": ["DESC_BPZ @ git+https://github.com/LSSTDESC/DESC_BPZ"],
     "flex": ["FlexCode[all]"],
-    "NN": ["sklearn"],
+    "NN": ["scikit-learn>=1.0"],
 }
 # dependencies for Delight, separate out because it can be a
 # pain to install on Mac due to dropped default openmp

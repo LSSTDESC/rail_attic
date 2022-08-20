@@ -5,7 +5,6 @@ from rail.core.data import QPHandle, TableHandle, ModelHandle
 from rail.core.stage import RailStage
 
 
-
 class CatSummarizer(RailStage):  #pragma: no cover
     """The base class for classes that go from catalog-like tables
     to ensemble NZ estimates.
@@ -105,7 +104,86 @@ class PZSummarizer(RailStage):
         return self.get_handle('output')
 
 
+class SZPZSummarizer(RailStage):
+    """The base class for classes that use two sets of data: a photometry sample with
+    spec-z values, and a photometry sample with unknown redshifts, e.g. simpleSOM and
+    outputs a QP Ensemble with bootstrap realization of the N(z) distribution
+    """
+    name = 'SZPZtoNZSummarizer'
+    config_options = RailStage.config_options.copy()
+    config_options.update(chunk_size=10000)
+    inputs = [('input', TableHandle),
+              ('spec_input', TableHandle),
+              ('model', ModelHandle)]
+    outputs = [('output', QPHandle)]
 
+    def __init__(self, args, comm=None):
+        """Initialize Estimator that can sample galaxy data."""
+        RailStage.__init__(self, args, comm=comm)
+        self.model = None
+        if not isinstance(args, dict):  #pragma: no cover
+            args = vars(args)
+        self.open_model(**args)
+
+    def open_model(self, **kwargs):
+        """Load the mode and/or attach it to this Summarizer
+
+        Keywords
+        --------
+        model : `object`, `str` or `ModelHandle`
+            Either an object with a trained model,
+            a path pointing to a file that can be read to obtain the trained model,
+            or a `ModelHandle` providing access to the trained model.
+
+        Returns
+        -------
+        self.model : `object`
+            The object encapsulating the trained model.
+        """
+        model = kwargs.get('model', None)
+        if model is None or model == 'None':  # pragma: no cover
+            self.model = None
+            return self.model
+        if isinstance(model, str):
+            self.model = self.set_data('model', data=None, path=model)
+            self.config['model'] = model
+            return self.model
+        if isinstance(model, ModelHandle):
+            if model.has_path:
+                self.config['model'] = model.path
+        self.model = self.set_data('model', model)
+        return self.model
+
+    def summarize(self, input_data, spec_data):
+        """The main run method for the summarization, should be implemented
+        in the specific subclass.
+
+        This will attach the input_data to this `SZandPhottoNZSummarizer`
+        (for introspection and provenance tracking).
+
+        Then it will call the run() and finalize() methods, which need to
+        be implemented by the sub-classes.
+
+        The run() method will need to register the data that it creates to this Estimator
+        by using `self.add_data('output', output_data)`.
+
+        Finally, this will return a QPHandle providing access to that output data.
+
+        Parameters
+        ----------
+        input_data : `qp.Ensemble`
+            Per-galaxy p(z), and any ancilary data associated with it
+
+        Returns
+        -------
+        output: `qp.Ensemble`
+            Ensemble with n(z), and any ancilary data
+        """
+        self.set_data('input', input_data)
+        self.set_data('spec_input', spec_data)
+        self.run()
+        self.finalize()
+        return self.get_handle('output')
 
 
 class PzInformer(RailStage):  #pragma: no cover
