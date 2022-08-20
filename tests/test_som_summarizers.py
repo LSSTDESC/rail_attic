@@ -36,14 +36,14 @@ def one_algo(key, inform_class, summarizer_class, summary_kwargs):
 
 
 def test_SimpleSOM():
-    summary_config_dict = {'m_dim': 21, 'n_dim': 21}
+    summary_config_dict = {'m_dim': 21, 'n_dim': 21, 'column_usage': 'colors'}
     inform_class = simpleSOM.Inform_SimpleSOMSummarizer
     summarizerclass = simpleSOM.SimpleSOMSummarizer
     _ = one_algo("SimpleSOM", inform_class, summarizerclass, summary_config_dict)
 
-    
+
 def test_SimpeSOM_with_mag_and_colors():
-    summary_config_dict = {'m_dim': 21, 'n_dim' : 21, 'use_only_colors': False, 'objid_name': 'id'}
+    summary_config_dict = {'m_dim': 21, 'n_dim': 21, 'column_usage': 'magandcolors', 'objid_name': 'id'}
     inform_class = simpleSOM.Inform_SimpleSOMSummarizer
     summarizerclass = simpleSOM.SimpleSOMSummarizer
     _ = one_algo("SimpleSOM_wmag", inform_class, summarizerclass, summary_config_dict)

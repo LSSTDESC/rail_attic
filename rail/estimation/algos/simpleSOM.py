@@ -17,21 +17,25 @@ def_maglims = dict(mag_u_lsst=27.79,
                    mag_y_lsst=27.05)
 
 
-def _computemagcolordata(data, ref_column_name, column_names, justcolors):
-    if not justcolors:
+def _computemagcolordata(data, ref_column_name, column_names, colusage):
+    if colusage not in ['colors', 'magandcolors', 'columns']:  # pragma: no cover
+        raise ValueError(f"column usage value {colusage} is not valid, valid values are 'colors', 'magandcolors', and 'columns'")
+    numcols = len(column_names)
+    if colusage == 'magandcolors':
         coldata = np.array(data[ref_column_name])
-        numcols = len(column_names)
         for i in range(numcols - 1):
             tmpcolor = data[column_names[i]] - data[column_names[i + 1]]
             coldata = np.vstack((coldata, tmpcolor))
-        return coldata.T
-    else:
+    if colusage == 'colors':
         coldata = np.array(data[column_names[0]] - data[column_names[1]])
-        numcols = len(column_names)
         for i in range(numcols - 2):
             tmpcolor = data[column_names[i + 1]] - data[column_names[i + 2]]
             coldata = np.vstack((coldata, tmpcolor))
-        return coldata.T
+    if colusage == 'columns':  # pragma: no cover
+        coldata = np.array(data[column_names[0]])
+        for i in range(numcols - 1):
+            coldata = np.vstack((coldata, np.array(data[column_names[i + 1]])))
+    return coldata.T
 
 
 class Inform_SimpleSOMSummarizer(CatInformer):
@@ -57,10 +61,19 @@ class Inform_SimpleSOMSummarizer(CatInformer):
     stage many times without needing to be re-run.
 
     We can make the SOM either with all colors, or one
-    magnitude and N colors, include a flag,
-    `use_only_colors`, as an option. If use_only_colors
-    is False then ref_column_name will also be included
-    when constructing the SOM
+    magnitude and N colors, or an arbitrary set of columns.
+    The code includes a flag `column_usage` to set usage,
+    If set to "colors" it will take the difference of each
+    adjacen pair of columns in `usecols` as the colors. If
+    set to `magandcolors` it will use these colors plus one
+    magnitude as specified by `ref_column_name`.  If set to
+    `columns` then it will take as inputs all of the columns
+    specified by `usecols` (they can be magnitudes, colors,
+    or any other input specified by the user).  NOTE: any
+    custom `usecols` parameters must have an accompanying
+    `nondetect_val` dictionary that will replace
+    nondetections with the nondetect_val values!
+
     Returns:
     --------
     model: pickle file
@@ -70,8 +83,8 @@ class Inform_SimpleSOMSummarizer(CatInformer):
     name = 'Inform_SimpleSOM'
     config_options = CatInformer.config_options.copy()
     config_options.update(usecols=Param(list, def_cols, msg="columns used to construct SOM"),
-                          use_only_colors=Param(bool, True, msg="if True, will construct SOM using all colors, if False, will use one magnitude and N-1 colors"),
-                          ref_column_name=Param(str, 'mag_i_lsst', msg="name for mag column used if use_only_magnitudes is True"),
+                          column_usage=Param(str, "magandcolors", msg="switch for how SOM uses columns, valid values are 'colors', 'magandcolors', and 'columns'"),
+                          ref_column_name=Param(str, 'mag_i_lsst', msg="name for mag column used if column_usage is set to 'magsandcolors'"),
                           nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
                           mag_limits=Param(dict, def_maglims, msg="1 sigma mag limits"),
                           seed=Param(int, 0, msg="Random number seed"),
@@ -105,7 +118,7 @@ class Inform_SimpleSOMSummarizer(CatInformer):
             training_data[col][mask] = self.config.mag_limits[col]
 
         colors = _computemagcolordata(training_data, self.config.ref_column_name,
-                                      self.config.usecols, self.config.use_only_colors)
+                                      self.config.usecols, self.config.column_usage)
 
         som = MiniSom(self.config.n_dim, self.config.m_dim, colors.shape[1],
                       sigma=self.config.som_sigma,
@@ -118,7 +131,7 @@ class Inform_SimpleSOMSummarizer(CatInformer):
         modeldict = dict(som=som, usecols=self.config.usecols,
                          ref_column=self.config.ref_column_name,
                          m_dim=self.config.m_dim, n_dim=self.config.n_dim,
-                         use_only_colors=self.config.use_only_colors)
+                         column_usage=self.config.column_usage)
         self.model = modeldict
         self.add_data('model', self.model)
 
@@ -214,7 +227,7 @@ class SimpleSOMSummarizer(SZPZSummarizer):
         SZPZSummarizer.open_model(self, **kwargs)
         self.som = self.model['som']
         self.usecols = self.model['usecols']
-        self.use_only_colors = self.model['use_only_colors']
+        self.column_usage = self.model['column_usage']
         self.ref_column_name = self.model['ref_column']
         self.m_dim = self.model['m_dim']
         self.n_dim = self.model['n_dim']
@@ -238,7 +251,7 @@ class SimpleSOMSummarizer(SZPZSummarizer):
 
         # make dictionary of ID data to be written out with cell IDs
         id_dict = {}
-        if self.config.objid_name != "":
+        if self.config.objid_name != "":  # pragma: no cover
             if self.config.objid_name in test_data.keys():
                 id_dict[self.config.objid_name] = test_data[self.config.objid_name]
 
@@ -270,9 +283,9 @@ class SimpleSOMSummarizer(SZPZSummarizer):
 
         # find the best cells for the photometric and spectrosopic datasets
         phot_colors = _computemagcolordata(test_data, self.ref_column_name,
-                                           self.usecols, self.use_only_colors)
+                                           self.usecols, self.column_usage)
         spec_colors = _computemagcolordata(spec_data, self.ref_column_name,
-                                           self.usecols, self.use_only_colors)
+                                           self.usecols, self.column_usage)
 
         phot_som_coords = np.array([self.som.winner(x) for x in phot_colors]).T
         spec_som_coords = np.array([self.som.winner(x) for x in spec_colors]).T
