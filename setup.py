@@ -3,7 +3,7 @@ from setuptools import find_namespace_packages, setup
 # basic dependencies for all RAIL modules
 install_requires = [
     "h5py",
-    "numpy<1.23",
+    "numpy",
     "pandas>=1.1",
     "tables-io>=0.7.5",
     "ceci",
@@ -19,16 +19,17 @@ creation_extras = ["pzflow"]
 # dependencies required for all estimators in the Estimation module
 estimation_extras = [
     "matplotlib",
+    "minisom",
     "pyarrow",
     "pyyaml",
-    "scipy>=1.5.2",
+    "scipy>=1.9.0",
     "tables",
 ]
 # dependencies for specific estimators in the Estimation module
 estimation_codes = {
     "bpz": ["DESC_BPZ @ git+https://github.com/LSSTDESC/DESC_BPZ"],
     "flex": ["FlexCode[all]"],
-    "NN": ["sklearn"],
+    "NN": ["scikit-learn>=1.0"],
 }
 # dependencies for Delight, separate out because it can be a
 # pain to install on Mac due to dropped default openmp
