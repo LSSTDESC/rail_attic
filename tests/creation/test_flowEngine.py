@@ -1,84 +1,142 @@
-import os
-
+"""Tests for FlowEngine."""
 import numpy as np
-import pzflow
+import pytest
+import tables_io
+from pzflow import Flow
 from pzflow.examples import get_example_flow, get_galaxy_data
-from rail.core.data import TableHandle
-from rail.core.stage import RailStage
 from rail.creation.engines.flowEngine import FlowCreator, FlowModeler, FlowPosterior
 
 
-def test_flowcreator_sample():
-    """Test that flow samples and FlowCr samples are the same."""
+@pytest.fixture(scope="session")
+def catalog_file(tmp_path_factory):
+    """Save a subset of the galaxy catalog from PZFlow."""
+    file = tmp_path_factory.mktemp("data") / "catalog.pq"
+    catalog = get_galaxy_data().iloc[:10]
+    tables_io.write(catalog, str(file.with_suffix("")), file.suffix[1:])
+    return str(file)
 
+
+@pytest.fixture(scope="session")
+def flow_file(tmp_path_factory):
+    """Save the example flow from PZFlow."""
+    file = tmp_path_factory.mktemp("data") / "flow.pzflow.pkl"
+    flow = get_example_flow()
+    flow.save(file)
+    return str(file)
+
+
+def test_FlowModeler(catalog_file, tmp_path):
+    """Test that training a PZFlow Flow doesn't throw any errors."""
+    # set directories for the training data and saved flow
+    # set the flow parameters
+    flow_modeler_params = {
+        "name": "flow_modeler",
+        "input": catalog_file,
+        "model": tmp_path / "trained_flow.pzflow.pkl",
+        "seed": 0,
+        "phys_cols": {"redshift": [0, 3]},
+        "phot_cols": {
+            "g": [16, 32],
+            "r": [15, 30],
+            "i": [15, 30],
+        },
+        "calc_colors": {"ref_column_name": "i"},
+    }
+
+    flow_modeler = FlowModeler.make_stage(**flow_modeler_params)
+
+    flow_modeler.fit_model()
+
+
+def test_FlowCreator(flow_file, tmp_path):
+    """Test that flow samples and FlowCreator samples are identical.
+
+    We want to make sure the n_samples and seed parameters fully specify the sample.
+    We also want to make sure it works if you construct FlowCreator from a flow in
+    memory and a flow that is saved to disk.
+    """
+    # set parameters
     n_samples = 10
     seed = 0
 
-    flow = get_example_flow()
+    # load the example flow
+    flow = Flow(file=flow_file)
+
+    # draw samples directly from PZFlow
     flow_samples = flow.sample(n_samples, seed=seed)
 
-    FlowCr = FlowCreator.make_stage(model=flow, n_samples=n_samples)
-    FlowCr_samples = FlowCr.sample(n_samples, seed=seed).data
-
-    pzdir = os.path.dirname(pzflow.__file__)
-    flow_path = os.path.join(pzdir, "examples", "example-flow.pkl")
-
-    FlowCr2 = FlowCreator.make_stage(
-        name="other_flow", flow_file=flow_path, n_samples=n_samples
+    # now make a FlowCreator from the flow and draw samples from it
+    flowCreator1 = FlowCreator.make_stage(
+        name="flowCreator1",
+        model=flow,
+        output=tmp_path / "samples1.pq",
+        n_samples=n_samples,
     )
-    FlowCr2_samples = FlowCr2.sample(n_samples, seed=seed).data
+    flowCreator1_samples = flowCreator1.sample(n_samples, seed=seed).data
 
-    # assert flow_samples.equals(FlowCr_samples)
-    # assert flow_samples.equals(FlowCr2_samples)
-    os.remove(FlowCr.get_output(FlowCr.get_aliased_tag("output"), final_name=True))
-    os.remove(FlowCr2.get_output(FlowCr2.get_aliased_tag("output"), final_name=True))
+    # we will also load the flow from the file via the FlowCreator class
+    # and then draw samples from it
+    flowCreator2 = FlowCreator.make_stage(
+        name="flowCreator2",
+        model=flow,
+        output=tmp_path / "samples2.pq",
+        n_samples=n_samples,
+    )
+    flowCreator2_samples = flowCreator2.sample(n_samples, seed=seed).data
+
+    # check that all samples are the same
+    assert np.allclose(flow_samples, flowCreator1_samples)
+    assert np.allclose(flow_samples, flowCreator2_samples)
+    assert np.allclose(flowCreator1_samples, flowCreator2_samples)
 
 
-def test_flowcreator_model():
-    """Test that a model can be trained? [needs a real test comparing to values]"""
-    pass
-    # FlowMod = FlowModeler.make_stage(flow_file='')
+def test_FlowPosterior(catalog_file, flow_file, tmp_path):
+    """Test that flow posteriors and FlowPosterior posteriors are identical.
 
+    We want to make sure that FlowPosteriors created from flows in memory and flows
+    saved to disk both give the same results as the original flow.
+    """
+    # load the catalog data
+    catalog = tables_io.read(catalog_file)
 
-def test_FlowCreator_pz_estimate(tmp_path):
-    """Test that flow posteriors and FlowCr posteriors are the same."""
+    # and the example flow
+    flow = Flow(file=flow_file)
 
-    data = get_galaxy_data().iloc[:10, :]
-    DS = RailStage.data_store
-    DS.clear()
-    handle = DS.add_data("data", data, TableHandle, path="dummy.pd")
-
+    # set up a redshift grid to calculate posteriors
+    # we will make it small so the test is quick
     grid = np.arange(0, 2.5, 0.5)
 
-    flow = get_example_flow()
-    flow_pdfs = flow.posterior(data, column="redshift", grid=grid)
+    # calculate posteriors directly with PZFlow
+    flow_posteriors = flow.posterior(catalog, column="redshift", grid=grid)
 
-    flow_path = str(tmp_path / "flow.pzflow.pkl")
-    flow.save(flow_path)
-    flowPost = FlowPosterior.make_stage(
-        name="flow",
-        model=flow_path,
-        column="redshift",
-        grid=grid,
-        marg_rules={"flag": np.nan, "u": lambda row: np.linspace(25, 31, 10)},
-    )
-
-    flowPost2 = FlowPosterior.make_stage(
-        name="flow2",
+    # now make a FlowPosterior object from the flow and calculate posteriors
+    flowPosterior1 = FlowPosterior.make_stage(
+        name="flowPosterior1",
         model=flow,
+        output=tmp_path / "posteriors1.hdf5",
         column="redshift",
         grid=grid,
         marg_rules={"flag": np.nan, "u": lambda row: np.linspace(25, 31, 10)},
     )
+    flowPosterior1_posteriors = flowPosterior1.get_posterior(catalog).data
+    # pull the posterior values out of qp!
+    flowPosterior1_posteriors = flowPosterior1_posteriors.objdata()["yvals"]
 
-    flowPost_pdfs = flowPost.get_posterior(handle, column="redshift", grid=grid).data
-    flowPost_pdfs = flowPost_pdfs.objdata()["yvals"]
-
-    flowPost2_pdfs = flowPost2.get_posterior(handle, column="redshift", grid=grid).data
-    flowPost2_pdfs = flowPost2_pdfs.objdata()["yvals"]
-
-    assert np.allclose(flow_pdfs, flowPost_pdfs)
-    os.remove(flowPost.get_output(flowPost.get_aliased_tag("output"), final_name=True))
-    os.remove(
-        flowPost2.get_output(flowPost2.get_aliased_tag("output"), final_name=True)
+    # we will also save the flow and create a FlowPosterior from the saved file
+    # then use it to calculate posteriors
+    flowPosterior2 = FlowPosterior.make_stage(
+        name="flowPosterior2",
+        model=flow_file,
+        output=tmp_path / "posteriors2.hdf5",
+        column="redshift",
+        grid=grid,
+        marg_rules={"flag": np.nan, "u": lambda row: np.linspace(25, 31, 10)},
     )
+    flowPosterior2_posteriors = flowPosterior2.get_posterior(catalog).data
+    # pull the posterior values out of qp!
+    flowPosterior2_posteriors = flowPosterior2_posteriors.objdata()["yvals"]
+
+    # check that all posteriors are the same
+    assert np.allclose(flow_posteriors, flowPosterior1_posteriors)
+    assert np.allclose(flow_posteriors, flowPosterior2_posteriors)
+    assert np.allclose(flowPosterior1_posteriors, flowPosterior2_posteriors)

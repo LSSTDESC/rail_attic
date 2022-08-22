@@ -61,7 +61,7 @@ class FlowModeler(Modeler):
             30,
             msg="The number of training epochs.",
         ),
-        flow_seed=Param(
+        seed=Param(
             int,
             0,
             msg="The random seed for training.",
@@ -140,7 +140,14 @@ class FlowModeler(Modeler):
         self.flow = Flow(column_names, bijector=bijector)
 
     def run(self):
-        """ """
+        """Run method
+
+        Calls `Flow.train` to train a normalizing flow using PZFlow.
+
+        Notes
+        -----
+        Puts the data into the data store under this stages 'output' tag
+        """
         # get the catalog
         catalog = self.get_data("input")
 
@@ -149,13 +156,13 @@ class FlowModeler(Modeler):
             catalog,
             epochs=self.config.num_training_epochs,
             verbose=True,
-            seed=self.config.flow_seed,
+            seed=self.config.seed,
         )
 
         # save the flow
         self.add_data("model", self.flow)
 
-        # NEED TO SAVE THE LOSSES TOO SO WE CAN PLOT THEM
+        # TODO: NEED TO SAVE THE LOSSES SO WE CAN PLOT THEM
 
 
 class FlowCreator(Creator):
@@ -186,7 +193,9 @@ class FlowCreator(Creator):
             raise ValueError(
                 "Tried to run a FlowCreator before the `Flow` model is loaded"
             )
-        self.add_data("output", flow.sample(self.config.n_samples, self.config.seed))
+        self.add_data(
+            "output", flow.sample(self.config.n_samples, seed=self.config.seed)
+        )
 
 
 class FlowPosterior(PosteriorCalculator):
@@ -226,8 +235,8 @@ class FlowPosterior(PosteriorCalculator):
         of the same length, regardless of the input row.
         DEFAULT: the default marg_rules dict is
         {
-        "flag": np.nan,
-        "u": np.linspace(25, 31, 10),
+            "flag": np.nan,
+            "u": np.linspace(25, 31, 10),
         }
     batch_size: int, default=None
         Size of batches in which to calculate posteriors. If None, all
@@ -262,16 +271,19 @@ class FlowPosterior(PosteriorCalculator):
     def run(self):
         """Run method
 
-        Calls `Flow.posterior` to use the `Flow` object to get the posterior distribution
+        Calls `Flow.posterior` to use the `Flow` object to get the posterior
+        distribution.
 
         Notes
         -----
         Get the input data from the data store under this stages 'input' tag
         Puts the data into the data store under this stages 'output' tag
         """
-
+        # pull out the flow and the data we want posteriors for
         data = self.get_data("input")
         flow = self.get_data("model")
+
+        # if no marginalization rules are set, use default values
         if self.config.marg_rules is None:  # pragma: no cover
             marg_rules = {
                 "flag": np.nan,
@@ -280,6 +292,7 @@ class FlowPosterior(PosteriorCalculator):
         else:
             marg_rules = self.config.marg_rules
 
+        # use the PZFlow normalizing flow to calculate posteriors
         pdfs = flow.posterior(
             inputs=data,
             column=self.config.column,
@@ -291,7 +304,9 @@ class FlowPosterior(PosteriorCalculator):
             nan_to_zero=self.config.nan_to_zero,
         )
 
+        # save the posteriors in a qp ensemble
         ensemble = qp.Ensemble(
             qp.interp, data={"xvals": self.config.grid, "yvals": pdfs}
         )
+
         self.add_data("output", ensemble)
