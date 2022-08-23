@@ -80,7 +80,7 @@ setup(
         ],
         "tests": ["*.hdf5", "*.yaml", "*.columns"],
         "examples/estimation/data/SED": ["*.list"],
-        "examples/estimation/data/AB": ["*.AB"],
+        "examples/estimation/data/AB": ["*.txt"],
         "examples/estimation/data/FILTER": ["*.res", "*.txt"],
         "examples/goldenspike/data": ["*.pkl"],
     },
