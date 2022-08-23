@@ -10,13 +10,12 @@ install_requires = [
     "pyyaml",
     "minisom",
     "scipy>=1.9.0",
+    "pz-hyperbolic-temp",
+    "pz-qp-temp",
 ]
 
 # dependencies for the core module
-core_extras = [
-    "hyperbolic @ git+https://github.com/jlvdb/hyperbolic",
-    "qp @ git+https://github.com/LSSTDESC/qp",
-]
+core_extras = []
 
 # dependencies for the Creation module
 creation_extras = ["pzflow"]
