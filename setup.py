@@ -7,14 +7,16 @@ install_requires = [
     "pandas>=1.1",
     "tables-io>=0.7.5",
     "ceci>=1.10.1",
-    "qp @ git+https://github.com/LSSTDESC/qp",
     "pyyaml",
     "minisom",
     "scipy>=1.9.0",
 ]
 
 # dependencies for the core module
-core_extras = ["hyperbolic @ git+https://github.com/jlvdb/hyperbolic"]
+core_extras = [
+    "hyperbolic @ git+https://github.com/jlvdb/hyperbolic",
+    "qp @ git+https://github.com/LSSTDESC/qp",
+]
 
 # dependencies for the Creation module
 creation_extras = ["pzflow"]
