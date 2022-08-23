@@ -89,7 +89,6 @@ setup(
     long_description=open("README.md").read(),
     classifiers=[
         "Development Status :: 4 - Beta",
-        "License :: OSI Approved :: BSD 3-Clause",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "Operating System :: OS Independent",
