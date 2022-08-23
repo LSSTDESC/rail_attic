@@ -12,10 +12,12 @@ RAIL includes a subpackage for each, providing a flexible framework for handling
 The purpose of each piece of infrastructure is outlined below.
 For a working example illustrating all four components of RAIL, see the `examples/goldenspike/goldenspike.ipynb <https://github.com/LSSTDESC/RAIL/blob/main/examples/goldenspike/goldenspike.ipynb>`_ jupyter notebook.
 
+
 A brief note on core DESC software dependencies
-==========
+===============================================
+
 The `qp` Ensemble format is the expected default storage format for redshift information within DESC, and all redshift PDFs, for both individual galaxies and galaxy samples (such as tomographic bin members or galaxy cluster members), will be stored as `qp` Ensemble objects to be directly accessible to LSST-DESC pipelines, such as `TXPipe <https://github.com/LSSTDESC/TXPipe/>`_.
-The use of a unified `qp` Ensemble as the output format enables a consistent evaluation of redshift uncertainties (see `the qp repository <https://github.com/LSSTDESC/qp`_ for more details, though in brief, `qp` enables transformation between different PDF parameterizations, computation of many useful metrics, and easy fileIO).
+The use of a unified `qp` Ensemble as the output format enables a consistent evaluation of redshift uncertainties.  See `the qp repository <https://github.com/LSSTDESC/qp>`_ for more details, though in brief, `qp` enables transformation between different PDF parameterizations, computation of many useful metrics, and easy fileIO.
 
 `creation`
 ==========
