@@ -9,6 +9,7 @@ install_requires = [
     "ceci>=1.10.1",
     "qp @ git+https://github.com/LSSTDESC/qp",
     "pyyaml",
+    "minisom",
     "scipy>=1.9.0",
 ]
 
