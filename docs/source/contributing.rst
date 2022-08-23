@@ -51,7 +51,7 @@ To review a pull request, it's a good idea to start by pulling the changes and r
 Adding a new Rail Stage
 =======================
 
-To make it easier to eventually run RAIL algorithms at scale, all of the various algorithms are implemented as `RailStage` python classes.   A `RailStage` is intended to take a particular set of inputs and configuration parameters, run a single bit of analysis, and produce or or more output files.  The inputs, outputs
+To make it easier to eventually run RAIL algorithms at scale, all of the various algorithms are implemented as `RailStage` python classes.   A `RailStage` is intended to take a particular set of inputs and configuration parameters, run a single bit of analysis, and produce one or more output files.  The inputs, outputs
 and configuration parameters are all defined in particular ways to allow `RailStage` objects to be integrated into larger data analysis pipelines.
 
 Here is an example of a very simple `RailStage`.
