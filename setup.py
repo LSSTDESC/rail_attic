@@ -11,7 +11,7 @@ install_requires = [
     "minisom",
     "scipy>=1.9.0",
     "pz-hyperbolic-temp",
-    "pz-qp-temp",
+    "qp-prob",
 ]
 
 # dependencies for the core module
