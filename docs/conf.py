@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # This way one does not need to install them when dealing with the doc.
 from unittest.mock import MagicMock
 
-MOCK_MODULES = ['qp-prob', 'flexcode', 'flexcode.regression_models', 'flexcode.loss_functions']
+MOCK_MODULES = ['qp', 'flexcode', 'flexcode.regression_models', 'flexcode.loss_functions']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = MagicMock()
 
