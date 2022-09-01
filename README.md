@@ -1,7 +1,7 @@
 ![example workflow](https://github.com/LSSTDESC/RAIL/actions/workflows/main.yml/badge.svg)
 [![codecov](https://codecov.io/gh/LSSTDESC/RAIL/branch/master/graph/badge.svg)](https://codecov.io/gh/LSSTDESC/RAIL)
 [![PyPI version](https://badge.fury.io/py/pz-rail.svg)](https://badge.fury.io/py/pz-rail)
-[![Documentation Status](https://readthedocs.org/projects/lsstdescrail/badge/?version=stable)](https://lsstdescrail.readthedocs.io/en/latest/?badge=stable)
+[![Documentation Status](https://readthedocs.org/projects/lsstdescrail/badge/?version=stable)](https://lsstdescrail.readthedocs.io/en/stable/?badge=stable)
 
 
 # RAIL: Redshift Assessment Infrastructure Layers
