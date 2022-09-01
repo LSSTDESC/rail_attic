@@ -13,7 +13,7 @@ pyyaml
 pip
 corner
 tables-io
-qp@git+https://github.com/LSSTDESC/qp
+qp-prob
 pzflow
 ceci
 pyarrow
