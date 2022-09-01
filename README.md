@@ -1,5 +1,8 @@
-![tests](https://github.com/LSSTDESC/BlendingToolKit/workflows/tests/badge.svg)
+![example workflow](https://github.com/LSSTDESC/RAIL/actions/workflows/main.yml/badge.svg)
 [![codecov](https://codecov.io/gh/LSSTDESC/RAIL/branch/master/graph/badge.svg)](https://codecov.io/gh/LSSTDESC/RAIL)
+[![PyPI version](https://badge.fury.io/py/pz-rail.svg)](https://badge.fury.io/py/pz-rail)
+[![Documentation Status](https://readthedocs.org/projects/lsstdescrail/badge/?version=stable)](https://lsstdescrail.readthedocs.io/en/latest/?badge=stable)
+
 
 # RAIL: Redshift Assessment Infrastructure Layers
 
@@ -7,19 +10,19 @@ RAIL's purpose is to be the infrastructure enabling the PZ WG Deliverables in [t
 RAIL differs from previous plans for PZ pipeline infrastructure in that it is broken into stages, each corresponding to a manageable unit of infrastructure advancement, a specific question to answer with that code, and a guaranteed publication opportunity.
 RAIL uses [qp](https://github.com/LSSTDESC/qp) as a back-end for handling univariate probability density functions (PDFs) such as photo-z posteriors or n(z) samples.
 
-A more detailed overview is available in the [Overview Section](https://lsstdescrail.readthedocs.io/en/latest/source/overview.html) of the RAIL Read The Docs page.
+A more detailed overview is available in the [Overview Section](https://lsstdescrail.readthedocs.io/en/stable/source/overview.html) of the RAIL Read The Docs page.
 
 ## Installation
 
-Installation instructions are available on the [Installation section](https://lsstdescrail.readthedocs.io/en/latest/source/installation.html) of the [RAIL Read The Docs page](https://lsstdescrail.readthedocs.io/en/latest/)
+Installation instructions are available on the [Installation section](https://lsstdescrail.readthedocs.io/en/stable/source/installation.html) of the [RAIL Read The Docs page](https://lsstdescrail.readthedocs.io/en/stable/)
 
 ## Contributing
 
-If interested in contributing to `RAIL` see the [Contributing section](https://lsstdescrail.readthedocs.io/en/latest/source/contributing.html) of the RAIL Read The Docs page.
+If interested in contributing to `RAIL` see the [Contributing section](https://lsstdescrail.readthedocs.io/en/stable/source/contributing.html) of the RAIL Read The Docs page.
 
 ## Future Plans
 
-Potential extensions of the RAIL package are summarized in the [Future Plans section](https://lsstdescrail.readthedocs.io/en/latest/source/futureplans.html) of the RAIL Read The Docs page.
+Potential extensions of the RAIL package are summarized in the [Future Plans section](https://lsstdescrail.readthedocs.io/en/stable/source/futureplans.html) of the RAIL Read The Docs page.
 
 ## Citing RAIL
 
@@ -31,4 +34,4 @@ External contributors and DESC members wishing to use RAIL for non-DESC projects
 
 ### Citing specific codes within RAIL
 
-Several of the codes included within the RAIL framework, e.g. BPZ, Delight, and FlexZBoost, are pre-existing codes that have been included in RAIL.  If you use those specific codes you should also cite the appropriate papers for each code used.  A list of such codes is included in the [Citing RAIL](https://lsstdescrail.readthedocs.io/en/latest/source/citing.html) section of the Read The Docs page.
+Several of the codes included within the RAIL framework, e.g. BPZ, Delight, and FlexZBoost, are pre-existing codes that have been included in RAIL.  If you use those specific codes you should also cite the appropriate papers for each code used.  A list of such codes is included in the [Citing RAIL](https://lsstdescrail.readthedocs.io/en/stable/source/citing.html) section of the Read The Docs page.
