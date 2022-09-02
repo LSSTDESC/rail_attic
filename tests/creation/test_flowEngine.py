@@ -128,7 +128,11 @@ def test_FlowPosterior(catalog_file, flow_file, tmp_path):
         column="redshift",
         grid=grid,
         marg_rules={"flag": np.nan, "u": lambda row: np.linspace(25, 31, 10)},
-        aliases={"model": "flowPosterior1_model", "output": "flowPosterior1_output"},
+        aliases={
+            "model": "flowPosterior1_model", 
+            "input": "flowPosterior1_input", 
+            "output": "flowPosterior1_output",
+        },
     )
     flowPosterior1_posteriors = flowPosterior1.get_posterior(catalog).data
     # pull the posterior values out of qp!
@@ -143,7 +147,11 @@ def test_FlowPosterior(catalog_file, flow_file, tmp_path):
         column="redshift",
         grid=grid,
         marg_rules={"flag": np.nan, "u": lambda row: np.linspace(25, 31, 10)},
-        aliases={"model": "flowPosterior2_model", "output": "flowPosterior1_output"},
+        aliases={
+            "model": "flowPosterior2_model", 
+            "input": "flowPosterior2_input", 
+            "output": "flowPosterior1_output",
+        },
     )
     flowPosterior2_posteriors = flowPosterior2.get_posterior(catalog).data
     # pull the posterior values out of qp!
