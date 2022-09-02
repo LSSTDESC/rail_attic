@@ -28,12 +28,14 @@ def flow_file(tmp_path_factory):
 
 def test_FlowModeler(catalog_file, tmp_path):
     """Test that training a PZFlow Flow doesn't throw any errors."""
-    # set directories for the training data and saved flow
+    # set path for the trained flow
+    trained_flow_path = tmp_path / "trained_flow.pzflow.pkl"
+
     # set the flow parameters
     flow_modeler_params = {
         "name": "flow_modeler",
         "input": catalog_file,
-        "model": tmp_path / "trained_flow.pzflow.pkl",
+        "model": trained_flow_path,
         "seed": 0,
         "phys_cols": {"redshift": [0, 3]},
         "phot_cols": {
@@ -45,9 +47,14 @@ def test_FlowModeler(catalog_file, tmp_path):
         "aliases": {"model": "flowModeler_model"},
     }
 
+    # create the stage to train the flow
     flow_modeler = FlowModeler.make_stage(**flow_modeler_params)
 
+    # train the flow
     flow_modeler.fit_model()
+
+    # load the flow
+    trained_flow = Flow(file=trained_flow_path)
 
 
 def test_FlowCreator(flow_file, tmp_path):
