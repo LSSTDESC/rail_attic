@@ -7,7 +7,7 @@ install_requires = [
     "pandas>=1.1",
     "tables-io>=0.7.5",
     "ceci",
-    "qp @ git+https://github.com/LSSTDESC/qp",
+    "qp-prob",
 ]
 
 # dependencies for the core module
