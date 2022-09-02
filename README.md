@@ -1,8 +1,11 @@
-![example workflow](https://github.com/LSSTDESC/RAIL/actions/workflows/main.yml/badge.svg)
-[![codecov](https://codecov.io/gh/LSSTDESC/RAIL/branch/master/graph/badge.svg)](https://codecov.io/gh/LSSTDESC/RAIL)
-[![PyPI version](https://badge.fury.io/py/pz-rail.svg)](https://badge.fury.io/py/pz-rail)
-[![Documentation Status](https://readthedocs.org/projects/lsstdescrail/badge/?version=stable)](https://lsstdescrail.readthedocs.io/en/stable/?badge=stable)
+<div align="center">
 
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/LSSTDESC/RAIL/rail?logo=Github)](https://github.com/LSSTDESC/RAIL/actions/workflows/main.yml)
+[![codecov](https://codecov.io/gh/LSSTDESC/RAIL/branch/master/graph/badge.svg)](https://codecov.io/gh/LSSTDESC/RAIL)
+[![PyPI](https://img.shields.io/pypi/v/pz-rail?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/pz-rail/)
+[![Read the Docs (version)](https://img.shields.io/readthedocs/lsstdescrail/stable?color=blue&logo=readthedocs&logoColor=white)](https://lsstdescrail.readthedocs.io/en/stable/#)
+
+</div>
 
 # RAIL: Redshift Assessment Infrastructure Layers
 
@@ -28,7 +31,7 @@ Potential extensions of the RAIL package are summarized in the [Future Plans sec
 
 This code, while public on GitHub, has not yet been released by DESC and is still under active development. Our release of v1.0 will be accompanied by a journal paper describing the development and validation of RAIL.
 
-If you make use of the ideas or software here, please cite this repository https://github.com/LSSTDESC/RAIL. You are welcome to re-use the code, which is open source and available under terms consistent with our [LICENSE](https://github.com/LSSTDESC/RAIL/blob/main/LICENSE) [(BSD 3-Clause)](https://opensource.org/licenses/BSD-3-Clause).
+If you make use of the ideas or software here, please cite this repository <https://github.com/LSSTDESC/RAIL>. You are welcome to re-use the code, which is open source and available under terms consistent with our [LICENSE](https://github.com/LSSTDESC/RAIL/blob/main/LICENSE) [(BSD 3-Clause)](https://opensource.org/licenses/BSD-3-Clause).
 
 External contributors and DESC members wishing to use RAIL for non-DESC projects should consult with the Photometric Redshifts (PZ) Working Group conveners, ideally before the work has started, but definitely before any publication or posting of the work to the arXiv.
 
