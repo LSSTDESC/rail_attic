@@ -4,14 +4,16 @@ import numpy as np
 import pandas as pd
 import healpy as hp
 import os
-import pickle
+import yaml
+
+from photerr import LsstErrorModel
 
 from rail.creation.degradation import Degrader
 from ceci.config import StageParameter as Param
 
 #### To do list:
-### - Tables io
 ### - Other formats than fits: .hs (needs healsparse), and .npz (needs rubin)
+### - Should allow input argument for all lsst error model
 
 
 class ObsCondition(Degrader):
@@ -43,8 +45,8 @@ class ObsCondition(Degrader):
     config_options.update(
         obs_config_file=Param(
             str, os.path.join(os.path.dirname(__file__),
-            "../../../examples/creation/data/example_obs_config.ini"),
-            msg="The path to the directory containing the config file."
+            "../../../examples/creation/data/example_obs_config.yml"),
+            msg="The path to the directory containing the config file in yaml format."
         )
     )
     
@@ -56,6 +58,12 @@ class ObsCondition(Degrader):
         
         # validate parameters provided in configuration file
         self._validate_obs_config()
+        
+        # initiate self.maps
+        self.maps = {}
+        
+        # load the survey condition maps if the validation is passed
+        self._get_maps()
             
     
     def _read_obs_config(self) -> dict:
@@ -64,30 +72,11 @@ class ObsCondition(Degrader):
         similar structure as the LSSTErrorModel
         """
         
-        #dictionary to store all the information
-        obs_cond_path = collections.OrderedDict()
-
-        #read all the lines
-        lines=open(self.obs_config_file,'r').readlines() 
-        nline=len(lines)
-        
-        #now go through all the lines and read the parameter information
-        for tmp in lines:
-            tsplit=tmp.split()
-            if(tmp=='\n' or tmp[0]=='#'):
-                continue
-            elif(tsplit[1]=='='):
-                if(len(tsplit)==3):
-                    if(tsplit[0] == "nside"):
-                         obs_cond_path[tsplit[0]]=np.int(tsplit[2])
-                    elif(tsplit[0] == "nYrObs"):
-                         obs_cond_path[tsplit[0]]=np.float(tsplit[2])
-                    else:
-                         obs_cond_path[tsplit[0]]=tsplit[2]
-            else:
-                raise ValueError("Incorrect format for the configuration file. "
-                                + "Error in line: "
-                                + temp)
+        with open(self.obs_config_file, "r") as stream:
+            try:
+                obs_cond_path = yaml.safe_load(stream)
+            except yaml.YAMLError as exc:
+                print(exc)
         
         print("Configuration file initialised.")
         return obs_cond_path
@@ -99,77 +88,125 @@ class ObsCondition(Degrader):
         """
         obs_cond_path = self.obs_cond_path
         
-        #check keys:
-        general_info = [
-            "nside", "mask",
-            "nYrObs", "weight",
-            "savefile",
+        # A directory to the survey condition
+        # map should be provided if
+        # these keys are included in the
+        # config file
+        obs_cond_keys = [
+            "m5",
+            "nVisYr",
+            "airmass",
+            "gamma",
+            "msky",
+            "theta",
+            "km",
+            "tvis",
         ]
         
-        obs_maps = [
-            "m5","nVisYr","airmass",
-            "gamma","msky","theta","km",
+        # Other lsst_error_model keys that
+        # can be passed in the config file
+        lsst_error_model_keys = [
+            "nYrObs",
+            "Cm",
+            "sigmaSys",
+            "sigLim",
+            "ndMode",
+            "ndFlag",
+            "absFlux",
+            "extendedType",
+            "aMin",
+            "aMax",
+            "majorCol",
+            "minorCol",
+            "decorrelate",
+            "highSNR",
+            "errLoc",
+            "renameDict",
         ]
         
-        obs_maps_bands = []
-        for obs in obs_maps:
-            for band in ["u","g","r","i","z","y"]:
-                obs_maps_bands.append(obs+"_"+band)
+        # Keys that are not included in
+        # lsst_error_model, contains the
+        # map information and weight for
+        # assigning galaxies to pixels.
+        additional_keys = [
+            "nside", 
+            "mask",
+            "weight",
+            "nVisYr_tot",
+        ]
         
-        #check if all of the keys are included:
-        if(len(set(obs_cond_path.keys())-set(general_info).union(set(obs_maps_bands)))!=0):
-            raise ValueError("Incomplete or extra keywords are passed to the configuration. "
-                            + "The following keys shoud be passed: "
-                            + str(genera_info) + "\n"
-                            + str(obs_maps_bands))
+        all_keys = (obs_cond_keys.append(lsst_error_model_keys)).append(additional_keys)
         
-        #Check keys:
-        for keys in obs_cond_path:
+        # Check if extra keys not in 
+        # this list have been passed:
+        if(len(set(obs_cond_path.keys())-set(all_keys))!=0):
+            extra_keys = set(obs_cond_path.keys())-set(all_keys)
+            raise ValueError("Extra keywords are passed to the configuration: \n"
+                            + str(extra_keys))
+           
+        # Check necessary parameters are included:
+        if "nside" not in list(obs_cond_path.keys()):
+            raise ValueError("nside needs to be provided for the input maps.")
+        if "mask" not in list(obs_cond_path.keys()):
+            raise ValueError("mask needs to be provided for the input maps.")
+        
+        # Check data type for the keys:
+        # Note that LSSTErrorModel checks
+        # the data type for its parameters,
+        # so here we only check the additional 
+        # parameters and the file paths
+        for keys in obs_cond_path.keys():
+            
+            # Check nside should be positive and powers of two
             if key == "nside":
-                #check positive and correct input for healpix
                 if obs_cond_path[key]<0:
                     raise ValueError("nside must be positive.")
                 elif np.log2(obs_cond_path[key]).is_integer() is not True:
-                    raise ValueError("nside must be powers of 2")
-            elif key == "nYrObs":
-                #check positive
-                if obs_cond_path[key]<0:
-                    raise ValueError("Number of years of observation must be positive.")
-            elif key == "mask":
-                #cannot be empty
-                if obs_cond_path[key] == "empty":
-                    raise ValueError("Mask must be provided.")
-            #check path exists
-            ###need to check if outroot exists
-            elif key == "savefile":
-                #check the directory exists
-                s = obs_cond_path[key].split("/")
-                path = obs_cond_path[key][:-len(s[-1])]
-                if os.path.exists(path) is not True:
-                    raise ValueError("Saving directory does not exist.")
-            else:
-                if os.path.exists(obs_cond_path[key]) is not True:
-                    raise ValueError("The following file is not found: "
-                                    + obs_cond_path[key])
+                    raise ValueError("nside must be powers of two.")
+            
+            # Check if nVisYr_tot is boolean
+            if key == "nVisYr_tot":
+                if type(key)!=bool:
+                    raise ValueError("nVisYr_tot must be boolean.")
+                    
+            # Check input paths exist
+            elif key in obs_cond_keys.append(["mask", "weight"]):
+                # band-independent keys:
+                if key in ["airmass", "tvis", "mask", "weight"]:
+                    if os.path.exists(obs_cond_path[key]) is not True:
+                        raise ValueError("The following file is not found: "
+                                        + obs_cond_path[key])
+                # band-dependent keys
+                else:
+                    for band in obs_cond_path[key].keys():
+                        if os.path.exists(obs_cond_path[key][band]) is not True:
+                            raise ValueError("The following file is not found: "
+                                        + obs_cond_path[key][band])
     
-
-    def _get_maps(self) -> dict:
+    
+    def _get_maps(self):
         """
         Load in the maps from the directory
         A note on nVisYr: input map usually in terms of total number of exposures,
                           so manually divide the map by nYrObs
         """
         
-        obs_maps = [
-            "m5","nVisYr","airmass",
-            "gamma","msky","theta","km",
+        obs_cond_keys = [
+            "m5",
+            "nVisYr",
+            "airmass",
+            "gamma",
+            "msky",
+            "theta",
+            "km",
+            "tvis",
         ]
         
         obs_cond_path = self.obs_cond_path
         
         maps = collections.OrderedDict()
         
-        # load mask
+        # Load mask
         mask = hp.read_map(obs_cond_path["mask"])
         if (mask<0).any():
             # set negative values (if any) to zero
@@ -177,40 +214,83 @@ class ObsCondition(Degrader):
         pixels = np.arange(int(obs_cond_path["nside"]**2*12))[mask.astype(bool)]
         maps["pixels"] = pixels
         
-        # load nYrObs
-        maps["nYrObs"] = obs_cond_path["nYrObs"]
+        # Load all other maps in the obs_cond_keys and weight
+        for key in obs_cond_path.keys():
+            if key in obs_cond_keys.append(["weight"]):
+                # band-independent keys:
+                if key in ["airmass", "tvis", "weight"]:
+                     maps[key] = hp.read_map(obs_cond_path[key])[pixels]
+                # band-dependent keys
+                else:
+                    maps[key] = {}
+                    for band in obs_cond_path[key].keys():
+                        maps[key][band] = hp.read_map(obs_cond_path[key][band])[pixels]
+            elif key not in ["nside", "nVisYr_tot", "mask"]:   
+                # copy all other lsst_error_model parameters supplied
+                maps[key] = obs_cond_path[key]
         
-        # load weight
-        if obs_cond_path["weight"] != "empty":
-            maps["weight"] = obs_cond_path["weight"][mask.astype(bool)]
+        if "nVisYr" in obs_cond_path.keys():
+            if "nYrObs" not in obs_cond_path.keys():
+                # Set to default:
+                maps["nYrObs"]=10.
+            if "nVisYr_tot" not in obs_cond_path.keys():
+                # Set to default:
+                obs_cond_path["nVisYr_tot"] = True
+            if  obs_cond_path["nVisYr_tot"] == True:
+                # For each band, compute the average number of visits per year
+                for band in maps["nVisYr"].keys():
+                    maps["nVisYr"][band] /= float(maps["nYrObs"])
+                    
+        self.maps = maps
         
-        # load everything else
-        for obs in obs_maps:
-            maps[obs] = {}
-            for band in ["u","g","r","i","z","y"]:
-                if obs_cond_path[obs+"_"+band] != "empty"
-                    maps[obs][band] = obs_cond_path[obs+"_"+band][mask.astype(bool)]
-                    #in case of nVisYr, divide by nYrObs 
-                    if obs == "nVisYr":
-                        maps[obs][band] /= float(maps["nYrObs"])
-            if not maps[obs]:
-                # delete the key since it is not used
-                del maps[obs]
-        
-        return maps
     
-    def _write_output(self, output):
+    def get_pixel_conditions(self, 
+                             pixel: int
+                            ) -> dict:
+        allpix = self.maps["pixels"]
+        obs_conditions = {}
+        ind = allpix==pixel
+        for key in (self.maps).keys():
+            if key not in ["pixels","weights"]:
+                obs_conditions[key] = self.maps[key][ind]
+        return obs_conditions
+    
+    
+    def assign_pixels(self, 
+                      catalog: pd.DataFrame
+                     ) -> pd.DataFrame:
         """
-        Save the data into a pikle file
-        ###or tables io? 
+        assign the pixels to the input catalog
         """
-        with open(self.obs_cond_path["savefile"],'wb') as fout:
-            pickle.dump(output,fout,pickle.HIGHEST_PROTOCOL)
+        pixels = self.maps["pixels"]
+        weights = self.maps["weights"]
+        assigned_pix = np.random.choice(pixels, size=len(catalog), replace=True, p=weights)
+        catalog = pd.concat([catalog, assigned_pix], axis=1)
         
+        return catalog
         
     def run(self):
-        obs_cond = self._get_maps()
-        self._write_output(obs_cond)
+        catalog = self.get_data("input", allow_missing=True)
+        
+        # assign each galaxy to a pixel
+        catalog = self.assign_pixels(catalog)
+
+        # loop over each pixel
+        pixel_cat_list = []
+        for pixel, pixel_cat in catalog.groupby("pixel"):
+            # get the observing conditions for this pixel
+            obs_conditions = self.get_pixel_conditions(pixel)
+
+            # calculate photometric errors for this pixel
+            obs_cat = LsstErrorModel(**obs_conditions)(pixel_cat)
+
+            # add this pixel catalog to the list
+            pixel_cat_list.append(obs_cat)
+
+        # recombine all the pixels into a single catalog
+        catalog = pd.concat([catalog, pixel_cat_list],axis=1)
+
+        self.add_data("output", catalog)
         
         
     def __repr__(self):

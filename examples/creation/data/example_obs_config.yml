@@ -1,0 +1,91 @@
+###Configuration file for reading in the observational condition maps###
+#Below is an exmaple for loading Y1 observational conditions from MAF maps:
+#Empty entries will fall back to default values provided in Table 2 of arXiv[0805.2366]
+#You can add all arguments needed for LSSTErrorModel
+
+###Map information (shared by all input maps)###
+#nside of the healpix maps
+nside: 128
+#mask of the survey footprint
+mask: /global/cscratch1/sd/qhang/DESC_DC2_obs-dr6/obj_footprint_mask-nside-128.fits
+
+
+###Survey information###
+#number of year of the observation
+nYrObs: 5.
+#Galaxy number density or weights to be used to assign pixels to sample galaxies
+#if empty, use uniform weighting
+weight: /global/cscratch1/sd/qhang/DESC_DC2_obs-dr6/obj_counts-imagbins-nside-128.fits
+
+###Survey property maps  (per band)###
+
+# - Five sigma depth for point source
+#notice if this is provided, all other rows will be ignored
+m5:
+    u: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_CoaddM5_u_and_nightlt1825_HEAL.fits
+    g: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_CoaddM5_g_and_nightlt1825_HEAL.fits
+    r: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_CoaddM5_r_and_nightlt1825_HEAL.fits
+    i: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_CoaddM5_i_and_nightlt1825_HEAL.fits
+    z: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_CoaddM5_z_and_nightlt1825_HEAL.fits
+    y: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_CoaddM5_y_and_nightlt1825_HEAL.fits
+
+# - Number of visits
+# nVisYr_tot=True: supply total number of visits
+# nVisYr_tot=False: supply average number of visits per year
+# if nVisYr_tot is not supplied but nVisYr is supplied, 
+# the default is True.
+nVisYr_tot: True
+nVisYr: 
+    u: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/supreme_map/supreme_dc2_dr6d_v3_u_nexp_sum-nside-128.fits
+    g: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/supreme_map/supreme_dc2_dr6d_v3_g_nexp_sum-nside-128.fits
+    r: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/supreme_map/supreme_dc2_dr6d_v3_r_nexp_sum-nside-128.fits
+    i: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/supreme_map/supreme_dc2_dr6d_v3_i_nexp_sum-nside-128.fits
+    z: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/supreme_map/supreme_dc2_dr6d_v3_z_nexp_sum-nside-128.fits
+    y: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/supreme_map/supreme_dc2_dr6d_v3_y_nexp_sum-nside-128.fits
+
+# - Airmass (currently band-independent)
+airmass: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_Median_airmass_i_and_nightlt1825_HEAL.fits
+#    u: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_Median_airmass_u_and_nightlt1825_HEAL.fits
+#    g: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_Median_airmass_g_and_nightlt1825_HEAL.fits
+#    r: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_Median_airmass_r_and_nightlt1825_HEAL.fits
+#    i: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_Median_airmass_i_and_nightlt1825_HEAL.fits
+#    z: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_Median_airmass_z_and_nightlt1825_HEAL.fits
+#    y: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_Median_airmass_y_and_nightlt1825_HEAL.fits
+
+# - System throughput parameter used in Eq.(5) of arXiv[0805.2366]
+#depends on sky brightness, readout noise etc.
+#default values see Table 2
+#gamma: 
+#    u: None
+#    g: None
+#    r: None
+#    i: None
+#    z: None
+#    y: None
+
+# - Sky brightness 
+msky: 
+    u: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_Median_filtSkyBrightness_u_and_nightlt1825_HEAL.fits
+    g: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_Median_filtSkyBrightness_g_and_nightlt1825_HEAL.fits
+    r: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_Median_filtSkyBrightness_r_and_nightlt1825_HEAL.fits
+    i: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_Median_filtSkyBrightness_i_and_nightlt1825_HEAL.fits
+    z: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_Median_filtSkyBrightness_z_and_nightlt1825_HEAL.fits
+    y: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_Median_filtSkyBrightness_y_and_nightlt1825_HEAL.fits
+
+# - Effective seeing [arcsec.]
+theta:
+    u: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_Median_FWHMeff_u_and_nightlt1825_HEAL.fits
+    g: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_Median_FWHMeff_g_and_nightlt1825_HEAL.fits
+    r: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_Median_FWHMeff_r_and_nightlt1825_HEAL.fits
+    i: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_Median_FWHMeff_i_and_nightlt1825_HEAL.fits
+    z: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_Median_FWHMeff_z_and_nightlt1825_HEAL.fits
+    y: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_Median_FWHMeff_y_and_nightlt1825_HEAL.fits
+
+# - Atomospheric extinction
+#km: 
+#    u: None
+#    g: None
+#    r: None
+#    i: None
+#    z: None
+#    y: None
