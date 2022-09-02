@@ -1,7 +1,7 @@
 run_params:
   class_name: flowModeler
   run_name: test_flowModeler
-  flow_seed: 0
+  seed: 0
   phys_cols:
     "redshift": [0., 3.]
   phot_cols:
@@ -15,4 +15,3 @@ run_params:
     ref_column_name: mag_i_lsst
   spline_knots: 16
   num_training_epochs: 30
-  modelfile': "example_flow.pkl"
