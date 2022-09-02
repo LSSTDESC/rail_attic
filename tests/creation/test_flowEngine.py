@@ -4,10 +4,11 @@ import pytest
 import tables_io
 from pzflow import Flow
 from pzflow.examples import get_example_flow, get_galaxy_data
-from rail.creation.engines.flowEngine import FlowCreator, FlowModeler, FlowPosterior
+from rail.creation.engines.flowEngine import (FlowCreator, FlowModeler,
+                                              FlowPosterior)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def catalog_file(tmp_path_factory):
     """Save a subset of the galaxy catalog from PZFlow."""
     file = tmp_path_factory.mktemp("data") / "catalog.pq"
@@ -16,7 +17,7 @@ def catalog_file(tmp_path_factory):
     return str(file)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def flow_file(tmp_path_factory):
     """Save the example flow from PZFlow."""
     file = tmp_path_factory.mktemp("data") / "flow.pzflow.pkl"
@@ -41,6 +42,7 @@ def test_FlowModeler(catalog_file, tmp_path):
             "i": [15, 30],
         },
         "calc_colors": {"ref_column_name": "i"},
+        "aliases": {"model": "flowModeler_model"},
     }
 
     flow_modeler = FlowModeler.make_stage(**flow_modeler_params)
@@ -71,6 +73,7 @@ def test_FlowCreator(flow_file, tmp_path):
         model=flow,
         output=tmp_path / "samples1.pq",
         n_samples=n_samples,
+        aliases={"model": "flowCreator1_model"},
     )
     flowCreator1_samples = flowCreator1.sample(n_samples, seed=seed).data
 
@@ -78,9 +81,10 @@ def test_FlowCreator(flow_file, tmp_path):
     # and then draw samples from it
     flowCreator2 = FlowCreator.make_stage(
         name="flowCreator2",
-        model=flow,
+        model=flow_file,
         output=tmp_path / "samples2.pq",
         n_samples=n_samples,
+        aliases={"model": "flowCreator2_model"},
     )
     flowCreator2_samples = flowCreator2.sample(n_samples, seed=seed).data
 
@@ -117,6 +121,7 @@ def test_FlowPosterior(catalog_file, flow_file, tmp_path):
         column="redshift",
         grid=grid,
         marg_rules={"flag": np.nan, "u": lambda row: np.linspace(25, 31, 10)},
+        aliases={"model": "flowPosterior1_model"},
     )
     flowPosterior1_posteriors = flowPosterior1.get_posterior(catalog).data
     # pull the posterior values out of qp!
@@ -131,6 +136,7 @@ def test_FlowPosterior(catalog_file, flow_file, tmp_path):
         column="redshift",
         grid=grid,
         marg_rules={"flag": np.nan, "u": lambda row: np.linspace(25, 31, 10)},
+        aliases={"model": "flowPosterior2_model"},
     )
     flowPosterior2_posteriors = flowPosterior2.get_posterior(catalog).data
     # pull the posterior values out of qp!
