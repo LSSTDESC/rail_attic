@@ -15,7 +15,7 @@ mask: /global/cscratch1/sd/qhang/DESC_DC2_obs-dr6/obj_footprint_mask-nside-128.f
 nYrObs: 5.
 #Galaxy number density or weights to be used to assign pixels to sample galaxies
 #if empty, use uniform weighting
-weight: /global/cscratch1/sd/qhang/DESC_DC2_obs-dr6/obj_counts-imagbins-nside-128.fits
+#weight: /global/cscratch1/sd/qhang/DESC_DC2_obs-dr6/obj_counts-imagbins-nside-128.fits
 
 ###Survey property maps  (per band)###
 

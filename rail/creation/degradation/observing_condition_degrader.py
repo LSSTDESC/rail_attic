@@ -72,7 +72,7 @@ class ObsCondition(Degrader):
         similar structure as the LSSTErrorModel
         """
         
-        with open(self.obs_config_file, "r") as stream:
+        with open(self.config["obs_config_file"], "r") as stream:
             try:
                 obs_cond_path = yaml.safe_load(stream)
             except yaml.YAMLError as exc:
@@ -135,7 +135,7 @@ class ObsCondition(Degrader):
             "nVisYr_tot",
         ]
         
-        all_keys = (obs_cond_keys.append(lsst_error_model_keys)).append(additional_keys)
+        all_keys = obs_cond_keys + lsst_error_model_keys + additional_keys
         
         # Check if extra keys not in 
         # this list have been passed:
@@ -155,7 +155,7 @@ class ObsCondition(Degrader):
         # the data type for its parameters,
         # so here we only check the additional 
         # parameters and the file paths
-        for keys in obs_cond_path.keys():
+        for key in obs_cond_path.keys():
             
             # Check nside should be positive and powers of two
             if key == "nside":
@@ -166,11 +166,11 @@ class ObsCondition(Degrader):
             
             # Check if nVisYr_tot is boolean
             if key == "nVisYr_tot":
-                if type(key)!=bool:
+                if type(obs_cond_path[key])!=bool:
                     raise ValueError("nVisYr_tot must be boolean.")
                     
             # Check input paths exist
-            elif key in obs_cond_keys.append(["mask", "weight"]):
+            elif key in (obs_cond_keys + ["mask", "weight"]):
                 # band-independent keys:
                 if key in ["airmass", "tvis", "mask", "weight"]:
                     if os.path.exists(obs_cond_path[key]) is not True:
@@ -204,7 +204,8 @@ class ObsCondition(Degrader):
         
         obs_cond_path = self.obs_cond_path
         
-        maps = collections.OrderedDict()
+        #maps = collections.OrderedDict()
+        maps = {}
         
         # Load mask
         mask = hp.read_map(obs_cond_path["mask"])
@@ -216,7 +217,7 @@ class ObsCondition(Degrader):
         
         # Load all other maps in the obs_cond_keys and weight
         for key in obs_cond_path.keys():
-            if key in obs_cond_keys.append(["weight"]):
+            if key in (obs_cond_keys + ["weight"]):
                 # band-independent keys:
                 if key in ["airmass", "tvis", "weight"]:
                      maps[key] = hp.read_map(obs_cond_path[key])[pixels]
@@ -229,11 +230,11 @@ class ObsCondition(Degrader):
                 # copy all other lsst_error_model parameters supplied
                 maps[key] = obs_cond_path[key]
         
-        if "nVisYr" in obs_cond_path.keys():
-            if "nYrObs" not in obs_cond_path.keys():
+        if "nVisYr" in list(obs_cond_path.keys()):
+            if "nYrObs" not in list(obs_cond_path.keys()):
                 # Set to default:
                 maps["nYrObs"]=10.
-            if "nVisYr_tot" not in obs_cond_path.keys():
+            if "nVisYr_tot" not in list(obs_cond_path.keys()):
                 # Set to default:
                 obs_cond_path["nVisYr_tot"] = True
             if  obs_cond_path["nVisYr_tot"] == True:
@@ -247,12 +248,36 @@ class ObsCondition(Degrader):
     def get_pixel_conditions(self, 
                              pixel: int
                             ) -> dict:
+        obs_cond_keys = [
+            "m5",
+            "nVisYr",
+            "airmass",
+            "gamma",
+            "msky",
+            "theta",
+            "km",
+            "tvis",
+        ]
+        
         allpix = self.maps["pixels"]
-        obs_conditions = {}
         ind = allpix==pixel
+        
+        obs_conditions = {}
         for key in (self.maps).keys():
-            if key not in ["pixels","weights"]:
-                obs_conditions[key] = self.maps[key][ind]
+            # For keys that may contain the survey condition maps
+            if key in obs_cond_keys:
+                # band-independent keys:
+                if key in ["airmass", "tvis"]:
+                     obs_conditions[key] = float(self.maps[key][ind])
+                # band-dependent keys:
+                else:
+                    obs_conditions[key] = {}
+                    for band in (self.maps[key]).keys():
+                        obs_conditions[key][band] = float(self.maps[key][band][ind])
+            # For other keys in LSSTErrorModel:
+            elif key not in ["pixels","weights"]:
+                obs_conditions[key] = self.maps[key]
+        # obs_conditions should now only contain the LSSTErrorModel keys
         return obs_conditions
     
     
@@ -263,8 +288,13 @@ class ObsCondition(Degrader):
         assign the pixels to the input catalog
         """
         pixels = self.maps["pixels"]
-        weights = self.maps["weights"]
+        if "weights" in list((self.maps).keys()):
+            weights = self.maps["weights"]
+        else:
+            weights = None
         assigned_pix = np.random.choice(pixels, size=len(catalog), replace=True, p=weights)
+        #make it a DataFrame object
+        assigned_pix = pd.DataFrame(assigned_pix, columns=["pixel"])
         catalog = pd.concat([catalog, assigned_pix], axis=1)
         
         return catalog
@@ -282,13 +312,22 @@ class ObsCondition(Degrader):
             obs_conditions = self.get_pixel_conditions(pixel)
 
             # calculate photometric errors for this pixel
-            obs_cat = LsstErrorModel(**obs_conditions)(pixel_cat)
-
+            errorModel = LsstErrorModel(**obs_conditions)
+            
+            # reset the index
+            index = pixel_cat.index
+            pixel_cat = pixel_cat.set_index(np.arange(len(pixel_cat)))
+            obs_cat = errorModel(pixel_cat, random_state=np.random.default_rng())
+            obs_cat = obs_cat.set_index(index)
+            
             # add this pixel catalog to the list
             pixel_cat_list.append(obs_cat)
 
         # recombine all the pixels into a single catalog
-        catalog = pd.concat([catalog, pixel_cat_list],axis=1)
+        catalog = pd.concat(pixel_cat_list)
+        
+        # sort index
+        catalog = catalog.sort_index()
 
         self.add_data("output", catalog)
         
@@ -301,7 +340,7 @@ class ObsCondition(Degrader):
         # start message
         printMsg = "Loaded observing conditions from configuration file: "
         
-        printMsg += self.obs_config_file
+        printMsg += self.config["obs_config_file"]
         
         return printMsg
     
