@@ -1,26 +1,31 @@
 ###Configuration file for reading in the observational condition maps###
-#Below is an exmaple for loading Y1 observational conditions from MAF maps:
-#Empty entries will fall back to default values provided in Table 2 of arXiv[0805.2366]
-#You can add all arguments needed for LSSTErrorModel
+#
+# Below is an exmaple for loading Y5 observational conditions from MAF maps:
+# Unprovided entries will fall back to default values provided in Table 2 of arXiv[0805.2366]
+# You can add all arguments needed for LSSTErrorModel
 
 ###Map information (shared by all input maps)###
-#nside of the healpix maps
+
+# - Nside of the healpix maps
 nside: 128
-#mask of the survey footprint
+
+# - Mask of the survey footprint
 mask: /global/cscratch1/sd/qhang/DESC_DC2_obs-dr6/obj_footprint_mask-nside-128.fits
 
 
 ###Survey information###
-#number of year of the observation
+
+# - Number of year of the observation
 nYrObs: 5.
-#Galaxy number density or weights to be used to assign pixels to sample galaxies
-#if empty, use uniform weighting
+
+# - Galaxy number density or weights to be used to assign pixels to sample galaxies
+#   Note: if empty, use uniform weighting
 #weight: /global/cscratch1/sd/qhang/DESC_DC2_obs-dr6/obj_counts-imagbins-nside-128.fits
 
 ###Survey property maps  (per band)###
 
 # - Five sigma depth for point source
-#notice if this is provided, all other rows will be ignored
+#   Note: if this is provided, all other rows will be ignored
 m5:
     u: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_CoaddM5_u_and_nightlt1825_HEAL.fits
     g: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_CoaddM5_g_and_nightlt1825_HEAL.fits
@@ -89,3 +94,24 @@ theta:
 #    i: None
 #    z: None
 #    y: None
+
+# - Time of exposure: default 30s
+#tvis: None
+    
+###All other LSSTErrorModel parameters goes here###
+
+#Cm: None
+#sigmaSys: None
+#sigLim: None
+#ndMode: None
+#ndFlag: None
+#absFlux: None
+#extendedType: None
+#aMin: None
+#aMax: None
+#majorCol: None
+#minorCol: None
+#decorrelate: None
+#highSNR: None
+#errLoc: None
+#renameDict: None
