@@ -155,31 +155,61 @@ class ObsCondition(Degrader):
         # the data type for its parameters,
         # so here we only check the additional 
         # parameters and the file paths
+        # nYrObs may be used below, so we
+        # check its type as well
         for key in obs_cond_path.keys():
             
-            # Check nside should be positive and powers of two
             if key == "nside":
+                # check if nside is integer
+                if not isinstance(obs_cond_path[key], int):
+                    raise TypeError("nside must be an integer.")
+                
+                # check if nside < 0
                 if obs_cond_path[key]<0:
                     raise ValueError("nside must be positive.")
-                elif np.log2(obs_cond_path[key]).is_integer() is not True:
+                
+                # check if nside is powers of two 
+                if not np.log2(obs_cond_path[key]).is_integer():
                     raise ValueError("nside must be powers of two.")
             
-            # Check if nVisYr_tot is boolean
             if key == "nVisYr_tot":
-                if type(obs_cond_path[key])!=bool:
-                    raise ValueError("nVisYr_tot must be boolean.")
+                # Check if nVisYr_tot is boolean
+                if not isinstance(obs_cond_path[key], bool):
+                    raise TypeError("nVisYr_tot must be a boolean.")
                     
-            # Check input paths exist
+            if key == "nYrObs":
+                if not isinstance(obs_cond_path[key], float):
+                    raise TypeError("nYrObs must be a float.")
+                    
             elif key in (obs_cond_keys + ["mask", "weight"]):
+                
                 # band-independent keys:
                 if key in ["airmass", "tvis", "mask", "weight"]:
-                    if os.path.exists(obs_cond_path[key]) is not True:
+                    
+                    # check if the input is a string
+                    if not isinstance(obs_cond_path[key], str):
+                        raise TypeError(f"{key} must be a string.")
+                        
+                    # check if the paths exist
+                    if not os.path.exists(obs_cond_path[key]):
                         raise ValueError("The following file is not found: "
                                         + obs_cond_path[key])
+                
                 # band-dependent keys
                 else:
+                    
+                    # they must be dictionaries:
+                    if not isinstance(obs_cond_path[key], dict):  # pragma: no cover
+                        raise TypeError(f"{key} must be a dictionary.")
+                        
                     for band in obs_cond_path[key].keys():
-                        if os.path.exists(obs_cond_path[key][band]) is not True:
+                        
+                        # check if the input is a string
+                        if not isinstance(obs_cond_path[key][band], str):
+                            raise TypeError(f"{key}['{band}'] must be a string.")
+                        
+                        # check if the paths exist
+                        if not os.path.exists(obs_cond_path[key][band]):
                             raise ValueError("The following file is not found: "
                                         + obs_cond_path[key][band])
     
