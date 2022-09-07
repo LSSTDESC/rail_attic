@@ -47,7 +47,18 @@ class RailStageBuild:
 
     def build(self, name):
         """Actually build the stage, this is called by the pipeline the stage
-        belongs to"""
+        belongs to
+        
+        Parameters
+        ----------
+        name : `str`
+            The name for this stage we are building
+
+        Returns
+        -------
+        stage : `RailStage`
+            The newly built stage 
+        """
         stage = self.stage_class.make_and_connect(name=name, **self._kwargs)
         return stage
 
@@ -131,14 +142,14 @@ class RailStage(PipelineStage):
     def make_and_connect(cls, **kwargs):
         """Make a stage and connects it to other stages
 
-        Parameters
-        ----------
-        connection : dict[str, DataHandle]
-            Input connections for this stage
-
-        Keywords
-        --------
-        Used to set stage configuration
+        Notes
+        -----
+        kwargs are used to set stage configuration, 
+        the should be key, value pairs, where the key 
+        is the parameter name and the value is value we want to assign
+        
+        The 'connections' keyword is special, it is a dict[str, DataHandle]
+        and should define the Input connections for this stage
 
         Returns
         -------
@@ -310,9 +321,8 @@ class RailStage(PipelineStage):
         tag : str
             The tag (from cls.inputs or cls.outputs) for this data
 
-        Keywords
-        --------
-        These will be passed to the Handle's iterator method
+        kwargs : dict[str, Any]
+            These will be passed to the Handle's iterator method
         """
         handle = self.get_handle(tag, allow_missing=True)
         if not handle.has_data:  #pragma: no cover

@@ -31,7 +31,11 @@ def one_algo(key, single_trainer, single_estimator, train_kwargs, estim_kwargs):
 
     pz = single_estimator.make_stage(name=key, **estim_kwargs)
     estim = pz.estimate(validation_data)
-
+    pz_2 = None
+    estim_2 = estim
+    pz_3 = None
+    estim_3 = estim
+ 
     copy_estim_kwargs = estim_kwargs.copy()
     model_file = copy_estim_kwargs.pop('model', 'None')
 
@@ -39,18 +43,12 @@ def one_algo(key, single_trainer, single_estimator, train_kwargs, estim_kwargs):
         copy_estim_kwargs['model'] = model_file
         pz_2 = single_estimator.make_stage(name=f"{pz.name}_copy", **copy_estim_kwargs)
         estim_2 = pz_2.estimate(validation_data)
-    else:
-        pz_2 = None
-        estim_2 = estim
 
     if single_trainer is not None and 'model' in single_trainer.output_tags():
         copy3_estim_kwargs = estim_kwargs.copy()
         copy3_estim_kwargs['model'] = train_pz.get_handle('model')
         pz_3 = single_estimator.make_stage(name=f"{pz.name}_copy3", **copy3_estim_kwargs)
         estim_3 = pz_3.estimate(validation_data)
-    else:
-        pz_3 = None
-        estim_3 = estim
 
     os.remove(pz.get_output(pz.get_aliased_tag('output'), final_name=True))
     if pz_2 is not None:

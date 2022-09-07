@@ -12,17 +12,17 @@ class SpecSelection(Degrader):
     The super class of spectroscopic selections.
     Parameters
     ----------
-    N_tot: integer, total number of down-sampled, spec-selected galaxies.\
-        If N_tot is greater than the number of spec-sepected galaxies, then\
+    N_tot: integer, total number of down-sampled, spec-selected galaxies.
+        If N_tot is greater than the number of spec-sepected galaxies, then
         it will be ignored.
     nondetect_val: value to be removed for non detects
     downsample: bool, if True, then downsample the pre-selected galaxies
         to N_tot galaxies.
     success_rate_dir: string, the path to the success rate files.
     percentile_cut: If using color-based redshift cut, percentile in redshifts above which redshifts will be cut from the sample. Default is 100 (no cut)
-    colnames: a dictionary that includes necessary columns\
-                         (magnitudes, colors and redshift) for selection. For magnitudes, the keys are ugrizy; for colors, the keys are, \
-                         for example, gr standing for g-r; for redshift, the key is 'redshift'.\
+    colnames: a dictionary that includes necessary columns
+                         (magnitudes, colors and redshift) for selection. For magnitudes, the keys are ugrizy; for colors, the keys are,
+                         for example, gr standing for g-r; for redshift, the key is 'redshift'.
     random_seed: random seed for reproducibility.
 
     """
@@ -38,7 +38,7 @@ class SpecSelection(Degrader):
                           percentile_cut=Param(int, 100, msg="cut redshifts above this percentile"),
                           colnames=Param(dict, {**{band: 'mag_' + band + '_lsst' for band in 'ugrizy'}, **{'redshift': 'redshift'}},
                                          msg="a dictionary that includes necessary columns\
-                         (magnitudes, colors and redshift) for selection. For magnitudes, the keys are ugrizy; for colors, the keys are, \
+                         (magnitudes, colors and redshift) for selection. For magnitudes, the keys are ugrizy; for colors, the keys are,\
                          for example, gr standing for g-r; for redshift, the key is 'redshift'"),
                          random_seed=Param(int, 42, msg="random seed for reproducibility"))
 
@@ -90,8 +90,7 @@ class SpecSelection(Degrader):
             if band not in self.config.colnames.keys():
                 continue
             colname = self.config.colnames[band]
-            self.mask &= (np.abs(data[colname]) < nondetect_val) & \
-                (~np.isnan(data[colname]))
+            self.mask &= (np.abs(data[colname]) < nondetect_val) & (~np.isnan(data[colname]))
 
     def downsampling_N_tot(self):
         """
@@ -185,11 +184,11 @@ class SpecSelection_BOSS(SpecSelection):
 
         print("Applying the selection from BOSS survey...")
         # cut quantities (unchanged)
-        c_p = 0.7 * (data[self.config.colnames['g']] - data[self.config.colnames['r']]) + 1.2 * \
+        c_p = 0.7 * (data[self.config.colnames['g']] - data[self.config.colnames['r']]) + 1.2 *\
             (data[self.config.colnames['r']] - data[self.config.colnames['i']] - 0.18)
-        c_r = (data[self.config.colnames['r']] - data[self.config.colnames['i']]) - \
+        c_r = (data[self.config.colnames['r']] - data[self.config.colnames['i']]) -\
             (data[self.config.colnames['g']] - data[self.config.colnames['r']]) / 4.0 - 0.18
-        d_r = (data[self.config.colnames['r']] - data[self.config.colnames['i']]) - \
+        d_r = (data[self.config.colnames['r']] - data[self.config.colnames['i']]) -\
             (data[self.config.colnames['g']] - data[self.config.colnames['r']]) / 8.0
         # defining the LOWZ sample
         # we cannot apply the r_psf - r_cmod cut
@@ -244,7 +243,7 @@ class SpecSelection_DEEP2(SpecSelection):
         mask = (
             (data[self.config.colnames['r']] > 18.5) &
             (data[self.config.colnames['r']] < 24.1) & (  # 24.1
-                (data[self.config.colnames['g']] - data[self.config.colnames['r']] < 2.45 * \
+                (data[self.config.colnames['g']] - data[self.config.colnames['r']] < 2.45 *
                  (data[self.config.colnames['r']] - data[self.config.colnames['i']]) - 0.2976) |
                 # 2.45, 0.2976
                 (data[self.config.colnames['r']] - data[self.config.colnames['i']] > 1.1) |
@@ -418,9 +417,9 @@ class SpecSelection_zCOSMOS(SpecSelection):
             success_rate_dir, "zCOSMOS_success.txt"))
         ratio_list = np.zeros(len(pixels_y))
         for i, py in enumerate(pixels_y):
-            if (py >= rates.shape[0]) or \
-               (pixels_x[i] >= rates.shape[1]) or \
-               (py == 0) or \
+            if (py >= rates.shape[0]) or\
+               (pixels_x[i] >= rates.shape[1]) or\
+               (py == 0) or\
                (pixels_x[i] == 0):
                 ratio_list[i] = 0
             else:
