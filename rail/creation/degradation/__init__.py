@@ -6,3 +6,4 @@ from .lsst_error_model import *
 from .spectroscopic_degraders import *
 from .grid_selection import *
 from .spectroscopic_selections import *
+from .observing_condition_degrader import *
