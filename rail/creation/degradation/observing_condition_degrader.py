@@ -21,8 +21,7 @@ class ObsCondition(Degrader):
     Degrader that generates magnitude errors using LSSTErrorModel
     
     Example: 
-    error_model_param = ObsCondition(obs_config_file)
-    errModel = LSSTErrorModel(obs_cond = error_model_param)
+    errModel = ObsCondition(obs_config_file)
     data_with_errs = errModel(data)
     
     This function takes a set of observation condition maps and 
@@ -36,6 +35,8 @@ class ObsCondition(Degrader):
         A configuration file which specifies for each observational
         conditions listed in LSSTErrorModel, the directory of the 
         systematic maps to read in.
+    random_seed:
+        A random seed for reproducibility.
         
     Example config_file: see example_obs_config
     """
@@ -47,7 +48,8 @@ class ObsCondition(Degrader):
             str, os.path.join(os.path.dirname(__file__),
             "../../../examples/creation/data/example_obs_config.yml"),
             msg="The path to the directory containing the config file in yaml format."
-        )
+        ),
+        random_seed=Param(int, 42, msg="random seed for reproducibility"),
     )
     
     def __init__(self, args, comm=None):
@@ -322,7 +324,7 @@ class ObsCondition(Degrader):
             weights = self.maps["weights"]
         else:
             weights = None
-        assigned_pix = np.random.choice(pixels, size=len(catalog), replace=True, p=weights)
+        assigned_pix = self.rng.choice(pixels, size=len(catalog), replace=True, p=weights)
         #make it a DataFrame object
         assigned_pix = pd.DataFrame(assigned_pix, columns=["pixel"])
         catalog = pd.concat([catalog, assigned_pix], axis=1)
@@ -330,6 +332,11 @@ class ObsCondition(Degrader):
         return catalog
         
     def run(self):
+        """
+        Run the degrader.
+        """
+        self.rng = np.random.default_rng(seed=self.config["random_seed"])
+        
         catalog = self.get_data("input", allow_missing=True)
         
         # assign each galaxy to a pixel
@@ -347,7 +354,7 @@ class ObsCondition(Degrader):
             # reset the index
             index = pixel_cat.index
             pixel_cat = pixel_cat.set_index(np.arange(len(pixel_cat)))
-            obs_cat = errorModel(pixel_cat, random_state=np.random.default_rng())
+            obs_cat = errorModel(pixel_cat, random_state=self.rng)
             obs_cat = obs_cat.set_index(index)
             
             # add this pixel catalog to the list

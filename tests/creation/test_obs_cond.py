@@ -55,6 +55,24 @@ def test_ObsCondition_returns_correct_shape(data):
 
 # We can further test some functions e.g.
 # random seeds
+def test_ObsCondition_random_seed(data):
+    """Test control with random seeds."""
+    degrader1 = ObsCondition.make_stage(random_seed=0)
+    degrader2 = ObsCondition.make_stage(random_seed=0)
+    
+    # make sure setting the same seeds yields the same output
+    degraded_data1 = degrader1(data).data
+    degraded_data2 = degrader2(data).data
+    assert degraded_data1.equals(degraded_data2)
+
+    # make sure setting different seeds yields different output
+    degrader3 = ObsCondition.make_stage(random_seed=1)
+    degraded_data3 = degrader3(data).data.to_numpy()
+    assert not degraded_data1.equals(degraded_data3)
+    
+    os.remove(degrader3.get_output(degrader3.get_aliased_tag("output"), final_name=True))
+    #os.remove(degrader2.get_output(degrader2.get_aliased_tag("output"), final_name=True))
+    #os.remove(degrader3.get_output(degrader3.get_aliased_tag("output"), final_name=True))
 
 
 # Test for ValueError or TypeError
