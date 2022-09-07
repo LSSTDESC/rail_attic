@@ -4,8 +4,7 @@ import pytest
 import tables_io
 from pzflow import Flow
 from pzflow.examples import get_example_flow, get_galaxy_data
-from rail.creation.engines.flowEngine import (FlowCreator, FlowModeler,
-                                              FlowPosterior)
+from rail.creation.engines.flowEngine import FlowCreator, FlowModeler, FlowPosterior
 
 
 @pytest.fixture(scope="module")
@@ -26,14 +25,54 @@ def flow_file(tmp_path_factory):
     return str(file)
 
 
-def test_FlowModeler(catalog_file, tmp_path):
-    """Test that training a PZFlow Flow doesn't throw any errors."""
+def test_FlowModeler_mags(catalog_file, tmp_path):
+    """Test that training a PZFlow Flow doesn't throw any errors.
+
+    Don't calculate colors from the magnitudes.
+    """
     # set path for the trained flow
     trained_flow_path = tmp_path / "trained_flow.pzflow.pkl"
 
     # set the flow parameters
     flow_modeler_params = {
-        "name": "flow_modeler",
+        "name": "flow_modeler_mags",
+        "input": catalog_file,
+        "model": trained_flow_path,
+        "seed": 0,
+        "phys_cols": {"redshift": [0, 3]},
+        "phot_cols": {
+            "g": [16, 32],
+            "r": [15, 30],
+            "i": [15, 30],
+        },
+        "calc_colors": {},
+        "aliases": {
+            "input": "flowModeler_mags_input",
+            "model": "flowModeler_mags_model",
+        },
+    }
+
+    # create the stage to train the flow
+    flow_modeler = FlowModeler.make_stage(**flow_modeler_params)
+
+    # train the flow
+    flow_modeler.fit_model()
+
+    # load the flow
+    trained_flow = Flow(file=trained_flow_path)
+
+
+def test_FlowModeler_colors(catalog_file, tmp_path):
+    """Test that training a PZFlow Flow doesn't throw any errors.
+
+    Calculate colors from the magnitudes.
+    """
+    # set path for the trained flow
+    trained_flow_path = tmp_path / "trained_flow.pzflow.pkl"
+
+    # set the flow parameters
+    flow_modeler_params = {
+        "name": "flow_modeler_colors",
         "input": catalog_file,
         "model": trained_flow_path,
         "seed": 0,
@@ -44,7 +83,10 @@ def test_FlowModeler(catalog_file, tmp_path):
             "i": [15, 30],
         },
         "calc_colors": {"ref_column_name": "i"},
-        "aliases": {"input": "flowModeler_input", "model": "flowModeler_model"},
+        "aliases": {
+            "input": "flowModeler_colors_input",
+            "model": "flowModeler_colors_model",
+        },
     }
 
     # create the stage to train the flow
@@ -129,8 +171,8 @@ def test_FlowPosterior(catalog_file, flow_file, tmp_path):
         grid=grid,
         marg_rules={"flag": np.nan, "u": lambda row: np.linspace(25, 31, 10)},
         aliases={
-            "model": "flowPosterior1_model", 
-            "input": "flowPosterior1_input", 
+            "model": "flowPosterior1_model",
+            "input": "flowPosterior1_input",
             "output": "flowPosterior1_output",
         },
     )
@@ -148,8 +190,8 @@ def test_FlowPosterior(catalog_file, flow_file, tmp_path):
         grid=grid,
         marg_rules={"flag": np.nan, "u": lambda row: np.linspace(25, 31, 10)},
         aliases={
-            "model": "flowPosterior2_model", 
-            "input": "flowPosterior2_input", 
+            "model": "flowPosterior2_model",
+            "input": "flowPosterior2_input",
             "output": "flowPosterior1_output",
         },
     )

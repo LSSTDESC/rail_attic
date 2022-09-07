@@ -81,14 +81,14 @@ class Creator(RailStage):
             The object encapsulating the trained model.
         """
         model = kwargs.get("model", None)
-        if model is None or model == "None":
+        if model is None or model == "None":  # pragma: no cover
             self.model = None
             return self.model
         if isinstance(model, str):
             self.model = self.set_data("model", data=None, path=model)
             self.config["model"] = model
             return self.model
-        if isinstance(model, ModelHandle):
+        if isinstance(model, ModelHandle):  # pragma: no cover
             if model.has_path:
                 self.config["model"] = model.path
         self.model = self.set_data("model", model)
@@ -167,10 +167,10 @@ class PosteriorCalculator(RailStage):
             The object encapsulating the trained model.
         """
         model = kwargs.get("model", None)
-        if model is None or model == "None":
+        if model is None or model == "None":  # pragma: no cover
             self.model = None
             return self.model
-        if isinstance(model, str):
+        if isinstance(model, str):  # pragma: no cover
             self.model = self.set_data("model", data=None, path=model)
             self.config["model"] = model
             return self.model

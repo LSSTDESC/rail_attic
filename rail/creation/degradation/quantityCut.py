@@ -93,7 +93,7 @@ class QuantityCut(Degrader):
         # get overlap of columns from data and columns on which to make cuts
         columns = set(self.cuts.keys()).intersection(data.columns)
 
-        if len(columns) == 0:
+        if len(columns) == 0:  # pragma: no cover
             self.add_data("output", data)
         else:
             # generate a pandas query from the cuts
