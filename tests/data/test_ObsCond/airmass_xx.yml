@@ -1,0 +1,4 @@
+nside: 128
+mask: /global/cscratch1/sd/qhang/DESC_DC2_obs-dr6/obj_footprint_mask-nside-128.fits
+
+airmass: xx

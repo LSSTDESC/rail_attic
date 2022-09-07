@@ -1,0 +1,5 @@
+nside: -1
+mask: /global/cscratch1/sd/qhang/DESC_DC2_obs-dr6/obj_footprint_mask-nside-128.fits
+
+m5:
+  u: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_CoaddM5_u_and_nightlt1825_HEAL.fits

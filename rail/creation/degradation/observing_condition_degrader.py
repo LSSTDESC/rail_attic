@@ -21,8 +21,7 @@ class ObsCondition(Degrader):
     Degrader that generates magnitude errors using LSSTErrorModel
     
     Example: 
-    error_model_param = ObsCondition(obs_config_file)
-    errModel = LSSTErrorModel(obs_cond = error_model_param)
+    errModel = ObsCondition(obs_config_file)
     data_with_errs = errModel(data)
     
     This function takes a set of observation condition maps and 
@@ -36,6 +35,8 @@ class ObsCondition(Degrader):
         A configuration file which specifies for each observational
         conditions listed in LSSTErrorModel, the directory of the 
         systematic maps to read in.
+    random_seed:
+        A random seed for reproducibility.
         
     Example config_file: see example_obs_config
     """
@@ -47,7 +48,8 @@ class ObsCondition(Degrader):
             str, os.path.join(os.path.dirname(__file__),
             "../../../examples/creation/data/example_obs_config.yml"),
             msg="The path to the directory containing the config file in yaml format."
-        )
+        ),
+        random_seed=Param(int, 42, msg="random seed for reproducibility"),
     )
     
     def __init__(self, args, comm=None):
@@ -155,31 +157,61 @@ class ObsCondition(Degrader):
         # the data type for its parameters,
         # so here we only check the additional 
         # parameters and the file paths
+        # nYrObs may be used below, so we
+        # check its type as well
         for key in obs_cond_path.keys():
             
-            # Check nside should be positive and powers of two
             if key == "nside":
+                # check if nside is integer
+                if not isinstance(obs_cond_path[key], int):
+                    raise TypeError("nside must be an integer.")
+                
+                # check if nside < 0
                 if obs_cond_path[key]<0:
                     raise ValueError("nside must be positive.")
-                elif np.log2(obs_cond_path[key]).is_integer() is not True:
+                
+                # check if nside is powers of two 
+                if not np.log2(obs_cond_path[key]).is_integer():
                     raise ValueError("nside must be powers of two.")
             
-            # Check if nVisYr_tot is boolean
             if key == "nVisYr_tot":
-                if type(obs_cond_path[key])!=bool:
-                    raise ValueError("nVisYr_tot must be boolean.")
+                # Check if nVisYr_tot is boolean
+                if not isinstance(obs_cond_path[key], bool):
+                    raise TypeError("nVisYr_tot must be a boolean.")
                     
-            # Check input paths exist
+            if key == "nYrObs":
+                if not isinstance(obs_cond_path[key], float):
+                    raise TypeError("nYrObs must be a float.")
+                    
             elif key in (obs_cond_keys + ["mask", "weight"]):
+                
                 # band-independent keys:
                 if key in ["airmass", "tvis", "mask", "weight"]:
-                    if os.path.exists(obs_cond_path[key]) is not True:
+                    
+                    # check if the input is a string
+                    if not isinstance(obs_cond_path[key], str):
+                        raise TypeError(f"{key} must be a string.")
+                        
+                    # check if the paths exist
+                    if not os.path.exists(obs_cond_path[key]):
                         raise ValueError("The following file is not found: "
                                         + obs_cond_path[key])
+                
                 # band-dependent keys
                 else:
+                    
+                    # they must be dictionaries:
+                    if not isinstance(obs_cond_path[key], dict):  # pragma: no cover
+                        raise TypeError(f"{key} must be a dictionary.")
+                        
                     for band in obs_cond_path[key].keys():
-                        if os.path.exists(obs_cond_path[key][band]) is not True:
+                        
+                        # check if the input is a string
+                        if not isinstance(obs_cond_path[key][band], str):
+                            raise TypeError(f"{key}['{band}'] must be a string.")
+                        
+                        # check if the paths exist
+                        if not os.path.exists(obs_cond_path[key][band]):
                             raise ValueError("The following file is not found: "
                                         + obs_cond_path[key][band])
     
@@ -292,7 +324,7 @@ class ObsCondition(Degrader):
             weights = self.maps["weights"]
         else:
             weights = None
-        assigned_pix = np.random.choice(pixels, size=len(catalog), replace=True, p=weights)
+        assigned_pix = self.rng.choice(pixels, size=len(catalog), replace=True, p=weights)
         #make it a DataFrame object
         assigned_pix = pd.DataFrame(assigned_pix, columns=["pixel"])
         catalog = pd.concat([catalog, assigned_pix], axis=1)
@@ -300,6 +332,11 @@ class ObsCondition(Degrader):
         return catalog
         
     def run(self):
+        """
+        Run the degrader.
+        """
+        self.rng = np.random.default_rng(seed=self.config["random_seed"])
+        
         catalog = self.get_data("input", allow_missing=True)
         
         # assign each galaxy to a pixel
@@ -317,7 +354,7 @@ class ObsCondition(Degrader):
             # reset the index
             index = pixel_cat.index
             pixel_cat = pixel_cat.set_index(np.arange(len(pixel_cat)))
-            obs_cat = errorModel(pixel_cat, random_state=np.random.default_rng())
+            obs_cat = errorModel(pixel_cat, random_state=self.rng)
             obs_cat = obs_cat.set_index(index)
             
             # add this pixel catalog to the list
