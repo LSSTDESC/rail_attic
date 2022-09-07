@@ -12,15 +12,8 @@ from rail.core.data import DATA_STORE, TableHandle
 from rail.core.utilStages import ColumnMapper
 from rail.creation.degradation import *
 
-#aditional because I have not updated the package:
-import sys
-sys.path.insert(0,"/global/u2/q/qhang/desc/RAIL/rail/creation/degradation/")
-from observing_condition_degrader import ObsCondition
-
-
 # Here copied from test_degraders to
 # generate data:
-
 @pytest.fixture
 def data():
     """Some dummy data to use below."""
@@ -71,8 +64,6 @@ def test_ObsCondition_random_seed(data):
     assert not degraded_data1.equals(degraded_data3)
     
     os.remove(degrader3.get_output(degrader3.get_aliased_tag("output"), final_name=True))
-    #os.remove(degrader2.get_output(degrader2.get_aliased_tag("output"), final_name=True))
-    #os.remove(degrader3.get_output(degrader3.get_aliased_tag("output"), final_name=True))
 
 
 # Test for ValueError or TypeError
