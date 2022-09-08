@@ -4,7 +4,7 @@ import os
 
 import numpy as np
 from ceci.config import StageParameter as Param
-from rail.creation import Degrader
+from rail.creation.degrader import Degrader
 from scipy.interpolate import interp1d
 
 

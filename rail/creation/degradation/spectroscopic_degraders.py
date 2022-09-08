@@ -2,7 +2,7 @@
 
 import numpy as np
 import pandas as pd
-from rail.creation import Degrader
+from rail.creation.degrader import Degrader
 
 
 class LineConfusion(Degrader):

@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pickle
 import tables_io
-from rail.creation import Degrader
+from rail.creation.degrader import Degrader
 from ceci.config import StageParameter as Param
 
 

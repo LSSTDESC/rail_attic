@@ -2,9 +2,10 @@ import os
 
 import ceci
 import rail
+import numpy as np
 from rail.core.stage import RailStage
 from rail.creation.degradation import LSSTErrorModel, InvRedshiftIncompleteness, LineConfusion, QuantityCut
-from rail.creation.engines.flowEngine import FlowCreator, FlowEngine, FlowPosterior
+from rail.creation.engines.flowEngine import FlowCreator, FlowPosterior
 from rail.core.data import TableHandle
 from rail.core.stage import RailStage, RailPipeline
 from rail.core.utilStages import ColumnMapper, TableConverter
@@ -93,8 +94,8 @@ def test_golden_v2():
     rename_dict = {f'mag_{band}_lsst_err':f'mag_err_{band}_lsst' for band in bands}
     post_grid = [float(x) for x in np.linspace(0., 5, 21)]
 
-    pipe.flow_engine_test = FlowEngine.build(
-        flow=flow_file, n_samples=50,
+    pipe.flow_engine_test = FlowCreator.build(
+        model=flow_file, n_samples=50,
     )
       
     pipe.lsst_error_model_test = LSSTErrorModel.build(
@@ -114,7 +115,7 @@ def test_golden_v2():
         seed=12345,
     )
 
-    pipe.initialize(dict(flow=flow_file), dict(output_dir='.', log_dir='.', resume=False), None)
+    pipe.initialize(dict(model=flow_file), dict(output_dir='.', log_dir='.', resume=False), None)
     pipe.save('stage.yaml')
 
     pr = ceci.Pipeline.read('stage.yaml')
