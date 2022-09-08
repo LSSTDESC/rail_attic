@@ -4,7 +4,7 @@ Abstract base classes defining redshift estimations Informers and Estimators
 
 from rail.core.data import TableHandle, QPHandle, ModelHandle
 from rail.core.stage import RailStage
-
+import gc
 
 class CatEstimator(RailStage):
     """The base class for making photo-z posterior estimates from catalog-like inputs
@@ -100,6 +100,9 @@ class CatEstimator(RailStage):
             print(f"Process {self.rank} running estimator on chunk {s} - {e}")
             self._process_chunk(s, e, test_data, first)
             first = False
+            # Running garbage collection manually seems to be needed
+            # to avoid memory growth for some estimators
+            gc.collect()
         self._finalize_run()
 
     def _initialize_run(self):
