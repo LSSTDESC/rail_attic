@@ -11,13 +11,16 @@ from scipy.interpolate import interp1d
 class SpecSelection(Degrader):
     """
     The super class of spectroscopic selections.
+
     Parameters
     ----------
-    N_tot: integer, total number of down-sampled, spec-selected galaxies.
+    N_tot: integer
+        total number of down-sampled, spec-selected galaxies.
         If N_tot is greater than the number of spec-sepected galaxies, then
         it will be ignored.
     nondetect_val: value to be removed for non detects
-    downsample: bool, if True, then downsample the pre-selected galaxies
+    downsample: bool
+        If True, then downsample the pre-selected galaxies
         to N_tot galaxies.
     success_rate_dir: string, the path to the success rate files.
     percentile_cut: If using color-based redshift cut, percentile in redshifts above which redshifts will be cut from the sample. Default is 100 (no cut)
@@ -65,6 +68,7 @@ class SpecSelection(Degrader):
         # validate the settings
         self._validate_settings()
         self.mask = None
+        self.rng = None
 
     def _validate_settings(self):
         """

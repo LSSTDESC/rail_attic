@@ -19,6 +19,7 @@ class PointStatsEz(MetricEvaluator):
         ez: (pz-sz)/(1+sz), the quantity will be useful for
           calculating statistics
         """
+        super().__init__(None)
         self.pzs = pzvec
         self.szs = szvec
         ez = (pzvec - szvec) / (1. + szvec)
@@ -31,8 +32,6 @@ class PointStatsEz(MetricEvaluator):
 
 class PointSigmaIQR(PointStatsEz):
     """Calculate sigmaIQR"""
-    def __init__(self, pzvec, szvec):
-        super().__init__(pzvec, szvec)
 
     def evaluate(self):
         """Calculate the width of the e_z distribution
@@ -46,19 +45,14 @@ class PointSigmaIQR(PointStatsEz):
         x75, x25 = np.percentile(self.ez, [75., 25.])
         iqr = x75 - x25
         sigma_iqr = iqr / 1.349
-        self.sigma_iqr = sigma_iqr
-
         return sigma_iqr
 
 
 class PointBias(PointStatsEz):
-    """calculates the bias of the ez and ez_magcut samples.  In
-        keeping with the Science Book, this is just the median of the
-        ez values
-    """
-    def __init__(self, pzvec, szvec):
-        super().__init__(pzvec, szvec)
+    """calculates the bias of the ez and ez_magcut samples.
 
+    In keeping with the Science Book, this is just the median of the ez values
+    """
     def evaluate(self):
         """
         Returns:
@@ -68,15 +62,11 @@ class PointBias(PointStatsEz):
 
 
 class PointOutlierRate(PointStatsEz):
-    def __init__(self, pzvec, szvec):
-        """Calculates the catastrophic outlier rate, defined in the
-        Science Book as the number of galaxies with ez larger than
-        max(0.06,3sigma).  This keeps the fraction reasonable when
-        sigma is very small.
-        """
-        self.pzvec = pzvec
-        self.szvec = szvec
-        super().__init__(pzvec, szvec)
+    """Calculates the catastrophic outlier rate, defined in the
+    Science Book as the number of galaxies with ez larger than
+    max(0.06,3sigma).  This keeps the fraction reasonable when
+    sigma is very small.
+    """
 
     def evaluate(self):
         """
@@ -84,7 +74,7 @@ class PointOutlierRate(PointStatsEz):
         frac: fraction of catastrophic outliers for full sample
         """
         num = len(self.ez)
-        sig_iqr = PointSigmaIQR(self.pzvec, self.szvec).evaluate()
+        sig_iqr = PointSigmaIQR(self.pzs, self.szs).evaluate()
         threesig = 3.0 * sig_iqr
         cutcriterion = np.maximum(0.06, threesig)
         mask = (np.fabs(self.ez) > cutcriterion)
@@ -94,12 +84,10 @@ class PointOutlierRate(PointStatsEz):
 
 
 class PointSigmaMAD(PointStatsEz):
-    def __init__(self, pzvec, szvec):
-        """Function to calculate median absolute deviation and sigma
-        based on MAD (just scaled up by 1.4826) for the full and
-        magnitude trimmed samples of ez values
-        """
-        super().__init__(pzvec, szvec)
+    """Function to calculate median absolute deviation and sigma
+    based on MAD (just scaled up by 1.4826) for the full and
+    magnitude trimmed samples of ez values
+    """
 
     def evaluate(self):
         """

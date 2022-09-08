@@ -95,7 +95,7 @@ class FlowModeler(Modeler):
             mag_idx = [column_names.index(band) for band in phot_cols]
 
             # convert magnitude ranges to color ranges
-            mag_ranges = np.array([val for val in phot_cols.values()])
+            mag_ranges = np.array(list(phot_cols.values()))
             ref_mag_range = mag_ranges[
                 list(phot_cols).index(color_config["ref_column_name"])
             ]
@@ -152,7 +152,7 @@ class FlowModeler(Modeler):
         catalog = self.get_data("input")
 
         # train the flow
-        losses = self.flow.train(
+        _ = self.flow.train(
             catalog,
             epochs=self.config.num_training_epochs,
             verbose=True,
@@ -234,10 +234,8 @@ class FlowPosterior(PosteriorCalculator):
         Note: the callable for a given name must *always* return an array
         of the same length, regardless of the input row.
         DEFAULT: the default marg_rules dict is
-        {
-            "flag": np.nan,
-            "u": np.linspace(25, 31, 10),
-        }
+        {"flag": np.nan,
+        "u": np.linspace(25, 31, 10),}
     batch_size: int, default=None
         Size of batches in which to calculate posteriors. If None, all
         posteriors are calculated simultaneously. This is faster, but

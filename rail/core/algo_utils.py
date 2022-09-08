@@ -35,7 +35,7 @@ def one_algo(key, single_trainer, single_estimator, train_kwargs, estim_kwargs):
     estim_2 = estim
     pz_3 = None
     estim_3 = estim
- 
+
     copy_estim_kwargs = estim_kwargs.copy()
     model_file = copy_estim_kwargs.pop('model', 'None')
 
