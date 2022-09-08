@@ -4,7 +4,7 @@ from numbers import Number
 from typing import Iterable, List, Optional, Tuple
 
 import numpy as np
-from rail.creation.degradation import Degrader
+from rail.creation.degrader import Degrader
 
 
 class LSSTErrorModel(Degrader):

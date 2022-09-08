@@ -1,10 +1,11 @@
 import os
-import numpy as np
+
 import ceci
 import rail
+import numpy as np
 from rail.core.stage import RailStage
 from rail.creation.degradation import LSSTErrorModel, InvRedshiftIncompleteness, LineConfusion, QuantityCut
-from rail.creation.engines.flowEngine import FlowEngine, FlowPosterior
+from rail.creation.engines.flowEngine import FlowCreator, FlowPosterior
 from rail.core.data import TableHandle
 from rail.core.stage import RailStage, RailPipeline
 from rail.core.utilStages import ColumnMapper, TableConverter
@@ -17,50 +18,54 @@ def test_goldenspike():
     DS.clear()
     
     flow_file = os.path.join(RAILDIR, 'examples/goldenspike/data/pretrained_flow.pkl')
+    print("\n\n\n\n\n\n\n\n\n", flow_file, "\n\n\n\n\n\n\n\n\n")
+
     bands = ['u','g','r','i','z','y']
     band_dict = {band:f'mag_{band}_lsst' for band in bands}
     rename_dict = {f'mag_{band}_lsst_err':f'mag_err_{band}_lsst' for band in bands}
     post_grid = [float(x) for x in np.linspace(0., 5, 21)]
 
-    flow_engine_test = FlowEngine.make_stage(name='flow_engine_test', 
-                                             flow=flow_file, n_samples=50)
-      
-    lsst_error_model_test = LSSTErrorModel.make_stage(name='lsst_error_model_test',
-                                                    bandNames=band_dict)
-                
-    col_remapper_test = ColumnMapper.make_stage(name='col_remapper_test', hdf5_groupname='',
-                                                columns=rename_dict)
+    flow_creator_test = FlowCreator.make_stage(
+        name="flow_creator_test", model=flow_file, n_samples=50
+    )
 
-    flow_post_test = FlowPosterior.make_stage(name='flow_post_test',
-                                              column='redshift', flow=flow_file,
-                                              grid=post_grid)
+    lsst_error_model_test = LSSTErrorModel.make_stage(
+        name="lsst_error_model_test", bandNames=band_dict
+    )
 
-    table_conv_test = TableConverter.make_stage(name='table_conv_test', output_format='numpyDict', 
-                                                seed=12345)
+    col_remapper_test = ColumnMapper.make_stage(
+        name="col_remapper_test", hdf5_groupname="", columns=rename_dict
+    )
 
+    table_conv_test = TableConverter.make_stage(
+        name="table_conv_test", output_format="numpyDict", seed=12345
+    )
 
     pipe = ceci.Pipeline.interactive()
-    stages = [flow_engine_test, lsst_error_model_test, col_remapper_test, table_conv_test]
+    stages = [
+        flow_creator_test,
+        lsst_error_model_test,
+        col_remapper_test,
+        table_conv_test,
+    ]
     for stage in stages:
         pipe.add_stage(stage)
 
-
-    lsst_error_model_test.connect_input(flow_engine_test)
+    lsst_error_model_test.connect_input(flow_creator_test)
     col_remapper_test.connect_input(lsst_error_model_test)
-    #flow_post_test.connect_input(col_remapper_test, inputTag='input')
     table_conv_test.connect_input(col_remapper_test)
 
+    pipe.initialize(
+        dict(model=flow_file), dict(output_dir=".", log_dir=".", resume=False), None
+    )
 
-    pipe.initialize(dict(flow=flow_file), dict(output_dir='.', log_dir='.', resume=False), None)
+    pipe.save("stage.yaml")
 
-    pipe.save('stage.yaml')
-
-    pr = ceci.Pipeline.read('stage.yaml')
+    pr = ceci.Pipeline.read("stage.yaml")
     pr.run()
 
-
-    os.remove('stage.yaml')
-    os.remove('stage_config.yml')
+    os.remove("stage.yaml")
+    os.remove("stage_config.yml")
 
     outputs = pr.find_all_outputs()
     for output_ in outputs.values():
@@ -68,13 +73,12 @@ def test_goldenspike():
             os.remove(output_)
         except FileNotFoundError:
             pass
-    logfiles = [f"{stage.instance_name}.out" for stage in pr.stages] 
+    logfiles = [f"{stage.instance_name}.out" for stage in pr.stages]
     for logfile_ in logfiles:
         try:
             os.remove(logfile_)
         except FileNotFoundError:
             pass
-        
 
 
 def test_golden_v2():
@@ -90,8 +94,8 @@ def test_golden_v2():
     rename_dict = {f'mag_{band}_lsst_err':f'mag_err_{band}_lsst' for band in bands}
     post_grid = [float(x) for x in np.linspace(0., 5, 21)]
 
-    pipe.flow_engine_test = FlowEngine.build(
-        flow=flow_file, n_samples=50,
+    pipe.flow_engine_test = FlowCreator.build(
+        model=flow_file, n_samples=50,
     )
       
     pipe.lsst_error_model_test = LSSTErrorModel.build(
@@ -111,7 +115,7 @@ def test_golden_v2():
         seed=12345,
     )
 
-    pipe.initialize(dict(flow=flow_file), dict(output_dir='.', log_dir='.', resume=False), None)
+    pipe.initialize(dict(model=flow_file), dict(output_dir='.', log_dir='.', resume=False), None)
     pipe.save('stage.yaml')
 
     pr = ceci.Pipeline.read('stage.yaml')

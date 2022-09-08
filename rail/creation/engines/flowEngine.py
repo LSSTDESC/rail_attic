@@ -1,43 +1,186 @@
-""" This is the subclass of Engine that wraps a pzflow Flow so that it can
-used to generate synthetic data """
+"""This is the subclass of Creator that wraps a PZFlow Flow so that it can
+be used to generate synthetic data and calculate posteriors."""
 
 import numpy as np
 import qp
+from ceci.config import StageParameter as Param
+from pzflow import Flow
+from pzflow.bijectors import Chain, ColorTransform, RollingSplineCoupling, ShiftBounds
+from rail.core.data import FlowHandle, PqHandle, QPHandle, TableHandle
+from rail.creation.engine import Creator, Modeler, PosteriorCalculator
 
-from rail.core.data import PqHandle, QPHandle, FlowHandle
-from rail.creation.engines.engine import Engine, PosteriorEvaluator
 
+class FlowModeler(Modeler):
+    """Modeler wrapper for a PZFlow Flow object.
 
+    This class trains the flow.
+    """
 
-class FlowEngine(Engine):
-    """Engine wrapper for a pzflow Flow object."""
+    name = "FlowModeler"
+    inputs = [("input", TableHandle)]
+    outputs = [("model", FlowHandle)]
 
-    name = 'FlowEngine'
-    inputs = [('flow', FlowHandle)]
-    outputs = [('output', PqHandle)]
+    config_options = Modeler.config_options.copy()
+    config_options.update(
+        phys_cols=Param(
+            dict,
+            {"redshift": [0, 3]},
+            msg="Names of non-photometry columns and their corresponding [min, max] values.",
+        ),
+        phot_cols=Param(
+            dict,
+            {
+                "mag_u_lsst": [17, 35],
+                "mag_g_lsst": [16, 32],
+                "mag_r_lsst": [15, 30],
+                "mag_i_lsst": [15, 30],
+                "mag_z_lsst": [14, 29],
+                "mag_y_lsst": [14, 28],
+            },
+            msg="Names of photometry columns and their corresponding [min, max] values.",
+        ),
+        calc_colors=Param(
+            dict,
+            {"ref_column_name": "mag_i_lsst"},
+            msg=(
+                "Whether to internally calculate colors (if phot_cols are magnitudes). "
+                "Assumes that you want to calculate colors from adjacent columns in "
+                "phot_cols. If you do not want to calculate colors, set False. Else, "
+                "provide a dictionary {'ref_column_name': band}, where band is a string "
+                "corresponding to the column in phot_cols you want to save as the "
+                "overall galaxy magnitude."
+            ),
+        ),
+        spline_knots=Param(
+            int,
+            16,
+            msg="The number of spline knots in the normalizing flow.",
+        ),
+        num_training_epochs=Param(
+            int,
+            30,
+            msg="The number of training epochs.",
+        ),
+        seed=Param(
+            int,
+            0,
+            msg="The random seed for training.",
+        ),
+    )
 
     def __init__(self, args, comm=None):
-        """ Constructor
+        """Constructor
 
-        Does standard Engine initialization and also gets the `Flow` object
+        Does standard Modeler initialization.
         """
-        Engine.__init__(self, args, comm=comm)
-        if not isinstance(args, dict):
-            args = vars(args)
-        self.set_flow(**args)
+        Modeler.__init__(self, args, comm=comm)
 
-    def set_flow(self, **kwargs):
-        """ Set the flow, either from an object or by loading from a file """
-        flow = kwargs.get('flow')
-        if flow is None:  #pragma: no cover
-            return None
-        from pzflow import Flow
-        if isinstance(flow, Flow):
-            return self.set_data('flow', flow)
-        return self.set_data('flow', data=None, path=flow)
+        # get the columns we are modeling
+        phys_cols = self.config.phys_cols
+        phot_cols = self.config.phot_cols
+
+        # assemble the list of column names
+        column_names = list(phys_cols) + list(phot_cols)
+
+        # now let's set up the RQ-RSC
+        nlayers = len(column_names)  # can make configurable from yaml if wanted
+        transformed_dim = 1  # can make configurable from yaml if wanted
+        K = self.config.spline_knots
+        rsc = RollingSplineCoupling(nlayers, K=K, transformed_dim=transformed_dim)
+
+        if color_config := self.config["calc_colors"]:
+            # tell it which column to use as the reference magnitude
+            ref_idx = column_names.index(color_config["ref_column_name"])
+            # and which columns correspond to the magnitudes we want colors for
+            mag_idx = [column_names.index(band) for band in phot_cols]
+
+            # convert magnitude ranges to color ranges
+            mag_ranges = np.array(list(phot_cols.values()))
+            ref_mag_range = mag_ranges[
+                list(phot_cols).index(color_config["ref_column_name"])
+            ]
+            color_ranges = mag_ranges[:-1] - mag_ranges[1:, ::-1]
+            mins = (
+                [col_range[0] for col_range in phys_cols.values()]
+                + [ref_mag_range[0]]
+                + list(color_ranges[:, 0])
+            )
+            maxs = (
+                [col_range[1] for col_range in phys_cols.values()]
+                + [ref_mag_range[1]]
+                + list(color_ranges[:, 1])
+            )
+
+            # chain all the bijectors together
+            bijector = Chain(
+                ColorTransform(ref_idx, mag_idx),
+                ShiftBounds(mins, maxs),
+                rsc,
+            )
+        else:
+            # get the list of mins and maxes
+            mins = [
+                col_range[0]
+                for columns in [phys_cols, phot_cols]
+                for col_range in columns.values()
+            ]
+            maxs = [
+                col_range[1]
+                for columns in [phys_cols, phot_cols]
+                for col_range in columns.values()
+            ]
+
+            # chain the bijectors
+            bijector = Chain(
+                ShiftBounds(mins, maxs),
+                rsc,
+            )
+
+        # build the flow
+        self.flow = Flow(column_names, bijector=bijector)
 
     def run(self):
-        """ Run method
+        """Run method
+
+        Calls `Flow.train` to train a normalizing flow using PZFlow.
+
+        Notes
+        -----
+        Puts the data into the data store under this stages 'output' tag
+        """
+        # get the catalog
+        catalog = self.get_data("input")
+
+        # train the flow
+        _ = self.flow.train(
+            catalog,
+            epochs=self.config.num_training_epochs,
+            verbose=True,
+            seed=self.config.seed,
+        )
+
+        # save the flow
+        self.add_data("model", self.flow)
+
+        # TODO: NEED TO SAVE THE LOSSES SO WE CAN PLOT THEM
+
+
+class FlowCreator(Creator):
+    """Creator wrapper for a PZFlow Flow object."""
+
+    name = "FlowCreator"
+    inputs = [("model", FlowHandle)]
+    outputs = [("output", PqHandle)]
+
+    def __init__(self, args, comm=None):
+        """Constructor
+
+        Does standard Creator initialization and also gets the `Flow` object
+        """
+        Creator.__init__(self, args, comm=comm)
+
+    def run(self):
+        """Run method
 
         Calls `Flow.sample` to use the `Flow` object to generate photometric data
 
@@ -45,14 +188,18 @@ class FlowEngine(Engine):
         -----
         Puts the data into the data store under this stages 'output' tag
         """
-        flow = self.get_data('flow')
-        if flow is None:  #pragma: no cover
-            raise ValueError("Tried to run a FlowEngine before the Flow object is loaded")
-        self.add_data('output', flow.sample(self.config.n_samples, seed=self.config.seed))
+        flow = self.get_data("model")
+        if flow is None:  # pragma: no cover
+            raise ValueError(
+                "Tried to run a FlowCreator before the `Flow` model is loaded"
+            )
+        self.add_data(
+            "output", flow.sample(self.config.n_samples, seed=self.config.seed)
+        )
 
 
-class FlowPosterior(PosteriorEvaluator):
-    """Engine wrapper for a pzflow Flow object
+class FlowPosterior(PosteriorCalculator):
+    """PosteriorCalculator wrapper for a PZFlow Flow object
 
     Parameters
     ----------
@@ -87,10 +234,8 @@ class FlowPosterior(PosteriorEvaluator):
         Note: the callable for a given name must *always* return an array
         of the same length, regardless of the input row.
         DEFAULT: the default marg_rules dict is
-        {
-        "flag": np.nan,
-        "u": np.linspace(25, 31, 10),
-        }
+        {"flag": np.nan,
+        "u": np.linspace(25, 31, 10),}
     batch_size: int, default=None
         Size of batches in which to calculate posteriors. If None, all
         posteriors are calculated simultaneously. This is faster, but
@@ -100,44 +245,52 @@ class FlowPosterior(PosteriorEvaluator):
 
     """
 
-    name = 'FlowPosterior'
-    config_options = PosteriorEvaluator.config_options.copy()
-    config_options.update(grid=list,
-                          err_samples=10,
-                          seed=12345,
-                          marg_rules={"flag": np.nan, "mag_u_lsst": lambda row: np.linspace(25, 31, 10)},
-                          batch_size=10000,
-                          nan_to_zero=True)
+    name = "FlowPosterior"
+    config_options = PosteriorCalculator.config_options.copy()
+    config_options.update(
+        grid=list,
+        err_samples=10,
+        seed=12345,
+        marg_rules={"flag": np.nan, "mag_u_lsst": lambda row: np.linspace(25, 31, 10)},
+        batch_size=10000,
+        nan_to_zero=True,
+    )
 
-    inputs = [('flow', FlowHandle),
-              ('input', PqHandle)]
-    outputs = [('output', QPHandle)]
+    inputs = [("model", FlowHandle), ("input", PqHandle)]
+    outputs = [("output", QPHandle)]
 
     def __init__(self, args, comm=None):
-        """ Constructor
+        """Constructor
 
-        Does standard Engine initialization and also gets the `Flow` object
+        Does standard PosteriorCalculator initialization
         """
-        PosteriorEvaluator.__init__(self, args, comm=comm)
+        PosteriorCalculator.__init__(self, args, comm=comm)
 
     def run(self):
-        """ Run method
+        """Run method
 
-        Calls `Flow.posterior` to use the `Flow` object to get the posterior disrtibution
+        Calls `Flow.posterior` to use the `Flow` object to get the posterior
+        distribution.
 
         Notes
         -----
         Get the input data from the data store under this stages 'input' tag
         Puts the data into the data store under this stages 'output' tag
         """
+        # pull out the flow and the data we want posteriors for
+        data = self.get_data("input")
+        flow = self.get_data("model")
 
-        data = self.get_data('input')
-        flow = self.get_data('flow')
-        if self.config.marg_rules is None:  #pragma: no cover
-            marg_rules = {"flag": np.nan, "mag_u_lsst": lambda row: np.linspace(25, 31, 10)}
+        # if no marginalization rules are set, use default values
+        if self.config.marg_rules is None:  # pragma: no cover
+            marg_rules = {
+                "flag": np.nan,
+                "mag_u_lsst": lambda row: np.linspace(25, 31, 10),
+            }
         else:
             marg_rules = self.config.marg_rules
 
+        # use the PZFlow normalizing flow to calculate posteriors
         pdfs = flow.posterior(
             inputs=data,
             column=self.config.column,
@@ -149,5 +302,9 @@ class FlowPosterior(PosteriorEvaluator):
             nan_to_zero=self.config.nan_to_zero,
         )
 
-        ensemble = qp.Ensemble(qp.interp, data={"xvals": self.config.grid, "yvals": pdfs})
-        self.add_data('output', ensemble)
+        # save the posteriors in a qp ensemble
+        ensemble = qp.Ensemble(
+            qp.interp, data={"xvals": self.config.grid, "yvals": pdfs}
+        )
+
+        self.add_data("output", ensemble)

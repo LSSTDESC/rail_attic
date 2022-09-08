@@ -125,6 +125,7 @@ class NZDir(CatEstimator):
         self.szusecols = None
         self.szweights = None
         self.sz_mag_data = None
+        self.bincents = None
         CatEstimator.__init__(self, args, comm=comm)
 
     def open_model(self, **kwargs):
