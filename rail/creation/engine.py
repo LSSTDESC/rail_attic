@@ -84,7 +84,7 @@ class Creator(RailStage):
         if model is None or model == "None":  # pragma: no cover
             self.model = None
             return self.model
-        if isinstance(model, str):
+        if isinstance(model, str):  # pragma: no cover
             self.model = self.set_data("model", data=None, path=model)
             self.config["model"] = model
             return self.model
@@ -174,7 +174,7 @@ class PosteriorCalculator(RailStage):
             self.model = self.set_data("model", data=None, path=model)
             self.config["model"] = model
             return self.model
-        if isinstance(model, ModelHandle):
+        if isinstance(model, ModelHandle):  # pragma: no cover
             if model.has_path:
                 self.config["model"] = model.path
         self.model = self.set_data("model", model)
