@@ -3,21 +3,26 @@ import os
 import ceci
 import rail
 from rail.core.stage import RailStage
+from rail.creation.degradation import LSSTErrorModel, InvRedshiftIncompleteness, LineConfusion, QuantityCut
+from rail.creation.engines.flowEngine import FlowCreator, FlowEngine, FlowPosterior
+from rail.core.data import TableHandle
+from rail.core.stage import RailStage, RailPipeline
 from rail.core.utilStages import ColumnMapper, TableConverter
-from rail.creation.degradation import LSSTErrorModel
-from rail.creation.engines.flowEngine import FlowCreator
+from rail.core.utils import RAILDIR
 
 
 def test_goldenspike():
     DS = RailStage.data_store
     DS.__class__.allow_overwrite = True
-
-    RAIL_DIR = os.path.join(os.path.dirname(rail.__file__), "..")
-    flow_file = os.path.join(RAIL_DIR, "examples/goldenspike/data/pretrained_flow.pkl")
+    DS.clear()
+    
+    flow_file = os.path.join(RAILDIR, 'examples/goldenspike/data/pretrained_flow.pkl')
     print("\n\n\n\n\n\n\n\n\n", flow_file, "\n\n\n\n\n\n\n\n\n")
-    bands = ["u", "g", "r", "i", "z", "y"]
-    band_dict = {band: f"mag_{band}_lsst" for band in bands}
-    rename_dict = {f"mag_{band}_lsst_err": f"mag_err_{band}_lsst" for band in bands}
+
+    bands = ['u','g','r','i','z','y']
+    band_dict = {band:f'mag_{band}_lsst' for band in bands}
+    rename_dict = {f'mag_{band}_lsst_err':f'mag_err_{band}_lsst' for band in bands}
+    post_grid = [float(x) for x in np.linspace(0., 5, 21)]
 
     flow_creator_test = FlowCreator.make_stage(
         name="flow_creator_test", model=flow_file, n_samples=50
@@ -73,3 +78,44 @@ def test_goldenspike():
             os.remove(logfile_)
         except FileNotFoundError:
             pass
+
+
+def test_golden_v2():
+
+    DS = RailStage.data_store
+    DS.__class__.allow_overwrite = True
+    DS.clear()
+    pipe = RailPipeline()
+
+    flow_file = os.path.join(RAILDIR, 'examples/goldenspike/data/pretrained_flow.pkl')
+    bands = ['u','g','r','i','z','y']
+    band_dict = {band:f'mag_{band}_lsst' for band in bands}
+    rename_dict = {f'mag_{band}_lsst_err':f'mag_err_{band}_lsst' for band in bands}
+    post_grid = [float(x) for x in np.linspace(0., 5, 21)]
+
+    pipe.flow_engine_test = FlowEngine.build(
+        flow=flow_file, n_samples=50,
+    )
+      
+    pipe.lsst_error_model_test = LSSTErrorModel.build(
+        connections=dict(input=pipe.flow_engine_test.io.output),
+        bandNames=band_dict,
+    )
+                
+    pipe.col_remapper_test = ColumnMapper.build(
+        connections=dict(input=pipe.lsst_error_model_test.io.output),
+        hdf5_groupname='',
+        columns=rename_dict,
+    )
+
+    pipe.table_conv_test = TableConverter.build(
+        connections=dict(input=pipe.col_remapper_test.io.output),
+        output_format='numpyDict', 
+        seed=12345,
+    )
+
+    pipe.initialize(dict(flow=flow_file), dict(output_dir='.', log_dir='.', resume=False), None)
+    pipe.save('stage.yaml')
+
+    pr = ceci.Pipeline.read('stage.yaml')
+    pr.run()

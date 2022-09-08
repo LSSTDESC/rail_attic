@@ -59,10 +59,11 @@ class LSSTErrorModel(Degrader):
         - nVisYr
         - gamma
         - the single-visit 5-sigma limiting magnitude. You can do this either by
-            (1) explicitly providing it in the m5 dictionary, or
-            (2) by adding the corresponding parameters to Cm, msky, theta,
-            and km, in which case the limiting magnitude will be calculated
-            for you, using Eq. 6 from the LSST Overview Paper.
+          (1) explicitly providing it in the m5 dictionary, or
+          (2) by adding the corresponding parameters to Cm, msky, theta,
+          and km, in which case the limiting magnitude will be calculated
+          for you, using Eq. 6 from the LSST Overview Paper.
+
     Note if for any bands, you explicitly pass a limiting magnitude in the
     m5 dictionary, the model will use the explicitly passed value,
     regardless of the values in Cm, msky, theta, and km.

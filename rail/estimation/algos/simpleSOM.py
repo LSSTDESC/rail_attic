@@ -74,8 +74,8 @@ class Inform_SimpleSOMSummarizer(CatInformer):
     `nondetect_val` dictionary that will replace
     nondetections with the nondetect_val values!
 
-    Returns:
-    --------
+    Returns
+    -------
     model: pickle file
       pickle file containing the `minisom` SOM object that
     will be used by the estimation/summarization stage
@@ -174,8 +174,8 @@ class SimpleSOMSummarizer(SZPZSummarizer):
     Some iteration on data cuts may be necessary to
     remove/mitigate these 'uncovered' objects.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     zmin: float
       min redshift for z grid
     zmax: float
@@ -192,8 +192,9 @@ class SimpleSOMSummarizer(SZPZSummarizer):
       column name of the spectroscopic weight column.  If no weights are to be used, set to ''
     nsamples: int
       number of bootstrap spec-z samples to generate
-    Returns:
-    --------
+
+    Returns
+    -------
     qp_ens: qp Ensemble
       ensemble of bootstrap realizations of the estimated N(z) for the input photometric data
     """

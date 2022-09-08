@@ -21,9 +21,9 @@ class SpecSelection(Degrader):
         to N_tot galaxies.
     success_rate_dir: string, the path to the success rate files.
     percentile_cut: If using color-based redshift cut, percentile in redshifts above which redshifts will be cut from the sample. Default is 100 (no cut)
-    colnames: a dictionary that includes necessary columns\
-                         (magnitudes, colors and redshift) for selection. For magnitudes, the keys are ugrizy; for colors, the keys are, \
-                         for example, gr standing for g-r; for redshift, the key is 'redshift'.\
+    colnames: a dictionary that includes necessary columns
+                         (magnitudes, colors and redshift) for selection. For magnitudes, the keys are ugrizy; for colors, the keys are,
+                         for example, gr standing for g-r; for redshift, the key is 'redshift'.
     random_seed: random seed for reproducibility.
 
     """
@@ -275,8 +275,11 @@ class SpecSelection_DEEP2(SpecSelection):
         Applying DEEP2 photometric cut based on Newman+13.
         This modified selection gives the best match to the data n(z) with
         its cut at z~0.75 and the B-R/R-I distribution (Newman+13, Fig. 12)
-        NOTE: We cannot apply the surface brightness cut and do not apply the
-              Gaussian weighted sampling near the original colour cuts.
+
+        Notes
+        -----
+        We cannot apply the surface brightness cut and do not apply the
+        Gaussian weighted sampling near the original colour cuts.
         """
         mask = (
             (data[self.config.colnames["r"]] > 18.5)
@@ -361,9 +364,10 @@ class SpecSelection_VVDSf02(SpecSelection):
     def photometryCut(self, data):
         """
         Photometric cut of VVDS 2h-field based on LeFèvre+05.
-        NOTE: The oversight of 1.0 magnitudes on the bright end misses 0.2 %
-               of galaxies.
-        update the internal state
+
+        Notes
+        -----
+        The oversight of 1.0 magnitudes on the bright end misses 0.2% of galaxies.
         """
         mask = (data[self.config.colnames["i"]] > 17.5) & (
             data[self.config.colnames["i"]] < 24.0
@@ -374,9 +378,13 @@ class SpecSelection_VVDSf02(SpecSelection):
     def speczSuccess(self, data):
         """
         Success rate of VVDS 2h-field
-        NOTE: We use a redshift-based and I-band based success rate
-               independently here since we do not know their correlation,
-               which makes the success rate worse than in reality.
+
+        Notes
+        -----
+        We use a redshift-based and I-band based success rate
+        independently here since we do not know their correlation,
+        which makes the success rate worse than in reality.
+
         Spec-z success rate as function of i_AB read of Figure 16 in
         LeFevre+05 for the VVDS 2h field. Values are binned in steps of
         0.5 mag with the first starting at 17 and the last bin ending at 24.

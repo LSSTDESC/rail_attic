@@ -6,44 +6,30 @@ install_requires = [
     "numpy",
     "pandas>=1.1",
     "tables-io>=0.7.5",
-    "ceci",
+    "ceci>=1.10.1",
+    "pyyaml",
+    "minisom",
+    "scipy>=1.9.0",
+    "pz-hyperbolic-temp",
     "qp-prob",
 ]
 
 # dependencies for the core module
-core_extras = ["hyperbolic @ git+https://github.com/jlvdb/hyperbolic"]
+core_extras = []
 
 # dependencies for the Creation module
 creation_extras = ["pzflow"]
 
 # dependencies required for all estimators in the Estimation module
-estimation_extras = [
-    "matplotlib",
-    "minisom",
-    "pyarrow",
-    "pyyaml",
-    "scipy>=1.9.0",
-    "tables",
-]
+estimation_extras = []
+
 # dependencies for specific estimators in the Estimation module
 estimation_codes = {
-    "bpz": ["DESC_BPZ @ git+https://github.com/LSSTDESC/DESC_BPZ"],
-    "flex": ["FlexCode[all]"],
-    "NN": ["scikit-learn>=1.0"],
+    "NN": ["sklearn"],
 }
-# dependencies for Delight, separate out because it can be a
-# pain to install on Mac due to dropped default openmp
-delight_extras = [
-    "coloredlogs",
-    "corner",
-    "cython",
-    "emcee",
-    "delight @ git+https://github.com/LSSTDESC/Delight",
-]
-
 
 # dependencies for the Evaluation module
-evaluation_extras = ["seaborn"]
+evaluation_extras = []
 
 
 # compile the extras_require dictionary
@@ -53,7 +39,6 @@ extras_require["creation"] = creation_extras
 extras_require["estimation"] = estimation_extras + list(
     set(sum(estimation_codes.values(), []))
 )
-extras_require["delight"] = delight_extras
 for key, values in estimation_codes.items():
     extras_require[key] = estimation_extras + values
 extras_require["evaluation"] = evaluation_extras
@@ -68,14 +53,12 @@ extras_require["base"] = list(
     )
 )
 
-extras_require["all"] = extras_require["full"] = extras_require["Full"] = list(
-    set((extras_require["base"] + extras_require["delight"]))
-)
+extras_require["all"] = extras_require["full"] = extras_require["Full"] = extras_require["base"]
 
 
 # setup the rail package!
 setup(
-    name="rail",
+    name="pz-rail",
     author="The LSST DESC PZ WG",
     author_email="aimalz@nyu.edu",
     packages=find_namespace_packages(),
@@ -96,9 +79,9 @@ setup(
             "*.pkl",
         ],
         "tests": ["*.hdf5", "*.yaml", "*.columns"],
-        "rail/estimation/data/SED": ["*.sed", "*.list"],
-        "rail/estimation/data/FILTER": ["*.res"],
-        "rail/estimation/data/AB": ["*.AB"],
+        "examples/estimation/data/SED": ["*.list"],
+        "examples/estimation/data/AB": ["*.txt"],
+        "examples/estimation/data/FILTER": ["*.res", "*.txt"],
         "examples/goldenspike/data": ["*.pkl"],
     },
     include_package_data=True,
@@ -108,17 +91,15 @@ setup(
     long_description=open("README.md").read(),
     classifiers=[
         "Development Status :: 4 - Beta",
-        "License :: OSI Approved :: BSD 3-Clause",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
     ],
-    entry_points={"console_scripts": ["rail=rail.main:main"]},
     install_requires=install_requires,
     extras_require=extras_require,
     python_requires=">=3.8",
     setup_requires=["setuptools_scm", "pytest-runner"],
-    use_scm_version={"write_to": "rail/_version.py"},
+    use_scm_version={"write_to": "rail/core/_version.py"},
     tests_require=["pytest"],
 )

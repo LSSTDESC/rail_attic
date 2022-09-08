@@ -35,7 +35,7 @@ copyright = '2019-2021, LSST DESC RAIL Contributors'
 author = 'LSST DESC RAIL Contributors'
 
 # The short X.Y version
-from rail import _version
+from rail.core import _version
 version = "%i.%i" % (_version.version_tuple[0], _version.version_tuple[1])
 # The full version, including alpha/beta/rc tags
 release = _version.version
@@ -200,7 +200,7 @@ def run_apidoc(_):
     cur_dir = os.path.normpath(os.path.dirname(__file__))
     output_path = os.path.join(cur_dir, 'api')
     modules = os.path.normpath(os.path.join(cur_dir, "../rail"))
-    paramlist = ['--separate', '--no-toc', '-f', '-M', '-o', output_path, modules]
+    paramlist = ['--separate', '--implicit-namespaces', '--no-toc', '-f', '-M', '-o', output_path, modules]
     apidoc_main(paramlist)
 
 def setup(app):
