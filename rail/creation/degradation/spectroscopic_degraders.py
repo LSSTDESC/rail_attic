@@ -8,12 +8,15 @@ from rail.creation.degradation import Degrader
 class LineConfusion(Degrader):
     """Degrader that simulates emission line confusion.
 
-    Example: degrader = LineConfusion(true_wavelen=3727,
-                                      wrong_wavelen=5007,
-                                      frac_wrong=0.05)
+    .. code-block:: python
+
+       Example: degrader = LineConfusion(true_wavelen=3727,
+                                         wrong_wavelen=5007,
+                                         frac_wrong=0.05)
+
     is a degrader that misidentifies 5% of OII lines (at 3727 angstroms)
     as OIII lines (at 5007 angstroms), which results in a larger
-    spectroscopic redshift .
+    spectroscopic redshift.
 
     Note that when selecting the galaxies for which the lines are confused,
     the degrader ignores galaxies for which this line confusion would result

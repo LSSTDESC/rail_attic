@@ -5,6 +5,7 @@ import pickle
 import numpy as np
 import pandas as pd
 from types import GeneratorType
+from rail.core.utils import RAILDIR
 from rail.core.stage import RailStage
 from rail.core.data import DataStore, DataHandle, TableHandle, Hdf5Handle, FitsHandle, PqHandle, QPHandle, ModelHandle, FlowHandle
 from rail.core.utilStages import ColumnMapper, RowSelector, TableConverter
@@ -21,8 +22,7 @@ def test_util_stages():
 
     DS = RailStage.data_store
 
-    raildir = os.path.dirname(rail.__file__)
-    datapath = os.path.join(raildir, '..', 'tests', 'data', 'test_dc2_training_9816.pq')
+    datapath = os.path.join(RAILDIR, 'tests', 'data', 'test_dc2_training_9816.pq')
     
     data = DS.read_file('data', TableHandle, datapath)
 
@@ -49,7 +49,6 @@ def do_data_handle(datapath, handle_class):
 
     DS = RailStage.data_store
 
-    raildir = os.path.dirname(rail.__file__)
     th = handle_class('data', path=datapath)
 
     with pytest.raises(ValueError) as errinfo:
@@ -85,8 +84,7 @@ def do_data_handle(datapath, handle_class):
     
 
 def test_pq_handle():
-    raildir = os.path.dirname(rail.__file__)
-    datapath = os.path.join(raildir, '..', 'tests', 'data', 'test_dc2_training_9816.pq')
+    datapath = os.path.join(RAILDIR, 'tests', 'data', 'test_dc2_training_9816.pq')
     handle = do_data_handle(datapath, PqHandle)
     pqfile = handle.open()
     assert pqfile
@@ -96,8 +94,7 @@ def test_pq_handle():
 
     
 def test_qp_handle():
-    raildir = os.path.dirname(rail.__file__)
-    datapath = os.path.join(raildir, '..', 'tests', 'data', 'output_BPZ_lite.fits')
+    datapath = os.path.join(RAILDIR, 'tests', 'data', 'output_BPZ_lite.fits')
     handle = do_data_handle(datapath, QPHandle)
     qpfile = handle.open()
     assert qpfile
@@ -108,13 +105,12 @@ def test_qp_handle():
 
     
 def test_hdf5_handle():
-    raildir = os.path.dirname(rail.__file__)
-    datapath = os.path.join(raildir, '..', 'tests', 'data', 'test_dc2_training_9816.hdf5')
+    datapath = os.path.join(RAILDIR, 'tests', 'data', 'test_dc2_training_9816.hdf5')
     handle = do_data_handle(datapath, Hdf5Handle)
     with handle.open(mode='r') as f:
         assert f
         assert handle.fileObj is not None
-    datapath_chunked = os.path.join(raildir, '..', 'tests', 'data', 'test_dc2_training_9816_chunked.hdf5')
+    datapath_chunked = os.path.join(RAILDIR, 'tests', 'data', 'test_dc2_training_9816_chunked.hdf5')
     handle_chunked = Hdf5Handle("chunked", handle.data, path=datapath_chunked)
     from tables_io.arrayUtils import getGroupInputDataLength, sliceDict, getInitializationForODict
     num_rows = len(handle.data['photometry']['id'])
@@ -145,8 +141,7 @@ def test_hdf5_handle():
 
 
 def test_fits_handle():
-    raildir = os.path.dirname(rail.__file__)
-    datapath = os.path.join(raildir, '..', 'tests', 'data', 'output_BPZ_lite.fits')
+    datapath = os.path.join(RAILDIR, 'tests', 'data', 'output_BPZ_lite.fits')
     handle = do_data_handle(datapath, FitsHandle)
     fitsfile = handle.open()
     assert fitsfile
@@ -159,9 +154,8 @@ def test_model_handle():
     DS = RailStage.data_store
     DS.clear()
     
-    raildir = os.path.dirname(rail.__file__)
-    model_path = os.path.join(raildir, '..', 'examples', 'estimation', 'demo_snn.pkl')
-    model_path_copy = os.path.join(raildir, '..', 'examples', 'estimation', 'demo_snn_copy.pkl')
+    model_path = os.path.join(RAILDIR, 'examples', 'estimation', 'demo_snn.pkl')
+    model_path_copy = os.path.join(RAILDIR, 'examples', 'estimation', 'demo_snn_copy.pkl')
     mh = ModelHandle("model", path=model_path)
     mh2 = ModelHandle("model2", path=model_path)
     
@@ -182,9 +176,8 @@ def test_flow_handle():
     DS = RailStage.data_store
     DS.clear()
     
-    raildir = os.path.dirname(rail.__file__)
-    flow_path = os.path.join(raildir, '..', 'examples', 'goldenspike', 'data', 'pretrained_flow.pkl')
-    flow_path_copy = os.path.join(raildir, '..', 'examples', 'goldenspike', 'data', 'pretrained_flow_copy.pkl')
+    flow_path = os.path.join(RAILDIR, 'examples', 'goldenspike', 'data', 'pretrained_flow.pkl')
+    flow_path_copy = os.path.join(RAILDIR, 'examples', 'goldenspike', 'data', 'pretrained_flow_copy.pkl')
     fh = FlowHandle("flow", path=flow_path)
     fh2 = FlowHandle("flow2", path=flow_path)
     
@@ -208,8 +201,7 @@ def test_data_hdf5_iter():
     DS = RailStage.data_store
     DS.clear()
     
-    raildir = os.path.dirname(rail.__file__)
-    datapath = os.path.join(raildir, '..', 'tests', 'data', 'test_dc2_training_9816.hdf5')
+    datapath = os.path.join(RAILDIR, 'tests', 'data', 'test_dc2_training_9816.hdf5')
 
     #data = DS.read_file('data', TableHandle, datapath)
     th = Hdf5Handle('data', path=datapath)
@@ -236,11 +228,10 @@ def test_data_store():
     DS = RailStage.data_store
     DS.clear()
     DS.__class__.allow_overwrite = False
-    raildir = os.path.dirname(rail.__file__)
-    datapath_hdf5 = os.path.join(raildir, '..', 'tests', 'data', 'test_dc2_training_9816.hdf5')
-    datapath_pq = os.path.join(raildir, '..', 'tests', 'data', 'test_dc2_training_9816.pq')
-    datapath_hdf5_copy = os.path.join(raildir, '..', 'tests', 'data', 'test_dc2_training_9816_copy.hdf5')
-    datapath_pq_copy = os.path.join(raildir, '..', 'tests', 'data', 'test_dc2_training_9816_copy.pq')
+    datapath_hdf5 = os.path.join(RAILDIR, 'tests', 'data', 'test_dc2_training_9816.hdf5')
+    datapath_pq = os.path.join(RAILDIR, 'tests', 'data', 'test_dc2_training_9816.pq')
+    datapath_hdf5_copy = os.path.join(RAILDIR, 'tests', 'data', 'test_dc2_training_9816_copy.hdf5')
+    datapath_pq_copy = os.path.join(RAILDIR, 'tests', 'data', 'test_dc2_training_9816_copy.pq')
 
     DS.add_data('hdf5', None, Hdf5Handle, path=datapath_hdf5)
     DS.add_data('pq', None, PqHandle, path=datapath_pq)
@@ -303,8 +294,7 @@ def load_result_smoothing():
     DS.clear()
     DS.__class__.allow_overwrite = False
 
-    raildir = os.path.dirname(rail.__file__)
-    testFile = os.path.join(raildir, '..', 'tests', 'data', 'test_dc2_training_9816_smoothing_params.pq')
+    testFile = os.path.join(RAILDIR, 'tests', 'data', 'test_dc2_training_9816_smoothing_params.pq')
     return DS.read_file("test_data", TableHandle, testFile).data
 
 
@@ -345,7 +335,7 @@ def test_PhotormetryManipulator(hyperbolic_configuration):
     inst = HyperbolicSmoothing.make_stage(name='photormetry_manipulator', **config, is_flux=True)
     inst.set_data('input', dummy_data)
     data = inst.get_as_fluxes()
-    assert data.equals(dummy_data)
+    assert np.allclose(data, dummy_data)
 
 
 
@@ -354,14 +344,13 @@ def test_HyperbolicSmoothing(hyperbolic_configuration):
     DS.clear()
     DS.__class__.allow_overwrite = False
 
-    raildir = os.path.dirname(rail.__file__)
     test_data = DS.read_file(
         "test_data", TableHandle, os.path.join(
-            raildir, '..', 'tests', 'data', 'test_dc2_training_9816.pq')
+            RAILDIR, 'tests', 'data', 'test_dc2_training_9816.pq')
     ).data
     result_smoothing = DS.read_file(
         "result_smoothing", TableHandle, os.path.join(
-            raildir, '..', 'tests', 'data', 'test_dc2_training_9816_smoothing_params.pq')
+            RAILDIR, 'tests', 'data', 'test_dc2_training_9816_smoothing_params.pq')
     ).data
 
     stage_name, handle_name = 'hyperbolic_smoothing', 'parameters'
@@ -370,7 +359,7 @@ def test_HyperbolicSmoothing(hyperbolic_configuration):
     smooth = HyperbolicSmoothing.make_stage(name=stage_name, **hyperbolic_configuration)
     smooth.compute(test_data)
     smooth_params = smooth.get_handle(handle_name).data
-    assert smooth_params.equals(result_smoothing)
+    assert np.allclose(smooth_params, result_smoothing)
 
     os.remove(f'{handle_name}_{stage_name}.pq')
 
@@ -380,18 +369,17 @@ def test_HyperbolicMagnitudes(hyperbolic_configuration,):
     DS.clear()
     DS.__class__.allow_overwrite = False
 
-    raildir = os.path.dirname(rail.__file__)
     test_data = DS.read_file(
         "test_data", TableHandle, os.path.join(
-            raildir, '..', 'tests', 'data', 'test_dc2_training_9816.pq')
+            RAILDIR, 'tests', 'data', 'test_dc2_training_9816.pq')
     ).data
     result_smoothing = DS.read_file(
         "result_smoothing", TableHandle, os.path.join(
-            raildir, '..', 'tests', 'data', 'test_dc2_training_9816_smoothing_params.pq')
+            RAILDIR, 'tests', 'data', 'test_dc2_training_9816_smoothing_params.pq')
     ).data
     result_hyperbolic = DS.read_file(
         "result_hyperbolic", TableHandle, os.path.join(
-            raildir, '..', 'tests', 'data', 'test_dc2_training_9816_hyperbolic.pq')
+            RAILDIR, 'tests', 'data', 'test_dc2_training_9816_hyperbolic.pq')
     ).data
 
     stage_name, handle_name = 'hyperbolic_magnitudes', 'output'

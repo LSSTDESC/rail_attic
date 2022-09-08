@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pzflow
 from pzflow.examples import get_example_flow, get_galaxy_data
-from rail.creation.engines import FlowEngine, FlowPosterior
+from rail.creation.engines.flowEngine import FlowEngine, FlowPosterior
 from rail.core.data import TableHandle
 from rail.core.stage import RailStage
 

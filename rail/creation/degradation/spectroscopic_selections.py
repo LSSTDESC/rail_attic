@@ -20,9 +20,9 @@ class SpecSelection(Degrader):
         to N_tot galaxies.
     success_rate_dir: string, the path to the success rate files.
     percentile_cut: If using color-based redshift cut, percentile in redshifts above which redshifts will be cut from the sample. Default is 100 (no cut)
-    colnames: a dictionary that includes necessary columns\
-                         (magnitudes, colors and redshift) for selection. For magnitudes, the keys are ugrizy; for colors, the keys are, \
-                         for example, gr standing for g-r; for redshift, the key is 'redshift'.\
+    colnames: a dictionary that includes necessary columns
+                         (magnitudes, colors and redshift) for selection. For magnitudes, the keys are ugrizy; for colors, the keys are,
+                         for example, gr standing for g-r; for redshift, the key is 'redshift'.
     random_seed: random seed for reproducibility.
 
     """
@@ -38,7 +38,7 @@ class SpecSelection(Degrader):
                           percentile_cut=Param(int, 100, msg="cut redshifts above this percentile"),
                           colnames=Param(dict, {**{band: 'mag_' + band + '_lsst' for band in 'ugrizy'}, **{'redshift': 'redshift'}},
                                          msg="a dictionary that includes necessary columns\
-                         (magnitudes, colors and redshift) for selection. For magnitudes, the keys are ugrizy; for colors, the keys are, \
+                         (magnitudes, colors and redshift) for selection. For magnitudes, the keys are ugrizy; for colors, the keys are,\
                          for example, gr standing for g-r; for redshift, the key is 'redshift'"),
                          random_seed=Param(int, 42, msg="random seed for reproducibility"))
 
@@ -90,8 +90,7 @@ class SpecSelection(Degrader):
             if band not in self.config.colnames.keys():
                 continue
             colname = self.config.colnames[band]
-            self.mask &= (np.abs(data[colname]) < nondetect_val) & \
-                (~np.isnan(data[colname]))
+            self.mask &= (np.abs(data[colname]) < nondetect_val) & (~np.isnan(data[colname]))
 
     def downsampling_N_tot(self):
         """
@@ -185,11 +184,11 @@ class SpecSelection_BOSS(SpecSelection):
 
         print("Applying the selection from BOSS survey...")
         # cut quantities (unchanged)
-        c_p = 0.7 * (data[self.config.colnames['g']] - data[self.config.colnames['r']]) + 1.2 * \
+        c_p = 0.7 * (data[self.config.colnames['g']] - data[self.config.colnames['r']]) + 1.2 *\
             (data[self.config.colnames['r']] - data[self.config.colnames['i']] - 0.18)
-        c_r = (data[self.config.colnames['r']] - data[self.config.colnames['i']]) - \
+        c_r = (data[self.config.colnames['r']] - data[self.config.colnames['i']]) -\
             (data[self.config.colnames['g']] - data[self.config.colnames['r']]) / 4.0 - 0.18
-        d_r = (data[self.config.colnames['r']] - data[self.config.colnames['i']]) - \
+        d_r = (data[self.config.colnames['r']] - data[self.config.colnames['i']]) -\
             (data[self.config.colnames['g']] - data[self.config.colnames['r']]) / 8.0
         # defining the LOWZ sample
         # we cannot apply the r_psf - r_cmod cut
@@ -235,13 +234,16 @@ class SpecSelection_DEEP2(SpecSelection):
         Applying DEEP2 photometric cut based on Newman+13.
         This modified selection gives the best match to the data n(z) with
         its cut at z~0.75 and the B-R/R-I distribution (Newman+13, Fig. 12)
-        NOTE: We cannot apply the surface brightness cut and do not apply the
-              Gaussian weighted sampling near the original colour cuts.
+
+        Notes
+        -----
+        We cannot apply the surface brightness cut and do not apply the
+        Gaussian weighted sampling near the original colour cuts.
         """
         mask = (
             (data[self.config.colnames['r']] > 18.5) &
             (data[self.config.colnames['r']] < 24.1) & (  # 24.1
-                (data[self.config.colnames['g']] - data[self.config.colnames['r']] < 2.45 * \
+                (data[self.config.colnames['g']] - data[self.config.colnames['r']] < 2.45 *
                  (data[self.config.colnames['r']] - data[self.config.colnames['i']]) - 0.2976) |
                 # 2.45, 0.2976
                 (data[self.config.colnames['r']] - data[self.config.colnames['i']] > 1.1) |
@@ -301,10 +303,12 @@ class SpecSelection_VVDSf02(SpecSelection):
     def photometryCut(self, data):
         """
         Photometric cut of VVDS 2h-field based on LeFèvre+05.
-        NOTE: The oversight of 1.0 magnitudes on the bright end misses 0.2 %
-               of galaxies.
-        update the internal state
+
+        Notes
+        -----
+        The oversight of 1.0 magnitudes on the bright end misses 0.2% of galaxies.
         """
+        # update the internal state
         mask = (data[self.config.colnames['i']] > 17.5) & (data[self.config.colnames['i']] < 24.0)
         # 17.5, 24.0
         self.mask &= mask
@@ -312,9 +316,13 @@ class SpecSelection_VVDSf02(SpecSelection):
     def speczSuccess(self, data):
         """
         Success rate of VVDS 2h-field
-        NOTE: We use a redshift-based and I-band based success rate
-               independently here since we do not know their correlation,
-               which makes the success rate worse than in reality.
+
+        Notes
+        -----
+        We use a redshift-based and I-band based success rate
+        independently here since we do not know their correlation,
+        which makes the success rate worse than in reality.
+
         Spec-z success rate as function of i_AB read of Figure 16 in
         LeFevre+05 for the VVDS 2h field. Values are binned in steps of
         0.5 mag with the first starting at 17 and the last bin ending at 24.
@@ -409,9 +417,9 @@ class SpecSelection_zCOSMOS(SpecSelection):
             success_rate_dir, "zCOSMOS_success.txt"))
         ratio_list = np.zeros(len(pixels_y))
         for i, py in enumerate(pixels_y):
-            if (py >= rates.shape[0]) or \
-               (pixels_x[i] >= rates.shape[1]) or \
-               (py == 0) or \
+            if (py >= rates.shape[0]) or\
+               (pixels_x[i] >= rates.shape[1]) or\
+               (py == 0) or\
                (pixels_x[i] == 0):
                 ratio_list[i] = 0
             else:

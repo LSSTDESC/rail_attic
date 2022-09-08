@@ -14,7 +14,8 @@ class GridSelection(Degrader):
     into training and application samples. Option to implement a color-based redshift cut off in each pixel.
     Option of further degrading the training sample by limiting it to galaxies less than a redshift cutoff by specifying redshift_cut.
 
-    configuration options:
+    Parameters
+    ----------
     color_redshift_cut: True or false, implements color-based redshift cut. Default is True.
         If True, ratio_file must include second key called 'data' with magnitudes, colors and spec-z from the spectroscopic sample.
     percentile_cut: If using color-based redshift cut, percentile in spec-z above which redshifts will be cut from training sample. Default is 99.0

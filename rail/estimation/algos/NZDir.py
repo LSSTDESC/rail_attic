@@ -21,10 +21,11 @@ class Inform_NZDir(CatInformer):
     This inform stage just creates a nearneigh model
     of the spec-z data and some distances to N-th
     neighbor that will be used in the estimate stage.
-    Returns:
-    --------
-    model: dict
-      dictionary of nearest neigh model and params used by estimate
+
+    Notes
+    -----
+    This will create `model` a dictionary of the nearest neighboor model and params used by estimate
+
     """
     bands = ['u', 'g', 'r', 'i', 'z', 'y']
     default_usecols = [f"mag_{band}_lsst" for band in bands]
@@ -50,7 +51,7 @@ class Inform_NZDir(CatInformer):
 
         if self.config.hdf5_groupname:
             sz_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  # pragma:  no cover
+        else:  # pragma: no cover
             sz_data = self.get_data('input')
         # if no weights specified, which is the default
         # set all weights to 1.0 if weights not present in keys
@@ -85,17 +86,19 @@ class NZDir(CatEstimator):
     NearestNeighbors.  Very basic, we can probably
     create a more sophisticated SOM-based DIR method in
     the future
-    Parameters:
-    -----------
+    Parameters
+    ----------
     zmin: float
-      min redshift for z grid
+        min redshift for z grid
     zmax: float
-      max redshift for z grid
+        max redshift for z grid
     nzbins: int
-      number of bins in z grid
-    Returns:
+        number of bins in z grid
+
+    Returns
+    -------
     qp_ens: qp Ensemble
-      histogram Ensemble describing N(z) estimate
+        histogram Ensemble describing N(z) estimate
     """
 
     bands = ['u', 'g', 'r', 'i', 'z', 'y']
@@ -136,7 +139,7 @@ class NZDir(CatEstimator):
         rng = np.random.default_rng(seed=self.config.seed)
         if self.config.hdf5_groupname:
             test_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  # pragma:  no cover
+        else:  # pragma: no cover
             test_data = self.get_data('input')
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins + 1)
         self.bincents = 0.5 * (self.zgrid[1:] + self.zgrid[:-1])

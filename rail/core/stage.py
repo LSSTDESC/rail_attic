@@ -2,9 +2,87 @@
 
 import os
 from ceci.config import StageParameter as Param
-from ceci import PipelineStage
+from ceci import PipelineStage, MiniPipeline
 
 from rail.core.data import DATA_STORE, DataHandle
+
+
+class StageIO:
+    """A small utility class for Stage Input/ Output
+
+    This make it possible to get access to stage inputs and outputs
+    as attributes rather that by using the get_handle() method.
+
+    In short it maps
+
+    a_stage.get_handle('input', allow_missing=True) to a_stage.input
+
+    This allows users to be more concise when writing pipelines.
+    """
+    def __init__(self, parent):
+        self._parent = parent
+
+    def __getattr__(self, item):
+        return self._parent.get_handle(item, allow_missing=True)
+
+
+class RailStageBuild:
+    """A small utility class that building stages
+
+    This provides a mechasim to get the name of the stage from the
+    attribute name in the Pipeline the stage belongs to.
+
+    I.e., we can do:
+
+    a_pipe.stage_name = StageClass.build(...)
+
+    And get a stage named 'stage_name', rather than having to do:
+
+    a_stage = StageClass.make_stage(..)
+    a_pipe.add_stage(a_stage)
+    """
+    def __init__(self, stage_class, **kwargs):
+        self.stage_class = stage_class
+        self._kwargs = kwargs
+
+    def build(self, name):
+        """Actually build the stage, this is called by the pipeline the stage
+        belongs to
+        
+        Parameters
+        ----------
+        name : `str`
+            The name for this stage we are building
+
+        Returns
+        -------
+        stage : `RailStage`
+            The newly built stage 
+        """
+        stage = self.stage_class.make_and_connect(name=name, **self._kwargs)
+        return stage
+
+
+class RailPipeline(MiniPipeline):
+    """A pipeline intended for interactive use
+
+    Mainly this allows for more concise pipeline specification, along the lines of:
+
+    self.stage_1 = Stage1Class.build(...)
+    self.stage_2 = Stage2Class.build(connections=dict(input=self.stage1.io.output), ...)
+
+    And end up with a fully specified pipeline.
+    """
+
+    def __init__(self):
+        MiniPipeline.__init__(self, [], dict(name='mini'))
+
+    def __setattr__(self, name, value):
+        if isinstance(value, RailStageBuild):
+            stage = value.build(name)
+            self.add_stage(stage)
+            return stage
+        return MiniPipeline.__setattr__(self, name, value)
 
 
 class RailStage(PipelineStage):
@@ -58,6 +136,35 @@ class RailStage(PipelineStage):
         Do RailStage specific initialization """
         PipelineStage.__init__(self, args, comm=comm)
         self._input_length = None
+        self.io = StageIO(self)
+
+    @classmethod
+    def make_and_connect(cls, **kwargs):
+        """Make a stage and connects it to other stages
+
+        Notes
+        -----
+        kwargs are used to set stage configuration, 
+        the should be key, value pairs, where the key 
+        is the parameter name and the value is value we want to assign
+        
+        The 'connections' keyword is special, it is a dict[str, DataHandle]
+        and should define the Input connections for this stage
+
+        Returns
+        -------
+        A stage
+        """
+        connections = kwargs.pop('connections', {})
+        stage = cls.make_stage(**kwargs)
+        for key, val in connections.items():
+            stage.set_data(key, val, do_read=False)
+        return stage
+
+    @classmethod
+    def build(cls, **kwargs):
+        """Return an object that can be used to build a stage"""
+        return RailStageBuild(cls, **kwargs)
 
     def get_handle(self, tag, path=None, allow_missing=False):
         """Gets a DataHandle associated to a particular tag
@@ -214,9 +321,8 @@ class RailStage(PipelineStage):
         tag : str
             The tag (from cls.inputs or cls.outputs) for this data
 
-        Keywords
-        --------
-        These will be passed to the Handle's iterator method
+        kwargs : dict[str, Any]
+            These will be passed to the Handle's iterator method
         """
         handle = self.get_handle(tag, allow_missing=True)
         if not handle.has_data:  #pragma: no cover
@@ -229,7 +335,7 @@ class RailStage(PipelineStage):
                           parallel_size=self.size)
             kwcopy.update(**kwargs)
             return handle.iterator(**kwcopy)
-        else:  #pragma:  no cover
+        else:  #pragma: no cover
             test_data = self.get_data('input')
             s = 0
             e = len(list(test_data.items())[0][1])
