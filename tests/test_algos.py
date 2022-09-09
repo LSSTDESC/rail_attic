@@ -9,15 +9,13 @@ import tables_io
 from rail.core.stage import RailStage
 from rail.core.data import DataStore, TableHandle
 from rail.core.algo_utils import one_algo
-from rail.core.utils import RAILDIR
+#from rail.core.utils import RAILDIR
 from rail.estimation.algos import randomPZ, sklearn_nn, trainZ
 from rail.estimation.algos import pzflow, knnpz
 import scipy.special
 sci_ver_str = scipy.__version__.split('.')
 
 
-traindata = os.path.join(RAILDIR, 'tests/data/training_100gal.hdf5')
-validdata = os.path.join(RAILDIR, 'tests/data/validation_10gal.hdf5')
 DS = RailStage.data_store
 DS.__class__.allow_overwrite = True
 

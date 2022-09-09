@@ -60,6 +60,7 @@ write_to = "src/rail/core/_version.py"
 "rail.examples.creation.success_rate_data" = ["*.txt"]
 "rail.examples.goldenspike" = ["*.yaml"]
 "rail.examples.goldenspike.data" = ["*.pkl", "*.pq"]
+"rail.examples.testdata" = ["*.ipynb", "*.fits", "*.hdf5", "*.pq", "*.md"]
 
 [tool.coverage.run]
 source = ["src/rail"]
