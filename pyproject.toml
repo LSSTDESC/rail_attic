@@ -64,6 +64,7 @@ write_to = "src/rail/core/_version.py"
 
 [tool.coverage.run]
 source = ["src/rail"]
+branch = false
 
 [tool.coverage.report]
 show_missing = true
