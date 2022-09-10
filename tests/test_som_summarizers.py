@@ -52,7 +52,7 @@ def one_algo(key, inform_class, summarizer_class, summary_kwargs):
             "spec_input": "som_summarize_test2_spec_input",
         },
     )
-    summ_en = summarizer2.summarize(phot_data, spec_data)
+    _ = summarizer2.summarize(phot_data, spec_data)
     fid_ens = qp.read(
         summarizer2.get_output(
             summarizer2.get_aliased_tag("single_NZ"), final_name=True

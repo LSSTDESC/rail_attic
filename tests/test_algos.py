@@ -1,15 +1,7 @@
 import numpy as np
-import os
-import sys
-import glob
-import pickle
 import pytest
-import yaml
-import tables_io
 from rail.core.stage import RailStage
-from rail.core.data import DataStore, TableHandle
 from rail.core.algo_utils import one_algo
-#from rail.core.utils import RAILDIR
 from rail.estimation.algos import randomPZ, sklearn_nn, trainZ
 from rail.estimation.algos import pzflow, knnpz
 import scipy.special
