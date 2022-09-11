@@ -158,10 +158,6 @@ class ObsCondition(Degrader):
         # check if mask is provided
         if self.config["mask"]=="":
             raise ValueError("mask needs to be provided for the input maps.")
-        
-        # check it is a string
-        if not isinstance(self.config["mask"], str):
-            raise TypeError("mask path must be a string.")
             
         # check if the path exists
         if not os.path.exists(self.config["mask"]):
@@ -170,8 +166,10 @@ class ObsCondition(Degrader):
             
         ### Check weight type:
         if self.config["weight"]!="":
-            if not isinstance(self.config["weight"], str):
-                raise TypeError("weight path must be a string.")
+            # check if the path exists
+            if not os.path.exists(self.config["weight"]):
+                raise ValueError("The weight file is not found: "
+                             + self.config["weight"])
         
         ### Check tot_nVis_flag type:
         if not isinstance(self.config["tot_nVis_flag"], bool):
