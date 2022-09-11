@@ -1,5 +1,0 @@
-nside: 128
-mask: xx
-
-m5:
-  u: /global/cscratch1/sd/qhang/minion_1016/MAF-5year/desc_maf/minion_1016_dc2_CoaddM5_u_and_nightlt1825_HEAL.fits
