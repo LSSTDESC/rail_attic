@@ -4,17 +4,17 @@ from scipy import stats
 import qp
 from .base import MetricEvaluator
 from rail.evaluation.utils import stat_and_pval, stat_crit_sig
-import warnings
 
 default_quants = np.linspace(0, 1, 100)
 _pitMetaMetrics = {}
 
 
 def PITMetaMetric(cls):
+    """Decorator function to attach metrics to a class"""
     argspec = inspect.getargspec(cls.evaluate)
     if argspec.defaults is not None:
         num_defaults = len(argspec.defaults)
-        kwargs = {var: val for var, val in zip(argspec.args[-num_defaults:], argspec.defaults)}
+        kwargs = dict(zip(argspec.args[-num_defaults:], argspec.defaults))
         _pitMetaMetrics.setdefault(cls, {})["default"] = kwargs
     return cls
 
@@ -34,8 +34,8 @@ class PIT(MetricEvaluator):
     def pit_samps(self):
         """Return the samples used to compute the PIT"""
         return self._pit_samps
-        
-        
+
+
     def evaluate(self, eval_grid=default_quants, meta_options=_pitMetaMetrics):
         """Compute PIT array using qp.Ensemble class
         Notes
@@ -116,9 +116,6 @@ class PITMeta():
 class PITOutRate(PITMeta):
     """ Fraction of PIT outliers """
 
-    def __init__(self, pit_vals, pit):
-        super().__init__(pit_vals, pit)
-
     def evaluate(self, pit_min=0.0001, pit_max=0.9999):
         """Compute fraction of PIT outliers"""
         out_area = (self._pit.cdf(pit_min) + (1. - self._pit.cdf(pit_max)))[0][0]
@@ -128,9 +125,6 @@ class PITOutRate(PITMeta):
 @PITMetaMetric
 class PITKS(PITMeta):
     """ Kolmogorov-Smirnov test statistic """
-
-    def __init__(self, pit_vals, pit):
-        super().__init__(pit_vals, pit)
 
     def evaluate(self):
         """ Use scipy.stats.kstest to compute the Kolmogorov-Smirnov test statistic for
@@ -143,9 +137,6 @@ class PITKS(PITMeta):
 class PITCvM(PITMeta):
     """ Cramer-von Mises statistic """
 
-    def __init__(self, pit_vals, pit):
-        super().__init__(pit_vals, pit)
-
     def evaluate(self):
         """ Use scipy.stats.cramervonmises to compute the Cramer-von Mises statistic for
         the PIT values by comparing with a uniform distribution between 0 and 1. """
@@ -157,9 +148,6 @@ class PITCvM(PITMeta):
 @PITMetaMetric
 class PITAD(PITMeta):
     """ Anderson-Darling statistic """
-
-    def __init__(self, pit_vals, pit):
-        super().__init__(pit_vals, pit)
 
     def evaluate(self, pit_min=0., pit_max=1.):
         """ Use scipy.stats.anderson_ksamp to compute the Anderson-Darling statistic

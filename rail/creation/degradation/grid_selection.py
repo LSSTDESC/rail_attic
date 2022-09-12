@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pickle
 import tables_io
-from rail.creation.degradation import Degrader
+from rail.creation.degrader import Degrader
 from ceci.config import StageParameter as Param
 
 
@@ -14,7 +14,8 @@ class GridSelection(Degrader):
     into training and application samples. Option to implement a color-based redshift cut off in each pixel.
     Option of further degrading the training sample by limiting it to galaxies less than a redshift cutoff by specifying redshift_cut.
 
-    configuration options:
+    Parameters
+    ----------
     color_redshift_cut: True or false, implements color-based redshift cut. Default is True.
         If True, ratio_file must include second key called 'data' with magnitudes, colors and spec-z from the spectroscopic sample.
     percentile_cut: If using color-based redshift cut, percentile in spec-z above which redshifts will be cut from training sample. Default is 99.0
@@ -150,9 +151,9 @@ class GridSelection(Degrader):
 
         ratio_list = []
         max_specz_list = []
-        for i in range(len(pixels_y)):
-            ratio_list.append(ratios[pixels_y[i]][pixels_x[i]])
-            max_specz_list.append(max_specz[pixels_y[i]][pixels_x[i]])
+        for pix_x, pix_y in zip(pixels_x, pixels_y):
+            ratio_list.append(ratios[pix_y][pix_x])
+            max_specz_list.append(max_specz[pix_y][pix_x])
 
         data_hsc_like['ratios'] = ratio_list
         data_hsc_like['max_specz'] = max_specz_list

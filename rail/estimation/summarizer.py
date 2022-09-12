@@ -128,12 +128,13 @@ class SZPZSummarizer(RailStage):
     def open_model(self, **kwargs):
         """Load the mode and/or attach it to this Summarizer
 
-        Keywords
-        --------
-        model : `object`, `str` or `ModelHandle`
-            Either an object with a trained model,
-            a path pointing to a file that can be read to obtain the trained model,
-            or a `ModelHandle` providing access to the trained model.
+        Notes
+        -----
+        Keywords are potentially used to build the model.
+        By default we just use 'model'  which can be an `object`, `str` or `ModelHandle`
+
+        I.e., either an object with a trained model, a path pointing to a file that
+        can be read to obtain the trained model, or a `ModelHandle` providing access to the trained model.
 
         Returns
         -------

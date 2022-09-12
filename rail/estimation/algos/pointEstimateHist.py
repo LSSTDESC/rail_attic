@@ -27,6 +27,7 @@ class PointEstimateHist(PZSummarizer):
     def __init__(self, args, comm=None):
         PZSummarizer.__init__(self, args, comm=comm)
         self.zgrid = None
+        self.bincents = None
 
     def run(self):
         rng = np.random.default_rng(seed=self.config.seed)

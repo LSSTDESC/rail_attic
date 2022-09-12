@@ -331,8 +331,8 @@ class HyperbolicMagnitudes(PhotormetryManipulator):
         -------
         output: `PqHandle`
             Output table containting hyperbolic magnitudes and their uncertainties. If the columns
-            in the input table contain a prefix "mag_", this output tabel will replace the prefix
-            with "hyp_mag_", otherwise the column names will be identical to the input table.
+            in the input table contain a prefix `mag_`, this output tabel will replace the prefix
+            with `hyp_mag_`, otherwise the column names will be identical to the input table.
         """
         self.set_data('input', data)
         self.set_data('parameters', parameters)

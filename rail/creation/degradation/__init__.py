@@ -18,3 +18,4 @@ from rail.creation.degradation.spectroscopic_selections import (
 )
 
 from rail.creation.degradation.observing_condition_degrader import ObsCondition
+
