@@ -525,19 +525,6 @@ def test_ObsCondition_bad_weight(weight, error):
     with pytest.raises(error):
         ObsCondition.make_stage(weight = weight)
 
-
-@pytest.mark.parametrize(
-    "random_seed, error",
-    [
-        ("xx", TypeError),
-    ]
-)
-def test_ObsCondition_bad_random_seed(random_seed, error):
-    """Test bad random_seed should raise Value and Type errors."""
-    with pytest.raises(error):
-        ObsCondition.make_stage(random_seed = random_seed)
-
-
 @pytest.mark.parametrize(
     "map_dict, error",
     [
@@ -573,8 +560,10 @@ def test_ObsCondition_bad_map_dict(map_dict, error):
 def test_ObsCondition_extended(data):
     #Testing extended parameter values
     weight=""
-    map_dict={"airmass": 1.3, "nVisYr":{"u": 12.}}
-    tot_nVis_flag=False
+    map_dict={"airmass": os.path.join(os.path.dirname(__file__), "../../examples/creation/data/survey_conditions/minion_1016_dc2_Median_airmass_i_and_nightlt1825_HEAL.fits"),
+              "nVisYr":{"u": 50.},
+              "tvis": 30.}
+    tot_nVis_flag=True
     random_seed=None
 
     degrader_ext = ObsCondition.make_stage(weight=weight, 

@@ -169,15 +169,6 @@ class ObsCondition(Degrader):
                 raise ValueError("The weight file is not found: "
                              + self.config["weight"])
         
-        ### Check tot_nVis_flag type:
-        #if not isinstance(self.config["tot_nVis_flag"], bool):
-            #raise TypeError("tot_nVis_flag must be a boolean.")
-        
-        ### Check random_seed type:
-        if self.config["random_seed"]!=None:
-            if not isinstance(self.config["random_seed"], int):
-                raise TypeError("random_seed must be an integer.")
-        
         ### Check map_dict: 
         
         # Check if extra keys are passed
