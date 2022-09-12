@@ -1,10 +1,12 @@
 """Degraders that emulate spectroscopic effects on photometry"""
 
+import os
 import numpy as np
 import pandas as pd
 import pickle
 import tables_io
 from rail.creation.degrader import Degrader
+from rail.core.utils import RAILDIR
 from ceci.config import StageParameter as Param
 
 
@@ -38,15 +40,17 @@ class GridSelection(Degrader):
     Aihara, H., AlSayyad, Y., Ando, M., et al. 2019, PASJ, 71, 114
     doi: 10.1093/pasj/psz103
     """
+    def_ratio_file = os.path.join(RAILDIR, "rail/examples/creation/data/hsc_ratios_and_specz.hdf5")
+    def_set_file = os.path.join(RAILDIR, "rail/examples/creation/data/HSC_grid_settings.pkl" )
 
     name = 'GridSelection'
     config_options = Degrader.config_options.copy()
     config_options.update(color_redshift_cut=Param(bool, True, msg='using color-based redshift cut'),
                           percentile_cut=Param(float, 99.0, msg='percentile cut-off for each pixel in color-based redshift cut off'),
                           redshift_cut=Param(float, 100.0, msg="cut redshifts above this value"),
-                          ratio_file=Param(str, './examples/creation/data/hsc_ratios_and_specz.hdf5',
+                          ratio_file=Param(str, def_ratio_file,
                                            msg="path to ratio file"),
-                          settings_file=Param(str, './examples/creation/data/HSC_grid_settings.pkl',
+                          settings_file=Param(str, def_set_file,
                                               msg='path to pickled parameters file'),
                           random_seed=Param(int, 12345, msg="random seed for reproducibility"),
                           scaling_factor=Param(float, 1.588, msg="multiplicative factor for ratios to adjust number of galaxies kept"))
