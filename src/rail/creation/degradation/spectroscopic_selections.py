@@ -6,6 +6,7 @@ import numpy as np
 from ceci.config import StageParameter as Param
 from rail.creation.degrader import Degrader
 from scipy.interpolate import interp1d
+from rail.core.utils import RAILDIR
 
 
 class SpecSelection(Degrader):
@@ -43,9 +44,8 @@ class SpecSelection(Degrader):
         ),
         success_rate_dir=Param(
             str,
-            os.path.join(
-                os.path.dirname(__file__),
-                "../../../examples/creation/data/success_rate_data",
+            os.path.join(RAILDIR,
+                "rail/examples/creation/data/success_rate_data",
             ),
             msg="The path to the directory containing success rate files.",
         ),

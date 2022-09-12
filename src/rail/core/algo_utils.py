@@ -7,8 +7,8 @@ import scipy.special
 sci_ver_str = scipy.__version__.split('.')
 
 
-traindata = os.path.join(RAILDIR, 'tests/data/training_100gal.hdf5')
-validdata = os.path.join(RAILDIR, 'tests/data/validation_10gal.hdf5')
+traindata = os.path.join(RAILDIR, 'rail/examples/testdata/training_100gal.hdf5')
+validdata = os.path.join(RAILDIR, 'rail/examples/testdata/validation_10gal.hdf5')
 DS = RailStage.data_store
 DS.__class__.allow_overwrite = True
 

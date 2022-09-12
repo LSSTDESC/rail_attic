@@ -107,7 +107,7 @@ class Inform_SimpleSOMSummarizer(CatInformer):
         """
         if self.config.hdf5_groupname:
             training_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  # pragma:  no cover
+        else:  # pragma: no cover
             training_data = self.get_data('input')
         # replace nondetects
         for col in self.config.usecols:
@@ -237,11 +237,11 @@ class SimpleSOMSummarizer(SZPZSummarizer):
         rng = np.random.default_rng(seed=self.config.seed)
         if self.config.hdf5_groupname:
             test_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  # pragma:  no cover
+        else:  # pragma: no cover
             test_data = self.get_data('input')
         if self.config.spec_groupname:
             spec_data = self.get_data('spec_input')[self.config.hdf5_groupname]
-        else:  # pragma:  no cover
+        else:  # pragma: no cover
             spec_data = self.get_data('spec_input')
         if self.config.redshift_colname not in spec_data.keys():  # pragma: no cover
             raise ValueError(f"redshift column {self.config.redshift_colname} not found in spec_data")
