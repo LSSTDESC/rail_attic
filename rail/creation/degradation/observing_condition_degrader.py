@@ -8,7 +8,12 @@ import os
 from photerr import LsstErrorModel, LsstErrorParams
 from dataclasses import fields
 
-from rail.creation.degrader import Degrader
+#for testing purposes
+import sys
+sys.path.insert(0,"/global/u2/q/qhang/desc/RAIL/rail/creation/")
+from degrader import Degrader
+
+#from rail.creation.degrader import Degrader
 from ceci.config import StageParameter as Param
 
 
@@ -93,9 +98,11 @@ class ObsCondition(Degrader):
     config_options.update(
         nside=Param(int, 128, msg="nside for the input maps in HEALPIX format."),
         mask=Param(str, os.path.join(os.path.dirname(__file__),
-            "../../../examples/creation/data/survey_conditions/DC2-mask-nside-128.fits"),
+            "../../../examples/creation/data/survey_conditions/DC2-mask-neg-nside-128.fits"),
                    msg="mask for the input maps in HEALPIX format."),
-        weight=Param(str, "", msg="weight for assigning pixels to galaxies in HEALPIX format."),
+        weight=Param(str, os.path.join(os.path.dirname(__file__),
+            "../../../examples/creation/data/survey_conditions/DC2-dr6-galcounts-i20-i25.3-nside-128.fits"), 
+                     msg="weight for assigning pixels to galaxies in HEALPIX format."),
         tot_nVis_flag=Param(bool, True, msg="flag indicating whether nVisYr is the total or average per year if supplied."),
         random_seed=Param(int, 42, msg="random seed for reproducibility"),
         map_dict=Param(dict, 
@@ -142,10 +149,6 @@ class ObsCondition(Degrader):
         """
         
         ### Check nside type:
-        # check if nside is integer
-        if not isinstance(self.config["nside"], int):
-            raise TypeError("nside must be an integer.")
-
         # check if nside < 0
         if self.config["nside"]<0:
             raise ValueError("nside must be positive.")
@@ -172,8 +175,8 @@ class ObsCondition(Degrader):
                              + self.config["weight"])
         
         ### Check tot_nVis_flag type:
-        if not isinstance(self.config["tot_nVis_flag"], bool):
-            raise TypeError("tot_nVis_flag must be a boolean.")
+        #if not isinstance(self.config["tot_nVis_flag"], bool):
+            #raise TypeError("tot_nVis_flag must be a boolean.")
         
         ### Check random_seed type:
         if self.config["random_seed"]!=None:
@@ -342,6 +345,7 @@ class ObsCondition(Degrader):
         pixels = self.maps["pixels"]
         if "weight" in list((self.maps).keys()):
             weights = self.maps["weight"]
+            weights = weights/sum(weights)
         else:
             weights = None
         assigned_pix = self.rng.choice(pixels, size=len(catalog), replace=True, p=weights)

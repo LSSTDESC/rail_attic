@@ -8,6 +8,8 @@ from rail.core.data import DATA_STORE, TableHandle
 from rail.core.utilStages import ColumnMapper
 from rail.creation.degradation import *
 
+from photerr import LsstErrorModel
+
 
 @pytest.fixture
 def data():
@@ -489,7 +491,6 @@ def test_ObsCondition_random_seed(data):
 @pytest.mark.parametrize(
     "nside, error",
     [
-        ("xx", TypeError),
         (-1, ValueError),
         (123, ValueError),
     ]
@@ -544,6 +545,7 @@ def test_ObsCondition_bad_random_seed(random_seed, error):
         ({"m5": "xx"}, TypeError),
         ({"m5": {"u": False}}, TypeError),
         ({"m5": {"u": "xx"}}, ValueError),
+        ({"m5": {}}, ValueError),
         ({"nVisYr": "xx"}, TypeError),
         ({"gamma": {"u": "xx"}}, ValueError),
         ({"msky": {"u": "xx"}}, ValueError),
@@ -554,9 +556,49 @@ def test_ObsCondition_bad_random_seed(random_seed, error):
         ({"airmass": "xx"}, ValueError),
         ({"airmass": False}, TypeError),
         ({"tvis": False}, TypeError),
+        
+        # wrong key name
+        ({"m5sigma": {"u": 27}}, ValueError),
+        
+        # nYrObs not float
+        ({"nYrObs": "xx"}, TypeError),
     ],
 )
 def test_ObsCondition_bad_map_dict(map_dict, error):
     """Test bad map_dict that should raise Value and Type errors."""
     with pytest.raises(error):
         ObsCondition.make_stage(map_dict = map_dict)
+        
+        
+def test_ObsCondition_extended(data):
+    #Testing extended parameter values
+    weight=""
+    map_dict={"airmass": 1.3, "nVisYr":{"u": 12.}}
+    tot_nVis_flag=False
+    random_seed=None
+
+    degrader_ext = ObsCondition.make_stage(weight=weight, 
+                                           tot_nVis_flag=tot_nVis_flag,
+                                           random_seed=random_seed,
+                                           map_dict=map_dict,)
+    degrader_ext(data)
+    degrader_ext.__repr__()
+    
+    os.remove(
+        degrader_ext.get_output(
+            degrader_ext.get_aliased_tag("output"), final_name=True
+        )
+    )
+    
+
+def test_ObsCondition_empty_map_dict(data):
+    """Test control with random seeds."""
+    degrader1 = ObsCondition.make_stage(random_seed=0, map_dict={})
+    degrader2 = LsstErrorModel()
+    
+    # make sure setting the same seeds yields the same output
+    degraded_data1 = degrader1(data).data
+    degraded_data2 = degrader2(data.data, random_state=0)
+    assert degraded_data1.equals(degraded_data2)
+    
+    os.remove(degrader1.get_output(degrader1.get_aliased_tag("output"), final_name=True))
