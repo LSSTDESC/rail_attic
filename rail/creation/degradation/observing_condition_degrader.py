@@ -8,7 +8,7 @@ import os
 from photerr import LsstErrorModel, LsstErrorParams
 from dataclasses import fields
 
-from rail.creation.degradation import Degrader
+from rail.creation.degrader import Degrader
 from ceci.config import StageParameter as Param
 
 
