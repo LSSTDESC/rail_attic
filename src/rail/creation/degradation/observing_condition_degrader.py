@@ -387,6 +387,7 @@ class ObsCondition(Degrader):
                 # reset the index
                 index = pixel_cat.index
                 pixel_cat = pixel_cat.set_index(np.arange(len(pixel_cat)))
+
                 # calculate the error model for this pixel
                 obs_cat = errorModel(pixel_cat, random_state=self.rng)
                 obs_cat = obs_cat.set_index(index)
