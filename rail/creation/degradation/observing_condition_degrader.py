@@ -8,12 +8,7 @@ import os
 from photerr import LsstErrorModel, LsstErrorParams
 from dataclasses import fields
 
-#remove when push
-import sys
-sys.path.insert(0,"/global/homes/q/qhang/desc/RAIL/rail/creation/")
-from degrader import Degrader
-
-#from rail.creation.degrader import Degrader
+from rail.creation.degrader import Degrader
 from ceci.config import StageParameter as Param
 
 
