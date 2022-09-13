@@ -17,44 +17,34 @@ class ObsCondition(Degrader):
     
     This degrader calculates spatially-varying photometric errors 
     using input survey condition maps. The error is based on the 
-    LSSTErrorModel from the LSST Overview Paper:
-    https://arxiv.org/abs/0805.2366
-    
-    Example: 
-    errModel = ObsCondition()
-    data_with_errs = errModel(data)
+    LSSTErrorModel from the PhotErr python package.
     
     Parameters
     ----------
-    nside:
+    nside: int, optional
         nside used for the HEALPIX maps.
-    
-    mask:
+    mask: str, optional
         Path to the mask covering the survey 
         footprint in HEALPIX format. Notice that 
-        all negative values will be set to zero.
-        
-    weight:
+        all negative values will be set to zero.  
+    weight: str, optional
         Path to the weights HEALPIX format, used
-        assign sample galaxies in pixels. Default
-        is weight="", which uniform weighting.
-    
-    tot_nVis_flag:
+        to assign sample galaxies to pixels. Default
+        is weight="", which uses uniform weighting.
+    tot_nVis_flag: bool, optional
         If any map for nVisYr are provided, this flag
         indicates whether the map shows the total number of
         visits in nYrObs (tot_nVis_flag=True), or the average 
         number of visits per year (tot_nVis_flag=False). The
         default is set to True.
-        
-    random_seed:
+    random_seed: int, optional
         A random seed for reproducibility.
-    
-    map_dict:
+    map_dict: dict, optional
         A dictionary that contains the paths to the
         survey condition maps in HEALPIX format. This dictionary
-        uses the same arguments as LSSTErrorModel. The following
-        arguements, if supplied, may contain either a single
-        number (as in the case of LSSTErrorModel), or a path:
+        uses the same arguments as LSSTErrorModel (from PhotErr).
+        The following arguments, if supplied, may contain either
+        a single number (as in the case of LSSTErrorModel), or a path:
         [
             m5, 
             nVisYr, 
@@ -65,7 +55,7 @@ class ObsCondition(Degrader):
             km, 
             tvis,
         ]
-        Notice that for the following keys:
+        For the following keys:
         [
             m5, 
             nVisYr, 
@@ -74,39 +64,56 @@ class ObsCondition(Degrader):
             theta, 
             km,
         ]
-        numbers/paths for specific bands should be passed.
-        A number could also be passed.
-        Other LSSTErrorModel parameters can also be passed
-        in this dictionary (e.g. a necessary one may be [nYrObs] 
-        for the survey condition maps).
-        If any argument is not passed, the default value in
-        https://arxiv.org/abs/0805.2366 is adopted.
+        numbers/paths for specific bands must be passed.
         Example:
         {
             "m5": {"u": path, ...}, 
             "theta": {"u": path, ...},
         }
+        Other LSSTErrorModel parameters can also be passed
+        in this dictionary (e.g. a necessary one may be [nYrObs] 
+        for the survey condition maps).
+        If any argument is not passed, the default value in
+        PhotErr's LsstErrorModel is adopted.
     """
     
     name = 'ObsCondition'
     config_options = Degrader.config_options.copy()
     config_options.update(
-        nside=Param(int, 128, msg="nside for the input maps in HEALPIX format."),
-        mask=Param(str, os.path.join(os.path.dirname(__file__),
-            "../../examples/creation/data/survey_conditions/DC2-mask-neg-nside-128.fits"),
-                   msg="mask for the input maps in HEALPIX format."),
-        weight=Param(str, os.path.join(os.path.dirname(__file__),
-            "../../examples/creation/data/survey_conditions/DC2-dr6-galcounts-i20-i25.3-nside-128.fits"), 
-                     msg="weight for assigning pixels to galaxies in HEALPIX format."),
-        tot_nVis_flag=Param(bool, True, msg="flag indicating whether nVisYr is the total or average per year if supplied."),
-        random_seed=Param(int, 42, msg="random seed for reproducibility"),
+        nside=Param(
+            int, 
+            128, 
+            msg="nside for the input maps in HEALPIX format.",
+        ),
+        mask=Param(
+            str, 
+            os.path.join(os.path.dirname(__file__), "../../examples/creation/data/survey_conditions/DC2-mask-neg-nside-128.fits"),
+            msg="mask for the input maps in HEALPIX format.",
+        ),
+        weight=Param(
+            str, 
+            os.path.join(os.path.dirname(__file__), "../../examples/creation/data/survey_conditions/DC2-dr6-galcounts-i20-i25.3-nside-128.fits"), 
+            msg="weight for assigning pixels to galaxies in HEALPIX format.",
+        ),
+        tot_nVis_flag=Param(
+            bool, 
+            True, 
+            msg="flag indicating whether nVisYr is the total or average per year if supplied.",
+        ),
+        random_seed=Param(
+            int, 
+            42, 
+            msg="random seed for reproducibility"
+        ),
         map_dict=Param(dict, 
-                       {'m5': {
-                           'i': os.path.join(os.path.dirname(__file__), "../../examples/creation/data/survey_conditions/minion_1016_dc2_Median_fiveSigmaDepth_i_and_nightlt1825_HEAL.fits"),
-                           },
-                        'nYrObs': 5.,
-                       }, 
-                       msg="dictionary containing the paths to the survey condition maps and/or additional LSSTErrorModel parameters."),
+           {'m5': 
+                {
+                    'i': os.path.join(os.path.dirname(__file__), "../../examples/creation/data/survey_conditions/minion_1016_dc2_Median_fiveSigmaDepth_i_and_nightlt1825_HEAL.fits"),
+                },
+            'nYrObs': 5.,
+           }, 
+           msg="dictionary containing the paths to the survey condition maps and/or additional LSSTErrorModel parameters.",
+        ),
     )
     
     def __init__(self, args, comm=None):
