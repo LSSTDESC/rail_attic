@@ -32,6 +32,8 @@ dependencies = [
     "qp-prob",
     "sklearn",
     "pzflow",
+    "healpy",
+    "photerr",
 ]
 
 [project.optional-dependencies]
