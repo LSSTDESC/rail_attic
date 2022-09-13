@@ -199,7 +199,7 @@ def run_apidoc(_):
     from sphinx.ext.apidoc import main as apidoc_main
     cur_dir = os.path.normpath(os.path.dirname(__file__))
     output_path = os.path.join(cur_dir, 'api')
-    modules = os.path.normpath(os.path.join(cur_dir, "../rail"))
+    modules = os.path.normpath(os.path.join(cur_dir, "../src/rail"))
     paramlist = ['--separate', '--implicit-namespaces', '--no-toc', '-f', '-M', '-o', output_path, modules]
     apidoc_main(paramlist)
 

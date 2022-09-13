@@ -5,9 +5,11 @@ import qp
 from rail.core.data import TableHandle
 from rail.core.stage import RailStage
 from rail.estimation.algos import simpleSOM
+from rail.core.utils import RAILDIR
 
-testszdata = "tests/data/training_100gal.hdf5"
-testphotdata = "tests/data/validation_10gal.hdf5"
+
+testszdata = os.path.join(RAILDIR, "rail/examples/testdata/training_100gal.hdf5")
+testphotdata = os.path.join(RAILDIR, "rail/examples/testdata/validation_10gal.hdf5")
 DS = RailStage.data_store
 DS.__class__.allow_overwrite = True
 
@@ -50,7 +52,7 @@ def one_algo(key, inform_class, summarizer_class, summary_kwargs):
             "spec_input": "som_summarize_test2_spec_input",
         },
     )
-    summ_en = summarizer2.summarize(phot_data, spec_data)
+    _ = summarizer2.summarize(phot_data, spec_data)
     fid_ens = qp.read(
         summarizer2.get_output(
             summarizer2.get_aliased_tag("single_NZ"), final_name=True
