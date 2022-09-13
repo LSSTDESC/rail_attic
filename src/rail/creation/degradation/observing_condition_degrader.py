@@ -79,7 +79,7 @@ class ObsCondition(Degrader):
         Other LSSTErrorModel parameters can also be passed
         in this dictionary (e.g. a necessary one may be [nYrObs] 
         for the survey condition maps).
-        If any arguement is not passed, the default value in
+        If any argument is not passed, the default value in
         https://arxiv.org/abs/0805.2366 is adopted.
         Example:
         {
