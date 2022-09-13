@@ -8,7 +8,12 @@ import os
 from photerr import LsstErrorModel, LsstErrorParams
 from dataclasses import fields
 
-from rail.creation.degrader import Degrader
+#remove when push
+import sys
+sys.path.insert(0,"/global/homes/q/qhang/desc/RAIL/rail/creation/")
+from degrader import Degrader
+
+#from rail.creation.degrader import Degrader
 from ceci.config import StageParameter as Param
 
 
@@ -102,7 +107,7 @@ class ObsCondition(Degrader):
         random_seed=Param(int, 42, msg="random seed for reproducibility"),
         map_dict=Param(dict, 
                        {'m5': {
-                           'i': os.path.join(os.path.dirname(__file__), "../../../examples/creation/data/survey_conditions/minion_1016_dc2_CoaddM5_i_and_nightlt1825_HEAL.fits"),
+                           'i': os.path.join(os.path.dirname(__file__), "../../../examples/creation/data/survey_conditions/minion_1016_dc2_Median_fiveSigmaDepth_i_and_nightlt1825_HEAL.fits"),
                            },
                         'nYrObs': 5.,
                        }, 
