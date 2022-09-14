@@ -3,10 +3,11 @@ import pytest
 from rail.core.stage import RailStage
 from rail.core.data import TableHandle
 from rail.estimation.algos import NZDir
+from rail.core.utils import RAILDIR
 
 
-testszdata = 'tests/data/training_100gal.hdf5'
-testphotdata = 'tests/data/validation_10gal.hdf5'
+testszdata = os.path.join(RAILDIR, 'rail/examples/testdata/training_100gal.hdf5')
+testphotdata = os.path.join(RAILDIR, 'rail/examples/testdata/validation_10gal.hdf5')
 DS = RailStage.data_store
 DS.__class__.allow_overwrite = True
 

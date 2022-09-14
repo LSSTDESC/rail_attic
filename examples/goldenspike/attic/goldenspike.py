@@ -3,9 +3,9 @@ import numpy as np
 import yaml
 import pandas as pd
 from pzflow import Flow
-from rail.creation import Creator
-import rail.creation.degradation
-from rail.creation.degradation.lsst_error_model import LSSTErrorModel
+from src.rail.creation import Creator
+import src.rail.creation.degradation
+from src.rail.creation import LSSTErrorModel
 from rail.estimation.estimator import Estimator
 from rail.evaluation.metrics.pit import *
 import rail.evaluation.metrics.pointestimates as pe

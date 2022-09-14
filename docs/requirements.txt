@@ -13,7 +13,7 @@ pyyaml
 pip
 corner
 tables-io
-qp@git+https://github.com/LSSTDESC/qp
+qp-prob
 pzflow
 ceci
 pyarrow
@@ -21,4 +21,5 @@ tables
 DESC_BPZ@git+https://github.com/LSSTDESC/DESC_BPZ
 FlexCode
 h5py
+minisom
 hyperbolic@git+https://github.com/jlvdb/hyperbolic

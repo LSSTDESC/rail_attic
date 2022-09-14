@@ -3,9 +3,9 @@ if "SPS_HOME" not in os.environ:
     os.environ["SPS_HOME"] = "/opt/hostedtoolcache/Python/fsps"
 
 import tables_io
-from rail.creation.sed_generation.sed_generator import FSPSSedGenerator
+from src.rail.creation.sed_generation import FSPSSedGenerator
 import pytest
-from rail.core.stage import RailStage
+from src.rail.core.stage import RailStage
 import numpy as np
 
 
@@ -33,7 +33,7 @@ def test_FSPSSedGenerator_bad_tabulated_sfh_params(settings, error):
     with pytest.raises(error):
         DS = RailStage.data_store
         DS.__class__.allow_overwrite = True
-        dummy_io_data = tables_io.read('tests/data/test_fsps_sed.fits')
+        dummy_io_data = tables_io.read('src/rail/examples/testdata/test_fsps_sed.fits')
         sed_generation_test = FSPSSedGenerator.make_stage(name='sed_generator_test', zcontinuous=1,
                                                           add_neb_emission=True, physical_units=True,
                                                           tabulated_sfh_file=None, tabulated_lsf_file=None,
@@ -53,7 +53,7 @@ def test_FSPSSedGenerator_bad_tabulated_sfh_params(settings, error):
     with pytest.raises(error):
         DS = RailStage.data_store
         DS.__class__.allow_overwrite = True
-        dummy_io_data = tables_io.read('tests/data/test_fsps_sed.fits')
+        dummy_io_data = tables_io.read('src/rail/examples/testdata/test_fsps_sed.fits')
         sed_generation_test = FSPSSedGenerator.make_stage(name='sed_generator_test', zcontinuous=3,
                                                           add_neb_emission=True, physical_units=True,
                                                           tabulated_sfh_file=None, tabulated_lsf_file=None,
@@ -73,7 +73,7 @@ def test_FSPSSedGenerator_missing_tabulated_sfh_file(settings, error):
     with pytest.raises(error):
         DS = RailStage.data_store
         DS.__class__.allow_overwrite = True
-        dummy_io_data = tables_io.read('tests/data/test_fsps_sed.fits')
+        dummy_io_data = tables_io.read('src/rail/examples/testdata/test_fsps_sed.fits')
         sed_generation_test = FSPSSedGenerator.make_stage(name='sed_generator_test', zcontinuous=3,
                                                           add_neb_emission=False, physical_units=True,
                                                           tabulated_sfh_file='sfh.txt', tabulated_lsf_file=None,
@@ -93,10 +93,11 @@ def test_FSPSSedGenerator_wrong_age_tabulated_sfh_file(settings, error):
     with pytest.raises(error):
         DS = RailStage.data_store
         DS.__class__.allow_overwrite = True
-        dummy_io_data = tables_io.read('tests/data/test_fsps_sed.fits')
+        dummy_io_data = tables_io.read('src/rail/examples/testdata/test_fsps_sed.fits')
         sed_generation_test = FSPSSedGenerator.make_stage(name='sed_generator_test', zcontinuous=3,
                                                           add_neb_emission=False, physical_units=True,
-                                                          tabulated_sfh_file='tests/data/sfh_bad_age_array.dat',
+                                                          tabulated_sfh_file='src/rail/examples/testdata/'
+                                                                             'sfh_bad_age_array.dat',
                                                           tabulated_lsf_file=None,
                                                           **settings)
         sed_generation_test.add_data('input', dummy_io_data)
@@ -114,7 +115,7 @@ def test_FSPSSedGenerator_bad_tabulated_lsf_params(settings, error):
     with pytest.raises(error):
         DS = RailStage.data_store
         DS.__class__.allow_overwrite = True
-        dummy_io_data = tables_io.read('tests/data/test_fsps_sed.fits')
+        dummy_io_data = tables_io.read('src/rail/examples/testdata/test_fsps_sed.fits')
         sed_generation_test = FSPSSedGenerator.make_stage(name='sed_generator_test', smooth_velocity=False,
                                                           physical_units=True, tabulated_sfh_file=None,
                                                           tabulated_lsf_file=None, **settings)
@@ -133,7 +134,7 @@ def test_FSPSSedGenerator_missing_tabulated_lsf_file(settings, error):
     with pytest.raises(error):
         DS = RailStage.data_store
         DS.__class__.allow_overwrite = True
-        dummy_io_data = tables_io.read('tests/data/test_fsps_sed.fits')
+        dummy_io_data = tables_io.read('src/rail/examples/testdata/test_fsps_sed.fits')
         sed_generation_test = FSPSSedGenerator.make_stage(name='sed_generator_test', smooth_velocity=True,
                                                           physical_units=True, tabulated_sfh_file=None,
                                                           tabulated_lsf_file='lsf.txt', **settings)
@@ -152,10 +153,11 @@ def test_FSPSSedGenerator_wrong_wavelength_tabulated_lsf_file(settings, error):
     with pytest.raises(error):
         DS = RailStage.data_store
         DS.__class__.allow_overwrite = True
-        dummy_io_data = tables_io.read('tests/data/test_fsps_sed.fits')
+        dummy_io_data = tables_io.read('src/rail/examples/testdata/test_fsps_sed.fits')
         sed_generation_test = FSPSSedGenerator.make_stage(name='sed_generator_test', smooth_velocity=True,
                                                           physical_units=True, tabulated_sfh_file=None,
-                                                          tabulated_lsf_file='tests/data/lsf_bad_wave_array.dat',
+                                                          tabulated_lsf_file='src/rail/examples/testdata/'
+                                                                             'lsf_bad_wave_array.dat',
                                                           **settings)
         sed_generation_test.add_data('input', dummy_io_data)
         sed_generation_test.run()
@@ -164,7 +166,7 @@ def test_FSPSSedGenerator_wrong_wavelength_tabulated_lsf_file(settings, error):
 def test_FSPSSedGenerator_output_table():
     DS = RailStage.data_store
     DS.__class__.allow_overwrite = True
-    dummy_io_data = tables_io.read('tests/data/test_fsps_sed.fits')
+    dummy_io_data = tables_io.read('src/rail/examples/testdata/test_fsps_sed.fits')
     sed_generation_test = FSPSSedGenerator.make_stage(name='sed_generator_test', physical_units=True,
                                                       tabulated_sfh_file=None, tabulated_lsf_file=None)
     sed_generation_test.add_data('input', dummy_io_data)
@@ -178,7 +180,7 @@ def test_FSPSSedGenerator_output_table():
 def test_FSPSSedGenerator_non_physical_units():
     DS = RailStage.data_store
     DS.__class__.allow_overwrite = True
-    dummy_io_data = tables_io.read('tests/data/test_fsps_sed.fits')
+    dummy_io_data = tables_io.read('src/rail/examples/testdata/test_fsps_sed.fits')
     sed_generation_test = FSPSSedGenerator.make_stage(name='sed_generator_test', physical_units=False,
                                                       tabulated_sfh_file=None, tabulated_lsf_file=None)
     sed_generation_test.add_data('input', dummy_io_data)
