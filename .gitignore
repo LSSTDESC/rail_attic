@@ -11,7 +11,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-rail/core/_version.py
+src/rail/core/_version.py
 build/
 develop-eggs/
 dist/
