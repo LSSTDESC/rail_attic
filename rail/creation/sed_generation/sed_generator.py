@@ -121,7 +121,9 @@ class FSPSSedGenerator(SedGenerator):
 
             if self.config.smooth_lsf:
                 assert self.config.smooth_velocity is True, 'lsf smoothing only works if smooth_velocity is True'
-                wave, sigma = np.loadtxt(tabulated_lsf_file, usecols=(0, 1))
+                lsf_values = np.loadtxt(tabulated_lsf_file, usecols=(0, 1))
+                wave = lsf_values[:, 0]
+                sigma = lsf_values[:, 1]
                 sp.set_lsf(wave, sigma, wmin=self.config.min_wavelength, wmax=self.config.max_wavelength)
 
             wavelength, flux_solar_lum_angstrom = sp.get_spectrum(tage=ages[i], peraa=True)
@@ -140,11 +142,11 @@ class FSPSSedGenerator(SedGenerator):
                 flux_solar_lum_angstrom = flux_solar_lum_angstrom[selected_wave_range]
                 fluxes[i] = flux_solar_lum_angstrom.astype('float64')
 
-        if self.comm is not None:
+        if self.comm is not None:  # pragma: no cover
             wavelengths = self.comm.gather(wavelengths)
             fluxes = self.comm.gather(fluxes)
 
-            if self.rank != 0:
+            if self.rank != 0:  # pragma: no cover
                 return None, None
 
             wavelengths = {k: v for a in wavelengths for k, v in a.items()}
