@@ -2,6 +2,7 @@
 
 from rail.creation.degradation.grid_selection import GridSelection
 from rail.creation.degradation.lsst_error_model import LSSTErrorModel
+from rail.creation.degradation.observing_condition_degrader import ObsCondition
 from rail.creation.degradation.quantityCut import QuantityCut
 from rail.creation.degradation.spectroscopic_degraders import (
     InvRedshiftIncompleteness,
@@ -16,6 +17,3 @@ from rail.creation.degradation.spectroscopic_selections import (
     SpecSelection_VVDSf02,
     SpecSelection_zCOSMOS,
 )
-
-from rail.creation.degradation.observing_condition_degrader import ObsCondition
-
