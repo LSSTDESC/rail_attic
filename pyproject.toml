@@ -30,7 +30,7 @@ dependencies = [
     "scipy>=1.9.0",
     "pz-hyperbolic-temp",
     "qp-prob",
-    "sklearn",
+    "scikit-learn",
     "pzflow",
     "healpy",
     "photerr",
