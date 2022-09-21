@@ -1,6 +1,7 @@
 import numpy as np
 #from minisom import MiniSom
 from somoclu import Somoclu
+from pathos.pools import ProcessPool
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatInformer
 from rail.estimation.summarizer import SZPZSummarizer
@@ -39,7 +40,32 @@ def _computemagcolordata(data, ref_column_name, column_names, colusage):
     return coldata.T
 
 
-class Inform_SimpleSOMSummarizer(CatInformer):
+def get_bmus(som, data, step=1000):
+    '''
+    This function gets the "best matching unit (bmu)" of a given data on a pre-trained SOM.
+    It works by multiprocessing chunks of the data.
+    Input:
+    som: a pre-trained Somoclu object;
+    data: np.ndarray of the data vector;
+    step: int, the size of a chunk of the data.
+    '''
+
+    def func(i):
+        if i * step + step > len(data):
+            dmap = som.get_surface_state(data[i*step:])
+            bmus = np.zeros((step, 2))
+            bmus[:len(data)-i*step] = som.get_bmus(dmap).tolist()
+            return bmus
+        else:
+            dmap = som.get_surface_state(data[i*step:i*step+step])
+            return som.get_bmus(dmap).tolist()
+    with ProcessPool() as p:
+        bmus = p.map(func, np.arange(int(len(data)/step)+1))
+    bmus_array = np.asarray(bmus).astype(np.int)
+    return bmus_array.reshape(bmus_array.shape[0]*bmus_array.shape[1], 2)[:len(data)]
+
+
+class Inform_somocluSOMSummarizer(CatInformer):
     """Summarizer that uses a SOM to construct a weighted sum
     of spec-z objects in the same SOM cell as each photometric
     galaxy in order to estimate the overall N(z).  This is
@@ -49,13 +75,17 @@ class Inform_SimpleSOMSummarizer(CatInformer):
     lead to problems if there are photometric galaxies with
     no nearby spec-z objects (NZDir is not aware that such
     objects exist and thus can hid biases).
-    Part of the SimpeSOM estimator will be a check for cells
+
+    We apply somoclu package (https://somoclu.readthedocs.io/)
+    to train the SOM.
+
+    Part of the SOM estimator will be a check for cells
     which contain photometric objects but do not contain any
     corresponding training/spec-z objects, those unmatched
     objects will be flagged for possible removal from the
     input sample.
     The inform stage will simply construct a 2D grid SOM
-    using `minisom` from a large sample of input
+    using somoclu from a large sample of input
     photometric data and save this as an output.  This may
     be a computationally intensive stage, though it will
     hopefully be run once and used by the estimate/summarize
@@ -78,10 +108,10 @@ class Inform_SimpleSOMSummarizer(CatInformer):
     Returns
     -------
     model: pickle file
-      pickle file containing the `minisom` SOM object that
+      pickle file containing the `somoclu` SOM object that
     will be used by the estimation/summarization stage
     """
-    name = 'Inform_SimpleSOM'
+    name = 'Inform_SOMoclu'
     config_options = CatInformer.config_options.copy()
     config_options.update(usecols=Param(list, def_cols, msg="columns used to construct SOM"),
                           column_usage=Param(str, "magandcolors", msg="switch for how SOM uses columns, valid values are 'colors', 'magandcolors', and 'columns'"),
@@ -91,15 +121,15 @@ class Inform_SimpleSOMSummarizer(CatInformer):
                           seed=Param(int, 0, msg="Random number seed"),
                           n_rows=Param(int, 31, msg="number of cells in SOM y dimension"),
                           n_columns=Param(int, 31, msg="number of cells in SOM x dimension"),
-                          gridtype=Param(str, 'rectangular', msg="Optional parameter to specify the grid form of the nodes:
-                          * 'rectangular': rectangular neurons (default)
-                          * 'hexagonal': hexagonal neurons"),
-                          maptype=Param(str, 'planar', msg="Optional parameter to specify the map topology:
-                          * 'planar': Planar map (default)
-                          * 'toroid': Toroid map"),
-                          std_coeff=Param(float, 1.5, msg="Optional parameter to set the coefficient in the Gaussian
-                          neighborhood function exp(-||x-y||^2/(2*(coeff*radius)^2))
-                          Default: 1.5"),
+                          gridtype=Param(str, 'rectangular', msg="Optional parameter to specify the grid form of the nodes:"
+                                         +"* 'rectangular': rectangular neurons (default)"
+                                         +"* 'hexagonal': hexagonal neurons"),
+                          maptype=Param(str, 'planar', msg="Optional parameter to specify the map topology:"
+                          +"* 'planar': Planar map (default)"
+                          +"* 'toroid': Toroid map"),
+                          std_coeff=Param(float, 1.5, msg="Optional parameter to set the coefficient in the Gaussian"
+                          +"neighborhood function exp(-||x-y||^2/(2*(coeff*radius)^2))"
+                          +"Default: 1.5"),
                           som_learning_rate=Param(float, 0.5, msg="Initial SOM learning rate (scale0 param in Somoclu)"),
                           som_iterations=Param(int, 10_000, msg="number of iterations in SOM training"),
                           hdf5_groupname=Param(str, "photometry", msg="name of hdf5 group for data, if None, then set to ''"))
@@ -129,9 +159,9 @@ class Inform_SimpleSOMSummarizer(CatInformer):
         colors = _computemagcolordata(training_data, self.config.ref_column_name,
                                       self.config.usecols, self.config.column_usage)
 
-        som = Somoclu(self.config.n_columns, self.config.n_rows, 
+        som = Somoclu(self.config.n_columns, self.config.n_rows,
                       gridtype=self.config.gridtype,
-                      maptype=self.config.maptype,initialization='pca')
+                      maptype=self.config.maptype, initialization='pca')
 
         som.train(colors)
 
@@ -143,7 +173,7 @@ class Inform_SimpleSOMSummarizer(CatInformer):
         self.add_data('model', self.model)
 
 
-class SimpleSOMSummarizer(SZPZSummarizer):
+class somocluSOMSummarizer(SZPZSummarizer):
     """Quick implementation of a SOM-based summarizer that
     constructs and N(z) estimate via a weighted sum of the
     empirical N(z) consisting of the normalized histogram
@@ -205,7 +235,7 @@ class SimpleSOMSummarizer(SZPZSummarizer):
     qp_ens: qp Ensemble
       ensemble of bootstrap realizations of the estimated N(z) for the input photometric data
     """
-    name = 'SimpleSOMSummarizer'
+    name = 'somocluSOMSummarizer'
     config_options = SZPZSummarizer.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
@@ -219,7 +249,8 @@ class SimpleSOMSummarizer(SZPZSummarizer):
                           redshift_colname=Param(str, "redshift", msg="name of redshift column in specz file"),
                           phot_weightcol=Param(str, "", msg="name of photometry weight, if present"),
                           spec_weightcol=Param(str, "", msg="name of specz weight col, if present"),
-                          nsamples=Param(int, 20, msg="number of bootstrap samples to generate"))
+                          nsamples=Param(int, 20, msg="number of bootstrap samples to generate"),
+                          step=Param(int, 1000, msg="stepsize used to calculate bmus for a pre-trained SOM on testing data"))
     outputs = [('output', QPHandle),
                ('single_NZ', QPHandle),
                ('cellid_output', TableHandle),
@@ -295,8 +326,8 @@ class SimpleSOMSummarizer(SZPZSummarizer):
         spec_colors = _computemagcolordata(spec_data, self.ref_column_name,
                                            self.usecols, self.column_usage)
 
-        phot_som_coords = np.array([self.som.winner(x) for x in phot_colors]).T
-        spec_som_coords = np.array([self.som.winner(x) for x in spec_colors]).T
+        phot_som_coords = get_bmus(self.som, phot_colors, self.config.step).T
+        spec_som_coords = get_bmus(self.som, spec_colors, self.config.step).T
         phot_pixel_coords = np.ravel_multi_index(phot_som_coords, (self.n_columns, self.n_rows))
         spec_pixel_coords = np.ravel_multi_index(spec_som_coords, (self.n_columns, self.n_rows))
 
