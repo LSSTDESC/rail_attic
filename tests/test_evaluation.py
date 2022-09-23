@@ -5,6 +5,7 @@ from rail.core.data import QPHandle, TableHandle
 from rail.evaluation.metrics.pit import PIT, PITOutRate, PITKS, PITCvM, PITAD
 from rail.evaluation.metrics.cdeloss import CDELoss
 import rail.evaluation.metrics.pointestimates as pe
+from rail.evaluation.metrics.brier import Brier
 from rail.evaluation.evaluator import Evaluator
 import qp
 
@@ -35,6 +36,10 @@ def construct_test_ensemble():
     grid_ens = n_ens.convert_to(qp.interp_gen, xvals=zgrid)
     return zgrid, true_zs, grid_ens, true_ez
 
+def test_brier_base():
+    brier_obj = Brier([1,2,3], [1,2,3])
+    result = brier_obj.evaluate()
+    assert result == 0
 
 def test_pit_metrics():
     zgrid, zspec, pdf_ens, _ = construct_test_ensemble()
