@@ -8,6 +8,10 @@ from rail.estimation.summarizer import SZPZSummarizer
 from rail.core.data import QPHandle, TableHandle
 import qp
 
+import matplotlib.pyplot as plt
+from matplotlib.patches import RegularPolygon
+from matplotlib import cm
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 def_bands = ['u', 'g', 'r', 'i', 'z', 'y']
 def_cols = [f"mag_{band}_lsst" for band in def_bands]
@@ -63,6 +67,63 @@ def get_bmus(som, data, step=1000):
         bmus = p.map(func, np.arange(int(len(data)/step)+1))
     bmus_array = np.asarray(bmus).astype(np.int)
     return bmus_array.reshape(bmus_array.shape[0]*bmus_array.shape[1], 2)[:len(data)]
+
+
+def plot_som(ax, som_map, grid_type='rectangular', colormap=cm.viridis, cbar_name=None,
+             vmin=None, vmax=None):
+    '''
+    This function plots the pre-trained SOM.
+    Input:
+    ax: the axis to be plotted on.
+    som_map: a 2-D array contains the value in a pre-trained SOM. The value can be the number 
+    of sources in each cell; or the mean feature in every cell.  
+    grid_type: string, either 'rectangular' or 'hexagonal'.
+    colormap: the colormap to show the values. default: cm.viridis.
+    cbar_name: the label on the color bar.
+    '''
+    if vmin == None and vmax == None:
+        vmin = np.quantile(som_map[~np.isnan(som_map)],0.01)
+        vmax = np.quantile(som_map[~np.isnan(som_map)],0.99)
+    cscale = (som_map-vmin) / (vmax - vmin)
+    som_dim = cscale.shape[0]
+    if grid_type == 'rectangular':
+        ax.matshow(som_map.T, cmap=colormap, 
+                   vmin=vmin, 
+                   vmax=vmax)
+    else:
+        yy, xx= np.meshgrid(np.arange(som_dim), np.arange(som_dim))
+        shift = np.zeros(som_dim)
+        shift[::2]=-0.5
+        xx = xx + shift
+        for i in range(cscale.shape[0]):
+            for j in range(cscale.shape[1]):
+                wy = yy[(i, j)] * np.sqrt(3) / 2
+                if np.isnan(cscale[i,j]):
+                    color = 'k'
+                else:
+                    color = colormap(cscale[i,j])
+
+                hex = RegularPolygon((xx[(i, j)], wy), 
+                                 numVertices=6, 
+                                 radius= 1 / np.sqrt(3),
+                                 facecolor=color, 
+                                 edgecolor=color,
+                                 #alpha=.4, 
+                                 lw=0.2,)
+                ax.add_patch(hex)
+
+    scmap = plt.scatter([0,0],[0,0], s=0, c=[vmin, vmax], 
+                            cmap=colormap)
+    ax.set_xlim(-1,som_dim-.5)
+    ax.set_ylim(-0.5,som_dim * np.sqrt(3) / 2)
+
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+
+    cb = plt.colorbar(scmap, cax=cax)
+    cb.ax.tick_params(labelsize=15)
+    cb.set_label(cbar_name, size=15)
+    ax.axis('off')
 
 
 class Inform_somocluSOMSummarizer(CatInformer):
@@ -122,16 +183,15 @@ class Inform_somocluSOMSummarizer(CatInformer):
                           n_rows=Param(int, 31, msg="number of cells in SOM y dimension"),
                           n_columns=Param(int, 31, msg="number of cells in SOM x dimension"),
                           gridtype=Param(str, 'rectangular', msg="Optional parameter to specify the grid form of the nodes:"
-                                         +"* 'rectangular': rectangular neurons (default)"
-                                         +"* 'hexagonal': hexagonal neurons"),
+                                         + "* 'rectangular': rectangular neurons (default)"
+                                         + "* 'hexagonal': hexagonal neurons"),
                           maptype=Param(str, 'planar', msg="Optional parameter to specify the map topology:"
-                          +"* 'planar': Planar map (default)"
-                          +"* 'toroid': Toroid map"),
+                                        + "* 'planar': Planar map (default)"
+                                        + "* 'toroid': Toroid map"),
                           std_coeff=Param(float, 1.5, msg="Optional parameter to set the coefficient in the Gaussian"
-                          +"neighborhood function exp(-||x-y||^2/(2*(coeff*radius)^2))"
-                          +"Default: 1.5"),
+                                          + "neighborhood function exp(-||x-y||^2/(2*(coeff*radius)^2))"
+                                          + "Default: 1.5"),
                           som_learning_rate=Param(float, 0.5, msg="Initial SOM learning rate (scale0 param in Somoclu)"),
-                          som_iterations=Param(int, 10_000, msg="number of iterations in SOM training"),
                           hdf5_groupname=Param(str, "photometry", msg="name of hdf5 group for data, if None, then set to ''"))
 
     def __init__(self, args, comm=None):
