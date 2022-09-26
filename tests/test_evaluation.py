@@ -35,6 +35,7 @@ def construct_test_ensemble():
     grid_ens = n_ens.convert_to(qp.interp_gen, xvals=zgrid)
     return zgrid, true_zs, grid_ens, true_ez
 
+
 def test_pit_metrics():
     zgrid, zspec, pdf_ens, _ = construct_test_ensemble()
     pit_obj = PIT(pdf_ens, zspec)
