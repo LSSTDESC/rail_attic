@@ -27,6 +27,7 @@ dependencies = [
     "ceci>=1.10.1",
     "pyyaml",
     "minisom",
+    "somoclu",
     "scipy>=1.9.0",
     "pz-hyperbolic-temp",
     "qp-prob",
