@@ -32,6 +32,10 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install numpy
+<<<<<<< HEAD
+=======
+        pip install pathos
+>>>>>>> bd227256f68c353415e39cf6f0d14d3bf8f27938
         pip install .[all]
         pip install flake8 pytest pytest-cov mockmpi pytest-timeout
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
