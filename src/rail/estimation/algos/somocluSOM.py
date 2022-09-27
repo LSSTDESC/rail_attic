@@ -44,7 +44,7 @@ def _computemagcolordata(data, ref_column_name, column_names, colusage):
     return coldata.T
 
 
-def get_bmus(som, data, step=1000):
+def get_bmus(som, data, step=1000):  # pragma: no cover
     '''
     This function gets the "best matching unit (bmu)" of a given data on a pre-trained SOM.
     It works by multiprocessing chunks of the data.
@@ -70,7 +70,7 @@ def get_bmus(som, data, step=1000):
 
 
 def plot_som(ax, som_map, grid_type='rectangular', colormap=cm.viridis, cbar_name=None,
-             vmin=None, vmax=None):
+             vmin=None, vmax=None):  # pragma: no cover
     '''
     This function plots the pre-trained SOM.
     Input:
