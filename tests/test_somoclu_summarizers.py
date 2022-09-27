@@ -23,8 +23,8 @@ def one_algo(key, inform_class, summarizer_class, summary_kwargs):
     phot_data = DS.read_file("phot_data", TableHandle, testphotdata)
     informer = inform_class.make_stage(
         name=f"inform_"+key,
-        model=f"tmpsom_"+key+".pkl",
-        aliases={"model": "som_inform_test_model", "input": "som_inform_test_input"},
+        model=f"tmpsomoclu_"+key+".pkl",
+        aliases={"model": "somoclu_inform_test_model", "input": "somoclu_inform_test_input"},
         **summary_kwargs,
     )
     informer.inform(spec_data)
@@ -32,9 +32,9 @@ def one_algo(key, inform_class, summarizer_class, summary_kwargs):
         name=key,
         model=informer.get_handle("model"),
         aliases={
-            "model": "som_summarize_test_model",
-            "input": "som_summarize_test_input",
-            "spec_input": "som_summarize_test_spec_input",
+            "model": "somoclu_summarize_test_model",
+            "input": "somoclu_summarize_test_input",
+            "spec_input": "somoclu_summarize_test_spec_input",
         },
         **summary_kwargs,
     )
@@ -45,11 +45,11 @@ def one_algo(key, inform_class, summarizer_class, summary_kwargs):
     # test loading model by name rather than via handle
     summarizer2 = summarizer_class.make_stage(
         name=key,
-        model=f"tmpsom_"+key+".pkl",
+        model=f"tmpsomoclu_"+key+".pkl",
         aliases={
-            "model": "som_summarize_test2_model",
-            "input": "som_summarize_test2_input",
-            "spec_input": "som_summarize_test2_spec_input",
+            "model": "somoclu_summarize_test2_model",
+            "input": "somoclu_summarize_test2_input",
+            "spec_input": "somoclu_summarize_test2_spec_input",
         },
     )
     _ = summarizer2.summarize(phot_data, spec_data)
@@ -63,7 +63,7 @@ def one_algo(key, inform_class, summarizer_class, summary_kwargs):
     os.remove(
         summarizer2.get_output(summarizer2.get_aliased_tag("output"), final_name=True)
     )
-    os.remove(f"tmpsom_"+key+".pkl")
+    os.remove(f"tmpsomoclu_"+key+".pkl")
     return summary_ens
 
 
