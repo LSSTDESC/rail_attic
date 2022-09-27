@@ -23,4 +23,5 @@ FlexCode
 h5py
 minisom
 somoclu
+pathos
 hyperbolic@git+https://github.com/jlvdb/hyperbolic
