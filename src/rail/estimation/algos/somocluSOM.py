@@ -324,6 +324,9 @@ class somocluSOMSummarizer(SZPZSummarizer):
 
     def open_model(self, **kwargs):
         SZPZSummarizer.open_model(self, **kwargs)
+        print("Model is ")
+        print(self.model)
+
         self.som = self.model['som']
         self.usecols = self.model['usecols']
         self.column_usage = self.model['column_usage']
