@@ -41,7 +41,7 @@ class Brier(MetricEvaluator):
     def _manipulate_data(self):
         """
         Placeholder for data manipulation as required. i.e. converting from
-        qp.ensamble objects into np.array objects.
+        qp.ensemble objects into np.array objects.
         """
 
         # Attempt to convert the input variables into np.arrays
@@ -79,7 +79,7 @@ class Brier(MetricEvaluator):
         """
 
         # If inputs are 1-d arrays adjust axis and retained output dimensions.
-        # Note: It's safe to check just self._prediction, becuase in
+        # Note: It's safe to check just self._prediction, because in
         # _validate_data, we raise an exception if _prediction and _truth do not
         # have the same shape.
         AVERAGE_ALONG_ROWS = 1
