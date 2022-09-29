@@ -29,4 +29,3 @@ python:
      path: .
      extra_requirements:
        - all
-       - numpy
