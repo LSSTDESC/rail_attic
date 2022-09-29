@@ -1,7 +1,6 @@
 setuptools_scm
 jupyter
 jupyterlab
-numpy
 sphinx
 matplotlib
 pandas
