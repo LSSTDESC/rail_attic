@@ -28,4 +28,3 @@ python:
      path: .
      extra_requirements:
        - all
-  system_packages: true
