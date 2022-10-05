@@ -4,7 +4,8 @@ from typing import Type
 import numpy as np
 import pandas as pd
 import pytest
-from rail.core.data import DATA_STORE, TableHandle
+from descformats.data import DATA_STORE
+from descformats.base import TableHandle
 from rail.core.utilStages import ColumnMapper
 from rail.creation.degradation import *
 

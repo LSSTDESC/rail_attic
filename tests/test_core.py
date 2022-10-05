@@ -71,7 +71,7 @@ def do_data_handle(datapath, handle_class):
     assert not th2.has_path
     assert not th2.is_written
     with pytest.raises(ValueError) as errinfo:
-        th2.open()
+        th2.open(mode='r')
     with pytest.raises(ValueError) as errinfo:
         th2.write()
     with pytest.raises(ValueError) as errinfo:
@@ -86,7 +86,7 @@ def do_data_handle(datapath, handle_class):
 def test_pq_handle():
     datapath = os.path.join(RAILDIR, 'rail', 'examples', 'testdata', 'test_dc2_training_9816.pq')
     handle = do_data_handle(datapath, PqHandle)
-    pqfile = handle.open()
+    pqfile = handle.open(mode='r')
     assert pqfile
     assert handle.fileObj is not None
     handle.close()
@@ -96,7 +96,7 @@ def test_pq_handle():
 def test_qp_handle():
     datapath = os.path.join(RAILDIR, 'rail', 'examples', 'testdata', 'output_BPZ_lite.fits')
     handle = do_data_handle(datapath, QPHandle)
-    qpfile = handle.open()
+    qpfile = handle.open(mode='r')
     assert qpfile
     assert handle.fileObj is not None
     handle.close()
@@ -143,7 +143,7 @@ def test_hdf5_handle():
 def test_fits_handle():
     datapath = os.path.join(RAILDIR, 'rail', 'examples', 'testdata', 'output_BPZ_lite.fits')
     handle = do_data_handle(datapath, FitsHandle)
-    fitsfile = handle.open()
+    fitsfile = handle.open(mode='r')
     assert fitsfile
     assert handle.fileObj is not None
     handle.close()

@@ -99,22 +99,25 @@ def test_golden_v2():
     )
       
     pipe.lsst_error_model_test = LSSTErrorModel.build(
-        connections=dict(input=pipe.flow_engine_test.io.output),
+        input=pipe.flow_engine_test.io.output,
         bandNames=band_dict,
     )
                 
     pipe.col_remapper_test = ColumnMapper.build(
-        connections=dict(input=pipe.lsst_error_model_test.io.output),
+        input=pipe.lsst_error_model_test.io.output,
         hdf5_groupname='',
         columns=rename_dict,
     )
 
     pipe.table_conv_test = TableConverter.build(
-        connections=dict(input=pipe.col_remapper_test.io.output),
+        input=pipe.col_remapper_test.io.output,
         output_format='numpyDict', 
         seed=12345,
     )
 
+    import pdb
+    pdb.set_trace()
+    
     pipe.initialize(dict(model=flow_file), dict(output_dir='.', log_dir='.', resume=False), None)
     pipe.save('stage.yaml')
 

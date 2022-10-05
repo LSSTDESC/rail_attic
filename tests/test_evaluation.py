@@ -88,6 +88,7 @@ def test_point_metrics():
 def test_evaluation_stage():
 
     DS = RailStage.data_store
+    DS.clear()
     zgrid, zspec, pdf_ens, true_ez = construct_test_ensemble()
     pdf = DS.add_data('pdf', pdf_ens, QPHandle)
     truth_table = dict(redshift=true_ez)
