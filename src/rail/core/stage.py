@@ -30,4 +30,3 @@ class RailPipeline(MiniPipeline):
 
 
 class RailStage(PipelineStage):
-    pass
