@@ -22,8 +22,8 @@ def one_algo(key, summarizer_class, summary_kwargs):
     test_data = DS.read_file('test_data', QPHandle, testdata)
     summarizer = summarizer_class.make_stage(name=key, **summary_kwargs)
     summary_ens = summarizer.summarize(test_data)                  
-    os.remove(summarizer.get_output(summarizer.get_aliased_tag('output'), final_name=True))
-    os.remove(summarizer.get_output(summarizer.get_aliased_tag('single_NZ'), final_name=True))    
+    os.remove(summarizer.get_output('output', final_name=True))
+    os.remove(summarizer.get_output('single_NZ', final_name=True))    
     return summary_ens
 
 

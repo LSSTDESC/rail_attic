@@ -26,43 +26,8 @@ class FitsHandle(base.FitsHandle):
 class PqHandle(base.PqHandle):
     pass
 
-class QPHandle(handle.DataHandle):
-    """DataHandle for qp ensembles
-    """
-    suffix = 'hdf5'
-
-    @classmethod
-    def _open(cls, path, **kwargs):
-        """Open and return the associated file
-        Notes
-        -----
-        This will simply open the file and return a file-like object to the caller.
-        It will not read or cache the data
-        """
-        return tables_io.io.io_open(path, **kwargs)  #pylint: disable=no-member
-
-    @classmethod
-    def _read(cls, path, **kwargs):
-        """Read and return the data from the associated file """
-        return qp.read(path)
-
-    @classmethod
-    def _write(cls, data, path, **kwargs):
-        """Write the data to the associatied file """
-        return data.write_to(path)
-
-    @classmethod
-    def _initialize_write(cls, data, path, data_lenght, **kwargs):
-        comm = kwargs.get('communicator', None)
-        return data.initializeHdf5Write(path, data_lenght, comm)
-
-    @classmethod
-    def _write_chunk(cls, data, fileObj, groups, start, end, **kwargs):
-        return data.writeHdf5Chunk(fileObj, start, end)
-
-    @classmethod
-    def _finalize_write(cls, data, fileObj, **kwargs):
-        return data.finalizeHdf5Write(fileObj)
+class QPHandle(base.QPHandle):
+    pass
 
 
 def default_model_read(modelfile):
@@ -116,12 +81,11 @@ class ModelHandle(DataHandle):
     model_factory = ModelDict()
 
     @classmethod
-    def _open(cls, path, **kwargs):
+    def _open(cls, path, mode, **kwargs):
         """Open and return the associated file
         """
-        kwcopy = kwargs.copy()
-        if kwcopy.pop('mode', 'r') == 'w':
-            return cls.model_factory.open(path, mode='wb', **kwcopy)
+        if mode == 'w':
+            return cls.model_factory.open(path, mode='wb', **kwargs)
         return cls.model_factory.read(path, **kwargs)
 
     @classmethod
@@ -172,8 +136,8 @@ class FlowHandle(ModelHandle):
     suffix = 'pkl'
 
     @classmethod
-    def _open(cls, path, **kwargs):  #pylint: disable=unused-argument
-        if kwargs.get('mode', 'r') == 'w':  #pragma: no cover
+    def _open(cls, path, mode, **kwargs):  #pylint: disable=unused-argument
+        if mode == 'w':  #pragma: no cover
             raise NotImplementedError("Use FlowHandle.write(), not FlowHandle.open(mode='w')")
         return cls.flow_factory.read(path)
 

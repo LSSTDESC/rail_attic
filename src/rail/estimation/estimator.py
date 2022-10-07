@@ -31,7 +31,6 @@ class CatEstimator(RailStage):
         self.model = None
         if not isinstance(args, dict):  #pragma: no cover
             args = vars(args)
-        self.open_model(**args)
 
     def open_model(self, **kwargs):
         """Load the mode and/or attach it to this Estimator
@@ -92,9 +91,10 @@ class CatEstimator(RailStage):
         return self.get_handle('output')
 
     def run(self):
+        self.open_model(model=self.config['model'])
         iterator = self.input_iterator('input')
         first = True
-        self._initialize_run()
+        self._initialize_run()        
         self._output_handle = None
         for s, e, test_data in iterator:
             print(f"Process {self.rank} running estimator on chunk {s} - {e}")

@@ -81,7 +81,7 @@ def test_LineConfusion_returns_correct_shape(data):
     degraded_data = degrader(data).data
 
     assert degraded_data.shape == data.data.shape
-    os.remove(degrader.get_output(degrader.get_aliased_tag("output"), final_name=True))
+    os.remove(degrader.get_output("output", final_name=True))
 
 
 def test_LineConfusion_no_negative_redshifts(data):
@@ -93,7 +93,7 @@ def test_LineConfusion_no_negative_redshifts(data):
     degraded_data = degrader(data).data
 
     assert all(degraded_data["redshift"].to_numpy() >= 0)
-    os.remove(degrader.get_output(degrader.get_aliased_tag("output"), final_name=True))
+    os.remove(degrader.get_output("output", final_name=True))
 
 
 @pytest.mark.parametrize(
@@ -111,7 +111,7 @@ def test_InvRedshiftIncompleteness_returns_correct_shape(data):
     degraded_data = degrader(data).data
     assert degraded_data.shape[0] < data.data.shape[0]
     assert degraded_data.shape[1] == data.data.shape[1]
-    os.remove(degrader.get_output(degrader.get_aliased_tag("output"), final_name=True))
+    os.remove(degrader.get_output("output", final_name=True))
 
 
 @pytest.mark.parametrize(
@@ -135,7 +135,7 @@ def test_GridSelection_returns_correct_shape(data):
     # pdb.set_trace()
     assert degraded_data.shape[0] < data.data.shape[0]
     assert degraded_data.shape[1] == data.data.shape[1] - 1
-    os.remove(degrader.get_output(degrader.get_aliased_tag("output"), final_name=True))
+    os.remove(degrader.get_output("output", final_name=True))
 
 
 @pytest.mark.parametrize(
@@ -168,7 +168,7 @@ def test_QuantityCut_returns_correct_shape(data):
     degraded_data = degrader(data).data
 
     assert degraded_data.shape == data.data.query("u < 0 & y > 1 & y < 2").shape
-    os.remove(degrader.get_output(degrader.get_aliased_tag("output"), final_name=True))
+    os.remove(degrader.get_output("output", final_name=True))
 
 
 @pytest.mark.parametrize(
@@ -227,7 +227,7 @@ def test_LSSTErrorModel_returns_correct_shape(m5, highSNR, data):
     degraded_data = degrader(data).data
 
     assert degraded_data.shape == (data.data.shape[0], 2 * data.data.shape[1] - 1)
-    os.remove(degrader.get_output(degrader.get_aliased_tag("output"), final_name=True))
+    os.remove(degrader.get_output("output", final_name=True))
 
 
 @pytest.mark.parametrize("m5,highSNR", [({}, False), ({"u": 23}, True)])
@@ -244,7 +244,7 @@ def test_LSSTErrorModel_magLim(m5, highSNR, data):
     degraded_mags = degraded_data.iloc[:, 1:].to_numpy()
 
     assert degraded_mags[~np.isnan(degraded_mags)].max() < magLim
-    os.remove(degrader.get_output(degrader.get_aliased_tag("output"), final_name=True))
+    os.remove(degrader.get_output("output", final_name=True))
 
 
 @pytest.mark.parametrize("highSNR", [False, True])
@@ -295,13 +295,11 @@ def test_LSSTErrorModel_extended(data):
     errorModel_gaap.__repr__()
 
     os.remove(
-        errorModel_auto.get_output(
-            errorModel_auto.get_aliased_tag("output"), final_name=True
+        errorModel_auto.get_output("output", final_name=True
         )
     )
     os.remove(
-        errorModel_gaap.get_output(
-            errorModel_gaap.get_aliased_tag("output"), final_name=True
+        errorModel_gaap.get_output("output", final_name=True
         )
     )
 
@@ -333,7 +331,7 @@ def test_random_seed(degrader, data):
     # make sure setting different seeds yields different output
     degraded_data3 = degrader(data, seed=1).data.to_numpy()
     assert not degraded_data1.equals(degraded_data3)
-    os.remove(degrader.get_output(degrader.get_aliased_tag("output"), final_name=True))
+    os.remove(degrader.get_output("output", final_name=True))
 
 
 def test_SpecSelection(data):
@@ -354,8 +352,7 @@ def test_SpecSelection(data):
     degrader_GAMA.__repr__()
 
     os.remove(
-        degrader_GAMA.get_output(
-            degrader_GAMA.get_aliased_tag("output"), final_name=True
+        degrader_GAMA.get_output("output", final_name=True
         )
     )
 
@@ -364,8 +361,7 @@ def test_SpecSelection(data):
     degrader_BOSS.__repr__()
 
     os.remove(
-        degrader_BOSS.get_output(
-            degrader_BOSS.get_aliased_tag("output"), final_name=True
+        degrader_BOSS.get_output("output", final_name=True
         )
     )
 
@@ -374,8 +370,7 @@ def test_SpecSelection(data):
     degrader_DEEP2.__repr__()
 
     os.remove(
-        degrader_DEEP2.get_output(
-            degrader_DEEP2.get_aliased_tag("output"), final_name=True
+        degrader_DEEP2.get_output("output", final_name=True
         )
     )
 
@@ -390,8 +385,7 @@ def test_SpecSelection(data):
     degrader_zCOSMOS.__repr__()
 
     os.remove(
-        degrader_zCOSMOS.get_output(
-            degrader_zCOSMOS.get_aliased_tag("output"), final_name=True
+        degrader_zCOSMOS.get_output("output", final_name=True
         )
     )
 
@@ -400,7 +394,7 @@ def test_SpecSelection(data):
     degrader_HSC.__repr__()
 
     os.remove(
-        degrader_HSC.get_output(degrader_HSC.get_aliased_tag("output"), final_name=True)
+        degrader_HSC.get_output("output", final_name=True)
     )
 
     degrader_HSC = SpecSelection_HSC.make_stage(percentile_cut=70)
@@ -408,7 +402,7 @@ def test_SpecSelection(data):
     degrader_HSC.__repr__()
 
     os.remove(
-        degrader_HSC.get_output(degrader_HSC.get_aliased_tag("output"), final_name=True)
+        degrader_HSC.get_output("output", final_name=True)
     )
 
 
@@ -429,8 +423,7 @@ def test_SpecSelection_low_N_tot(data_forspec):
     degrader_zCOSMOS(data_forspec)
 
     os.remove(
-        degrader_zCOSMOS.get_output(
-            degrader_zCOSMOS.get_aliased_tag("output"), final_name=True
+        degrader_zCOSMOS.get_output("output", final_name=True
         )
     )
 
@@ -468,7 +461,7 @@ def test_ObsCondition_returns_correct_shape(data):
     degraded_data = degrader(data).data
 
     assert degraded_data.shape == (data.data.shape[0], 2 * data.data.shape[1])
-    os.remove(degrader.get_output(degrader.get_aliased_tag("output"), final_name=True))
+    os.remove(degrader.get_output("output", final_name=True))
     
     
 def test_ObsCondition_random_seed(data):
@@ -486,7 +479,7 @@ def test_ObsCondition_random_seed(data):
     degraded_data3 = degrader3(data).data.to_numpy()
     assert not degraded_data1.equals(degraded_data3)
     
-    os.remove(degrader3.get_output(degrader3.get_aliased_tag("output"), final_name=True))
+    os.remove(degrader3.get_output("output", final_name=True))
 
 
 @pytest.mark.parametrize(
@@ -575,9 +568,7 @@ def test_ObsCondition_extended(data):
     degrader_ext.__repr__()
     
     os.remove(
-        degrader_ext.get_output(
-            degrader_ext.get_aliased_tag("output"), final_name=True
-        )
+        degrader_ext.get_output("output", final_name=True)
     )
     
 
@@ -591,4 +582,4 @@ def test_ObsCondition_empty_map_dict(data):
     degraded_data2 = degrader2(data.data, random_state=0)
     assert degraded_data1.equals(degraded_data2)
     
-    os.remove(degrader1.get_output(degrader1.get_aliased_tag("output"), final_name=True))
+    os.remove(degrader1.get_output("output", final_name=True))

@@ -23,7 +23,8 @@ def one_algo(key, inform_class, estimator_class, summary_kwargs):
     informer.inform(spec_data)
     estimatorr = estimator_class.make_stage(name=key, model=informer.get_handle('model'), **summary_kwargs)
     summary_ens = estimatorr.estimate(phot_data)
-    os.remove(estimatorr.get_output(estimatorr.get_aliased_tag('output'), final_name=True))
+    os.remove(estimatorr.get_output('output', final_name=True))
+    os.remove(estimatorr.get_output('single_NZ', final_name=True))
     os.remove("tmp.pkl")
     return summary_ens
 

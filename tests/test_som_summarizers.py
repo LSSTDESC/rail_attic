@@ -40,7 +40,7 @@ def one_algo(key, inform_class, summarizer_class, summary_kwargs):
     )
     summary_ens = summarizerr.summarize(phot_data, spec_data)
     os.remove(
-        summarizerr.get_output(summarizerr.get_aliased_tag("output"), final_name=True)
+        summarizerr.get_output("output", final_name=True)
     )
     # test loading model by name rather than via handle
     summarizer2 = summarizer_class.make_stage(
@@ -54,15 +54,14 @@ def one_algo(key, inform_class, summarizer_class, summary_kwargs):
     )
     _ = summarizer2.summarize(phot_data, spec_data)
     fid_ens = qp.read(
-        summarizer2.get_output(
-            summarizer2.get_aliased_tag("single_NZ"), final_name=True
-        )
+        summarizer2.get_output("single_NZ", final_name=True)
     )
     meanz = fid_ens.mean().flatten()
     assert np.isclose(meanz[0], 0.1493592786)
-    os.remove(
-        summarizer2.get_output(summarizer2.get_aliased_tag("output"), final_name=True)
-    )
+    os.remove(summarizer2.get_output("output", final_name=True))
+    os.remove(summarizer2.get_output("cellid_output", final_name=True))
+    os.remove(summarizer2.get_output("single_NZ", final_name=True)),
+    os.remove(summarizer2.get_output("uncovered_cell_file", final_name=True))
     os.remove(f"tmpsom_{key}.pkl")
     return summary_ens
 

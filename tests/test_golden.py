@@ -1,5 +1,6 @@
 import os
 
+import tempfile
 import ceci
 import rail
 import numpy as np
@@ -13,6 +14,7 @@ from rail.core.utils import RAILDIR
 
 
 def test_goldenspike():
+    
     DS = RailStage.data_store
     DS.__class__.allow_overwrite = True
     DS.clear()
@@ -59,7 +61,9 @@ def test_goldenspike():
         dict(model=flow_file), dict(output_dir=".", log_dir=".", resume=False), None
     )
 
+    
     pipe.save("stage.yaml")
+    pipe.run()
 
     pr = ceci.Pipeline.read("stage.yaml")
     pr.run()
@@ -115,11 +119,13 @@ def test_golden_v2():
         seed=12345,
     )
 
-    import pdb
-    pdb.set_trace()
-    
-    pipe.initialize(dict(model=flow_file), dict(output_dir='.', log_dir='.', resume=False), None)
-    pipe.save('stage.yaml')
+    with tempfile.TemporaryDirectory() as dirname:
 
-    pr = ceci.Pipeline.read('stage.yaml')
-    pr.run()
+        pipe.initialize(dict(model=flow_file), dict(output_dir=dirname, log_dir=dirname, resume=False), None)
+        pipe.save('stage.yaml')
+
+        pr = ceci.Pipeline.read('stage.yaml')
+        pr.run()
+
+    os.remove("stage.yaml")
+    os.remove("stage_config.yml")

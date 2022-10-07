@@ -50,12 +50,12 @@ def one_algo(key, single_trainer, single_estimator, train_kwargs, estim_kwargs):
         pz_3 = single_estimator.make_stage(name=f"{pz.name}_copy3", **copy3_estim_kwargs)
         estim_3 = pz_3.estimate(validation_data)
 
-    os.remove(pz.get_output(pz.get_aliased_tag('output'), final_name=True))
+    os.remove(pz.get_output('output', final_name=True))
     if pz_2 is not None:
-        os.remove(pz_2.get_output(pz_2.get_aliased_tag('output'), final_name=True))
+        os.remove(pz_2.get_output('output', final_name=True))
 
     if pz_3 is not None:
-        os.remove(pz_3.get_output(pz_3.get_aliased_tag('output'), final_name=True))
+        os.remove(pz_3.get_output('output', final_name=True))
     model_file = estim_kwargs.get('model', 'None')
     if model_file != 'None':
         try:

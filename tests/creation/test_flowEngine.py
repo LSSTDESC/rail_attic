@@ -121,7 +121,7 @@ def test_FlowCreator(flow_file, tmp_path):
     # now make a FlowCreator from the flow and draw samples from it
     flowCreator1 = FlowCreator.make_stage(
         name="flowCreator1",
-        model=flow,
+        model=flow_file,
         output=tmp_path / "samples1.pq",
         n_samples=n_samples,
         aliases={"model": "flowCreator1_model", "output": "flowCreator1_output"},

@@ -137,6 +137,7 @@ class NZDir(CatEstimator):
         self.sz_mag_data = self.model['sz_mag_data']
 
     def run(self):
+        self.open_model(model=self.config['model'])
         rng = np.random.default_rng(seed=self.config.seed)
         if self.config.hdf5_groupname:
             test_data = self.get_data('input')[self.config.hdf5_groupname]

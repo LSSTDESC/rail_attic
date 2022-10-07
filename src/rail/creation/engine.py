@@ -60,39 +60,6 @@ class Creator(RailStage):
     def __init__(self, args, comm=None):
         """Initialize Creator"""
         RailStage.__init__(self, args, comm=comm)
-        self.model = None
-        if not isinstance(args, dict):  # pragma: no cover
-            args = vars(args)
-        self.open_model(**args)
-
-    def open_model(self, **kwargs):
-        """Load the mode and/or attach it to this Creator
-
-        Keywords
-        --------
-        model : `object`, `str` or `ModelHandle`
-            Either an object with a trained model,
-            a path pointing to a file that can be read to obtain the trained model,
-            or a `ModelHandle` providing access to the trained model.
-
-        Returns
-        -------
-        self.model : `object`
-            The object encapsulating the trained model.
-        """
-        model = kwargs.get("model", None)
-        if model is None or model == "None":  # pragma: no cover
-            self.model = None
-            return self.model
-        if isinstance(model, str):  # pragma: no cover
-            self.model = self.set_data("model", data=None, path=model)
-            self.config["model"] = model
-            return self.model
-        if isinstance(model, ModelHandle):  # pragma: no cover
-            if model.has_path:
-                self.config["model"] = model.path
-        self.model = self.set_data("model", model)
-        return self.model
 
     def sample(self, n_samples: int, seed: int = None, **kwargs):
         """Draw samples from the model specified in the configuration.

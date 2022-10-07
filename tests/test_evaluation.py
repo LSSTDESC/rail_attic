@@ -96,4 +96,4 @@ def test_evaluation_stage():
     evaluator = Evaluator.make_stage(name='Eval')
     evaluator.evaluate(pdf, truth)
     
-    os.remove(evaluator.get_output(evaluator.get_aliased_tag('output'), final_name=True))
+    os.remove(evaluator.get_output('output', final_name=True))
