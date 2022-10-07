@@ -1,9 +1,9 @@
 config: pipe_example_config.yml
 inputs:
   model: /Users/echarles/software/DESC/RAIL/src/rail/examples/goldenspike/data/pretrained_flow.pkl
-log_dir: .
+log_dir: tmp_out
 modules: rail
-output_dir: .
+output_dir: tmp_out
 resume: false
 site:
   dry_run: false
