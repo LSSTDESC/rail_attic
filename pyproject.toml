@@ -34,6 +34,8 @@ dependencies = [
     "pzflow",
     "healpy",
     "photerr",
+    "pathos",
+    "somoclu",
 ]
 
 [project.optional-dependencies]
