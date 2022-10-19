@@ -338,7 +338,7 @@ class somocluSOMSummarizer(SZPZSummarizer):
         else:  # pragma: no cover
             test_data = self.get_data('input')
         if self.config.spec_groupname:
-            spec_data = self.get_data('spec_input')[self.config.hdf5_groupname]
+            spec_data = self.get_data('spec_input')[self.config.spec_groupname]
         else:  # pragma: no cover
             spec_data = self.get_data('spec_input')
         if self.config.redshift_colname not in spec_data.keys():  # pragma: no cover
