@@ -1,6 +1,6 @@
 from rail.creation.engine import Modeler
 from rail.core.stage import RailStage
-from rail.core.data import DataHandle
+from rail.core.data import ModelHandle
 from ceci.config import StageParameter as Param
 import numpy as np
 from dsps.seds_from_tables import _calc_sed_kern
@@ -32,17 +32,11 @@ class DSPSSingleSedModeler(Modeler):
                           metallicity_grid=Param(str, 'metallicity_grid.npy', msg='npy file containing the metallicity '
                                                                                   'grid values in units of '
                                                                                   'log10(Z / Z_solar)'),
-                          ssp_wavelengths=Param(str, 'ssp_spec_wave.npy', msg='npy file containing the wavelength array'
-                                                                              'of the template SEDs of SSPs with'
-                                                                              'shape n_wavelength_points'),
                           ssp_fluxes=Param(str, 'ssp_spec_flux_lines.npy', msg='npy file containing the SSPs template'
                                                                                'SEDs with shape '
                                                                                '(n_grid_metallicity_values,'
                                                                                'n_grid_age_values, '
                                                                                'n_wavelength_points)'),
-                          filter_data=Param(str, 'lsst_filters.npy', msg='npy file containing the structured numpy '
-                                                                         'array of the survey filter wavelengths and'
-                                                                         'transmissions'),
                           star_formation_history=Param(str, 'SFH.npy', msg='npy file containing star-formation'
                                                                            'history of the galaxy in units of'
                                                                            'solar masses per year'),
@@ -63,9 +57,9 @@ class DSPSSingleSedModeler(Modeler):
                                                                            'at the time of observation'),
                           seed=12345)
 
-    inputs = [("input", DataHandle)]
+    # inputs = [("input", DataHandle)]
     # outputs = [("model", ModelHandle)]
-    outputs = [("model", DataHandle)]
+    outputs = [("model", ModelHandle)]
 
     def __init__(self, args, comm=None):
         """Initialize Modeler"""
@@ -73,11 +67,25 @@ class DSPSSingleSedModeler(Modeler):
         self.model = None
         self.log_age_gyr = np.load(self.config.age_grid)
         self.lgZsun_bin = np.load(self.config.metallicity_grid)
-        self.ssp_wave = np.load(self.config.ssp_wavelengths)
         self.ssp_flux = np.load(self.config.ssp_fluxes)
-        self.filter_data = np.load(self.config.filter_data)
         self.sfh_table = np.load(self.config.star_formation_history)
         self.t_table = np.load(self.config.cosmic_time_grid)
+
+    def fit_model(self):
+        """
+        Produce a creation model from which photometry can be generated
+
+        Parameters
+        ----------
+        [The parameters depend entirely on the modeling approach!]
+
+        Returns
+        -------
+        [This will definitely be a file, but the filetype and format depend entirely on the modeling approach!]
+        """
+        self.run()
+        self.finalize()
+        return self.get_handle("model")
 
     def run(self):
         """Run method
@@ -117,7 +125,7 @@ class DSPSSingleSedModeler(Modeler):
         restframe_sed = _calc_sed_kern(*args)
 
         # save the sed model
-        self.add_data("model", restframe_sed)
+        self.add_data("model", np.array(restframe_sed))
 
 
 class DSPSPopulationSedModeler(Modeler):
@@ -144,32 +152,25 @@ class DSPSPopulationSedModeler(Modeler):
                           metallicity_grid=Param(str, 'metallicity_grid.npy', msg='npy file containing the metallicity '
                                                                                   'grid values in units of '
                                                                                   'log10(Z / Z_solar)'),
-                          ssp_wavelengths=Param(str, 'ssp_spec_wave.npy', msg='npy file containing the wavelength array'
-                                                                              'of the template SEDs of SSPs with'
-                                                                              'shape n_wavelength_points'),
                           ssp_fluxes=Param(str, 'ssp_spec_flux_lines.npy', msg='npy file containing the SSPs template'
                                                                                'SEDs with shape '
                                                                                '(n_grid_metallicity_values,'
                                                                                'n_grid_age_values, '
                                                                                'n_wavelength_points)'),
-                          filter_data=Param(str, 'lsst_filters.npy', msg='npy file containing the structured numpy '
-                                                                         'array of the survey filter wavelengths and'
-                                                                         'transmissions'),
                           star_formation_history=Param(str, 'SFHs.npy', msg='npy file containing star-formation'
                                                                             'histories of the individual galaxies in '
                                                                             'the galaxy population in units of'
                                                                             'solar masses per year'),
-                          cosmic_time_grid=Param(str, 'cosmic_time_tables.npy', msg='Cosmic time tables of the galaxy'
+                          cosmic_time_grid=Param(str, 'cosmic_times_table.npy', msg='Cosmic time tables of the galaxy'
                                                                                     'population over which'
                                                                                     'the stellar mass build-up takes'
                                                                                     'place'),
                           stellar_mass_type=Param(str, 'formed', msg='Options are "formed" or "surviving" for the '
                                                                      'computation of stellar-mass build-up'),
-                          stellar_mass_table=Param(str, 'stellar_mass_table.npy', msg='npy file containing the'
-                                                                                      'log galaxy stellar mass in units'
-                                                                                      'of solar masses as function of'
-                                                                                      'cosmic time, valid only when'
-                                                                                      'stellar_mass_type="surviving"'),
+                          stellar_mass_table=Param(str, 'stellar_masses_table.npy',
+                                                   msg='npy file containing the log galaxy stellar masses in units'
+                                                       'of solar masses as function of cosmic time, valid only when'
+                                                       'stellar_mass_type="surviving"'),
                           galaxy_age=Param(str, 'galaxy_population_ages.npy', msg='npy file containing the galaxy ages'
                                                                                   ' at the time of observation in Gyr'),
                           galaxy_metallicity=Param(str, 'galaxy_population_metallicities.npy',
@@ -180,9 +181,9 @@ class DSPSPopulationSedModeler(Modeler):
                                                                'galaxy metallicities at the time of observation'),
                           seed=12345)
 
-    inputs = [("input", DataHandle)]
+    # inputs = [("input", DataHandle)]
     # outputs = [("model", ModelHandle)]
-    outputs = [("model", DataHandle)]
+    outputs = [("model", ModelHandle)]
 
     def __init__(self, args, comm=None):
         """Initialize Modeler"""
@@ -190,14 +191,28 @@ class DSPSPopulationSedModeler(Modeler):
         self.model = None
         self.log_age_gyr = np.load(self.config.age_grid)
         self.lgZsun_bin = np.load(self.config.metallicity_grid)
-        self.ssp_wave = np.load(self.config.ssp_wavelengths)
         self.ssp_flux = np.load(self.config.ssp_fluxes)
-        self.filter_data = np.load(self.config.filter_data)
         self.sfh_table_pop = np.load(self.config.star_formation_history)
         self.t_table_pop = np.load(self.config.cosmic_time_grid)
         self.galaxy_age_pop = np.load(self.config.galaxy_age)
         self.galaxy_metallicity_pop = np.load(self.config.galaxy_metallicity)
         self.galaxy_metallicity_scatter_pop = np.load(self.config.galaxy_metallicity_scatter)
+
+    def fit_model(self):
+        """
+        Produce a creation model from which photometry can be generated
+
+        Parameters
+        ----------
+        [The parameters depend entirely on the modeling approach!]
+
+        Returns
+        -------
+        [This will definitely be a file, but the filetype and format depend entirely on the modeling approach!]
+        """
+        self.run()
+        self.finalize()
+        return self.get_handle("model")
 
     def run(self):
         """Run method
@@ -214,13 +229,18 @@ class DSPSPopulationSedModeler(Modeler):
         (see surviving_mstar.py).
         The units of the resulting rest-frame SEDs are solar luminosity per Hertz. The luminosity refers to that
         emitted by the formed mass at the time of observation.
+        The _a tuple for jax is composed of None or 0, depending on whether you don't or do want the
+         array axis to map over for all arguments.
         """
 
-        _a = (*[None] * 5, 0, 0, 0)
+        # _a = (*[None] * 5, 0, 0, 0)
+        _a = (0, None, None, None, 0, 0, 0, 0)
         _calc_sed_vmap = jjit(vmap(_calc_sed_kern, in_axes=_a))
 
         if self.config.stellar_mass_type == 'formed':
-            dt_table_pop = _jax_get_dt_array(self.t_table_pop)
+            dt_table_pop = np.empty_like(self.t_table_pop)
+            for i in range(len(self.t_table_pop)):
+                dt_table_pop[i, :] = _jax_get_dt_array(self.t_table_pop[i, :])
             logsm_table_pop = np.log10(np.cumsum(self.sfh_table_pop * dt_table_pop, axis=1)) + 9.0
         elif self.config.stellar_mass_type == 'surviving':
             logsm_table_pop = np.load(self.config.stellar_mass_table)
@@ -233,10 +253,10 @@ class DSPSPopulationSedModeler(Modeler):
                     self.ssp_flux,
                     self.t_table_pop,
                     logsm_table_pop,
-                    self.config.galaxy_metallicity_pop,
-                    self.config.galaxy_metallicity_scatter_pop)
+                    self.galaxy_metallicity_pop,
+                    self.galaxy_metallicity_scatter_pop)
 
         restframe_sed_galpop = _calc_sed_vmap(*args_pop)
 
         # save the sed model
-        self.add_data("model", restframe_sed_galpop)
+        self.add_data("model", np.array(restframe_sed_galpop))
