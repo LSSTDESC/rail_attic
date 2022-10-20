@@ -1,4 +1,4 @@
-""" Abstract base class and derived class defining a generator for galaxy population modelling components
+""" Abstract base class and derived class defining a generator for galaxy population galaxy_modelling components
 
 The key feature is that the __call__ method takes a configuration file and
 returns a FitsHandle, and wraps the run method
@@ -13,7 +13,7 @@ from gal_pop_model_components import galaxy_population_modelling
 
 class GalaxyGenerator(RailStage):
     """
-    Base class for generating galaxy populations from library of modelling components.
+    Base class for generating galaxy populations from library of galaxy_modelling components.
 
     It takes as "input" a configuration file and provides as "output" a fits table compatible with the input
     accepted by rail_fsps.
@@ -35,7 +35,7 @@ class GalaxyGenerator(RailStage):
     def __call__(self, sample, seed: int = None):  # pragma: no cover
         """The main interface method for `GalaxyGenerator`
 
-        Generate galaxy population from library of modelling components.
+        Generate galaxy population from library of galaxy_modelling components.
 
         set_data will attach the sample to this `GalaxyGenerator`
         (for introspection and provenance tracking).
@@ -51,7 +51,7 @@ class GalaxyGenerator(RailStage):
         Parameters
         ----------
         sample : configuration file
-            which modelling components to use
+            which galaxy_modelling components to use
         seed : int, default=None
             An integer to set the numpy random seed
 
@@ -74,7 +74,7 @@ class GalaxyGenerator(RailStage):
 
 class GalaxyPopulationGenerator(GalaxyGenerator):
     """
-    Generator that creates galaxy populations from library of modelling components.
+    Generator that creates galaxy populations from library of galaxy_modelling components.
     It requires the package gal_pop_model_components.
     Install gal_pop_model_components with the following command:
     git clone https://github.com/torluca/gal_pop_model_components
@@ -92,7 +92,7 @@ class GalaxyPopulationGenerator(GalaxyGenerator):
     name = 'GalaxyPopulationGenerator'
     config_options = GalaxyGenerator.config_options.copy()
     config_options.update(config_params_file=Param(str, 'params.yml', msg='yaml file containing the parameters'
-                                                                          'for the modelling components'),
+                                                                          'for the galaxy_modelling components'),
                           sample_luminosity_function=Param(bool, True, msg='True/False for joint sampling M,z from'
                                                                            'luminosity function'),
                           luminosity_function_type=Param(str, 'Schechter', msg='ignored if '
