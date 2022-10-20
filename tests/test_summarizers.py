@@ -6,8 +6,10 @@ from rail.core.stage import RailStage
 from rail.core.data import QPHandle
 from rail.estimation.algos import naiveStack, pointEstimateHist
 from rail.estimation.algos import varInference
+from rail.core.utils import RAILDIR
 
-testdata = 'tests/data/output_BPZ_lite.fits'
+
+testdata = os.path.join(RAILDIR, 'rail/examples/testdata/output_BPZ_lite.fits')
 DS = RailStage.data_store
 DS.__class__.allow_overwrite = True
 
@@ -21,6 +23,7 @@ def one_algo(key, summarizer_class, summary_kwargs):
     summarizer = summarizer_class.make_stage(name=key, **summary_kwargs)
     summary_ens = summarizer.summarize(test_data)                  
     os.remove(summarizer.get_output(summarizer.get_aliased_tag('output'), final_name=True))
+    os.remove(summarizer.get_output(summarizer.get_aliased_tag('single_NZ'), final_name=True))    
     return summary_ens
 
 

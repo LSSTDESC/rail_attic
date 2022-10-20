@@ -11,7 +11,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-rail/_version.py
+src/rail/core/_version.py
 build/
 develop-eggs/
 dist/
@@ -48,6 +48,7 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *.cover
+cov.xml
 .hypothesis/
 .pytest_cache/
 inprogress_*
