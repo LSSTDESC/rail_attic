@@ -29,7 +29,7 @@ dependencies = [
     "minisom",
     "scipy>=1.9.0",
     "pz-hyperbolic-temp",
-    "qp-prob",
+    "qp-prob==0.6.3",
     "scikit-learn",
     "pzflow",
     "healpy",
