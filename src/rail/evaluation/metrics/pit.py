@@ -4,16 +4,13 @@ from scipy import stats
 import qp
 from .base import MetricEvaluator
 from rail.evaluation.utils import stat_and_pval, stat_crit_sig
-<<<<<<< HEAD:rail/evaluation/metrics/pit.py
 from sklearn.preprocessing import StandardScaler
 from condition_pit_utils.mlp_training import train_local_pit, load_model, get_local_pit, trapz_grid
 from joblib import Parallel, delayed
 from condition_pit_utils.ispline import fit_cdf
 from tqdm import trange
 import matplotlib.pyplot as plt
-import warnings
-=======
->>>>>>> main:src/rail/evaluation/metrics/pit.py
+
 
 default_quants = np.linspace(0, 1, 100)
 _pitMetaMetrics = {}
