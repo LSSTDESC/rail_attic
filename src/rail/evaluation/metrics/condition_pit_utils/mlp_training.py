@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, TensorDataset
-import MonotonicNN
+from src.rail.evaluation.metrics.condition_pit_utils.MonotonicNN import MonotonicNN
 from prettytable import PrettyTable
 from tqdm import trange
 
