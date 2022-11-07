@@ -23,7 +23,7 @@ The use of a unified `qp` Ensemble as the output format enables a consistent eva
 ==========
 
 The creation subpackage has two main components enabling forward-modeling of realistically complex mock data.
-The creation modules provide a joint probability spaces of redshift and photometry, and the degradation modules introduce systematic imperfections into galaxy catalogs, which can be used to stress-test photo-z estimators. 
+The creation modules provide a joint probability space of redshift and photometry, and the degradation modules introduce systematic imperfections into galaxy catalogs, which can be used to stress-test photo-z estimators. 
 
 **Creation modules**: 
 This code enables the generation of mock photometry corresponding to a fully self-consistent forward model of the joint probability space of redshift and photometry.  
