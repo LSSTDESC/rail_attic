@@ -32,7 +32,7 @@ class DSPSPhotometryCreator(Creator):
                           Om0=Param(float, 0.3, msg=''), Ode0=Param(float, 0.7, msg=''), w0=Param(float, -1, msg=''),
                           wa=Param(float, 0, msg=''), h=Param(float, 0.7, msg=''),
                           use_planck_cosmology=Param(bool, False, msg=''),
-                          n_samples=int, seed=12345)
+                          n_galaxies=int, seed=12345)
 
     inputs = [("model", ModelHandle)]
     outputs = [("output", FitsHandle)]
@@ -89,7 +89,7 @@ class DSPSPhotometryCreator(Creator):
         self.model = self.set_data("model", model)
         return self.model
 
-    def sample(self, n_samples: int, seed: int = None, **kwargs):
+    def sample(self, seed: int = None, **kwargs):
         """Draw samples from the model specified in the configuration.
 
         This is a method for running a Creator in interactive mode.
@@ -97,8 +97,6 @@ class DSPSPhotometryCreator(Creator):
 
         Parameters
         ----------
-        n_samples: int
-            The number of samples to draw
         seed: int
             The random seed to control sampling
 
@@ -109,12 +107,11 @@ class DSPSPhotometryCreator(Creator):
 
         Notes
         -----
-        This method puts `n_samples` and `seed` into the stage configuration
+        This method puts  `seed` into the stage configuration
         data, which makes them available to other methods.
         It then calls the `run` method, which must be defined by a subclass.
         Finally, the `DataHandle` associated to the `output` tag is returned.
         """
-        self.config["n_samples"] = n_samples
         self.config["seed"] = seed
         self.config.update(**kwargs)
         self.run()
@@ -126,25 +123,25 @@ class DSPSPhotometryCreator(Creator):
 
         """
 
-        filter_wavelengths = np.stack((self.filter_wavelengths,) * self.config.n_samples, axis=0)
-        filter_transmissions = np.stack((self.filter_transmissions,) * self.config.n_samples, axis=0)
+        filter_wavelengths = np.stack((self.filter_wavelengths,) * self.config.n_galaxies, axis=0)
+        filter_transmissions = np.stack((self.filter_transmissions,) * self.config.n_galaxies, axis=0)
 
         args = (self.rest_frame_wavelengths,
-                self.model.reshape((self.config.n_samples, len(self.rest_frame_wavelengths))),
+                self.model.reshape((self.config.n_galaxies, len(self.rest_frame_wavelengths))),
                 filter_wavelengths, filter_transmissions)
 
-        rest_frame_absolute_mags = self._calc_rest_mag_vmap(*args).reshape((self.config.n_samples,
+        rest_frame_absolute_mags = self._calc_rest_mag_vmap(*args).reshape((self.config.n_galaxies,
                                                                             len(self.filter_wavelengths)))
 
         args = (self.rest_frame_wavelengths,
-                self.model.reshape((self.config.n_samples, len(self.rest_frame_wavelengths))),
+                self.model.reshape((self.config.n_galaxies, len(self.rest_frame_wavelengths))),
                 filter_wavelengths, filter_transmissions, self.galaxy_redshifts,
                 self.config.Om0, self.config.Ode0, self.config.w0, self.config.wa, self.config.h)
 
-        apparent_magnitudes = self._calc_obs_mag_vmap(*args).reshape((self.config.n_samples,
+        apparent_magnitudes = self._calc_obs_mag_vmap(*args).reshape((self.config.n_galaxies,
                                                                       len(self.filter_wavelengths)))
 
-        idxs = np.arange(1, self.config.n_samples + 1, 1, dtype=int)
+        idxs = np.arange(1, self.config.n_galaxies + 1, 1, dtype=int)
 
         output_table = Table([idxs, rest_frame_absolute_mags, apparent_magnitudes], names=('id', 'abs_mags',
                                                                                            'app_mags'))
