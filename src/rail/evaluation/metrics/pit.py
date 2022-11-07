@@ -27,7 +27,7 @@ def PITMetaMetric(cls):
     return cls
 
 
-class UnconditionPIT(MetricEvaluator):
+class PIT(MetricEvaluator):
     """ Probability Integral Transform """
 
     def __init__(self, qp_ens, ztrue):
@@ -132,9 +132,9 @@ class ConditionPIT(MetricEvaluator):
         self.uncond_pit_test = get_pit(cde_test, z_grid, self._ztrue_test)
 
         # now let's do pit using the unconditional pit coded above
-        # uncond_pit_calib_class = UnconditionPIT(self._qp_ens, self._ztrue_calib)
+        # uncond_pit_calib_class = PIT(self._qp_ens, self._ztrue_calib)
         # self.uncond_pit_calib = uncond_pit_calib_class.evaluate(eval_grid=self._zgrid)
-        # uncond_pit_test_class = UnconditionPIT(self._qp_ens_cde_test, self._ztrue_test)
+        # uncond_pit_test_class = PIT(self._qp_ens_cde_test, self._ztrue_test)
         # self.uncond_pit_test = uncond_pit_test_class.evaluate(eval_grid=self._zgrid)
 
     def train(self, patience=10, n_epochs=10000, lr=0.001, weight_decay=0.01, batch_size=2048, frac_mlp_train=0.9,
