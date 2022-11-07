@@ -7,6 +7,7 @@ from dsps.seds_from_tables import _calc_sed_kern
 from dsps.utils import _jax_get_dt_array
 from jax import vmap
 from jax import jit as jjit
+from jax import numpy as jnp
 
 
 class DSPSSingleSedModeler(Modeler):
@@ -188,6 +189,9 @@ class DSPSPopulationSedModeler(Modeler):
     def __init__(self, args, comm=None):
         """Initialize Modeler"""
         RailStage.__init__(self, args, comm=comm)
+        # _a = (*[None] * 5, 0, 0, 0)
+        self._a = (0, None, None, None, 0, 0, 0, 0)
+        self._calc_sed_vmap = jjit(vmap(_calc_sed_kern, in_axes=self._a))
         self.model = None
         self.log_age_gyr = np.load(self.config.age_grid)
         self.lgZsun_bin = np.load(self.config.metallicity_grid)
@@ -197,6 +201,18 @@ class DSPSPopulationSedModeler(Modeler):
         self.galaxy_age_pop = np.load(self.config.galaxy_age)
         self.galaxy_metallicity_pop = np.load(self.config.galaxy_metallicity)
         self.galaxy_metallicity_scatter_pop = np.load(self.config.galaxy_metallicity_scatter)
+
+    @jjit
+    def _jax_get_dt_array_pop(self):
+        dt_pop = jnp.zeros_like(self.t_table_pop)
+        tmids_pop = 0.5 * (self.t_table_pop[:, :-1] + self.t_table_pop[:, 1:])
+        dtmids_pop = jnp.diff(tmids_pop)
+        dt_pop = dt_pop.at[:, 1:-1].set(dtmids_pop)
+        t_lo_pop = self.t_table_pop[:, 0] - (self.t_table_pop[:, 1] - self.t_table_pop[:, 0]) / 2
+        t_hi_pop = self.t_table_pop[:, -1] + dtmids_pop[:, -1] / 2
+        dt_pop = dt_pop.at[:, 0].set(tmids_pop[:, 0] - t_lo_pop)
+        dt_pop = dt_pop.at[:, -1].set(t_hi_pop - tmids_pop[:, -1])
+        return dt_pop
 
     def fit_model(self):
         """
@@ -210,6 +226,7 @@ class DSPSPopulationSedModeler(Modeler):
         -------
         [This will definitely be a file, but the filetype and format depend entirely on the modeling approach!]
         """
+
         self.run()
         self.finalize()
         return self.get_handle("model")
@@ -233,14 +250,9 @@ class DSPSPopulationSedModeler(Modeler):
          array axis to map over for all arguments.
         """
 
-        # _a = (*[None] * 5, 0, 0, 0)
-        _a = (0, None, None, None, 0, 0, 0, 0)
-        _calc_sed_vmap = jjit(vmap(_calc_sed_kern, in_axes=_a))
-
         if self.config.stellar_mass_type == 'formed':
-            dt_table_pop = np.empty_like(self.t_table_pop)
-            for i in range(len(self.t_table_pop)):
-                dt_table_pop[i, :] = _jax_get_dt_array(self.t_table_pop[i, :])
+
+            dt_table_pop = self._jax_get_dt_array_pop(self.t_table_pop)
             logsm_table_pop = np.log10(np.cumsum(self.sfh_table_pop * dt_table_pop, axis=1)) + 9.0
         elif self.config.stellar_mass_type == 'surviving':
             logsm_table_pop = np.load(self.config.stellar_mass_table)
@@ -256,7 +268,7 @@ class DSPSPopulationSedModeler(Modeler):
                     self.galaxy_metallicity_pop,
                     self.galaxy_metallicity_scatter_pop)
 
-        restframe_sed_galpop = _calc_sed_vmap(*args_pop)
+        restframe_sed_galpop = self._calc_sed_vmap(*args_pop)
 
         # save the sed model
         self.add_data("model", np.array(restframe_sed_galpop))

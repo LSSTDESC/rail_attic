@@ -41,6 +41,10 @@ class DSPSPhotometryCreator(Creator):
         """Initialize Creator"""
         RailStage.__init__(self, args, comm=comm)
         # self.model = self.config.rest_frame_sed_models
+        self._b = [None, 0, 0, 0]
+        self._calc_rest_mag_vmap = jjit(vmap(_calc_rest_mag, in_axes=self._b))
+        self._c = [None, 0, 0, 0, 0, *[None] * 5]
+        self._calc_obs_mag_vmap = jjit(vmap(_calc_obs_mag, in_axes=self._c))
         self.filter_data = np.load(self.config.filter_data)
         self.filter_names = np.array([key for key in self.filter_data.dtype.fields
                                       if 'wave' in key])
@@ -122,9 +126,6 @@ class DSPSPhotometryCreator(Creator):
 
         """
 
-        _b = [None, 0, 0, 0]
-        _calc_rest_mag_vmap = jjit(vmap(_calc_rest_mag, in_axes=_b))
-
         filter_wavelengths = np.stack((self.filter_wavelengths,) * self.config.n_samples, axis=0)
         filter_transmissions = np.stack((self.filter_transmissions,) * self.config.n_samples, axis=0)
 
@@ -132,18 +133,16 @@ class DSPSPhotometryCreator(Creator):
                 self.model.reshape((self.config.n_samples, len(self.rest_frame_wavelengths))),
                 filter_wavelengths, filter_transmissions)
 
-        rest_frame_absolute_mags = _calc_rest_mag_vmap(*args).reshape((self.config.n_samples,
-                                                                       len(self.filter_wavelengths)))
-
-        _c = [None, 0, 0, 0, 0, *[None]*5]
-        _calc_obs_mag_vmap = jjit(vmap(_calc_obs_mag, in_axes=_c))
+        rest_frame_absolute_mags = self._calc_rest_mag_vmap(*args).reshape((self.config.n_samples,
+                                                                            len(self.filter_wavelengths)))
 
         args = (self.rest_frame_wavelengths,
                 self.model.reshape((self.config.n_samples, len(self.rest_frame_wavelengths))),
                 filter_wavelengths, filter_transmissions, self.galaxy_redshifts,
                 self.config.Om0, self.config.Ode0, self.config.w0, self.config.wa, self.config.h)
 
-        apparent_magnitudes = _calc_obs_mag_vmap(*args).reshape((self.config.n_samples, len(self.filter_wavelengths)))
+        apparent_magnitudes = self._calc_obs_mag_vmap(*args).reshape((self.config.n_samples,
+                                                                      len(self.filter_wavelengths)))
 
         idxs = np.arange(1, self.config.n_samples + 1, 1, dtype=int)
 
