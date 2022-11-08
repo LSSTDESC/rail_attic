@@ -23,7 +23,7 @@ posting of the work to the arXiv.
 Citing individual codes within RAIL
 ***********************************
 
-Several of the codes included in RAIL are pre-existing codes written by external devalopers,
+Several of the codes included in RAIL are pre-existing codes written by external developers,
 if these codes are used in an analysis they should be cited individually in addition to the
 citation to RAIL.
 
