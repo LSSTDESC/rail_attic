@@ -2,6 +2,7 @@ import inspect
 import numpy as np
 from scipy import stats
 import qp
+from deprecated import deprecated
 from .base import MetricEvaluator
 from rail.evaluation.utils import stat_and_pval, stat_crit_sig
 
@@ -18,7 +19,12 @@ def PITMetaMetric(cls):
         _pitMetaMetrics.setdefault(cls, {})["default"] = kwargs
     return cls
 
-
+@deprecated(
+    reason="""
+    This implementation of PIT is deprecated.
+    Please use qp.metrics.pit.PIT(qp_ens, z_true, quant_grid) from the qp package.
+    """,
+    category=DeprecationWarning)
 class PIT(MetricEvaluator):
     """ Probability Integral Transform """
 
@@ -83,6 +89,12 @@ class PIT(MetricEvaluator):
     #     return fig_filename
 
 
+@deprecated(
+    reason="""
+    This class is deprecated.
+    It has been superseded the qp.metrics.pit.PIT class in the qp-prob package.
+    """,
+    category=DeprecationWarning)
 class PITMeta():
     """ A superclass for metrics of the PIT"""
 
@@ -112,6 +124,12 @@ class PITMeta():
         raise NotImplementedError
 
 
+@deprecated(
+    reason="""
+    This class is deprecated.
+    It has been incorporated into the qp.metrics.pit.PIT class in the qp-prob package.
+    """,
+    category=DeprecationWarning)
 @PITMetaMetric
 class PITOutRate(PITMeta):
     """ Fraction of PIT outliers """
@@ -122,6 +140,12 @@ class PITOutRate(PITMeta):
         return out_area
 
 
+@deprecated(
+    reason="""
+    This class is deprecated.
+    It has been incorporated into the qp.metrics.pit.PIT class in the qp-prob package.
+    """,
+    category=DeprecationWarning)
 @PITMetaMetric
 class PITKS(PITMeta):
     """ Kolmogorov-Smirnov test statistic """
@@ -132,7 +156,12 @@ class PITKS(PITMeta):
         stat, pval = stats.kstest(self._pit_vals, 'uniform')
         return stat_and_pval(stat, pval)
 
-
+@deprecated(
+    reason="""
+    This class is deprecated.
+    It has been incorporated into the qp.metrics.pit.PIT class in the qp-prob package.
+    """,
+    category=DeprecationWarning)
 @PITMetaMetric
 class PITCvM(PITMeta):
     """ Cramer-von Mises statistic """
@@ -144,7 +173,12 @@ class PITCvM(PITMeta):
         return stat_and_pval(cvm_stat_and_pval.statistic,
                              cvm_stat_and_pval.pvalue)
 
-
+@deprecated(
+    reason="""
+    This class is deprecated.
+    It has been incorporated into the qp.metrics.pit.PIT class in the qp-prob package.
+    """,
+    category=DeprecationWarning)
 @PITMetaMetric
 class PITAD(PITMeta):
     """ Anderson-Darling statistic """

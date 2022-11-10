@@ -3,7 +3,7 @@ from matplotlib import gridspec
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from rail.evaluation.metrics.pit import *
+from qp.metrics.pit import PIT
 from qp.ensemble import Ensemble
 from qp import interp
 
@@ -58,9 +58,7 @@ def plot_pit_qq(pdf_ens, ztrue, qbins=101, title=None, code=None,
     ax0 = plt.subplot(gs[0])
 
     pitobj = PIT(pdf_ens, ztrue)
-    spl_ens, metamets = pitobj.evaluate()
-    pit_vals = np.array(pitobj._pit_samps)
-    pit_out_rate = PITOutRate(pit_vals, spl_ens).evaluate()
+    pit_vals = np.array(pitobj.pit_samps)
 
     # #################
     q_theory = np.linspace(0., 1., qbins)
@@ -122,11 +120,8 @@ def plot_pit_qq(pdf_ens, ztrue, qbins=101, title=None, code=None,
 def ks_plot(pitobj, n_quant=100, savefig=True, figname='default_ksplot.jpg'):
     """ KS test illustration.
     Ancillary function to be used by class KS."""
-    #pits = ks._pits
-    spl_ens, metamets = pitobj.evaluate()
-    pits = np.array(pitobj._pit_samps)
-    ksobj = PITKS(pits, spl_ens)
-    stat_and_pval = ksobj.evaluate()
+    pits = np.array(pitobj.pit_samps)
+    stat_and_pval = pitobj.evaluate_PIT_KS()
     xvals = np.linspace(0., 1., n_quant)
     yvals = np.array([np.histogram(pits, bins=len(xvals))[0]])
     pit_cdf = Ensemble(interp, data=dict(xvals=xvals, yvals=yvals)).cdf(xvals)[0]

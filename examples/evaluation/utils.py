@@ -3,8 +3,7 @@ from matplotlib import gridspec
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from rail.evaluation.metrics.pit import *
-#from metrics import *
+from qp.metrics.pit import PIT
 from IPython.display import Markdown
 import h5py
 import os
@@ -207,9 +206,8 @@ def plot_pit_qq(pdfs, zgrid, ztrue, bins=None, title=None, code=None,
     if show_pit:
         fzdata = qp.Ensemble(qp.interp, data=dict(xvals=zgrid, yvals=pdfs))
         pitobj = PIT(fzdata, ztrue)
-        spl_ens, metamets = pitobj.evaluate()
-        pit_vals = np.array(pitobj._pit_samps)
-        pit_out_rate = PITOutRate(pit_vals, spl_ens).evaluate()
+        pit_vals = np.array(pitobj.pit_samps)
+        pit_out_rate = pitobj.evaluate_PIT_outlier_rate()
 
         try:
             y_uni = float(len(pit_vals)) / float(bins)
@@ -257,11 +255,8 @@ def plot_pit_qq(pdfs, zgrid, ztrue, bins=None, title=None, code=None,
 def ks_plot(pitobj, n_quant=100):
     """ KS test illustration.
     Ancillary function to be used by class KS."""
-    #pits = ks._pits
-    spl_ens, metamets = pitobj.evaluate()
-    pits = np.array(pitobj._pit_samps)
-    ksobj = PITKS(pits, spl_ens)
-    stat_and_pval = ksobj.evaluate()
+    pits = np.array(pitobj.pit_samps)
+    stat_and_pval = pitobj.evaluate_PIT_KS()
     xvals = np.linspace(0., 1., n_quant)
     yvals = np.array([np.histogram(pits, bins=len(xvals))[0]])
     pit_cdf = Ensemble(interp, data=dict(xvals=xvals, yvals=yvals)).cdf(xvals)[0]
