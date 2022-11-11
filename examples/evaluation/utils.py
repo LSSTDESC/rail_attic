@@ -204,7 +204,7 @@ def plot_pit_qq(pdfs, zgrid, ztrue, bins=None, title=None, code=None,
     plt.xlim(-0.001, 1.001)
     plt.title(title)
     if show_pit:
-        fzdata = qp.Ensemble(qp.interp, data=dict(xvals=zgrid, yvals=pdfs))
+        fzdata = Ensemble(interp, data=dict(xvals=zgrid, yvals=pdfs))
         pitobj = PIT(fzdata, ztrue)
         pit_vals = np.array(pitobj.pit_samps)
         pit_out_rate = pitobj.evaluate_PIT_outlier_rate()
@@ -506,18 +506,18 @@ class Sample(Ensemble):
         return text
 
     def plot_pdfs(self, gals, show_ztrue=True, show_photoz_mode=False):
-        colors = utils.plot_pdfs(self, gals, show_ztrue=show_ztrue,
+        colors = plot_pdfs(self, gals, show_ztrue=show_ztrue,
                                  show_photoz_mode=show_photoz_mode)
         return colors
 
     def plot_old_valid(self, gals=None, colors=None):
-        old_metrics_table = utils.plot_old_valid(self, gals=gals, colors=colors)
+        old_metrics_table = plot_old_valid(self, gals=gals, colors=colors)
         return old_metrics_table
 
     def plot_pit_qq(self, bins=None, label=None, title=None, show_pit=True,
                     show_qq=True, show_pit_out_rate=True, savefig=False):
         """Make plot PIT-QQ as Figure 2 from Schmidt et al. 2020."""
-        fig_filename = utils.plot_pit_qq(self, bins=bins, label=label, title=title,
+        fig_filename = plot_pit_qq(self, bins=bins, label=label, title=title,
                                          show_pit=show_pit, show_qq=show_qq,
                                          show_pit_out_rate=show_pit_out_rate,
                                          savefig=savefig)

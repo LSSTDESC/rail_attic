@@ -176,6 +176,7 @@ def main():
 
             # calculate PIT values, takes a qp ensemble and the true z's
             pitobj = PIT(pz_data, z_true)
+            pit_vals = pitobj.pit_samps
             metamets = pitobj.calculate_pit_meta_metrics()
             # KS
             ks_stat_and_pval = metamets['ks']
