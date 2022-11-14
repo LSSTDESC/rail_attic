@@ -92,7 +92,7 @@ class PIT(MetricEvaluator):
 @deprecated(
     reason="""
     This class is deprecated.
-    It has been superseded the qp.metrics.pit.PIT class in the qp-prob package.
+    It has been superseded by the qp.metrics.pit.PIT class in the qp-prob package.
     """,
     category=DeprecationWarning)
 class PITMeta():
