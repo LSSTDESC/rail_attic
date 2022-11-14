@@ -12,12 +12,12 @@ from rail.core.stage import RailStage
 
 from rail.evaluation.utils import stat_and_pval
 from rail.evaluation.metrics.cdeloss import CDELoss
-from rail.evaluation.metrics.pit import PIT, PITOutRate, PITKS, PITCvM
+from qp.metrics.pit import PIT
 from rail.evaluation.metrics.pointestimates import PointSigmaIQR, PointBias, PointOutlierRate, PointSigmaMAD
 
 
 class Evaluator(RailStage):
-    """Evalute the preformance of a photo-Z estimator """
+    """Evaluate the performance of a photo-Z estimator """
 
     name = 'Evaluator'
     config_options = RailStage.config_options.copy()
@@ -26,7 +26,7 @@ class Evaluator(RailStage):
                           nzbins=Param(int, 301, msg="# of bins in zgrid"),
                           pit_metrics=Param(str, 'all', msg='PIT-based metrics to include'),
                           point_metrics=Param(str, 'all', msg='Point-estimate metrics to include'),
-                          do_cde=Param(bool, True, msg='Evalute CDE Metric'))
+                          do_cde=Param(bool, True, msg='Evaluate CDE Metric'))
     inputs = [('input', QPHandle),
               ('truth', Hdf5Handle)]
     outputs = [('output', Hdf5Handle)]
@@ -82,13 +82,36 @@ class Evaluator(RailStage):
         z_true = self.get_data('truth')['redshift']
         zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins+1)
 
-        PIT_METRICS = dict(KS=PITKS,
-                           CvM=PITCvM,
-                           OutRate=PITOutRate)
+        # Create an instance of the PIT class
+        pitobj = PIT(pz_data, z_true)
+
+        # Build reference dictionary of the PIT meta-metrics from this PIT instance
+        PIT_METRICS = dict(
+            AD=getattr(pitobj, 'evaluate_PIT_anderson_ksamp'),
+            CvM=getattr(pitobj, 'evaluate_PIT_CvM'),
+            KS=getattr(pitobj, 'evaluate_PIT_KS'),
+            OutRate=getattr(pitobj, 'evaluate_PIT_outlier_rate'),
+        )
+
+        # Parse the input configuration to determine which meta-metrics should be calculated
         if self.config.pit_metrics == 'all':
             pit_metrics = list(PIT_METRICS.keys())
         else:  #pragma: no cover
             pit_metrics = self.config.pit_metrics.split()
+
+        # Evaluate each of the requested meta-metrics, and store the result in `out_table`
+        out_table = {}
+        for pit_metric in pit_metrics:
+            value = PIT_METRICS[pit_metric]()
+
+            # The result objects of some meta-metrics are bespoke scipy objects with inconsistent fields.
+            # Here we do our best to store the relevant fields in `out_table`.
+            if isinstance(value, list):
+                out_table[f'PIT_{pit_metric}'] = value
+            else:
+                out_table[f'PIT_{pit_metric}_stat'] = [getattr(value, 'statistic', None)]
+                out_table[f'PIT_{pit_metric}_pval'] = [getattr(value, 'p_value', None)]
+                out_table[f'PIT_{pit_metric}_significance_level'] = [getattr(value, 'significance_level', None)]
 
         POINT_METRICS = dict(SimgaIQR=PointSigmaIQR,
                              Bias=PointBias,
@@ -98,21 +121,6 @@ class Evaluator(RailStage):
             point_metrics = list(POINT_METRICS.keys())
         else:  #pragma: no cover
             point_metrics = self.config.point_metrics.split()
-
-        out_table = {}
-        pitobj = None
-        for pit_metric in pit_metrics:
-            if pitobj is None:
-                pitobj = PIT(pz_data, z_true)
-                quant_ens, _ = pitobj.evaluate()
-                pit_vals = np.array(pitobj.pit_samps)
-
-            value = PIT_METRICS[pit_metric](pit_vals, quant_ens).evaluate()
-            if isinstance(value, stat_and_pval):
-                out_table[f'PIT_{pit_metric}_stat'] = [value.statistic]
-                out_table[f'PIT_{pit_metric}_pval'] = [value.p_value]
-            elif isinstance(value, float):
-                out_table[f'PIT_{pit_metric}'] = [value]
 
         z_mode = None
         for point_metric in point_metrics:

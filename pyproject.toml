@@ -29,13 +29,14 @@ dependencies = [
     "minisom",
     "scipy>=1.9.0",
     "pz-hyperbolic-temp",
-    "qp-prob==0.7.0",
+    "qp-prob>=0.7.1",
     "scikit-learn",
     "pzflow",
     "healpy",
     "photerr",
     "pathos",
     "somoclu",
+    "deprecated",
 ]
 
 [project.optional-dependencies]
