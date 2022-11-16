@@ -128,3 +128,6 @@ venv.bak/
 
 # vscode
 .vscode/
+
+# data for testing
+/tests/data
