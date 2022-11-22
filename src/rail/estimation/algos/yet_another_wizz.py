@@ -7,7 +7,7 @@ from __future__ import annotations
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Callable, Iterable, Iterator
+from typing import Any, Callable, Iterable, Iterator
 
 import astropy.cosmology
 import numpy as np
@@ -67,18 +67,32 @@ class UniformRandoms:
         return DataFrame({names[0]: ra, names[1]: dec})
 
 
-@dataclass(frozen=True, repr=False)
-class PairCountData:
-    weights: DataFrame
-    total: DataFrame
+class ArrayDict:
+
+    def __init__(
+        self,
+        array: NDArray,
+        key_to_index: dict[Any, np.int_]
+    ) -> None:
+        if len(array) != len(key_to_index):
+            raise ValueError("number of keys and array length do not match")
+        self.array = array
+        self.map = key_to_index
+
+    def get(self, key: Any) -> NDArray:
+        return self.array[self.map[key]]
+
+    def sample(self, keys: Iterable[Any]) -> NDArray:
+        idx = [self.map[key] for key in keys]
+        return self.array[idx]
 
 
 @dataclass(frozen=True, repr=False)
 class TreeCorrResult:
     interval: Interval
     npatch: tuple(int, int)
-    weights: DataFrame
-    total: DataFrame
+    weights: ArrayDict
+    total: ArrayDict
     mask: NDArray[np.bool_]
 
     @classmethod
@@ -97,23 +111,31 @@ class TreeCorrResult:
             r_weights = np.ones_like(correlation.meanr)
 
         # extract the (cross-patch) pair counts
-        index = IntervalIndex([interval])
+        key_to_index = {}
         weights = []
         total = []
-        for patches, result in correlation.results.items():
-            kwd = dict(index=index, name="%i,%i" % patches)
-            weights.append(Series([np.sum(result.weight * r_weights)], **kwd))
-            total.append(Series([result.tot], **kwd))
-        weights = pd.concat(weights, axis=1)
-        total = pd.concat(total, axis=1)
+        for i, (patches, result) in enumerate(correlation.results.items()):
+            key_to_index["%i,%i" % patches] = i
+            weights.append(np.sum(result.weight * r_weights))
+            total.append(result.tot)
+        weights = ArrayDict(np.array(weights), key_to_index)
+        total = ArrayDict(np.array(total), key_to_index)
         return cls(interval, npatch, weights, total, mask=correlation._ok)
 
 
 @dataclass(frozen=True, repr=False)
+class PairCountData:
+    binning: IntervalIndex
+    weights: NDArray[np.float_]
+    total: NDArray[np.float_]
+
+
+@dataclass(frozen=True, repr=False)
 class TreeCorrResultZbinned:
+    binning: IntervalIndex
     npatch: tuple(int, int)
-    weights: DataFrame
-    total: DataFrame
+    weights: ArrayDict
+    total: ArrayDict
     mask: NDArray[np.bool_]
 
     @classmethod
@@ -131,28 +153,36 @@ class TreeCorrResultZbinned:
                 raise ValueError("the patch numbers are inconsistent")
             if not np.array_equal(mask, zbin.mask):
                 raise ValueError("pair masks are inconsistent")
+        keys = set(zbins[0].weights.map)
+        for zbin in zbins[1:]:
+            if set(zbin.weights.map) != keys:
+                raise ValueError("patches are inconsistent")
+        keys = zbins[0].weights.map
 
-        # cast into dataframe with interval index to check consistency
-        index = IntervalIndex([zbin.interval for zbin in zbins])
-        if not index.is_non_overlapping_monotonic:
+        # check the ordering of the bins based on the provided intervals
+        binning = IntervalIndex([zbin.interval for zbin in zbins])
+        if not binning.is_non_overlapping_monotonic:
             raise ValueError(
                 "the binning interval is overlapping or not monotonic")
-        for this, following in zip(index[:-1], index[1:]):
+        for this, following in zip(binning[:-1], binning[1:]):
             if this.right != following.left:
                 raise ValueError(f"the binning interval is not contiguous")
-        weights = pd.concat([zbin.weights for zbin in zbins])
-        total = pd.concat([zbin.total for zbin in zbins])
-        return cls(npatch, weights, total, mask)
+
+        # merge the data
+        weights = ArrayDict(
+            np.column_stack([zbin.weights.array for zbin in zbins]), keys)
+        total = ArrayDict(
+            np.column_stack([zbin.total.array for zbin in zbins]), keys)
+        return cls(binning, npatch, weights, total, mask)
 
     def __len__(self) -> int:
         return len(self.total)
 
-    @property
-    def binning(self) -> IntervalIndex:
-        return self.total.index
-
     def get(self) -> PairCountData:
-        return PairCountData(self.weights.sum(axis=1), self.total.sum(axis=1))
+        return PairCountData(
+            self.binning,
+            self.weights.array.sum(axis=0),
+            self.total.array.sum(axis=0))
 
     def get_jackknife_samples(
         self,
@@ -167,26 +197,22 @@ class TreeCorrResultZbinned:
         npatch = max(self.npatch)
         # Furthermore, the iterator expects a single patch index which is
         # dropped in a single realisation.
-        weights = {}
-        total = {}
+        weights = []
+        total = []
         if global_norm:
-            global_total = self.total.sum(axis=1)
+            global_total = self.total.array.sum(axis=0)
         for idx in range(npatch):  # simplified leave-one-out iteration
             # we need to use the jackknife iterator twice
             keys_str = list(
                 "%i,%i" % patches
                 for patches in treecorr.NNCorrelation.JackknifePairIterator(
                     _dummy_pairs, *self.npatch, idx, self.mask))
-            weights[idx] = np.sum(
-                [self.weights[key] for key in keys_str], axis=0)
+            weights.append(self.weights.sample(keys_str).sum(axis=0))
             if global_norm:
-                total[idx] = global_total
+                total.append(global_total)
             else:
-                total[idx] = np.sum(
-                    [self.total[key] for key in keys_str], axis=0)
-        weights = DataFrame(weights, index=self.binning)
-        total = DataFrame(total, index=self.binning)
-        return PairCountData(weights, total)
+                total.append(self.total.sample(keys_str).sum(axis=0))
+        return PairCountData(self.binning, np.array(weights), np.array(total))
 
     def get_bootstrap_samples(
         self,
@@ -198,26 +224,22 @@ class TreeCorrResultZbinned:
         # draw N times from (0, ..., N) with repetition. These random patch
         # indices for M realisations should be provided in the [M, N] shaped
         # array 'patch_idx'.
-        weights = {}
-        total = {}
+        weights = []
+        total = []
         if global_norm:
-            global_total = self.total.sum(axis=1)
-        for i, idx in enumerate(patch_idx):  # simplified leave-one-out iteration
+            global_total = self.total.array.sum(axis=0)
+        for idx in patch_idx:  # simplified leave-one-out iteration
             # we need to use the jackknife iterator twice
             keys_str = list(
                 "%i,%i" % patches
                 for patches in treecorr.NNCorrelation.BootstrapPairIterator(
                     self.weights, *self.npatch, idx, self.mask))
-            weights[i] = np.sum(
-                [self.weights[key] for key in keys_str], axis=0)
+            weights.append(self.weights.sample(keys_str).sum(axis=0))
             if global_norm:
-                total[i] = global_total
+                total.append(global_total)
             else:
-                total[i] = np.sum(
-                    [self.total[key] for key in keys_str], axis=0)
-        weights = DataFrame(weights, index=self.weights.index)
-        total = DataFrame(total, index=self.total.index)
-        return PairCountData(weights, total)
+                total.append(self.total.sample(keys_str).sum(axis=0))
+        return PairCountData(self.binning, np.array(weights), np.array(total))
 
     def get_samples(
         self,
@@ -289,7 +311,8 @@ class CorrelationFunctionZbinned:
     ) -> DataFrame:
         DD = dd.weights
         RR = rr.weights * dd.total / rr.total
-        return DD / RR - 1.0
+        est = DD / RR - 1.0
+        return pd.DataFrame(data=est.T, index=dd.binning)
 
     @staticmethod
     def Davis_Peebles(
@@ -300,7 +323,8 @@ class CorrelationFunctionZbinned:
     ) -> DataFrame:
         DD = dd.weights
         DR = dr.weights * dd.total / dr.total
-        return DD / DR - 1.0
+        est = DD / DR - 1.0
+        return pd.DataFrame(data=est.T, index=dd.binning)
 
     @staticmethod
     def Hamilton(
@@ -317,7 +341,8 @@ class CorrelationFunctionZbinned:
         else:
             RD = rd.weights * dd.total / rd.total
         RR = rr.weights * dd.total / rr.total
-        return (DD * RR) / (DR * RD) - 1.0
+        est = (DD * RR) / (DR * RD) - 1.0
+        return pd.DataFrame(data=est.T, index=dd.binning)
 
     @staticmethod
     def Landy_Szalay(
@@ -334,7 +359,8 @@ class CorrelationFunctionZbinned:
         else:
             RD = rd.weights * dd.total / rd.total
         RR = rr.weights * dd.total / rr.total
-        return (DD - (DR + RD) + RR) / RR
+        est = (DD - (DR + RD) + RR) / RR
+        return pd.DataFrame(data=est.T, index=dd.binning)
 
     def _check_and_select_estimator(
         self,
@@ -364,11 +390,10 @@ class CorrelationFunctionZbinned:
         method, arguments = self._check_and_select_estimator(estimator)
         pairs = {}
         for attr in arguments:
-            try:
-                pairs[attr] = getattr(self, attr).get()
-            except AttributeError:  # self.rd is None
-                pass
-        return method(**pairs)
+            instance = getattr(self, attr)
+            if instance is not None:
+                pairs[attr] = instance.get()
+        return method(**pairs)[0]
 
     def generate_bootstrap_patch_indices(
         self,
@@ -399,13 +424,12 @@ class CorrelationFunctionZbinned:
         # resample the patch pair counts
         pairs = {}
         for attr in arguments:
-            try:
-                pairs[attr] = getattr(self, attr).get_samples(
+            instance = getattr(self, attr)
+            if instance is not None:
+                pairs[attr] = instance.get_samples(
                     method=sample_method,
                     global_norm=global_norm,
                     patch_idx=boot_idx)
-            except AttributeError:  # self.rd is None
-                pass
         # evaluate the correlation estimator
         return method(**pairs)
 
@@ -958,7 +982,8 @@ class YetAnotherWizz:
         correlation = CustomNNCorrelation(
             min_sep=ang_min, max_sep=ang_max, **self.correlator_config)
         correlation.process(cat1, cat2)
-        return z_interval, correlation
+        return TreeCorrResult.from_countcorr(
+            z_interval, correlation, self.dist_weight_scale)
 
     def crosscorr(
         self,
@@ -967,7 +992,6 @@ class YetAnotherWizz:
     ) -> CorrelationFunctionZbinned:
         cat_unknown = self.make_catalogue(self.unknown)
         cat_unk_rand = self.make_catalogue(self.unk_rand)
-        corrs = []
         DD = []
         DR = []
         if estimator == "LS":  # otherwise default to Davis-Peebles
@@ -978,23 +1002,11 @@ class YetAnotherWizz:
             cat_reference = self.make_catalogue(data_bin)
             cat_ref_rand = self.make_catalogue(rand_bin)
             # correlate
-            z_edges, corr_dd = self.correlate(z_edges, cat_reference, cat_unknown)
-            dd = TreeCorrResult.from_countcorr(z_edges, corr_dd, self.dist_weight_scale)
-            z_edges, corr_dr = self.correlate(z_edges, cat_reference, cat_unk_rand)
-            dr = TreeCorrResult.from_countcorr(z_edges, corr_dr, self.dist_weight_scale)
-            DD.append(dd)
-            DR.append(dr)
+            DD.append(self.correlate(z_edges, cat_reference, cat_unknown))
+            DR.append(self.correlate(z_edges, cat_reference, cat_unk_rand))
             if estimator == "LS":
-                z_edges, corr_rd = self.correlate(z_edges, cat_ref_rand, cat_unknown)
-                rd = TreeCorrResult.from_countcorr(z_edges, corr_rd, self.dist_weight_scale)
-                z_edges, corr_rr = self.correlate(z_edges, cat_ref_rand, cat_unk_rand)
-                rr = TreeCorrResult.from_countcorr(z_edges, corr_rr, self.dist_weight_scale)
-                RD.append(rd)
-                RR.append(rr)
-                corr_dd.calculateXi(dr=corr_dr, rd=corr_rd, rr=corr_rr)
-            else:
-                corr_dd.calculateXi(dr=corr_dr)
-            corrs.append(corr_dd)
+                RD.append(self.correlate(z_edges, cat_ref_rand, cat_unknown))
+                RR.append(self.correlate(z_edges, cat_ref_rand, cat_unk_rand))
         DD = TreeCorrResultZbinned.from_bins(DD)
         DR = TreeCorrResultZbinned.from_bins(DR)
         if estimator == "LS":
@@ -1003,7 +1015,7 @@ class YetAnotherWizz:
         else:
             RD = None
             RR = None
-        return NNCorrelationContainer(corrs), CorrelationFunctionZbinned(dd=DD, dr=DR, rd=RD, rr=RR)
+        return CorrelationFunctionZbinned(dd=DD, dr=DR, rd=RD, rr=RR)
 
     def autocorr(
         self,
@@ -1019,7 +1031,6 @@ class YetAnotherWizz:
                 zbins, self.unknown, self.unk_rand, desc="w_pp")
         else:
             raise ValueError("'which' must be either of 'reference' or 'unknown'")
-        corrs = []
         DD = []
         DR = []
         if estimator == "LS":  # otherwise default to Davis-Peebles
@@ -1028,29 +1039,19 @@ class YetAnotherWizz:
             cat_data_bin = self.make_catalogue(data_bin)
             cat_rand_bin = self.make_catalogue(rand_bin)
             # correlate
-            z_edges, corr_dd = self.correlate(z_edges, cat_data_bin)
-            dd = TreeCorrResult.from_countcorr(z_edges, corr_dd, self.dist_weight_scale)
-            z_edges, corr_dr = self.correlate(z_edges, cat_data_bin, cat_rand_bin)
-            dr = TreeCorrResult.from_countcorr(z_edges, corr_dr, self.dist_weight_scale)
-            DD.append(dd)
-            DR.append(dr)
+            DD.append(self.correlate(z_edges, cat_data_bin))
+            DR.append(self.correlate(z_edges, cat_data_bin, cat_rand_bin))
             if estimator == "LS":
-                z_edges, corr_rr = self.correlate(z_edges, cat_rand_bin)
-                rr = TreeCorrResult.from_countcorr(z_edges, corr_rr, self.dist_weight_scale)
-                RR.append(rr)
-                corr_dd.calculateXi(dr=corr_dr, rr=corr_rr)
-            else:
-                corr_dd.calculateXi(dr=corr_dr)
-            corrs.append(corr_dd)
+                RR.append(self.correlate(z_edges, cat_rand_bin))
         DD = TreeCorrResultZbinned.from_bins(DD)
         DR = TreeCorrResultZbinned.from_bins(DR)
         if estimator == "LS":
             RR = TreeCorrResultZbinned.from_bins(RR)
         else:
             RR = None
-        return NNCorrelationContainer(corrs), CorrelationFunctionZbinned(dd=DD, dr=DR, rr=RR)
+        return CorrelationFunctionZbinned(dd=DD, dr=DR, rr=RR)
 
-    def true_redshifts(self, zbins, n_boostraps=1000):
+    def true_redshifts(self, zbins: NDArray[np.float_]) -> NzTrue:
         region_counts = DataFrame(
             index=pd.IntervalIndex.from_breaks(zbins),
             data={
