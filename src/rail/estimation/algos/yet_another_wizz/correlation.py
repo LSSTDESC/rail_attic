@@ -198,6 +198,13 @@ class CorrelationFunction:
             if getattr(self, kind) is not None}
         return estimator_func(**requires, **optional)[0]
 
+    def generate_bootstrap_patch_indices(
+        self,
+        n_boot: int,
+        seed: int = 12345
+    ) -> NDArray[np.int_]:
+        return self.dd.generate_bootstrap_patch_indices(n_boot, seed)
+
     def get_samples(
         self,
         estimator: str,

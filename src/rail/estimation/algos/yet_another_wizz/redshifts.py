@@ -110,6 +110,13 @@ class NzEstimator(Nz):
             unk_corr = self.unk_corr.get(estimator)
         return cross_corr / np.sqrt(self.dz**2 * ref_corr * unk_corr)
 
+    def generate_bootstrap_patch_indices(
+        self,
+        n_boot: int,
+        seed: int = 12345
+    ) -> NDArray[np.int_]:
+        return self.cross_corr.generate_bootstrap_patch_indices(n_boot, seed)
+
     def get_samples(
         self,
         *,
@@ -120,8 +127,7 @@ class NzEstimator(Nz):
         seed: int = 12345
     ) -> DataFrame:
         if sample_method == "bootstrap":
-            patch_idx = self.cross_corr.generate_bootstrap_patch_indices(
-                n_boot, seed)  # should be applicable to dr/rd/rr after checks
+            patch_idx = self.generate_bootstrap_patch_indices(n_boot, seed)
         else:
             patch_idx = None
         kwargs = dict(
