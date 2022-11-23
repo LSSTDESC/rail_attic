@@ -4,10 +4,11 @@ redshifts (arXiv:2007.01846 / A&A 642, A200 (2020)).
 """
 from __future__ import annotations
 
+import dataclasses
 import os
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import Any, Callable, Iterable, Iterator
+from abc import ABC, abstractmethod, abstractproperty
+from collections.abc import Callable, Collection, Iterable, Iterator, KeysView, Mapping
+from typing import Any
 
 import astropy.cosmology
 import numpy as np
@@ -65,100 +66,137 @@ class UniformRandoms:
         return DataFrame({names[0]: ra, names[1]: dec})
 
 
-class ArrayDict:
+class ArrayDict(Mapping):
 
     def __init__(
         self,
-        array: NDArray,
-        key_to_index: dict[Any, np.int_]
+        keys: Collection[Any],
+        array: NDArray
     ) -> None:
-        if len(array) != len(key_to_index):
+        if len(array) != len(keys):
             raise ValueError("number of keys and array length do not match")
-        self.array = array
-        self.map = key_to_index
+        self._array = array
+        self._dict = {key: idx for idx, key in enumerate(keys)}
 
-    def get(self, key: Any) -> NDArray:
-        return self.array[self.map[key]]
+    def __len__(self) -> int:
+        return len(self._array)
+
+    def __getitem__(self, key: Any) -> NDArray:
+        idx = self._dict[key]
+        return self._array[idx]
+
+    def __iter__(self) -> Iterator[NDArray]:
+        return self._dict.__iter__()
+
+    def __contains__(self, key: Any) -> bool:
+        return key in self._dict
+
+    def items(self) -> list[tuple[Any, NDArray]]:
+        # ensure that the items are ordered by the index of each key
+        return sorted(self._dict.items(), key=lambda item: item[1])
+
+    def keys(self) -> list[Any]:
+        # key are ordered by their corresponding index
+        return [key for key, _ in self.items()]
+
+    def values(self) -> list[NDArray]:
+        # values are returned in index order
+        return [value for value in self._array]
+
+    def get(self, key: Any, default: Any) -> Any:
+        try:
+            idx = self._dict[key]
+        except KeyError:
+            return default
+        else:
+            return self._array[idx]
 
     def sample(self, keys: Iterable[Any]) -> NDArray:
-        idx = [self.map[key] for key in keys]
-        return self.array[idx]
+        idx = [self._dict[key] for key in keys]
+        return self._array[idx]
+
+    def as_array(self) -> NDArray:
+        return self._array
 
 
-@dataclass(frozen=True, repr=False)
-class TreeCorrResult:
-    interval: Interval
-    npatch: tuple(int, int)
-    weights: ArrayDict
-    total: ArrayDict
-    mask: NDArray[np.bool_]
-
-    @classmethod
-    def from_countcorr(
-        cls,
-        interval: Interval,
-        correlation: treecorr.NNCorrelation,
-        dist_weight_scale: float | None = None
-    ) -> TreeCorrResult:
-        # compute the pair-separation (a.k.a inverse distance) weights
-        npatch = (correlation.npatch1, correlation.npatch2)
-        if dist_weight_scale is not None:
-            r_weights = correlation.meanr ** dist_weight_scale
-            r_weights /= r_weights.mean()
-        else:
-            r_weights = np.ones_like(correlation.meanr)
-
-        # extract the (cross-patch) pair counts
-        key_to_index = {}
-        weights = []
-        total = []
-        for i, (patches, result) in enumerate(correlation.results.items()):
-            key_to_index["%i,%i" % patches] = i
-            weights.append(np.sum(result.weight * r_weights))
-            total.append(result.tot)
-        weights = ArrayDict(np.array(weights), key_to_index)
-        total = ArrayDict(np.array(total), key_to_index)
-        return cls(interval, npatch, weights, total, mask=correlation._ok)
-
-
-@dataclass(frozen=True, repr=False)
+@dataclasses.dataclass(frozen=True, repr=False)
 class PairCountData:
     binning: IntervalIndex
-    weights: NDArray[np.float_]
+    count: NDArray[np.float_]
     total: NDArray[np.float_]
 
+    def normalise(self) -> NDArray[np.float_]:
+        normalised = self.count / self.total
+        return DataFrame(data=normalised.T, index=self.binning)
 
-@dataclass(frozen=True, repr=False)
-class TreeCorrResultZbinned:
-    binning: IntervalIndex
+
+@dataclasses.dataclass(frozen=True, repr=False)
+class TreeCorrData:
     npatch: tuple(int, int)
-    weights: ArrayDict
+    count: ArrayDict
     total: ArrayDict
     mask: NDArray[np.bool_]
+    binning: IntervalIndex
+
+    def __post_init__(self) -> None:
+        if self.count.keys() != self.total.keys():
+            raise KeyError("keys for 'count' and 'total' are not identical")
+
+    def keys(self) -> list[tuple(int, int)]:
+        return self.total.keys()
+
+    @property
+    def nbins(self) -> int:
+        return len(self.binning)
+
+    @classmethod
+    def from_nncorrelation(
+        cls,
+        interval: Interval,
+        correlation: treecorr.NNCorrelation
+    ) -> TreeCorrData:
+        # extract the (cross-patch) pair counts
+        npatch = (correlation.npatch1, correlation.npatch2)
+        keys = []
+        count = np.empty((len(correlation.results), 1))
+        total = np.empty((len(correlation.results), 1))
+        for i, (patches, result) in enumerate(correlation.results.items()):
+            keys.append(patches)
+            count[i] = result.weight
+            total[i] = result.tot
+        return cls(
+            npatch=npatch,
+            count=ArrayDict(keys, count),
+            total=ArrayDict(keys, total),
+            mask=correlation._ok,
+            binning=IntervalIndex([interval]))
 
     @classmethod
     def from_bins(
         cls,
-        zbins: Iterable[TreeCorrResult]
-    ) -> TreeCorrResultZbinned:
-        # check the number of patches
+        zbins: Iterable[TreeCorrData]
+    ) -> TreeCorrData:
+        # check that the data is compatible
         if len(zbins) == 0:
-            raise ValueError("'zbin' contains no entries")
+            raise ValueError("'zbins' is empty")
         npatch = zbins[0].npatch
         mask = zbins[0].mask
+        keys = tuple(zbins[0].keys())
+        nbins = zbins[0].nbins
         for zbin in zbins[1:]:
             if zbin.npatch != npatch:
                 raise ValueError("the patch numbers are inconsistent")
             if not np.array_equal(mask, zbin.mask):
                 raise ValueError("pair masks are inconsistent")
-        keys = set(zbins[0].weights.map)
-        for zbin in zbins[1:]:
-            if set(zbin.weights.map) != keys:
+            if tuple(zbin.keys()) != keys:
                 raise ValueError("patches are inconsistent")
-        keys = zbins[0].weights.map
+            if zbin.nbins != nbins:
+                raise IndexError("number of bins is inconsistent")
 
         # check the ordering of the bins based on the provided intervals
-        binning = IntervalIndex([zbin.interval for zbin in zbins])
+        binning = IntervalIndex.from_tuples([
+            zbin.binning.to_tuples()[0]  # contains just one entry
+            for zbin in zbins])
         if not binning.is_non_overlapping_monotonic:
             raise ValueError(
                 "the binning interval is overlapping or not monotonic")
@@ -166,51 +204,60 @@ class TreeCorrResultZbinned:
             if this.right != following.left:
                 raise ValueError(f"the binning interval is not contiguous")
 
-        # merge the data
-        weights = ArrayDict(
-            np.column_stack([zbin.weights.array for zbin in zbins]), keys)
+        # merge the ArrayDicts
+        count = ArrayDict(
+            keys, np.column_stack([zbin.count.as_array() for zbin in zbins]))
         total = ArrayDict(
-            np.column_stack([zbin.total.array for zbin in zbins]), keys)
-        return cls(binning, npatch, weights, total, mask)
+            keys, np.column_stack([zbin.total.as_array() for zbin in zbins]))
+        return cls(
+            npatch=npatch,
+            count=count,
+            total=total,
+            mask=mask,
+            binning=binning)
 
-    def __len__(self) -> int:
-        return len(self.total)
+    def get_patch_count(self) -> DataFrame:
+        return DataFrame(
+            index=self.binning,
+            columns=self.keys(),
+            data=self.count.as_array().T)
+
+    def get_patch_total(self) -> DataFrame:
+        return DataFrame(
+            index=self.binning,
+            columns=self.keys(),
+            data=self.total.as_array().T)
 
     def get(self) -> PairCountData:
         return PairCountData(
-            self.binning,
-            self.weights.array.sum(axis=0),
-            self.total.array.sum(axis=0))
+            binning=self.binning,
+            count=self.count.as_array().sum(axis=0),
+            total=self.total.as_array().sum(axis=0))
 
     def get_jackknife_samples(
         self,
         global_norm: bool = False,
         **kwargs
     ) -> PairCountData:
-        # The treecorr jackknife iterator expects the actual results dictionary
-        # with (i,j) keys, whereas the dataframes have "j,i" string columns.
-        _dummy_pairs = {
-            tuple(str(f) for f in colname.split(",")): None
-            for colname in self.paris.columns}
-        npatch = max(self.npatch)
-        # Furthermore, the iterator expects a single patch index which is
-        # dropped in a single realisation.
-        weights = []
+        # The iterator expects a single patch index which is dropped in a single
+        # realisation.
+        count = []
         total = []
         if global_norm:
-            global_total = self.total.array.sum(axis=0)
-        for idx in range(npatch):  # simplified leave-one-out iteration
+            global_total = self.total.as_array().sum(axis=0)
+        for idx in range(max(self.npatch)):  # leave-one-out iteration
             # we need to use the jackknife iterator twice
-            keys_str = list(
-                "%i,%i" % patches
-                for patches in treecorr.NNCorrelation.JackknifePairIterator(
-                    _dummy_pairs, *self.npatch, idx, self.mask))
-            weights.append(self.weights.sample(keys_str).sum(axis=0))
+            patches = list(treecorr.NNCorrelation.JackknifePairIterator(
+                self.count, *self.npatch, idx, self.mask))
+            count.append(self.count.sample(patches).sum(axis=0))
             if global_norm:
                 total.append(global_total)
             else:
-                total.append(self.total.sample(keys_str).sum(axis=0))
-        return PairCountData(self.binning, np.array(weights), np.array(total))
+                total.append(self.total.sample(patches).sum(axis=0))
+        return PairCountData(
+            binning=self.binning,
+            count=np.array(count),
+            total=np.array(total))
 
     def get_bootstrap_samples(
         self,
@@ -222,22 +269,23 @@ class TreeCorrResultZbinned:
         # draw N times from (0, ..., N) with repetition. These random patch
         # indices for M realisations should be provided in the [M, N] shaped
         # array 'patch_idx'.
-        weights = []
+        count = []
         total = []
         if global_norm:
-            global_total = self.total.array.sum(axis=0)
+            global_total = self.total.as_array().sum(axis=0)
         for idx in patch_idx:  # simplified leave-one-out iteration
             # we need to use the jackknife iterator twice
-            keys_str = list(
-                "%i,%i" % patches
-                for patches in treecorr.NNCorrelation.BootstrapPairIterator(
-                    self.weights, *self.npatch, idx, self.mask))
-            weights.append(self.weights.sample(keys_str).sum(axis=0))
+            patches = list(treecorr.NNCorrelation.BootstrapPairIterator(
+                self.count, *self.npatch, idx, self.mask))
+            count.append(self.count.sample(patches).sum(axis=0))
             if global_norm:
                 total.append(global_total)
             else:
-                total.append(self.total.sample(keys_str).sum(axis=0))
-        return PairCountData(self.binning, np.array(weights), np.array(total))
+                total.append(self.total.sample(patches).sum(axis=0))
+        return PairCountData(
+            binning=self.binning,
+            count=np.array(count),
+            total=np.array(total))
 
     def get_samples(
         self,
@@ -245,21 +293,128 @@ class TreeCorrResultZbinned:
         **kwargs
     ) -> PairCountData:
         if method == "jackknife":
-            return self.get_jackknife_samples(**kwargs)
+            samples = self.get_jackknife_samples(**kwargs)
         elif method == "bootstrap":
-            return self.get_bootstrap_samples(**kwargs)
+            samples = self.get_bootstrap_samples(**kwargs)
         else:
             raise NotImplementedError(
                 f"sampling method '{method}' not implemented")
+        return samples
 
 
-@dataclass(frozen=True, repr=False)
-class CorrelationFunctionZbinned:
-    dd: TreeCorrResultZbinned
-    dr: TreeCorrResultZbinned | None = field(default=None)
-    rd: TreeCorrResultZbinned | None = field(default=None)
-    rr: TreeCorrResultZbinned | None = field(default=None)
-    npatch: tuple(int, int) = field(init=False)
+class CorrelationEstimator(ABC):
+    variants: list[CorrelationEstimator] = []
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls.variants.append(cls)
+
+    def name(self) -> str:
+        return self.__class__.__name__
+
+    @abstractproperty
+    def short(self) -> str:
+        return "CE"
+
+    @abstractproperty
+    def requires(self) -> list[str]:
+        return ["dd", "dr", "rr"]
+
+    @abstractproperty
+    def optional(self) -> list[str]:
+        return ["rd"]
+
+    @abstractmethod
+    def __call__(
+        self,
+        *,
+        dd: PairCountData,
+        dr: PairCountData,
+        rr: PairCountData,
+        rd: PairCountData | None = None
+    ) -> DataFrame:
+        raise NotImplementedError
+
+
+class PeeblesHauser(CorrelationEstimator):
+    short: str = "PH"
+    requires = ["dd", "rr"]
+    optional = []
+
+    def __call__(
+        self,
+        *,
+        dd: PairCountData,
+        rr: PairCountData
+    ) -> DataFrame:
+        DD = dd.normalise()
+        RR = rr.normalise()
+        return DD / RR - 1.0
+
+
+class DavisPeebles(CorrelationEstimator):
+    short = "DP"
+    requires = ["dd", "dr"]
+    optional = []
+
+    def __call__(
+        self,
+        *,
+        dd: PairCountData,
+        dr: PairCountData
+    ) -> DataFrame:
+        DD = dd.normalise()
+        DR = dr.normalise()
+        return DD / DR - 1.0
+
+
+class Hamilton(CorrelationEstimator):
+    short = "HM"
+    requires = ["dd", "dr", "rr"]
+    optional = ["rd"]
+
+    def __call__(
+        self,
+        *,
+        dd: PairCountData,
+        dr: PairCountData,
+        rr: PairCountData,
+        rd: PairCountData | None = None
+    ) -> DataFrame:
+        DD = dd.normalise()
+        DR = dr.normalise()
+        RD = DR if rd is None else rd.normalise()
+        RR = rr.normalise()
+        return (DD * RR) / (DR * RD) - 1.0
+
+
+class LandySzalay(CorrelationEstimator):
+    short = "LS"
+    requires = ["dd", "dr", "rr"]
+    optional = ["rd"]
+
+    def __call__(
+        self,
+        *,
+        dd: PairCountData,
+        dr: PairCountData,
+        rr: PairCountData,
+        rd: PairCountData | None = None
+    ) -> DataFrame:
+        DD = dd.normalise()
+        DR = dr.normalise()
+        RD = DR if rd is None else rd.normalise()
+        RR = rr.normalise()
+        return (DD - (DR + RD) + RR) / RR
+
+
+@dataclasses.dataclass(frozen=True, repr=False)
+class CorrelationFunction:
+    dd: TreeCorrData
+    dr: TreeCorrData | None = dataclasses.field(default=None)
+    rd: TreeCorrData | None = dataclasses.field(default=None)
+    rr: TreeCorrData | None = dataclasses.field(default=None)
+    npatch: tuple(int, int) = dataclasses.field(init=False)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "npatch", self.dd.npatch)  # since frozen=True
@@ -270,128 +425,70 @@ class CorrelationFunctionZbinned:
             raise ValueError("'rd' requires 'dr'")
         # check that the pair counts are compatible
         for kind in ("dr", "rd", "rr"):
-            pair_instance = getattr(self, kind)
-            if pair_instance is not None:
-                if pair_instance.npatch != self.npatch:
-                    raise ValueError(f"npatches of '{kind}' do not match 'dd'")
-                if np.any(pair_instance.binning != self.dd.binning):
-                    raise ValueError(
-                        f"redshift binning of '{kind}' do not match 'dd'")
+            pairs: TreeCorrData | None = getattr(self, kind)
+            if pairs is None:
+                continue
+            if pairs.npatch != self.npatch:
+                raise ValueError(f"patches of '{kind}' do not match 'dd'")
+            if np.any(pairs.binning != self.dd.binning):
+                raise ValueError(f"binning of '{kind}' and 'dd' does not match")
+
+    @property
+    def binning(self) -> IntervalIndex:
+        return self.dd.binning
 
     def is_compatible(
         self,
-        other: CorrelationFunctionZbinned
+        other: TreeCorrData
     ) -> bool:
         if self.npatch != other.npatch:
             return False
-        if np.any(self.dd.binning != other.dd.binning):
+        if np.any(self.binning != other.binning):
             return False
         return True
 
     @property
-    def estimators(self) -> set[str]:
-        estimators = set()
-        if self.dr is not None:
-            estimators.add("DP")
-            if self.rr is not None:
-                estimators.add("HM")
-                estimators.add("LS")
-        if self.rr is not None:
-            estimators.add("PH")
+    def estimators(self) -> dict[str, CorrelationEstimator]:
+        # figure out which of dd, dr, ... are not None
+        available = set()
+        # iterate all dataclass attributes that are in __init__
+        for attr in dataclasses.fields(self):
+            if not attr.init:
+                continue
+            if getattr(self, attr.name) is not None:
+                available.add(attr.name)
+        # check which estimators are supported
+        estimators = {}
+        for estimator in CorrelationEstimator.variants:  # registered estimators
+            if set(estimator.requires) <= available:
+                estimators[estimator.short] = estimator
         return estimators
-
-    @staticmethod
-    def Peebles_Hauser(
-        *,
-        dd: PairCountData,
-        rr: PairCountData,
-        **kwargs
-    ) -> DataFrame:
-        DD = dd.weights
-        RR = rr.weights * dd.total / rr.total
-        est = DD / RR - 1.0
-        return pd.DataFrame(data=est.T, index=dd.binning)
-
-    @staticmethod
-    def Davis_Peebles(
-        *,
-        dd: PairCountData,
-        dr: PairCountData,
-        **kwargs
-    ) -> DataFrame:
-        DD = dd.weights
-        DR = dr.weights * dd.total / dr.total
-        est = DD / DR - 1.0
-        return pd.DataFrame(data=est.T, index=dd.binning)
-
-    @staticmethod
-    def Hamilton(
-        *,
-        dd: PairCountData,
-        dr: PairCountData,
-        rr: PairCountData,
-        rd: PairCountData | None = None
-    ) -> DataFrame:
-        DD = dd.weights
-        DR = dr.weights * dd.total / dr.total
-        if rd is None:
-            RD = DR
-        else:
-            RD = rd.weights * dd.total / rd.total
-        RR = rr.weights * dd.total / rr.total
-        est = (DD * RR) / (DR * RD) - 1.0
-        return pd.DataFrame(data=est.T, index=dd.binning)
-
-    @staticmethod
-    def Landy_Szalay(
-        *,
-        dd: PairCountData,
-        dr: PairCountData,
-        rr: PairCountData,
-        rd: PairCountData | None = None
-    ) -> DataFrame:
-        DD = dd.weights
-        DR = dr.weights * dd.total / dr.total
-        if rd is None:
-            RD = DR
-        else:
-            RD = rd.weights * dd.total / rd.total
-        RR = rr.weights * dd.total / rr.total
-        est = (DD - (DR + RD) + RR) / RR
-        return pd.DataFrame(data=est.T, index=dd.binning)
 
     def _check_and_select_estimator(
         self,
         estimator: str
-    ) -> Callable[[NDArray[np.int_]], DataFrame]:
-        if estimator not in self.estimators:
-            raise ValueError(f"estimator '{estimator}' not available")
+    ) -> CorrelationEstimator:
+        options = self.estimators
+        if estimator not in options:
+            opts = ", ".join(sorted(options.keys()))
+            raise ValueError(
+                f"estimator '{estimator}' not available, options are: {opts}")
         # select the correct estimator
-        method = dict(
-            PH=self.Peebles_Hauser,
-            DP=self.Davis_Peebles,
-            HM=self.Hamilton,
-            LS=self.Landy_Szalay
-        )[estimator]
-        arguments = dict(
-            PH=("dd", "rr"),
-            DP=("dd", "dr"),
-            HM=("dd", "dr", "rd", "rr"),
-            LS=("dd", "dr", "rd", "rr")
-        )[estimator]
-        return method, arguments
+        return options[estimator]()  # return estimator class instance
 
     def get(
         self,
         estimator: str
     ) -> Series:
-        method, arguments = self._check_and_select_estimator(estimator)
-        pairs = {}
-        for attr in arguments:
-            instance = getattr(self, attr)
-            if instance is not None:
-                pairs[attr] = instance.get()
-        return method(**pairs)[0]
+        estimator_func = self._check_and_select_estimator(estimator)
+        requires = {
+            kind: getattr(self, kind).get()
+            for kind in estimator_func.requires}
+        optional = {
+            kind: getattr(self, kind).get()
+            for kind in estimator_func.optional
+            if getattr(self, kind) is not None}
+        return estimator_func(**requires, **optional)[0]
 
     def generate_bootstrap_patch_indices(
         self,
@@ -408,28 +505,29 @@ class CorrelationFunctionZbinned:
         global_norm: bool = False,
         sample_method: str = "bootstrap",
         n_boot: int = 500,
-        boot_idx: NDArray[np.int_] | None = None
+        patch_idx: NDArray[np.int_] | None = None
     ) -> DataFrame:
-        # check the sampling method
+        # set up the sampling method
         valid_methods = ("bootstrap", "jackknife")
         if sample_method not in valid_methods:
             opts = ", ".join(f"'{s}'" for s in valid_methods)
             raise ValueError(f"'sample_method' must be either of {opts}")
+        if patch_idx is None and sample_method == "bootstrap":
+            patch_idx = self.generate_bootstrap_patch_indices(n_boot)
+        sample_kwargs = dict(
+            method=sample_method,
+            global_norm=global_norm,
+            patch_idx=patch_idx)
         # select the sampling method and generate optional bootstrap samples
-        method, arguments = self._check_and_select_estimator(estimator)
-        if boot_idx is None and sample_method == "bootstrap":
-            boot_idx = self.generate_bootstrap_patch_indices(n_boot)
-        # resample the patch pair counts
-        pairs = {}
-        for attr in arguments:
-            instance = getattr(self, attr)
-            if instance is not None:
-                pairs[attr] = instance.get_samples(
-                    method=sample_method,
-                    global_norm=global_norm,
-                    patch_idx=boot_idx)
-        # evaluate the correlation estimator
-        return method(**pairs)
+        estimator_func = self._check_and_select_estimator(estimator)
+        requires = {
+            kind: getattr(self, kind).get_samples(**sample_kwargs)
+            for kind in estimator_func.requires}
+        optional = {
+            kind: getattr(self, kind).get_samples(**sample_kwargs)
+            for kind in estimator_func.optional
+            if getattr(self, kind) is not None}
+        return estimator_func(**requires, **optional)
 
 
 class Nz(ABC):
@@ -479,8 +577,8 @@ class NzTrue(Nz):
     ) -> DataFrame:
         rng = np.random.default_rng(seed=seed)
         n_regions = len(self.counts.columns)
-        boot_idx = rng.integers(0, n_regions, size=[n_boot, n_regions])
-        Nz_boot = np.sum(self.counts.to_numpy().T[boot_idx], axis=1)
+        patch_idx = rng.integers(0, n_regions, size=[n_boot, n_regions])
+        Nz_boot = np.sum(self.counts.to_numpy().T[patch_idx], axis=1)
         nz_boot = Nz_boot / (
             Nz_boot.sum(axis=1)[:, np.newaxis] * self.dz[np.newaxis, :])
         samples = pd.DataFrame(
@@ -492,7 +590,7 @@ class NzEstimator(Nz):
 
     def __init__(
         self,
-        cross_corr: CorrelationFunctionZbinned
+        cross_corr: CorrelationFunction
     ) -> None:
         self.cross_corr = cross_corr
         self.ref_corr = None
@@ -501,7 +599,7 @@ class NzEstimator(Nz):
 
     def add_reference_autocorr(
         self,
-        ref_corr: CorrelationFunctionZbinned
+        ref_corr: CorrelationFunction
     ) -> None:
         if not self.cross_corr.is_compatible(ref_corr):
             raise ValueError(
@@ -510,7 +608,7 @@ class NzEstimator(Nz):
 
     def add_unknown_autocorr(
         self,
-        unk_corr: CorrelationFunctionZbinned
+        unk_corr: CorrelationFunction
     ) -> None:
         if not self.cross_corr.is_compatible(unk_corr):
             raise ValueError(
@@ -550,7 +648,7 @@ class NzEstimator(Nz):
             estimator=estimator,
             global_norm=global_norm,
             sample_method=sample_method,
-            boot_idx=patch_idx)
+            patch_idx=patch_idx)
         cross_corr = self.cross_corr.get_samples(**kwargs)
         if self.ref_corr is None:
             ref_corr = np.float64(1.0)
@@ -650,14 +748,13 @@ class YetAnotherWizz:
         correlation = treecorr.NNCorrelation(
             min_sep=ang_min, max_sep=ang_max, **self.correlator_config)
         correlation.process(cat1, cat2)
-        return TreeCorrResult.from_countcorr(
-            z_interval, correlation, self.dist_weight_scale)
+        return TreeCorrData.from_nncorrelation(z_interval, correlation)
 
     def crosscorr(
         self,
         zbins: NDArray[np.float_],
         estimator: str = "LS"
-    ) -> CorrelationFunctionZbinned:
+    ) -> CorrelationFunction:
         cat_unknown = self.make_catalogue(self.unknown)
         cat_unk_rand = self.make_catalogue(self.unk_rand)
         DD = []
@@ -675,22 +772,22 @@ class YetAnotherWizz:
             if estimator == "LS":
                 RD.append(self.correlate(z_edges, cat_ref_rand, cat_unknown))
                 RR.append(self.correlate(z_edges, cat_ref_rand, cat_unk_rand))
-        DD = TreeCorrResultZbinned.from_bins(DD)
-        DR = TreeCorrResultZbinned.from_bins(DR)
+        DD = TreeCorrData.from_bins(DD)
+        DR = TreeCorrData.from_bins(DR)
         if estimator == "LS":
-            RD = TreeCorrResultZbinned.from_bins(RD)
-            RR = TreeCorrResultZbinned.from_bins(RR)
+            RD = TreeCorrData.from_bins(RD)
+            RR = TreeCorrData.from_bins(RR)
         else:
             RD = None
             RR = None
-        return CorrelationFunctionZbinned(dd=DD, dr=DR, rd=RD, rr=RR)
+        return CorrelationFunction(dd=DD, dr=DR, rd=RD, rr=RR)
 
     def autocorr(
         self,
         zbins: NDArray[np.float_],
         estimator: str = "LS",
         which: str = "reference"
-    ) -> CorrelationFunctionZbinned:
+    ) -> CorrelationFunction:
         if which == "reference":
             bin_iter = self.bin_iter(
                 zbins, self.reference, self.ref_rand, desc="w_ss")
@@ -711,13 +808,13 @@ class YetAnotherWizz:
             DR.append(self.correlate(z_edges, cat_data_bin, cat_rand_bin))
             if estimator == "LS":
                 RR.append(self.correlate(z_edges, cat_rand_bin))
-        DD = TreeCorrResultZbinned.from_bins(DD)
-        DR = TreeCorrResultZbinned.from_bins(DR)
+        DD = TreeCorrData.from_bins(DD)
+        DR = TreeCorrData.from_bins(DR)
         if estimator == "LS":
-            RR = TreeCorrResultZbinned.from_bins(RR)
+            RR = TreeCorrData.from_bins(RR)
         else:
             RR = None
-        return CorrelationFunctionZbinned(dd=DD, dr=DR, rr=RR)
+        return CorrelationFunction(dd=DD, dr=DR, rr=RR)
 
     def true_redshifts(self, zbins: NDArray[np.float_]) -> NzTrue:
         region_counts = DataFrame(
