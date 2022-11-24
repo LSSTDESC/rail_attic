@@ -141,6 +141,13 @@ class CorrelationFunction:
             if np.any(pairs.binning != self.dd.binning):
                 raise ValueError(f"binning of '{kind}' and 'dd' does not match")
 
+    def write(self, fpath: str) -> None:
+        raise NotImplementedError  # TODO
+
+    @classmethod
+    def load(self, fpath: str) -> CorrelationFunction:
+        raise NotImplementedError  # TODO
+
     @property
     def binning(self) -> IntervalIndex:
         return self.dd.binning
