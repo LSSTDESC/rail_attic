@@ -2,12 +2,16 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Collection, Iterable, Iterator, Mapping
+from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Any
 
-from astropy.cosmology import FLRW, Planck15
 import numpy as np
+import pandas as pd
+from astropy.cosmology import FLRW, Planck15
 from numpy.typing import ArrayLike, NDArray
-from pandas import DataFrame
+from pandas import DataFrame, Interval, Series
+from treecorr import Catalog
 
 
 def get_default_cosmology() -> FLRW:
@@ -73,6 +77,73 @@ class UniformRandoms:
             names = ["ra", "dec"]
         ra, dec = self.cylinder2sky(x, y).T
         return DataFrame({names[0]: ra, names[1]: dec})
+
+
+@dataclass(frozen=True)
+class CatalogWrapper:
+    data: DataFrame = field(repr=False)
+    ra_name: str
+    dec_name: str
+    patch_name: str
+    z_name: str | None = field(default=None)
+
+    def __post_init__(self) -> None:
+        # check if the columns exist
+        for kind in ("ra", "dec", "z", "patch"):
+            name = getattr(self, f"{kind}_name")
+            if name is None:
+                continue
+            if name not in self.data:
+                raise KeyError(f"'{name}' not in data")
+
+    @property
+    def ra(self) -> Series:
+        return self.data[self.ra_name]
+
+    @property
+    def dec(self) -> Series:
+        return self.data[self.dec_name]
+
+    @property
+    def patch(self) -> Series:
+        return self.data[self.patch_name]
+
+    @property
+    def z(self) -> Series:
+        try:
+            return self.data[self.z_name]
+        except KeyError:
+            return None
+
+    @property
+    @lru_cache(maxsize=1)
+    def npatch(self) -> int:
+        return len(np.unique(self.patch))
+
+    def get_catalogue(self,) -> Catalog:
+        return Catalog(
+            ra=self.ra, ra_units="degrees",
+            dec=self.dec, dec_units="degrees",
+            patch=self.patch)
+
+    def bin_iter(
+        self,
+        z_bins: NDArray[np.float_],
+    ) -> Iterator[tuple[Interval, CatalogWrapper]]:
+        if self.z is None:
+            raise ValueError("no redshifts for iteration provided")
+        iterator = self.data.groupby(pd.cut(self.z), z_bins)
+        for interval, bin_data in iterator:
+            yield interval, CatalogWrapper(
+                bin_data, self.ra_name, self.dec_name,
+                self.patch_name, self.z_name)
+
+    def patch_iter(self) -> Iterator[tuple[int, CatalogWrapper]]:
+        iterator = self.data.groupby(self.patch)
+        for patch_id, patch_data in iterator:
+            yield patch_id, CatalogWrapper(
+                patch_data, self.ra_name, self.dec_name,
+                self.patch_name, self.z_name)
 
 
 class ArrayDict(Mapping):
