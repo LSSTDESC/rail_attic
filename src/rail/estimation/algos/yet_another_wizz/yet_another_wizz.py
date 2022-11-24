@@ -101,6 +101,9 @@ class YetAnotherWizz:
         correlation = treecorr.NNCorrelation(
             min_sep=ang_min, max_sep=ang_max, **self.correlator_config)
         correlation.process(cat1, cat2)
+        """
+        # TODO: implement 1/r weights
+        """
         return TreeCorrData.from_nncorrelation(z_interval, correlation)
 
     def crosscorr(

@@ -1,11 +1,35 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from collections.abc import Collection, Iterable, Iterator, Mapping
 from typing import Any
 
+from astropy.cosmology import FLRW, Planck15
 import numpy as np
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 from pandas import DataFrame
+
+
+def get_default_cosmology() -> FLRW:
+    return Planck15
+
+
+class CustomCosmology(ABC):
+    """
+    Can be used to implement a custom cosmology outside of astropy.cosmology
+    """
+
+    @abstractmethod
+    def to_format(self, format: str = "mapping") -> str:
+        raise NotImplementedError
+
+    @abstractmethod
+    def comoving_distance(self, z: ArrayLike) -> ArrayLike:
+        raise NotImplementedError
+
+    @abstractmethod
+    def comoving_transverse_distance(self, z: ArrayLike) -> ArrayLike:
+        raise NotImplementedError
 
 
 class UniformRandoms:
