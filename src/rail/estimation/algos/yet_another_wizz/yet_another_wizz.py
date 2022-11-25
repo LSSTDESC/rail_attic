@@ -8,13 +8,13 @@ import numpy as np
 import pandas as pd
 import treecorr
 from numpy.typing import ArrayLike, NDArray
-from pandas import DataFrame, Interval
+from pandas import Interval
 from tqdm import tqdm
 
-from rail.estimation.algos.yet_another_wizz.bootstrap import TreeCorrData
 from rail.estimation.algos.yet_another_wizz.correlation import CorrelationFunction
 from rail.estimation.algos.yet_another_wizz.redshifts import BinFactory, NzTrue
-from rail.estimation.algos.yet_another_wizz.utils import CatalogWrapper, CustomCosmology, get_default_cosmology
+from rail.estimation.algos.yet_another_wizz.resampling import TreeCorrData
+from rail.estimation.algos.yet_another_wizz.utils import BinnedCatalog, CustomCosmology, get_default_cosmology
 
 
 class YetAnotherWizz:
@@ -23,10 +23,10 @@ class YetAnotherWizz:
         self,
         *,
         # data samples
-        reference: CatalogWrapper,
-        ref_rand: CatalogWrapper,
-        unknown: CatalogWrapper,
-        unk_rand: CatalogWrapper,
+        reference: BinnedCatalog,
+        ref_rand: BinnedCatalog,
+        unknown: BinnedCatalog,
+        unk_rand: BinnedCatalog,
         # measurement scales, TODO: implement multiple scales!
         rmin_Mpc: ArrayLike = 0.1,
         rmax_Mpc: ArrayLike = 1.0,
@@ -47,6 +47,7 @@ class YetAnotherWizz:
         self.ref_rand = ref_rand
         self.unknown = unknown
         self.unk_rand = unk_rand
+        self._require_redshifts()
         # configure scales
         self.rmin = rmin_Mpc
         self.rmax = rmax_Mpc
@@ -58,12 +59,15 @@ class YetAnotherWizz:
         if zbins is not None:
             BinFactory.check(zbins)
             self.binning = zbins
-        elif zmin is not None and zmax is not None and n_zbins is not None:
+        elif n_zbins is not None:
+            if zmin is None:
+                zmin = reference.r.min()
+            if zmax is None:
+                zmax = reference.r.max()
             factory = BinFactory(zmin, zmax, n_zbins, cosmology)
-            self.binning = factory.get(zbin_method, redshifts=reference["z"])
+            self.binning = factory.get(zbin_method, redshifts=reference.r)
         else:
-            raise ValueError(
-                "either 'zbins' or 'zmin', 'zmax', 'n_zbins' must be provided")
+            raise ValueError("either 'zbins' or 'n_zbins' must be provided")
         # others
         if num_threads is None:
             num_threads = os.cpu_count()
@@ -75,16 +79,22 @@ class YetAnotherWizz:
             bin_slop=rbin_slop,
             num_threads=num_threads)
 
+    def _require_redshifts(self) -> None:
+        if self.reference.r is None:
+            raise ValueError("'reference' has not redshifts provided")
+        if self.ref_rand.r is None:
+            raise ValueError("'ref_rand' has not redshifts provided")
+
     def get_config(self) -> dict[str, int | float | bool | str | None]:
         raise NotImplementedError  # TODO
 
     def bin_iter(
         self,
-        data: CatalogWrapper,
-        rand: CatalogWrapper,
+        data: BinnedCatalog,
+        rand: BinnedCatalog,
         *,
         desc: str | None = None
-    ) -> Iterator[tuple[Interval, CatalogWrapper, CatalogWrapper]]:
+    ) -> Iterator[tuple[Interval, BinnedCatalog, BinnedCatalog]]:
         iterator = zip(data.bin_iter(self.binning), rand.bin_iter(self.binning))
         if desc is not None:  # wrap with tqdm
             iterator = tqdm(iterator, total=len(self.binning)-1, desc=desc)
@@ -97,11 +107,11 @@ class YetAnotherWizz:
         ang_min, ang_max = np.rad2deg(angle_rad)
         return ang_min, ang_max
 
-    def correlate(
+    def _correlate(
         self,
         z_interval: Interval,
-        cat1: treecorr.Catalog,
-        cat2: treecorr.Catalog | None = None
+        cat1: BinnedCatalog,
+        cat2: BinnedCatalog | None = None
     ) -> tuple[Interval, treecorr.NNCorrelation]:
         ang_min, ang_max = self._rbin_to_angle(z_interval.mid)
         correlation = treecorr.NNCorrelation(
@@ -123,11 +133,11 @@ class YetAnotherWizz:
                 self.reference, self.ref_rand,
                 desc=("w_sp" if progress else None)):
             # correlate
-            dd.append(self.correlate(z_edges, cat_reference, self.unknown))
-            dr.append(self.correlate(z_edges, cat_reference, self.unk_rand))
+            dd.append(self._correlate(z_edges, cat_reference, self.unknown))
+            dr.append(self._correlate(z_edges, cat_reference, self.unk_rand))
             if compute_rr:  # otherwise will default to Davis-Peebles
-                rd.append(self.correlate(z_edges, cat_ref_rand, self.unknown))
-                rr.append(self.correlate(z_edges, cat_ref_rand, self.unk_rand))
+                rd.append(self._correlate(z_edges, cat_ref_rand, self.unknown))
+                rr.append(self._correlate(z_edges, cat_ref_rand, self.unk_rand))
         # merge binnned measurements
         DD = TreeCorrData.from_bins(dd)
         DR = TreeCorrData.from_bins(dr)
@@ -139,7 +149,7 @@ class YetAnotherWizz:
         self,
         which: str,
         *,
-        compute_rr: bool = False,
+        compute_rr: bool = True,
         progress: bool = False
     ) -> CorrelationFunction:
         if which == "reference":
@@ -155,10 +165,10 @@ class YetAnotherWizz:
         dd, dr, rr = [], [], []
         for z_edges, cat_data_bin, cat_rand_bin in bin_iter:
             # correlate
-            dd.append(self.correlate(z_edges, cat_data_bin))
-            dr.append(self.correlate(z_edges, cat_data_bin, cat_rand_bin))
+            dd.append(self._correlate(z_edges, cat_data_bin))
+            dr.append(self._correlate(z_edges, cat_data_bin, cat_rand_bin))
             if compute_rr:  # otherwise will default to Davis-Peebles
-                rr.append(self.correlate(z_edges, cat_rand_bin))
+                rr.append(self._correlate(z_edges, cat_rand_bin))
         # merge binnned measurements
         DD = TreeCorrData.from_bins(dd)
         DR = TreeCorrData.from_bins(dr)
@@ -166,9 +176,10 @@ class YetAnotherWizz:
         return CorrelationFunction(dd=DD, dr=DR, rr=RR)
 
     def true_redshifts(self) -> NzTrue:
-        u = self.unknown
-        region_counts = DataFrame(
-            index=pd.IntervalIndex.from_breaks(self.binning),
-            data={patch_id: np.histogram(patch_cat.z, self.binning)[0]
-                  for patch_id, patch_cat in self.unknown.patch_iter()})
-        return NzTrue(region_counts)
+        if self.unknown.r is None:
+            raise ValueError("'unknown' has not redshifts provided")
+        # compute the reshift histogram in each patch
+        hist_counts = []
+        for _, patch_cat in self.unknown.patch_iter():
+            hist_counts.append(np.histogram(patch_cat.r, self.binning)[0])
+        return NzTrue(np.array(hist_counts), self.binning)
