@@ -127,7 +127,7 @@ class Nz(ABC):
         if sample_method == "bootstrap":
             yerr = y_samp.std(axis=1)
         else:
-            yerr = y_samp.std(axis=1) * (len(y_samp) - 1)
+            yerr = y_samp.std(axis=1) * np.sqrt(len(y_samp) - 1)
         # plot
         if plot_kwargs is None:
             plot_kwargs = {}
