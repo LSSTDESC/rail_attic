@@ -2,15 +2,13 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Collection, Iterable, Iterator, Mapping
-from dataclasses import dataclass, field
-from functools import lru_cache
 from typing import Any
 
 import numpy as np
 import pandas as pd
 from astropy.cosmology import FLRW, Planck15
 from numpy.typing import ArrayLike, NDArray
-from pandas import DataFrame, Interval, Series
+from pandas import DataFrame, Interval
 from treecorr import Catalog
 
 
@@ -43,10 +41,20 @@ class UniformRandoms:
         ra_min: float,
         ra_max: float,
         dec_min: float,
-        dec_max: float
+        dec_max: float,
+        seed: int = 12345
     ) -> None:
         self.x_min, self.y_min = self.sky2cylinder(ra_min, dec_min)
         self.x_max, self.y_max = self.sky2cylinder(ra_max, dec_max)
+        self.rng = np.random.default_rng(seed=seed)
+
+    @classmethod
+    def from_catalogue(cls, cat: BinnedCatalog) -> UniformRandoms:
+        return cls(
+            np.rad2deg(cat.ra.min()),
+            np.rad2deg(cat.ra.max()),
+            np.rad2deg(cat.dec.min()),
+            np.rad2deg(cat.dec.max()))
 
     @staticmethod
     def sky2cylinder(
@@ -69,81 +77,93 @@ class UniformRandoms:
     def generate(
         self,
         size: int,
-        names: list[str, str] | None = None
+        names: list[str, str] | None = None,
+        draw_from: dict[str, NDArray] | None = None
     ) -> DataFrame:
+        # generate positions
         x = np.random.uniform(self.x_min, self.x_max, size)
         y = np.random.uniform(self.y_min, self.y_max, size)
+        ra, dec = self.cylinder2sky(x, y).T
+        rand = DataFrame({names[0]: ra, names[1]: dec})
         if names is None:
             names = ["ra", "dec"]
-        ra, dec = self.cylinder2sky(x, y).T
-        return DataFrame({names[0]: ra, names[1]: dec})
+        # generate random draw
+        if draw_from is not None:
+            N = None
+            for col in draw_from.values():
+                if N is None:
+                    if len(col.shape) > 1:
+                        raise ValueError("data to draw from must be 1-dimensional")
+                    N = len(col)
+                else:
+                    if len(col) != N:
+                        raise ValueError(
+                            "length of columns to draw from does not match")
+            draw_idx = self.rng.integers(0, N, size=size)
+            # draw and insert data
+            for key, col in draw_from.items():
+                rand[key] = col[draw_idx]
+        return rand
 
 
-@dataclass(frozen=True)
-class CatalogWrapper:
-    data: DataFrame = field(repr=False)
-    ra_name: str
-    dec_name: str
-    patch_name: str
-    z_name: str | None = field(default=None)
+def iter_bin_masks(
+    data: NDArray,
+    bins: NDArray,
+    closed: str = "right"
+) -> Iterator[tuple[Interval, NDArray[np.bool_]]]:
+    if closed not in ("left", "right"):
+        raise ValueError("'closed' must be either of 'left', 'right'")
+    intervals = pd.IntervalIndex.from_breaks(bins, closed=closed)
+    bin_ids = np.digitize(data, bins, right=(closed=="right"))
+    for i, interval in zip(range(1, len(bins)), intervals):
+        yield interval, bin_ids==i
 
-    def __post_init__(self) -> None:
-        # check if the columns exist
-        for kind in ("ra", "dec", "z", "patch"):
-            name = getattr(self, f"{kind}_name")
-            if name is None:
-                continue
-            if name not in self.data:
-                raise KeyError(f"'{name}' not in data")
 
-    @property
-    def ra(self) -> Series:
-        return self.data[self.ra_name]
+class BinnedCatalog(Catalog):
 
-    @property
-    def dec(self) -> Series:
-        return self.data[self.dec_name]
+    @classmethod
+    def from_dataframe(
+        cls,
+        data: DataFrame,
+        patches: int | BinnedCatalog,
+        ra: str,
+        dec: str,
+        z: str | None = None,
+        **kwargs
+    ) -> BinnedCatalog:
+        if isinstance(patches, int):
+            kwargs.update(dict(npatch=patches))
+        else:
+            kwargs.update(dict(patch_centers=patches.patch_centers))
+        redshift = None if z is None else data[z]
+        new = cls(
+            ra=data[ra], ra_units="degrees",
+            dec=data[dec], dec_units="degrees",
+            r=redshift, **kwargs)
+        return new
 
-    @property
-    def patch(self) -> Series:
-        return self.data[self.patch_name]
-
-    @property
-    def z(self) -> Series:
-        try:
-            return self.data[self.z_name]
-        except KeyError:
-            return None
-
-    @property
-    @lru_cache(maxsize=1)
-    def npatch(self) -> int:
-        return len(np.unique(self.patch))
-
-    def get_catalogue(self,) -> Catalog:
-        return Catalog(
-            ra=self.ra, ra_units="degrees",
-            dec=self.dec, dec_units="degrees",
-            patch=self.patch)
+    @classmethod
+    def from_catalog(cls, cat: Catalog) -> BinnedCatalog:
+        new = cls.__new__(cls)
+        new.__dict__ = cat.__dict__
+        return new
 
     def bin_iter(
         self,
         z_bins: NDArray[np.float_],
-    ) -> Iterator[tuple[Interval, CatalogWrapper]]:
-        if self.z is None:
+    ) -> Iterator[tuple[Interval, Catalog]]:
+        if self.r is None:
             raise ValueError("no redshifts for iteration provided")
-        iterator = self.data.groupby(pd.cut(self.z), z_bins)
-        for interval, bin_data in iterator:
-            yield interval, CatalogWrapper(
-                bin_data, self.ra_name, self.dec_name,
-                self.patch_name, self.z_name)
+        for interval, bin_mask in iter_bin_masks(self.r, z_bins):
+            new = self.copy()
+            new.select(bin_mask)
+            yield interval, BinnedCatalog.from_catalog(new)
 
-    def patch_iter(self) -> Iterator[tuple[int, CatalogWrapper]]:
-        iterator = self.data.groupby(self.patch)
-        for patch_id, patch_data in iterator:
-            yield patch_id, CatalogWrapper(
-                patch_data, self.ra_name, self.dec_name,
-                self.patch_name, self.z_name)
+    def patch_iter(self) -> Iterator[tuple[int, Catalog]]:
+        patch_ids = sorted(set(self.patch))
+        patches = self.get_patches()
+        for patch_id, patch in zip(patch_ids, patches):
+            yield patch_id, BinnedCatalog.from_catalog(patch)
 
 
 class ArrayDict(Mapping):
