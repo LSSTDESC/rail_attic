@@ -128,18 +128,20 @@ class BinnedCatalog(Catalog):
         patches: int | BinnedCatalog,
         ra: str,
         dec: str,
-        z: str | None = None,
+        redshift: str | None = None,
+        w: str | None = None,
         **kwargs
     ) -> BinnedCatalog:
         if isinstance(patches, int):
             kwargs.update(dict(npatch=patches))
         else:
             kwargs.update(dict(patch_centers=patches.patch_centers))
-        redshift = None if z is None else data[z]
+        r = None if redshift is None else data[redshift]
+        w = None if w is None else data[w]
         new = cls(
             ra=data[ra], ra_units="degrees",
             dec=data[dec], dec_units="degrees",
-            r=redshift, **kwargs)
+            r=r, w=w, **kwargs)
         return new
 
     @classmethod
@@ -148,13 +150,17 @@ class BinnedCatalog(Catalog):
         new.__dict__ = cat.__dict__
         return new
 
+    @property
+    def redshift(self) -> NDArray:
+        return self.r
+
     def bin_iter(
         self,
         z_bins: NDArray[np.float_],
     ) -> Iterator[tuple[Interval, Catalog]]:
-        if self.r is None:
+        if self.redshift is None:
             raise ValueError("no redshifts for iteration provided")
-        for interval, bin_mask in iter_bin_masks(self.r, z_bins):
+        for interval, bin_mask in iter_bin_masks(self.redshift, z_bins):
             new = self.copy()
             new.select(bin_mask)
             yield interval, BinnedCatalog.from_catalog(new)

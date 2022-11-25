@@ -61,11 +61,12 @@ class YetAnotherWizz:
             self.binning = zbins
         elif n_zbins is not None:
             if zmin is None:
-                zmin = reference.r.min()
+                zmin = reference.redshift.min()
             if zmax is None:
-                zmax = reference.r.max()
+                zmax = reference.redshift.max()
             factory = BinFactory(zmin, zmax, n_zbins, cosmology)
-            self.binning = factory.get(zbin_method, redshifts=reference.r)
+            self.binning = factory.get(
+                zbin_method, redshifts=reference.redshift)
         else:
             raise ValueError("either 'zbins' or 'n_zbins' must be provided")
         # others
@@ -80,9 +81,9 @@ class YetAnotherWizz:
             num_threads=num_threads)
 
     def _require_redshifts(self) -> None:
-        if self.reference.r is None:
+        if self.reference.redshift is None:
             raise ValueError("'reference' has not redshifts provided")
-        if self.ref_rand.r is None:
+        if self.ref_rand.redshift is None:
             raise ValueError("'ref_rand' has not redshifts provided")
 
     def get_config(self) -> dict[str, int | float | bool | str | None]:
@@ -176,10 +177,12 @@ class YetAnotherWizz:
         return CorrelationFunction(dd=DD, dr=DR, rr=RR)
 
     def true_redshifts(self) -> NzTrue:
-        if self.unknown.r is None:
+        if self.unknown.redshift is None:
             raise ValueError("'unknown' has not redshifts provided")
         # compute the reshift histogram in each patch
         hist_counts = []
         for _, patch_cat in self.unknown.patch_iter():
-            hist_counts.append(np.histogram(patch_cat.r, self.binning)[0])
-        return NzTrue(np.array(hist_counts), self.binning)
+            counts, bins = np.histogram(
+                patch_cat.redshift, self.binning, weights=patch_cat.w)
+            hist_counts.append(counts)
+        return NzTrue(np.array(hist_counts), bins)
