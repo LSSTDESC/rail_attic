@@ -6,8 +6,10 @@ from abc import ABC, abstractmethod, abstractproperty
 import numpy as np
 from numpy.typing import NDArray
 from pandas import DataFrame, IntervalIndex, Series
+from matplotlib import pyplot as plt
+from matplotlib.axis import Axis
 
-from rail.estimation.algos.yet_another_wizz.bootstrap import PairCountData, TreeCorrData
+from rail.estimation.algos.yet_another_wizz.resampling import PairCountData, TreeCorrData
 
 
 class CorrelationEstimator(ABC):
@@ -215,6 +217,7 @@ class CorrelationFunction:
     def get_samples(
         self,
         estimator: str,
+        *,
         global_norm: bool = False,
         sample_method: str = "bootstrap",
         n_boot: int = 500,
@@ -241,3 +244,28 @@ class CorrelationFunction:
             for kind in estimator_func.optional
             if getattr(self, kind) is not None}
         return estimator_func(**requires, **optional)
+
+    def plot(
+        self,
+        estimator: str,
+        *,
+        global_norm: bool = False,
+        sample_method: str = "bootstrap",
+        n_boot: int = 500,
+        ax: Axis | None = None,
+        **scatter_kwargs
+    ) -> None:
+        if ax is None:
+            ax = plt.gca()
+        z = [z.mid for z in self.binning]
+        y = self.get(estimator)
+        y_samp = self.get_samples(
+            estimator, global_norm=global_norm,
+            sample_method=sample_method, n_boot=n_boot)
+        if sample_method == "bootstrap":
+            yerr = y_samp.std(axis=1)
+        else:
+            yerr = y_samp.std(axis=1) * (len(y_samp) - 1)
+        kwargs = dict(fmt=".", ls="none")
+        kwargs.update(scatter_kwargs)
+        ax.errorbar(z, y, yerr, **kwargs)
