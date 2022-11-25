@@ -1,14 +1,17 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
+from typing import Any
 
 from astropy.cosmology import FLRW
 import numpy as np
 from pandas import DataFrame, IntervalIndex, Series
 from numpy.typing import NDArray
+from matplotlib import pyplot as plt
+from matplotlib.axis import Axis
 
 from rail.estimation.algos.yet_another_wizz.correlation import CorrelationFunction
-from rail.estimation.algos.yet_another_wizz.utils import CustomCosmology, get_default_cosmology
+from rail.estimation.algos.yet_another_wizz.utils import ArrayDict, CustomCosmology, get_default_cosmology
 
 
 class BinFactory:
@@ -72,59 +75,143 @@ class BinFactory:
 
 class Nz(ABC):
 
-    def _get_redshift_binwidths(
-        self,
-        interval_index: IntervalIndex
-    ) -> NDArray[np.float_]:
+    @abstractproperty
+    def binning(self) -> IntervalIndex:
+        raise NotImplementedError
+
+    @property
+    def dz(self) -> NDArray[np.float_]:
         # compute redshift bin widths
-        return np.array([zbin.right - zbin.left for zbin in interval_index])
+        return np.array([zbin.right - zbin.left for zbin in self.binning])
 
     @abstractmethod
-    def get(self, **kwargs) -> Series:
+    def get(self, *args) -> Series:
+        raise NotImplementedError
+
+    @abstractmethod
+    def generate_bootstrap_patch_indices(
+        self,
+        n_boot: int,
+        seed: int = 12345
+    ) -> NDArray[np.int_]:
         raise NotImplementedError
 
     @abstractmethod
     def get_samples(
         self,
-        *,
+        *args,
+        sample_method: str = "bootstrap",
         n_boot: int = 500,
         seed: int = 12345,
         **kwargs
     ) -> DataFrame:
         raise NotImplementedError
+
+    @abstractmethod
+    def plot(
+        self,
+        kind: str,
+        *args,
+        sample_method: str = "bootstrap",
+        n_boot: int = 500,
+        ax: Axis | None = None,
+        color: str | NDArray | None = None,
+        plot_kwargs: dict[str, Any] | None = None,
+        **kwargs
+    ) -> None:
+        # compute plot data
+        y = self.get(*args)
+        z = [z.mid for z in y.index]
+        y_samp = self.get_samples(
+            *args, **kwargs, sample_method=sample_method, n_boot=n_boot)
+        if sample_method == "bootstrap":
+            yerr = y_samp.std(axis=1)
+        else:
+            yerr = y_samp.std(axis=1) * (len(y_samp) - 1)
+        # plot
+        if plot_kwargs is None:
+            plot_kwargs = {}
+        plot_kwargs.update(dict(color=color))
+        if ax is None:
+            ax = plt.gca()
+        if kind == "line":
+            color = ax.plot(z, y, **plot_kwargs)[0].get_color()
+            ax.fill_between(z, y - yerr, y + yerr, color=color, alpha=0.2)
+        elif kind == "ebar":
+            ebar_kwargs = dict(fmt=".", ls="none")
+            ebar_kwargs.update(plot_kwargs)
+            ax.errorbar(z, y, yerr, **ebar_kwargs)
+        else:
+            raise ValueError(f"invalid plot type '{kind}'")
 
 
 class NzTrue(Nz):
 
     def __init__(
         self,
-        region_counts: DataFrame
+        patch_counts: NDArray[np.int_],
+        binning: NDArray
     ) -> None:
-        self.counts = region_counts
-        self.dz = self._get_redshift_binwidths(region_counts.index)
+        self.counts = patch_counts
+        self._binning = binning
 
-    def get(self, **kwargs) -> Series:
-        Nz = np.sum(self.counts, axis=1)
+    @property
+    def binning(self) -> IntervalIndex:
+        return IntervalIndex.from_breaks(self._binning)
+
+    def get(self, *args) -> Series:
+        Nz = self.counts.sum(axis=0)
         norm = Nz.sum() * self.dz
-        return Nz / norm
+        return Series(Nz / norm, index=self.binning)
+
+    def generate_bootstrap_patch_indices(
+        self,
+        n_boot: int,
+        seed: int = 12345
+    ) -> NDArray[np.int_]:
+        N = len(self.counts)
+        rng = np.random.default_rng(seed=seed)
+        return rng.integers(0, N, size=(n_boot, N))
+
+    def generate_jackknife_patch_indices(self) -> NDArray[np.int_]:
+        N = len(self.counts)
+        idx = np.delete(np.tile(np.arange(0, N), N), np.s_[::N+1])
+        return idx.reshape((N, N-1))
 
     def get_samples(
         self,
-        *,
+        *args,
+        sample_method: str = "bootstrap",
         n_boot: int = 500,
         seed: int = 12345,
         **kwargs
     ) -> DataFrame:
-        rng = np.random.default_rng(seed=seed)
-        n_regions = len(self.counts.columns)
-        patch_idx = rng.integers(0, n_regions, size=[n_boot, n_regions])
-        Nz_boot = np.sum(self.counts.to_numpy().T[patch_idx], axis=1)
+        if sample_method == "bootstrap":
+            patch_idx = self.generate_bootstrap_patch_indices(n_boot, seed)
+        elif sample_method == "jackknife":
+            patch_idx = self.generate_jackknife_patch_indices()
+        Nz_boot = np.sum(self.counts[patch_idx], axis=1)
         nz_boot = Nz_boot / (
             Nz_boot.sum(axis=1)[:, np.newaxis] * self.dz[np.newaxis, :])
         return DataFrame(
-            index=self.counts.index,
-            columns=np.arange(n_boot),
+            index=self.binning,
+            columns=np.arange(len(patch_idx)),
             data=nz_boot.T)
+
+    def plot(
+        self,
+        *args,
+        sample_method: str = "bootstrap",
+        n_boot: int = 500,
+        ax: Axis | None = None,
+        color: str | NDArray | None = None,
+        plot_kwargs: dict[str, Any] | None = None,
+        **kwargs
+    ) -> None:
+        super().plot(
+            "line",
+            sample_method=sample_method, n_boot=n_boot,
+            ax=ax, color=color, plot_kwargs=plot_kwargs)
 
 
 class NzEstimator(Nz):
@@ -136,7 +223,10 @@ class NzEstimator(Nz):
         self.cross_corr = cross_corr
         self.ref_corr = None
         self.unk_corr = None
-        self.dz = self._get_redshift_binwidths(self.cross_corr.dd.binning)
+
+    @property
+    def binning(self) -> IntervalIndex:
+        return self.cross_corr.binning
 
     def add_reference_autocorr(
         self,
@@ -158,7 +248,7 @@ class NzEstimator(Nz):
 
     def get(
         self,
-        estimator: str = "DP"
+        estimator: str
     ) -> Series:
         cross_corr = self.cross_corr.get(estimator)
         if self.ref_corr is None:
@@ -180,8 +270,8 @@ class NzEstimator(Nz):
 
     def get_samples(
         self,
+        estimator: str,
         *,
-        estimator: str = "DP",
         global_norm: bool = False,
         sample_method: str = "bootstrap",
         n_boot: int = 500,
@@ -205,7 +295,28 @@ class NzEstimator(Nz):
             unk_corr = np.float64(1.0)
         else:
             unk_corr = self.unk_corr.get_samples(**kwargs)
+        """legacy:
         dz_sq = cross_corr.copy()
         for col in dz_sq.columns:
             dz_sq[col] = self.dz**2
+        """
+        N = len(cross_corr.columns)
+        dz_sq = np.tile(self.dz**2, N).reshape((N, -1)).T
         return cross_corr / np.sqrt(dz_sq * ref_corr * unk_corr)
+
+    def plot(
+        self,
+        estimator: str,
+        *,
+        global_norm: bool = False,
+        sample_method: str = "bootstrap",
+        n_boot: int = 500,
+        ax: Axis | None = None,
+        color: str | NDArray | None = None,
+        plot_kwargs: dict[str, Any] | None = None,
+    ) -> None:
+        super().plot(
+            "ebar",
+            estimator,
+            sample_method=sample_method, n_boot=n_boot, global_norm=global_norm,
+            ax=ax, color=color, plot_kwargs=plot_kwargs)
