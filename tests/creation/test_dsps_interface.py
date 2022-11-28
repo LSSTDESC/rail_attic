@@ -1,12 +1,12 @@
 import os
 import subprocess
-
 import pytest
 from src.rail.creation.galaxy_modelling.dsps_sed_modeler import DSPSSingleSedModeler, DSPSPopulationSedModeler
 from rail.core.stage import RailStage
+from rail.core.utils import RAILDIR
 
 
-default_files_folder = '/Users/Luca.Tortorelli/RAIL/src/rail/examples/testdata/dsps_data/'
+default_files_folder = os.path.join(RAILDIR, 'rail', 'examples', 'testdata', 'dsps_data')
 
 
 @pytest.mark.parametrize(
