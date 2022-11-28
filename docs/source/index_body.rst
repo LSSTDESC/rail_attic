@@ -4,7 +4,7 @@ RAIL: Redshift Assessment Infrastructure Layers
 
 The LSST-DESC Redshift Assessment Infrastructure Layer (RAIL) code is a framework to perform photometric redshift (PZ) estimation and analysis for DESC.
 
-RAIL's purpose is to be the infrastructure enabling the PZ working group deliverables in `the LSST-DESC Science Roadmap (see Sec. 5.18) <https://lsstdesc.org/assets/pdf/docs/DESC_SRM_latest.pdf>`_,
+RAIL's purpose is to be the infrastructure enabling the PZ working group deliverables in `the LSST-DESC Science Roadmap (see Sec. 4.14) <https://lsstdesc.org/assets/pdf/docs/DESC_SRM_latest.pdf>`_,
 aiming to guide the selection and implementation of redshift estimators in DESC pipelines.
 RAIL differs from previous plans for PZ pipeline infrastructure in that it is broken into stages,
 each corresponding to a manageable unit of infrastructure advancement, a specific question to answer with that code, and a guaranteed publication opportunity.

@@ -1,7 +1,14 @@
 import logging
 import numpy as np
+from deprecated import deprecated
 from .base import MetricEvaluator
 
+@deprecated(
+    reason="""
+    This implementation of the Brier metric is deprecated.
+    Please use qp.metrics.calculate_brier(prediction, truth) from the qp-prob package.
+    """,
+    category=DeprecationWarning)
 class Brier(MetricEvaluator):
     """ Brier score """
     def __init__(self, prediction, truth):

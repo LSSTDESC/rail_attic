@@ -7,7 +7,7 @@ from rail.creation import Creator
 import rail.creation.degradation
 from rail.creation.degradation.lsst_error_model import LSSTErrorModel
 from rail.estimation.estimator import Estimator
-from rail.evaluation.metrics.pit import *
+from qp.metrics.pit import PIT
 import rail.evaluation.metrics.pointestimates as pe
 from rail.evaluation.metrics.cdeloss import CDELoss
 import tables_io
@@ -176,14 +176,12 @@ def main():
 
             # calculate PIT values, takes a qp ensemble and the true z's
             pitobj = PIT(pz_data, z_true)
-            quant_ens, metamets = pitobj.evaluate()
-            pit_vals = np.array(pitobj._pit_samps)
+            pit_vals = pitobj.pit_samps
+            metamets = pitobj.calculate_pit_meta_metrics()
             # KS
-            ksobj = PITKS(pit_vals, quant_ens)
-            ks_stat_and_pval = ksobj.evaluate()
+            ks_stat_and_pval = metamets['ks']
             print(f"KS value for code {name}: {ks_stat_and_pval.statistic}")
-            cvmobj = PITCvM(pit_vals, quant_ens)
-            cvm_stat_and_pval = cvmobj.evaluate()
+            cvm_stat_and_pval = metamets['cvm']
             print(f"CvM value for code {name}: {cvm_stat_and_pval.statistic}")
             cdelossobj = CDELoss(pz_data, zgrid, z_true)
             cde_stat_and_pval = cdelossobj.evaluate()
@@ -194,7 +192,7 @@ def main():
                 tmpname = f"{figdir}/{name}_ksplot.jpg"
                 ks_plot(pitobj, 101, True, tmpname)
 
-            pit_out_rate = PITOutRate(pit_vals, quant_ens).evaluate()
+            pit_out_rate = metamets['outlier_rate'][0]
             print(f"PIT Outlier Rate for code {name}: {pit_out_rate}")
 
             z_mode = pz_data.mode(grid=zgrid)
