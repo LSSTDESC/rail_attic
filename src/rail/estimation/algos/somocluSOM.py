@@ -394,7 +394,7 @@ class somocluSOMSummarizer(SZPZSummarizer):
         spec_colors = _computemagcolordata(spec_data, self.ref_column_name,
                                            self.usecols, self.column_usage)
         
-        if self.config.n_clusters > self.n_rows * self.n_columns:
+        if self.config.n_clusters > self.n_rows * self.n_columns:  # pragma: no cover
             print("Warning: number of clusters cannot be greater than the number of cells ("+str(self.n_rows * self.n_columns)+"). The SOM will NOT be grouped into clusters.")
             n_clusters = self.n_rows * self.n_columns
         else:
