@@ -36,6 +36,7 @@ dependencies = [
     "photerr",
     "pathos",
     "somoclu",
+    "dsps@git+https://github.com/ArgonneCPAC/dsps",
     "deprecated",
 ]
 

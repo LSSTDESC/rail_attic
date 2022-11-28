@@ -10,4 +10,3 @@ pyyaml
 pip
 corner
 hyperbolic@git+https://github.com/jlvdb/hyperbolic
-dsps@git+https://github.com/ArgonneCPAC/dsps
