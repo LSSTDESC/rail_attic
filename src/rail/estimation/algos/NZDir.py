@@ -147,10 +147,10 @@ class NZDir(CatEstimator):
         nsamp = self.config.nsamples
         if self.rank == 0:
             bootstrap_matrix = rng.integers(low=0, high=ngal, size=(ngal,nsamp))
-        else:
+        else:  # pragma: no cover
             bootstrap_matrix = None
 
-        if self.comm is not None:
+        if self.comm is not None:  # pragma: no cover
             bootstrap_matrix = self.comm.bcast(bootstrap_matrix, root = 0)
 
         iterator = self.input_iterator('input')
@@ -167,7 +167,7 @@ class NZDir(CatEstimator):
             first = False
         self._single_handle.finalize_write()
         self._sample_handle.finalize_write()
-        if self.comm is not None:
+        if self.comm is not None:  # pragma: no cover
             self.comm.Barrier()
         if self.rank == 0:
             # Joining the histograms and updating the data handles
