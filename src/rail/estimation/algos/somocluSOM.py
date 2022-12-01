@@ -24,23 +24,23 @@ def_maglims = dict(mag_u_lsst=27.79,
 
 
 def _computemagcolordata(data, ref_column_name, column_names, colusage):
-    if colusage not in ['colors', 'magandcolors', 'columns']:  # pragma: no cover
-        raise ValueError(f"column usage value {colusage} is not valid, valid values are 'colors', 'magandcolors', and 'columns'")
     numcols = len(column_names)
     if colusage == 'magandcolors':
         coldata = np.array(data[ref_column_name])
         for i in range(numcols - 1):
             tmpcolor = data[column_names[i]] - data[column_names[i + 1]]
             coldata = np.vstack((coldata, tmpcolor))
-    if colusage == 'colors':
+    elif colusage == 'colors':
         coldata = np.array(data[column_names[0]] - data[column_names[1]])
         for i in range(numcols - 2):
             tmpcolor = data[column_names[i + 1]] - data[column_names[i + 2]]
             coldata = np.vstack((coldata, tmpcolor))
-    if colusage == 'columns':  # pragma: no cover
+    elif colusage == 'columns':  # pragma: no cover
         coldata = np.array(data[column_names[0]])
         for i in range(numcols - 1):
             coldata = np.vstack((coldata, np.array(data[column_names[i + 1]])))
+    else: # pragma: no cover
+        raise ValueError(f"column usage value {colusage} is not valid, valid values are 'colors', 'magandcolors', and 'columns'")
     return coldata.T
 
 
@@ -314,7 +314,7 @@ class somocluSOMSummarizer(SZPZSummarizer):
                           step=Param(int, 1000, msg="stepsize used to calculate bmus for a pre-trained SOM on testing data"))
     outputs = [('output', QPHandle),
                ('single_NZ', QPHandle),
-               ('cellid_output', TableHandle),
+               ('cellid_output', Hdf5Handle),
                ('uncovered_cell_file', TableHandle)]
 
     def __init__(self, args, comm=None):
@@ -332,102 +332,193 @@ class somocluSOMSummarizer(SZPZSummarizer):
         self.n_rows = self.model['n_rows']
         self.n_columns = self.model['n_columns']
 
-    def run(self):
-        rng = np.random.default_rng(seed=self.config.seed)
+    def read_photometry_data(self):
         if self.config.hdf5_groupname:
             test_data = self.get_data('input')[self.config.hdf5_groupname]
         else:  # pragma: no cover
             test_data = self.get_data('input')
+
+    for col in self.usecols:
+        if col not in test_data.keys():  # pragma: no cover
+            raise ValueError(f"data column {col} not found in test_data")
+
+    return test_data
+
+    def get_photometry_size(self):
+        handle = self.get_handle("input")
+        group = self.config.spec_groupname or "/"
+        col = self.usecols[0]
+        print("should close something here? ", handle)
+        return handle.fileObj[group][col].size
+
+    
+    def read_spectroscopic_data(self):        
         if self.config.spec_groupname:
             spec_data = self.get_data('spec_input')[self.config.spec_groupname]
         else:  # pragma: no cover
             spec_data = self.get_data('spec_input')
+
         if self.config.redshift_colname not in spec_data.keys():  # pragma: no cover
             raise ValueError(f"redshift column {self.config.redshift_colname} not found in spec_data")
-        sz = spec_data[self.config.redshift_colname]
+
+        return spec_data
+
+    def replace_non_detections(self, data):
         for col in self.usecols:
-            if col not in test_data.keys():  # pragma: no cover
-                raise ValueError(f"data column {col} not found in test_data")
+            if np.isnan(self.config.nondetect_val):  # pragma: no cover
+                mask = np.isnan(dset[col])
+            else:
+                mask = np.isclose(dset[col], self.config.nondetect_val)
+            dset[col][mask] = self.config.mag_limits[col]
+
+    def set_weight_column(self, data, weight_col):
+        if self.config.phot_weightcol == "":
+            data["weight"] = np.ones(len(data[self.usecols[0]]))
+        elif self.config.phot_weightcol in data.keys():  # pragma: no cover
+            data["weight"] = np.array(data[self.config.phot_weightcol])
+        # tested in example notebook, so just put a pragma no cover for if present
+        else:  # pragma: no cover
+            raise KeyError(f"Weight column {weight_col} not present in data!")
+
+    def get_som_coordinates(self, data):
+        self.replace_non_detections(data)
+        self.set_weight_column(self, data, self.config.phot_weightcol)
+
+        # find the best cells for this data set
+        colors = _computemagcolordata(data, self.ref_column_name,
+                                           self.usecols, self.column_usage)
+
+        som_coords = get_bmus(self.som, colors, self.config.step).T
+
+        return som_coords
+
+    def save_coordinates(self, start, end, data, som_coords):
+        # save this chunk of SOM coordinate information
+        coord0, coord1 = som_coords
+        ravel_coord = np.ravel_multi_index(cell_ids, (self.n_columns, self.n_rows))
+
+        output = {
+            "coord0": coord0,
+            "coord1": coord1,
+            "ravel_coord": ravel_coord,
+        }
+
+        # Leave out for now
+        # id_name = self.config.objid_name
+        # if id_name and (id_name in data.keys()):  # pragma: no cover
+        #     output[id_name] = data[id_name]
+
+        self.cell_id_handle.set_data(output, partial=True)
+        self.cell_id_handle.write_chunk(start, end)
+
+
+
+    def run(self):
+        spec_data = self.read_spectroscopic_data()
+        self.replace_non_detections(spec_data)
+        self.set_weight_column(self, spec_data, self.config.spec_weightcol)
+        sz = spec_data[self.config.redshift_colname]
 
         # make dictionary of ID data to be written out with cell IDs
-        id_dict = {}
-        if self.config.objid_name != "":  # pragma: no cover
-            if self.config.objid_name in test_data.keys():
-                id_dict[self.config.objid_name] = test_data[self.config.objid_name]
+        # id_dict = {}
 
-        # replace nondetects
-        dsets = [test_data, spec_data]
-        for col in self.usecols:
-            for dset in dsets:
-                if np.isnan(self.config.nondetect_val):  # pragma: no cover
-                    mask = np.isnan(dset[col])
-                else:
-                    mask = np.isclose(dset[col], self.config.nondetect_val)
-                dset[col][mask] = self.config.mag_limits[col]
 
-        self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins + 1)
-        # assign weight vecs if present, else set all to 1.0
-        # tested in example notebook, so just put a pragma no cover for if present
-        if self.config.phot_weightcol == "":
-            pweight = np.ones(len(test_data[self.usecols[0]]))
-        elif self.config.phot_weightcol in test_data.keys():  # pragma: no cover
-            pweight = np.array(test_data[self.config.phot_weightcol])
-        else:  # pragma: no cover
-            raise KeyError(f"photometric weight column {self.config.phot_weightcol} not present in data!")
-        if self.config.spec_weightcol == "":
-            sweight = np.ones(len(spec_data[self.usecols[0]]))
-        elif self.config.spec_weightcol in test_data.keys():  # pragma: no cover
-            sweight = np.array(spec_data[self.config.spec_weightcol])
-        else:  # pragma: no cover
-            raise KeyError(f"spectroscopic weight column {self.config.spec_weightcol} not present in data!")
 
-        # find the best cells for the photometric and spectrosopic datasets
-        phot_colors = _computemagcolordata(test_data, self.ref_column_name,
-                                           self.usecols, self.column_usage)
         spec_colors = _computemagcolordata(spec_data, self.ref_column_name,
                                            self.usecols, self.column_usage)
 
-        phot_som_coords = get_bmus(self.som, phot_colors, self.config.step).T
-        spec_som_coords = get_bmus(self.som, spec_colors, self.config.step).T
-        phot_pixel_coords = np.ravel_multi_index(phot_som_coords, (self.n_columns, self.n_rows))
-        spec_pixel_coords = np.ravel_multi_index(spec_som_coords, (self.n_columns, self.n_rows))
-
-        # add id coords to id_dict for writeout
-        xcoord, ycoord = phot_som_coords
-        id_dict['coord0'] = xcoord
-        id_dict['coord1'] = ycoord
-        id_dict['ravel_coord'] = phot_pixel_coords
-
+        spec_coords_2d = get_bmus(self.som, spec_colors, self.config.step).T
+        spec_coords_1d = np.ravel_multi_index(spec_coords_2d, (self.n_columns, self.n_rows))
+        spec_hit_pixels = np.unique(spec_coords_1d)
         num_pixels = self.n_columns * self.n_rows
-        ngal = len(spec_pixel_coords)
-        phot_pixel_set = set(phot_pixel_coords)
-        spec_pixel_set = set(spec_pixel_coords)
-        uncovered_pixels = phot_pixel_set - spec_pixel_set
-        bad_pix = dict(uncovered_pixels=np.array(list(uncovered_pixels)))
-        print("the following pixels contain photometric data but not spectroscopic data:")
+        
+
+
+        # We will count the total photometric weight in each SOM pixel.
+        # We can also get the object count, just for interest
+        phot_pixel_count = np.zeros((self.n_columns, self.n_rows), dtype=np.int64)
+        phot_pixel_weight = np.zeros((self.n_columns, self.n_rows))
+
+        # Where we save output data
+        ngal_phot = self.get_photometry_size()
+        self.cell_id_handle = self.add_handle('cellid_output')
+        cell_cols = {
+            "coord0":((ngal_phot,), 'i4'),
+            "coord1":((ngal_phot,), 'i4'),
+            "ravel_coord":((ngal_phot,), 'i4'),
+        }
+        self.cell_id_handle.initialize_write(ngal_phot, communicator = self.comm, **cell_cols)
+
+        for start, end, test_data in self.iterate_photometric_data():
+            print(f"Process {self.rank} adding data {start:,} - {end:,} to SOM")
+
+            phot_som_coords = self.get_som_coordinates(test_data)
+            self.save_coordinates(self, start, end, phot_som_coords)
+
+            # acumulate both weight and count in each pixel
+            # using np.add.at like this instead of just array[indices] +=1
+            # makes it work when the same index appears multiple times
+            np.add.at(phot_pixel_counts, phot_som_coords, 1)
+            np.add.at(phot_pixel_weight, phot_som_coords, test_data['weight'])
+
+        # If we are running in parallel then we need to sum
+        # the results from all the processes
+        if self.comm is not None:
+            import mpi4py.MPI
+            # get the total photometric weight and count in each
+            # pixel across all processes and chunks of data
+            self.comm.Reduce(mpi4py.MPI.IN_PLACE, phot_pixel_counts)
+            self.comm.Reduce(mpi4py.MPI.IN_PLACE, phot_pixel_weight)
+
+            # Only process 0 does the rest of this
+            if self.rank != 0:
+                return
+
+        # The accumulated weight per pixel, flattened out
+        phot_pixel_weight_1d = phot_pixel_weight.flatten()
+
+        # Figure out and report on which pixels were uncovered
+        # by the spectroscopy
+        phot_missed_pixels = np.where(phot_pixel_weight_1d==0)
+        phot_hit_pixels = np.where(phot_pixel_weight_1d!=0)
+        uncovered_pixels = np.setdiff1d(phot_hit_pixels, spec_hit_pixels)
+        nbad = len(uncovered_pixels)
+        print(f"The following {nbad} pixels contain photometric data but not spectroscopic data:")
         print(uncovered_pixels)
-        useful_pixels = phot_pixel_set - uncovered_pixels
+        useful_pixels = np.setdiff1d(phot_hit_pixels - uncovered_pixels)
         print(f"{len(useful_pixels)} out of {num_pixels} have usable data")
 
-        hist_vals = np.empty((self.config.nsamples, len(self.zgrid) - 1))
+        # The x and count values of the histogram.  We have a different histogram
+        # for each realization, and accumulate each below
+        self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins + 1)
+        hist_vals = np.zeros((self.config.nsamples, len(self.zgrid) - 1))
+
+        # Bootstrap over the spectroscopic sample
+        rng = np.random.default_rng(seed=self.config.seed)
+        ngal_spec = len(spec_coords_1d)
+
+
         for i in range(self.config.nsamples):
-            bootstrap_indices = rng.integers(low=0, high=ngal, size=ngal)
+            # Bootstrap indices and associated weights and redshifts
+            bootstrap_indices = rng.integers(low=0, high=ngal_spec, size=ngal_spec)
             bs_specz = sz[bootstrap_indices]
             bs_weights = sweight[bootstrap_indices]
-            bs_specz_coords = spec_pixel_coords[bootstrap_indices]
-            tmp_hist_vals = np.zeros(len(self.zgrid) - 1)
+            bs_specz_coords = spec_coords_1d[bootstrap_indices]
+            
+            # Find spectroscopic galaxies in each pixel and get the histogram
+            # of their redshifts. Scaling this by the photometric weight in that
+            # pixel gives the redshift distribution for this pixel. Summing that
+            # over all the pixels gives the total redshift distribution for this pixel.
             for pix in useful_pixels:
-                pmask = (phot_pixel_coords == pix)
-                binpweight = np.sum(pweight[pmask])
                 smask = (bs_specz_coords == pix)
                 pix_hist_vals, _ = np.histogram(bs_specz[smask], bins=self.zgrid, weights=bs_weights[smask])
-                tmp_hist_vals += pix_hist_vals * binpweight
-            hist_vals[i, :] = tmp_hist_vals
+                hist_vals[i] += pix_hist_vals * phot_pixel_weight_1d[pix]
 
+        # Output of the separate bootstrap PDFs, as well as the fiducial one which is 
+        # just the mean of all the others
         sample_ens = qp.Ensemble(qp.hist, data=dict(bins=self.zgrid, pdfs=np.atleast_2d(hist_vals)))
         fid_hist = np.mean(hist_vals, axis=0)
         qp_d = qp.Ensemble(qp.hist, data=dict(bins=self.zgrid, pdfs=fid_hist))
         self.add_data('output', sample_ens)
         self.add_data('single_NZ', qp_d)
-        self.add_data('uncovered_cell_file', bad_pix)
-        self.add_data('cellid_output', id_dict)
+        self.add_data('uncovered_cell_file', {"uncovered_pixels": uncovered_pixels})
