@@ -1,5 +1,4 @@
 import numpy as np
-#from minisom import MiniSom
 from somoclu import Somoclu
 from pathos.pools import ProcessPool
 from ceci.config import StageParameter as Param
@@ -57,18 +56,18 @@ def get_bmus(som, data, step=1000):  # pragma: no cover
 
     def func(i):
         if i * step + step > len(data):
-            dmap = som.get_surface_state(data[i*step:])
+            dmap = som.get_surface_state(data[i * step:])
             bmus = np.zeros((step, 2))
-            bmus[:len(data)-i*step] = som.get_bmus(dmap).tolist()
+            bmus[:len(data) - i * step] = som.get_bmus(dmap).tolist()
             return bmus
         else:
-            dmap = som.get_surface_state(data[i*step:i*step+step])
+            dmap = som.get_surface_state(data[i * step:i * step + step])
             return som.get_bmus(dmap).tolist()
     n_chunk = int(np.ceil(len(data) / step))
     with ProcessPool() as p:
         bmus = p.map(func, np.arange(n_chunk))
     bmus_array = np.asarray(bmus).astype(np.int)
-    return bmus_array.reshape(bmus_array.shape[0]*bmus_array.shape[1], 2)[:len(data)]
+    return bmus_array.reshape(bmus_array.shape[0] * bmus_array.shape[1], 2)[:len(data)]
 
 
 ###
@@ -79,47 +78,47 @@ def plot_som(ax, som_map, grid_type='rectangular', colormap=cm.viridis, cbar_nam
     This function plots the pre-trained SOM.
     Input:
     ax: the axis to be plotted on.
-    som_map: a 2-D array contains the value in a pre-trained SOM. The value can be the number 
-    of sources in each cell; or the mean feature in every cell.  
+    som_map: a 2-D array contains the value in a pre-trained SOM. The value can be the number
+    of sources in each cell; or the mean feature in every cell.
     grid_type: string, either 'rectangular' or 'hexagonal'.
     colormap: the colormap to show the values. default: cm.viridis.
     cbar_name: the label on the color bar.
     '''
     if vmin == None and vmax == None:
-        vmin = np.quantile(som_map[~np.isnan(som_map)],0.01)
-        vmax = np.quantile(som_map[~np.isnan(som_map)],0.99)
-    cscale = (som_map-vmin) / (vmax - vmin)
+        vmin = np.quantile(som_map[~np.isnan(som_map)], 0.01)
+        vmax = np.quantile(som_map[~np.isnan(som_map)], 0.99)
+    cscale = (som_map - vmin) / (vmax - vmin)
     som_dim = cscale.shape[0]
     if grid_type == 'rectangular':
-        ax.matshow(som_map.T, cmap=colormap, 
-                   vmin=vmin, 
+        ax.matshow(som_map.T, cmap=colormap,
+                   vmin=vmin,
                    vmax=vmax)
     else:
-        yy, xx= np.meshgrid(np.arange(som_dim), np.arange(som_dim))
+        yy, xx = np.meshgrid(np.arange(som_dim), np.arange(som_dim))
         shift = np.zeros(som_dim)
-        shift[::2]=-0.5
+        shift[::2]= -0.5
         xx = xx + shift
         for i in range(cscale.shape[0]):
             for j in range(cscale.shape[1]):
                 wy = yy[(i, j)] * np.sqrt(3) / 2
-                if np.isnan(cscale[i,j]):
+                if np.isnan(cscale[i, j]):
                     color = 'k'
                 else:
-                    color = colormap(cscale[i,j])
+                    color = colormap(cscale[i, j])
 
-                hex = RegularPolygon((xx[(i, j)], wy), 
-                                 numVertices=6, 
-                                 radius= 1 / np.sqrt(3),
-                                 facecolor=color, 
-                                 edgecolor=color,
-                                 #alpha=.4, 
-                                 lw=0.2,)
+                hex = RegularPolygon((xx[(i, j)], wy),
+                                     numVertices=6,
+                                     radius=1 / np.sqrt(3),
+                                     facecolor=color,
+                                     edgecolor=color,
+                                     # alpha=.4,
+                                     lw=0.2,)
                 ax.add_patch(hex)
 
-    scmap = plt.scatter([0,0],[0,0], s=0, c=[vmin, vmax], 
-                            cmap=colormap)
-    ax.set_xlim(-1,som_dim-.5)
-    ax.set_ylim(-0.5,som_dim * np.sqrt(3) / 2)
+    scmap = plt.scatter([0, 0], [0, 0], s=0, c=[vmin, vmax],
+                        cmap=colormap)
+    ax.set_xlim(-1, som_dim - .5)
+    ax.set_ylim(-0.5, som_dim * np.sqrt(3) / 2)
 
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="5%", pad=0.05)
@@ -238,8 +237,8 @@ class Inform_somocluSOMSummarizer(CatInformer):
 
 
 class somocluSOMSummarizer(SZPZSummarizer):
-    """Quick implementation of a SOM-based summarizer. It will 
-    group a pre-trained SOM into hierarchical clusters and assign 
+    """Quick implementation of a SOM-based summarizer. It will
+    group a pre-trained SOM into hierarchical clusters and assign
     a galaxy sample into SOM cells and clusters. Then it
     constructs an N(z) estimation via a weighted sum of the
     empirical N(z) consisting of the normalized histogram
@@ -393,20 +392,20 @@ class somocluSOMSummarizer(SZPZSummarizer):
                                            self.usecols, self.column_usage)
         spec_colors = _computemagcolordata(spec_data, self.ref_column_name,
                                            self.usecols, self.column_usage)
-        
+
         if self.config.n_clusters > self.n_rows * self.n_columns:  # pragma: no cover
             print("Warning: number of clusters cannot be greater than the number of cells ("+str(self.n_rows * self.n_columns)+"). The SOM will NOT be grouped into clusters.")
             n_clusters = self.n_rows * self.n_columns
         elif self.config.n_clusters == -1:
             print("Warning: number of clusters is not provided. The SOM will NOT be grouped into clusters.")
             n_clusters = self.n_rows * self.n_columns
-        else: # pragma: no cover
+        else:  # pragma: no cover
             n_clusters = self.config.n_clusters
-        
+
         algorithm = sc.AgglomerativeClustering(n_clusters=n_clusters, linkage='complete')
         self.som.cluster(algorithm)
         som_cluster_inds = self.som.clusters.reshape(-1)
-        
+
         phot_som_coords = get_bmus(self.som, phot_colors, self.config.step).T
         spec_som_coords = get_bmus(self.som, spec_colors, self.config.step).T
         phot_pixel_coords = np.ravel_multi_index(phot_som_coords, (self.n_columns, self.n_rows))
@@ -414,7 +413,7 @@ class somocluSOMSummarizer(SZPZSummarizer):
 
         phot_som_clusterind = som_cluster_inds[phot_pixel_coords]
         spec_som_clusterind = som_cluster_inds[spec_pixel_coords]
-        
+
         # add id coords to id_dict for writeout
         xcoord, ycoord = phot_som_coords
         id_dict['coord0'] = xcoord
@@ -422,7 +421,7 @@ class somocluSOMSummarizer(SZPZSummarizer):
         id_dict['ravel_coord'] = phot_pixel_coords
         id_dict['cluster_ind'] = phot_som_clusterind
         id_dict['cell_ravel_ind'] = phot_pixel_coords
-        
+
         ngal = len(spec_pixel_coords)
         phot_cluster_set = set(phot_som_clusterind)
         spec_cluster_set = set(spec_som_clusterind)
@@ -437,9 +436,9 @@ class somocluSOMSummarizer(SZPZSummarizer):
         # also see Eq.7 in Wright et al. (2020).
         # Note that the origional definition should be effective number *density*, which equals to N_eff / Area.
         N_eff = np.sum(pweight) ** 2 / np.sum(pweight**2)
-        
+
         hist_vals = np.empty((self.config.nsamples, len(self.zgrid) - 1))
-        
+
         N_eff_p_samples = np.zeros(self.config.nsamples)
         for i in range(self.config.nsamples):
             bootstrap_indices = rng.integers(low=0, high=ngal, size=ngal)
@@ -455,15 +454,15 @@ class somocluSOMSummarizer(SZPZSummarizer):
                 smask = (bs_specz_clusters == cluster)
                 cluster_hist_vals, _ = np.histogram(bs_specz[smask], bins=self.zgrid, weights=bs_weights[smask])
                 tmp_hist_vals += cluster_hist_vals * binpweight
-                
+
                 n_eff_p_num += np.sum(pweight[pmask])
                 n_eff_p_den += np.sum(pweight[pmask] ** 2)
             N_eff_p_samples[i] = n_eff_p_num ** 2 / n_eff_p_den
             hist_vals[i, :] = tmp_hist_vals
-            
+
         # the effective number density of the subsample of the photometric sample reside within SOM groupings which contain spectroscopy
         N_eff_p = np.mean(N_eff_p_samples)
-        
+
         # the ratio between the effective number of photometric sub-sample that has spectroscopic representation and the full photometric sample.
         # We use this to evaluate the spectroscopic representation of current SOM setup and calibrating spectroscopic catalog.
         self.neff_p_to_neff = N_eff_p / N_eff
@@ -474,6 +473,3 @@ class somocluSOMSummarizer(SZPZSummarizer):
         self.add_data('single_NZ', qp_d)
         self.add_data('uncovered_cluster_file', bad_cluster)
         self.add_data('cellid_output', id_dict)
-
-
-        
