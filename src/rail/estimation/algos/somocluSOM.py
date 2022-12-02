@@ -400,7 +400,7 @@ class somocluSOMSummarizer(SZPZSummarizer):
         elif self.config.n_clusters == -1:
             print("Warning: number of clusters is not provided. The SOM will NOT be grouped into clusters.")
             n_clusters = self.n_rows * self.n_columns
-        else:
+        else: # pragma: no cover
             n_clusters = self.config.n_clusters
         
         algorithm = sc.AgglomerativeClustering(n_clusters=n_clusters, linkage='complete')
