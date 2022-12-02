@@ -128,3 +128,8 @@ venv.bak/
 
 # vscode
 .vscode/
+
+# data for testing
+/tests/data/
+/examples/estimation/*.hdf5
+/examples/estimation/*.pkl
