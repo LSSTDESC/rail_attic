@@ -306,7 +306,7 @@ class somocluSOMSummarizer(SZPZSummarizer):
     config_options = SZPZSummarizer.config_options.copy()
     config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
-                          n_clusters=Param(int, 100, msg="The number of hierarchical clusters of SOM cells. If not provided, the SOM cells will not be clustered."),
+                          n_clusters=Param(int, -1, msg="The number of hierarchical clusters of SOM cells. If not provided, the SOM cells will not be clustered."),
                           nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
                           hdf5_groupname=Param(str, "photometry", msg="name of hdf5 group for data, if None, then set to ''"),
                           objid_name=Param(str, "", "name of ID column, if present will be written to cellid_output"),
@@ -397,6 +397,9 @@ class somocluSOMSummarizer(SZPZSummarizer):
         if self.config.n_clusters > self.n_rows * self.n_columns:  # pragma: no cover
             print("Warning: number of clusters cannot be greater than the number of cells ("+str(self.n_rows * self.n_columns)+"). The SOM will NOT be grouped into clusters.")
             n_clusters = self.n_rows * self.n_columns
+        elif self.config.n_clusters == -1:
+            print("Warning: number of clusters is not provided. The SOM will NOT be grouped into clusters.")
+            n_clusters = self.n_rows * self.n_columns
         else:
             n_clusters = self.config.n_clusters
         
@@ -430,9 +433,14 @@ class somocluSOMSummarizer(SZPZSummarizer):
         useful_clusters = phot_cluster_set - uncovered_clusters
         print(f"{len(useful_clusters)} out of {n_clusters} have usable data")
 
-        n_eff = np.sum(pweight) ** 2 / np.sum(pweight**2)
+        # effective number defined in Heymans et al. (2012) to quantify the photometric representation.
+        # also see Eq.7 in Wright et al. (2020).
+        # Note that the origional definition should be effective number *density*, which equals to N_eff / Area.
+        N_eff = np.sum(pweight) ** 2 / np.sum(pweight**2)
         
         hist_vals = np.empty((self.config.nsamples, len(self.zgrid) - 1))
+        
+        N_eff_p_samples = np.zeros(self.config.nsamples)
         for i in range(self.config.nsamples):
             bootstrap_indices = rng.integers(low=0, high=ngal, size=ngal)
             bs_specz = sz[bootstrap_indices]
@@ -450,10 +458,15 @@ class somocluSOMSummarizer(SZPZSummarizer):
                 
                 n_eff_p_num += np.sum(pweight[pmask])
                 n_eff_p_den += np.sum(pweight[pmask] ** 2)
-            n_eff_p = n_eff_p_num ** 2 / n_eff_p_den
+            N_eff_p_samples[i] = n_eff_p_num ** 2 / n_eff_p_den
             hist_vals[i, :] = tmp_hist_vals
             
-        self.neff_p_to_neff = n_eff_p / n_eff
+        # the effective number density of the subsample of the photometric sample reside within SOM groupings which contain spectroscopy
+        N_eff_p = np.mean(N_eff_p_samples)
+        
+        # the ratio between the effective number of photometric sub-sample that has spectroscopic representation and the full photometric sample.
+        # We use this to evaluate the spectroscopic representation of current SOM setup and calibrating spectroscopic catalog.
+        self.neff_p_to_neff = N_eff_p / N_eff
         sample_ens = qp.Ensemble(qp.hist, data=dict(bins=self.zgrid, pdfs=np.atleast_2d(hist_vals)))
         fid_hist = np.mean(hist_vals, axis=0)
         qp_d = qp.Ensemble(qp.hist, data=dict(bins=self.zgrid, pdfs=fid_hist))
