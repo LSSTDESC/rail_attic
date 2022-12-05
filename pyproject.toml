@@ -34,9 +34,9 @@ dependencies = [
     "pzflow",
     "healpy",
     "photerr",
-    "torch",
     "pathos",
     "somoclu",
+    "torch",
     "deprecated",
 ]
 
