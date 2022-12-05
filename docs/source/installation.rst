@@ -19,7 +19,7 @@ RAIL packages structure.
 
 Note that the various RAIL packages all populate the `rail` namespace in python.   I.e., in python you will be importing from `rail` or `rail.pipelines` or `rail.estimation.algos`, not `rail_<alogrithm>` or `rail_pipelines`. 
    
-Installing any of the RAIL packages should automatically install all of the dependent RAIL packages.  However, in some cases you might find that you explicitly need to modify the source code in more that one package, in which case you will want to install multiple packages from source.
+Installing any of the RAIL packages should automatically install all of the dependent RAIL packages.  However, in some cases you might find that you explicitly need to modify the source code in more than one package, in which case you will want to install multiple packages from source.
 
 To create a conda environment named "[name-for-your-env]" that has a specific version of python (in this case 3.9) and pip (and we have found that it is eaiser to use conda to install h5py, so we do that as well), run the command:
 

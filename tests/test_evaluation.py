@@ -39,7 +39,7 @@ def construct_test_ensemble():
 def test_pit_metrics():
     zgrid, zspec, pdf_ens, _ = construct_test_ensemble()
     pit_obj = PIT(pdf_ens, zspec)
-    pit_vals = pit_obj._pit_samps
+    pit_vals = pit_obj.pit_samps
     quant_grid = np.linspace(0, 1, 101)
     quant_ens, metametrics = pit_obj.evaluate(quant_grid)
     out_rate = PITOutRate(pit_vals, quant_ens).evaluate()
