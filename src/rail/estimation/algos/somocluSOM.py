@@ -66,7 +66,7 @@ def get_bmus(som, data, step=1000):  # pragma: no cover
     n_chunk = int(np.ceil(len(data) / step))
     with ProcessPool() as p:
         bmus = p.map(func, np.arange(n_chunk))
-    bmus_array = np.asarray(bmus).astype(np.int)
+    bmus_array = np.asarray(bmus).astype(int)
     return bmus_array.reshape(bmus_array.shape[0] * bmus_array.shape[1], 2)[:len(data)]
 
 
