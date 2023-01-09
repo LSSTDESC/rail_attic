@@ -46,7 +46,7 @@ class DSPSPhotometryCreator(Creator):
                           h=Param(float, 0.7, msg='Dimensionless hubble constant'),
                           use_planck_cosmology=Param(bool, False, msg='True to overwrite the cosmological parameters'
                                                                       'to their Planck2015 values'),
-                          n_galaxies=int, seed=12345)
+                          n_galaxies=Param(int, 1000, msg='number of galaxies in the population'), seed=12345)
 
     inputs = [("model", ModelHandle)]
     outputs = [("output", FitsHandle)]
