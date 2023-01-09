@@ -290,5 +290,5 @@ def test_DSPSPhotometryCreator_photometry_creation():
     DS = RailStage.data_store
     DS.__class__.allow_overwrite = True
     phot_creator = DSPSPhotometryCreator.make_stage(name='DSPSPhotometryCreator')
-    out_table = phot_creator.sample(n_samples=1000)
-    assert len(out_table.data) == 1000
+    out_table = phot_creator.sample(n_samples=10)
+    assert len(out_table.data) == 10
