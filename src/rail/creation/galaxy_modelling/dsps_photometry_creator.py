@@ -30,7 +30,7 @@ class DSPSPhotometryCreator(Creator):
                                             msg='npy file containing the structured numpy '
                                                 'array of the survey filter wavelengths and transmissions'),
                           rest_frame_sed_models=Param(str, os.path.join(default_files_folder,
-                                                                        'model_DSPSPopulationSEDmodel.pkl'),
+                                                                        'model_DSPS_pop_sed_model.pkl'),
                                                       msg='pickle file containing the sed models '
                                                           'generated with dsps_sed_modeler.py'),
                           rest_frame_wavelengths=Param(str, os.path.join(default_files_folder, 'ssp_spec_wave.npy'),
