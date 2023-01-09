@@ -87,7 +87,7 @@ class DSPSPhotometryCreator(Creator):
             raise ValueError("The dark energy density at the current time {self.config.Ode0} is outside of allowed"
                              " range 0. < Ode0 < 1.")
 
-        if (self.config.h < 0.) | (self.config.Odeh0 > 1.):
+        if (self.config.h < 0.) | (self.config.h > 1.):
             raise ValueError("The dimensionless Hubble constant {self.config.h} is outside of allowed"
                              " range 0 < h < 1")
 
