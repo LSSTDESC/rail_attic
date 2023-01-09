@@ -2,6 +2,7 @@ import os
 import subprocess
 import pytest
 from src.rail.creation.galaxy_modelling.dsps_sed_modeler import DSPSSingleSedModeler, DSPSPopulationSedModeler
+from src.rail.creation.galaxy_modelling.dsps_photometry_creator import DSPSPhotometryCreator
 from rail.core.stage import RailStage
 from rail.core.utils import RAILDIR
 
@@ -199,5 +200,95 @@ def test_DSPSPopulationSedModeler_model_creation():
     DS.__class__.allow_overwrite = True
     population_seds_model = DSPSPopulationSedModeler.make_stage(name='DSPSPopulationSEDmodel')
     model_handle = population_seds_model.fit_model()
-    subprocess.run(['rm', 'model_DSPSPopulationSEDmodel.pkl'])
+    # subprocess.run(['rm', 'model_DSPSPopulationSEDmodel.pkl'])
     assert bool(model_handle) is True
+
+
+@pytest.mark.parametrize(
+    "settings,error",
+    [
+        ({"Om0": 2}, ValueError),
+    ],
+)
+def test_DSPSPhotometryCreator_bad_omega_matter(settings, error):
+    """
+    Test if omega matter is in allowed range. If not, it should raise ValueError.
+
+    Parameters
+    ----------
+    settings: dict
+        dictionary having "Om0" as keyword and value outside range to trigger ValueError
+    error: built-in type
+        ValueError
+    Returns
+    -------
+
+    """
+
+    with pytest.raises(error):
+        DSPSPhotometryCreator.make_stage(**settings)
+
+
+@pytest.mark.parametrize(
+    "settings,error",
+    [
+        ({"Ode0": 2}, ValueError),
+    ],
+)
+def test_DSPSPhotometryCreator_bad_omega_de(settings, error):
+    """
+    Test if dark energy is in allowed range. If not, it should raise ValueError.
+
+    Parameters
+    ----------
+    settings: dict
+        dictionary having "Ode0" as keyword and value outside range to trigger ValueError
+    error: built-in type
+        ValueError
+    Returns
+    -------
+
+    """
+
+    with pytest.raises(error):
+        DSPSPhotometryCreator.make_stage(**settings)
+
+
+@pytest.mark.parametrize(
+    "settings,error",
+    [
+        ({"h": 1.1}, ValueError),
+    ],
+)
+def test_DSPSPhotometryCreator_bad_little_h(settings, error):
+    """
+    Test if the dimensionless hubble constant is in allowed range. If not, it should raise ValueError.
+
+    Parameters
+    ----------
+    settings: dict
+        dictionary having "h" as keyword and value outside range to trigger ValueError
+    error: built-in type
+        ValueError
+    Returns
+    -------
+
+    """
+
+    with pytest.raises(error):
+        DSPSPhotometryCreator.make_stage(**settings)
+
+
+def test_DSPSPhotometryCreator_photometry_creation():
+    """
+    Test if the resulting output_table is not empty.
+
+    Returns
+    -------
+
+    """
+    DS = RailStage.data_store
+    DS.__class__.allow_overwrite = True
+    phot_creator = DSPSPhotometryCreator.make_stage(name='DSPSPhotometryCreator')
+    out_table = phot_creator.sample(n_samples=1000)
+    assert len(out_table.data) == 1000

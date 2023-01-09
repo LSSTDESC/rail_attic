@@ -1,3 +1,5 @@
+import os
+from rail.core.utils import RAILDIR
 from rail.creation.engine import Creator
 from rail.core.stage import RailStage
 from rail.core.data import ModelHandle, FitsHandle
@@ -22,19 +24,28 @@ class DSPSPhotometryCreator(Creator):
     """
 
     name = "DSPS Photometry Creator"
+    default_files_folder = os.path.join(RAILDIR, 'rail', 'examples', 'testdata', 'dsps_data')
     config_options = RailStage.config_options.copy()
-    config_options.update(filter_data=Param(str, 'lsst_filters.npy', msg='npy file containing the structured numpy '
-                                                                         'array of the survey filter wavelengths and'
-                                                                         'transmissions'),
-                          rest_frame_sed_models=Param(str, 'sed_models.pkl', msg=''),
-                          rest_frame_wavelengths=Param(str, 'rest_frame_wave.npy',
+    config_options.update(filter_data=Param(str, os.path.join(default_files_folder, 'lsst_filters.npy'),
+                                            msg='npy file containing the structured numpy '
+                                                'array of the survey filter wavelengths and transmissions'),
+                          rest_frame_sed_models=Param(str, os.path.join(default_files_folder,
+                                                                        'model_DSPSPopulationSEDmodel.pkl'),
+                                                      msg='pickle file containing the sed models '
+                                                          'generated with dsps_sed_modeler.py'),
+                          rest_frame_wavelengths=Param(str, os.path.join(default_files_folder, 'ssp_spec_wave.npy'),
                                                        msg='npy file containing the wavelength array'
                                                            'of the rest-frame model seds with'
                                                            'shape (n_wavelength_points)'),
-                          galaxy_redshifts=Param(str, 'galaxy_redshifts.npy', msg=''),
-                          Om0=Param(float, 0.3, msg=''), Ode0=Param(float, 0.7, msg=''), w0=Param(float, -1, msg=''),
-                          wa=Param(float, 0, msg=''), h=Param(float, 0.7, msg=''),
-                          use_planck_cosmology=Param(bool, False, msg=''),
+                          galaxy_redshifts=Param(str, os.path.join(default_files_folder, 'galaxy_redshifts.npy'),
+                                                 msg='npy file containing galaxy redshifts'),
+                          Om0=Param(float, 0.3, msg='Omega matter at current time'),
+                          Ode0=Param(float, 0.7, msg='Omega dark energy at current time'),
+                          w0=Param(float, -1, msg='Dark energy equation-of-state parameter at current time'),
+                          wa=Param(float, 0, msg='Slope dark energy equation-of-state evolution with scale factor'),
+                          h=Param(float, 0.7, msg='Dimensionless hubble constant'),
+                          use_planck_cosmology=Param(bool, False, msg='True to overwrite the cosmological parameters'
+                                                                      'to their Planck2015 values'),
                           n_galaxies=int, seed=12345)
 
     inputs = [("model", ModelHandle)]
@@ -65,8 +76,21 @@ class DSPSPhotometryCreator(Creator):
                                               if 'trans' in key])
         self.rest_frame_wavelengths = np.load(self.config.rest_frame_wavelengths)
         self.galaxy_redshifts = np.load(self.config.galaxy_redshifts)
+
         if self.config.use_planck_cosmology:
             self.config.Om0, self.config.Ode0, self.config.w0, self.config.wa, self.config.h = PLANCK15
+
+        if (self.config.Om0 < 0.) | (self.config.Om0 > 1.):
+            raise ValueError("The mass density at the current time {self.config.Om0} is outside of allowed"
+                             " range 0. < Om0 < 1.")
+        if (self.config.Ode0 < 0.) | (self.config.Ode0 > 1.):
+            raise ValueError("The dark energy density at the current time {self.config.Ode0} is outside of allowed"
+                             " range 0. < Ode0 < 1.")
+
+        if (self.config.h < 0.) | (self.config.Odeh0 > 1.):
+            raise ValueError("The dimensionless Hubble constant {self.config.h} is outside of allowed"
+                             " range 0 < h < 1")
+
         if not isinstance(args, dict):  # pragma: no cove
             args = vars(args)
         self.open_model(**args)
