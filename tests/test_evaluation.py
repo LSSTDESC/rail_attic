@@ -24,7 +24,7 @@ SIGIQR = 0.0045947
 BIAS = -0.00001576
 SIGMAD = 0.0046489
 
-default_conditionpitfiles_folder = os.path.join(RAILDIR, 'rail', 'examples', 'testdata', 'condition_pit_testdata')
+default_testdata_folder = os.path.join(RAILDIR, 'rail', 'examples', 'testdata')
 
 def construct_test_ensemble():
     np.random.seed(87)
@@ -77,29 +77,41 @@ def test_condition_pit_metric():
 
     """
 
-    cde_calib = np.load(os.path.join(default_conditionpitfiles_folder, 'cde_calib.npy'))
-    cde_test = np.load(os.path.join(default_conditionpitfiles_folder, 'cde_test.npy'))
-    z_grid = np.load(os.path.join(default_conditionpitfiles_folder, 'z_grid.npy'))
-    z_calib = np.load(os.path.join(default_conditionpitfiles_folder, 'z_calib.npy'))
-    z_test = np.load(os.path.join(default_conditionpitfiles_folder, 'z_test.npy'))
-    cat_calib = pd.read_csv(os.path.join(default_conditionpitfiles_folder, 'cat_calib.csv'))
-    cat_test = pd.read_csv(os.path.join(default_conditionpitfiles_folder, 'cat_test.csv'))
-    features = ['I', 'UG', 'GR', 'RI', 'IZ', 'ZY', 'IZERR', 'RIERR', 'GRERR', 'UGERR', 'IERR', 'ZYERR']
+    data = np.load(os.path.join(default_testdata_folder, 'bpz_test_red.npz'), allow_pickle=True)
+    z_grid = data['z_grid']
+    cat = pd.DataFrame(data["test_cat"])
+
+    cde = data["cde_test"]  # conditional density estimate
+    norm = np.trapz(cde, z_grid)  # normalize across the redshift grid
+    norm[norm == 0] = 1
+    cde = cde / norm[:, None]
+    num_calib = 800
+    SEED = 299792458
+    n_gal = 1200
+    rng = np.random.default_rng(SEED)
+    indices = rng.permutation(n_gal)  # creating index permutation for splitting in train and test
+    cde_calib = cde[indices[:num_calib]]  # splitting cde in training set
+    cde_test = cde[indices[num_calib:]]  # and test set
+    z_calib = cat["SPECZ"][indices[:num_calib]].values
+    z_test = cat["SPECZ"][indices[num_calib:]].values
+    cat_calib = cat.iloc[indices[:num_calib]]
+    cat_test = cat.iloc[indices[num_calib:]]
+    features = ["I", "UG", "GR", "RI", "IZ", "ZY", "IZERR", "RIERR", "GRERR", "UGERR", "IERR", "ZYERR"]
 
     qp_ens_cde_calib = qp.Ensemble(qp.interp, data=dict(xvals=z_grid, yvals=cde_calib))
     cond_pit = ConditionPIT(cde_calib, cde_test, z_grid, z_calib, z_test, cat_calib[features].values,
                             cat_test[features].values, qp_ens_cde_calib)
     cond_pit.train(patience=10, n_epochs=2, lr=0.001, weight_decay=0.01, batch_size=100, frac_mlp_train=0.9,
                    lr_decay=0.95, oversample=50, n_alpha=201,
-                   checkpt_path=os.path.join(default_conditionpitfiles_folder, 'checkpoint_GPZ_wide_CDE_test.pt'),
+                   checkpt_path=os.path.join(default_testdata_folder, 'checkpoint_GPZ_wide_CDE_test.pt'),
                    hidden_layers=[2, 2, 2])
-    pit_local, pit_local_fit = cond_pit.evaluate(model_checkpt_path=os.path.join(default_conditionpitfiles_folder,
+    pit_local, pit_local_fit = cond_pit.evaluate(model_checkpt_path=os.path.join(default_testdata_folder,
                                                                                  'checkpoint_GPZ_wide_CDE_test.pt'),
                                                  model_hidden_layers=[2, 2, 2], nn_type='monotonic',
                                                  batch_size=100, num_basis=40, num_cores=1)
-    subprocess.run(['rm', os.path.join(default_conditionpitfiles_folder, 'checkpoint_GPZ_wide_CDE_test.pt')])
-    cond_pit.diagnostics(pit_local, pit_local_fit, os.path.join(default_conditionpitfiles_folder, 'local_pp_plot.pdf'))
-    assert os.path.isfile(os.path.join(default_conditionpitfiles_folder, 'local_pp_plot.pdf'))
+    subprocess.run(['rm', os.path.join(default_testdata_folder, 'checkpoint_GPZ_wide_CDE_test.pt')])
+    cond_pit.diagnostics(pit_local, pit_local_fit, os.path.join(default_testdata_folder, 'local_pp_plot.pdf'))
+    assert os.path.isfile(os.path.join(default_testdata_folder, 'local_pp_plot.pdf'))
 
 
 def test_point_metrics():
