@@ -182,7 +182,7 @@ class ConditionPIT(MetricEvaluator):
         """
 
         # training, hyperparameters need to be tuned
-        if hidden_layers is None:
+        if hidden_layers is None:  # pragma: no cover
             hidden_layers = [256, 256, 256]
         rhat, _, _ = train_local_pit(X=self.x_calib, pit_values=self.uncond_pit_calib, patience=patience,
                                      n_epochs=n_epochs, lr=lr, weight_decay=weight_decay, batch_size=batch_size,
@@ -217,7 +217,7 @@ class ConditionPIT(MetricEvaluator):
 
         if meta_options is None:
             meta_options = _pitMetaMetrics
-        if model_hidden_layers is None:
+        if model_hidden_layers is None:  # pragma: no cover
             model_hidden_layers = [1024, 512, 512]
 
         rhat = load_model(input_size=self.x_test.shape[1] + 1, hidden_layers=model_hidden_layers,
