@@ -87,7 +87,7 @@ def test_condition_pit_metric():
     cde = cde / norm[:, None]
     num_calib = 800
     SEED = 299792458
-    n_gal = 1200
+    n_gal = 1000
     rng = np.random.default_rng(SEED)
     indices = rng.permutation(n_gal)  # creating index permutation for splitting in train and test
     cde_calib = cde[indices[:num_calib]]  # splitting cde in training set
