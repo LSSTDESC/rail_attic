@@ -102,6 +102,20 @@ class ConditionPIT(MetricEvaluator):
     #             features_calib, features_test):
     def __init__(self, cde_calib, cde_test, z_grid, z_true_calib, z_true_test,
                  features_calib, features_test, qp_ens_cde_calib):
+        """
+
+        Parameters
+        ----------
+        cde_calib
+        cde_test
+        z_grid
+        z_true_calib
+        z_true_test
+        features_calib
+        features_test
+        qp_ens_cde_calib
+        """
+
         super().__init__(qp_ens_cde_calib)
 
         # cde conditional density estimate
@@ -146,6 +160,27 @@ class ConditionPIT(MetricEvaluator):
     def train(self, patience=10, n_epochs=10000, lr=0.001, weight_decay=0.01, batch_size=2048, frac_mlp_train=0.9,
               lr_decay=0.95, oversample=50, n_alpha=201, checkpt_path="./checkpoint_GPZ_wide_CDE_1024x512x512.pt",
               hidden_layers=None):
+        """
+
+        Parameters
+        ----------
+        patience
+        n_epochs
+        lr
+        weight_decay
+        batch_size
+        frac_mlp_train
+        lr_decay
+        oversample
+        n_alpha
+        checkpt_path
+        hidden_layers
+
+        Returns
+        -------
+
+        """
+
         # training, hyperparameters need to be tuned
         if hidden_layers is None:
             hidden_layers = [256, 256, 256]
@@ -158,6 +193,24 @@ class ConditionPIT(MetricEvaluator):
     def evaluate(self, eval_grid=default_quants, meta_options=None, model_checkpt_path='model_checkpt_path',
                  model_hidden_layers=None, nn_type='monotonic', batch_size=100, num_basis=40,
                  num_cores=1):
+        """
+
+        Parameters
+        ----------
+        eval_grid
+        meta_options
+        model_checkpt_path
+        model_hidden_layers
+        nn_type
+        batch_size
+        num_basis
+        num_cores
+
+        Returns
+        -------
+
+        """
+
         # we just need the features X test since the model has been trained in the function train and we just need to
         # run the model on the features to obtain directly the calibrated PDFs.
         # get pit local and ispline fits
@@ -181,8 +234,22 @@ class ConditionPIT(MetricEvaluator):
 
         return pit_local, np.array(pit_local_fit)
 
-    def diagnostics(self, pit_local, pit_local_fit):
+    def diagnostics(self, pit_local, pit_local_fit, figure_filepath):
+        """
+
+        Parameters
+        ----------
+        pit_local
+        pit_local_fit
+        figure_filepath
+
+        Returns
+        -------
+
+        """
+
         # P-P plot creation, not one for every galaxy but something clever
+        plt.clf()
         rng = np.random.default_rng(42)
         random_idx = rng.choice(len(self.x_test), 25, replace=False)
         fig, axs = plt.subplots(5,5, figsize=(15, 15))
@@ -201,7 +268,8 @@ class ConditionPIT(MetricEvaluator):
         fig.text(0.5,-0.05,"Theoretical P", fontsize=30)
         fig.text(-0.05,0.5,"Empirical P", rotation=90, fontsize=30)
         plt.tight_layout()
-        plt.show()
+        plt.savefig(figure_filepath)
+        plt.close()
 
 
 @deprecated(
