@@ -111,7 +111,9 @@ class DSPSPhotometryCreator(Creator):
             The object encapsulating the trained model.
         """
 
-        model = kwargs.get("rest_frame_sed_models", None)
+        # model = kwargs.get("rest_frame_sed_models", None)
+        model = self.config.rest_frame_sed_models
+        
         if model is None or model == "None":  # pragma: no cover
             self.model = None
             return self.model

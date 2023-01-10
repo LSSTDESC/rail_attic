@@ -200,7 +200,7 @@ def test_DSPSPopulationSedModeler_model_creation():
     DS.__class__.allow_overwrite = True
     population_seds_model = DSPSPopulationSedModeler.make_stage(name='DSPSPopulationSEDmodel')
     model_handle = population_seds_model.fit_model()
-    # subprocess.run(['rm', 'model_DSPSPopulationSEDmodel.pkl'])
+    subprocess.run(['rm', 'model_DSPSPopulationSEDmodel.pkl'])
     assert bool(model_handle) is True
 
 
