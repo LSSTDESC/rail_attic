@@ -113,7 +113,7 @@ class DSPSPhotometryCreator(Creator):
 
         # model = kwargs.get("rest_frame_sed_models", None)
         model = self.config.rest_frame_sed_models
-        
+
         if model is None or model == "None":  # pragma: no cover
             self.model = None
             return self.model
@@ -124,8 +124,8 @@ class DSPSPhotometryCreator(Creator):
         if isinstance(model, ModelHandle):  # pragma: no cover
             if model.has_path:
                 self.config["model"] = model.path
-        self.model = self.set_data("model", model)
-        return self.model
+            self.model = self.set_data("model", model)
+            return self.model
 
     def sample(self, seed: int = None, **kwargs):
         r"""
