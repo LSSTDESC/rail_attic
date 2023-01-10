@@ -82,8 +82,8 @@ def test_condition_pit_metric():
     z_grid = np.load(os.path.join(default_conditionpitfiles_folder, 'z_grid.npy'))
     z_calib = np.load(os.path.join(default_conditionpitfiles_folder, 'z_calib.npy'))
     z_test = np.load(os.path.join(default_conditionpitfiles_folder, 'z_test.npy'))
-    cat_calib = pd.read_csv('cat_calib.csv')
-    cat_test = pd.read_csv('cat_test.csv')
+    cat_calib = pd.read_csv(os.path.join(default_conditionpitfiles_folder, 'cat_calib.csv'))
+    cat_test = pd.read_csv(os.path.join(default_conditionpitfiles_folder, 'cat_test.csv'))
     features = ['I', 'UG', 'GR', 'RI', 'IZ', 'ZY', 'IZERR', 'RIERR', 'GRERR', 'UGERR', 'IERR', 'ZYERR']
 
     qp_ens_cde_calib = qp.Ensemble(qp.interp, data=dict(xvals=z_grid, yvals=cde_calib))
