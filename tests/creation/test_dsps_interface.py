@@ -1,6 +1,7 @@
 import os
 import subprocess
 import pytest
+import rail
 from src.rail.creation.galaxy_modelling.dsps_sed_modeler import DSPSSingleSedModeler, DSPSPopulationSedModeler
 from src.rail.creation.galaxy_modelling.dsps_photometry_creator import DSPSPhotometryCreator
 from rail.core.stage import RailStage
@@ -289,8 +290,7 @@ def test_DSPSPhotometryCreator_photometry_creation():
     """
     DS = RailStage.data_store
     DS.__class__.allow_overwrite = True
-    phot_creator = DSPSPhotometryCreator.make_stage(name='DSPSPhotometryCreator',
-                                                    filter_data=os.path.join(default_files_folder, 'lsst_filters.npy'),
+    phot_creator = DSPSPhotometryCreator.make_stage(filter_data=os.path.join(default_files_folder, 'lsst_filters.npy'),
                                                     rest_frame_sed_models=os.path.join(default_files_folder,
                                                                                        'model_DSPS_pop_sed_model.pkl'),
                                                     rest_frame_wavelengths=os.path.join(default_files_folder,
