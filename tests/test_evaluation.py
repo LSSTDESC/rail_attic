@@ -93,8 +93,8 @@ def test_condition_pit_metric():
                    lr_decay=0.95, oversample=50, n_alpha=201,
                    checkpt_path=os.path.join(default_conditionpitfiles_folder, 'checkpoint_GPZ_wide_CDE_test.pt'),
                    hidden_layers=[2, 2, 2])
-    pit_local, pit_local_fit = cond_pit.evaluate(os.path.join(default_conditionpitfiles_folder,
-                                                              'checkpoint_GPZ_wide_CDE_test.pt'),
+    pit_local, pit_local_fit = cond_pit.evaluate(model_checkpt_path=os.path.join(default_conditionpitfiles_folder,
+                                                                                 'checkpoint_GPZ_wide_CDE_test.pt'),
                                                  model_hidden_layers=[2, 2, 2], nn_type='monotonic',
                                                  batch_size=100, num_basis=40, num_cores=1)
     subprocess.run(['rm', os.path.join(default_conditionpitfiles_folder, 'checkpoint_GPZ_wide_CDE_test.pt')])
