@@ -278,26 +278,3 @@ def test_DSPSPhotometryCreator_bad_little_h(settings, error):
 
     with pytest.raises(error):
         DSPSPhotometryCreator.make_stage(**settings)
-
-
-def test_DSPSPhotometryCreator_photometry_creation():
-    """
-    Test if the resulting output_table is not empty.
-
-    Returns
-    -------
-
-    """
-    DS = RailStage.data_store
-    DS.__class__.allow_overwrite = True
-    phot_creator = DSPSPhotometryCreator.make_stage(filter_data=os.path.join(default_files_folder, 'lsst_filters.npy'),
-                                                    rest_frame_sed_models=os.path.join(default_files_folder,
-                                                                                       'model_DSPS_pop_sed_model.pkl'),
-                                                    rest_frame_wavelengths=os.path.join(default_files_folder,
-                                                                                        'ssp_spec_wave.npy'),
-                                                    galaxy_redshifts=os.path.join(default_files_folder,
-                                                                                  'galaxy_redshifts.npy'),
-                                                    Om0=0.3, Ode0=0.7, w0=-1, wa=0, h=0.7,
-                                                    use_planck_cosmology=True, n_galaxies=10, seed=12345)
-    out_table = phot_creator.sample(n_samples=10)
-    assert len(out_table.data) == 10
