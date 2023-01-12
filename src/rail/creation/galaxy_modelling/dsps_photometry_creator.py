@@ -63,6 +63,18 @@ class DSPSPhotometryCreator(Creator):
         """
         RailStage.__init__(self, args, comm=comm)
         # self.model = self.config.rest_frame_sed_models
+        if self.config.use_planck_cosmology:
+            self.config.Om0, self.config.Ode0, self.config.w0, self.config.wa, self.config.h = PLANCK15
+        if (self.config.Om0 < 0.) | (self.config.Om0 > 1.):
+            raise ValueError("The mass density at the current time {self.config.Om0} is outside of allowed"
+                             " range 0. < Om0 < 1.")
+        if (self.config.Ode0 < 0.) | (self.config.Ode0 > 1.):
+            raise ValueError("The dark energy density at the current time {self.config.Ode0} is outside of allowed"
+                             " range 0. < Ode0 < 1.")
+        if (self.config.h < 0.) | (self.config.h > 1.):
+            raise ValueError("The dimensionless Hubble constant {self.config.h} is outside of allowed"
+                             " range 0 < h < 1")
+
         self._b = [None, 0, 0, 0]
         self._calc_rest_mag_vmap = jjit(vmap(_calc_rest_mag, in_axes=self._b))
         self._c = [None, 0, 0, 0, 0, *[None] * 5]
@@ -76,20 +88,6 @@ class DSPSPhotometryCreator(Creator):
                                               if 'trans' in key])
         self.rest_frame_wavelengths = np.load(self.config.rest_frame_wavelengths)
         self.galaxy_redshifts = np.load(self.config.galaxy_redshifts)
-
-        if self.config.use_planck_cosmology:
-            self.config.Om0, self.config.Ode0, self.config.w0, self.config.wa, self.config.h = PLANCK15
-
-        if (self.config.Om0 < 0.) | (self.config.Om0 > 1.):
-            raise ValueError("The mass density at the current time {self.config.Om0} is outside of allowed"
-                             " range 0. < Om0 < 1.")
-        if (self.config.Ode0 < 0.) | (self.config.Ode0 > 1.):
-            raise ValueError("The dark energy density at the current time {self.config.Ode0} is outside of allowed"
-                             " range 0. < Ode0 < 1.")
-
-        if (self.config.h < 0.) | (self.config.h > 1.):
-            raise ValueError("The dimensionless Hubble constant {self.config.h} is outside of allowed"
-                             " range 0 < h < 1")
 
         if not isinstance(args, dict):  # pragma: no cove
             args = vars(args)
