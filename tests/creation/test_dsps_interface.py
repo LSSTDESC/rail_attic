@@ -8,7 +8,7 @@ from rail.core.stage import RailStage
 from rail.core.utils import RAILDIR
 from dsps.utils import _jax_get_dt_array
 
-default_files_folder = os.path.join(RAILDIR, 'rail', 'examples', 'testdata', 'dsps_data')
+default_files_folder = os.path.join(RAILDIR, 'rail', 'examples', 'testdata')
 
 
 def save_to_npy(filenames, properties):
@@ -312,7 +312,7 @@ def test_DSPSPopulationSedModeler_bad_stellar_mass_type(settings, error):
     with pytest.raises(error):
         DS = RailStage.data_store
         DS.__class__.allow_overwrite = True
-        population_seds_model = DSPSPopulationSedModeler.make_stage(name='DSPSPopulationSEDmodel', **settings)
+        population_seds_model = DSPSPopulationSedModeler.make_stage(name='model_DSPSPopulationSEDmodel', **settings)
         subprocess.run(['rm'] + list(testdata_filenames.values()))
         population_seds_model.fit_model()
 
@@ -330,7 +330,7 @@ def test_DSPSPopulationSedModeler_model_creation():
 
     DS = RailStage.data_store
     DS.__class__.allow_overwrite = True
-    population_seds_model = DSPSPopulationSedModeler.make_stage(name='DSPSPopulationSEDmodel')
+    population_seds_model = DSPSPopulationSedModeler.make_stage(name='model_DSPSPopulationSEDmodel')
     model_handle = population_seds_model.fit_model()
     subprocess.run(['rm', 'model_DSPSPopulationSEDmodel.pkl'])
     subprocess.run(['rm'] + list(testdata_filenames.values()))

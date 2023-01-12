@@ -58,14 +58,14 @@ class DSPSSingleSedModeler(Modeler):
     """
 
     name = "DSPS single SED model"
-    default_files_folder = os.path.join(RAILDIR, 'rail', 'examples', 'testdata', 'dsps_data')
+    default_files_folder = os.path.join(RAILDIR, 'rail', 'examples', 'testdata')
     config_options = RailStage.config_options.copy()
     config_options.update(age_grid=Param(str, os.path.join(default_files_folder, 'age_grid.npy'),
                                          msg='npy file containing the age grid values in units of log10(Age[Gyr])'),
                           metallicity_grid=Param(str, os.path.join(default_files_folder, 'metallicity_grid.npy'),
                                                  msg='npy file containing the metallicity grid values in units of '
                                                      'log10(Z / Z_solar)'),
-                          ssp_fluxes=Param(str, os.path.join(default_files_folder, 'ssp_spec_flux_lines.npy'),
+                          ssp_fluxes=Param(str, os.path.join(default_files_folder, 'dsps_ssp_spec_flux.npy'),
                                            msg='npy file containing the SSPs template SEDs with shape  '
                                                '(n_grid_metallicity_values, n_grid_age_values, n_wavelength_points)'),
                           star_formation_history=Param(str, os.path.join(default_files_folder, 'SFH.npy'),
@@ -199,14 +199,14 @@ class DSPSPopulationSedModeler(Modeler):
     """
 
     name = "DSPS population SED models"
-    default_files_folder = os.path.join(RAILDIR, 'rail', 'examples', 'testdata', 'dsps_data')
+    default_files_folder = os.path.join(RAILDIR, 'rail', 'examples', 'testdata')
     config_options = RailStage.config_options.copy()
     config_options.update(age_grid=Param(str, os.path.join(default_files_folder, 'age_grid.npy'),
                                          msg='npy file containing the age grid values in units of log10(Age[Gyr])'),
                           metallicity_grid=Param(str, os.path.join(default_files_folder, 'metallicity_grid.npy'),
                                                  msg='npy file containing the metallicity grid values in units of '
                                                      'log10(Z / Z_solar)'),
-                          ssp_fluxes=Param(str, os.path.join(default_files_folder, 'ssp_spec_flux_lines.npy'),
+                          ssp_fluxes=Param(str, os.path.join(default_files_folder, 'dsps_ssp_spec_flux.npy'),
                                            msg='npy file containing the SSPs template SEDs with shape '
                                                '(n_grid_metallicity_values, n_grid_age_values, n_wavelength_points)'),
                           star_formation_history=Param(str, os.path.join(default_files_folder, 'SFHs.npy'),

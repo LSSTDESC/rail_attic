@@ -24,7 +24,7 @@ class DSPSPhotometryCreator(Creator):
     """
 
     name = "DSPS Photometry Creator"
-    default_files_folder = os.path.join(RAILDIR, 'rail', 'examples', 'testdata', 'dsps_data')
+    default_files_folder = os.path.join(RAILDIR, 'rail', 'examples', 'testdata')
     config_options = RailStage.config_options.copy()
     config_options.update(filter_data=Param(str, os.path.join(default_files_folder, 'lsst_filters.npy'),
                                             msg='npy file containing the structured numpy '
@@ -33,7 +33,7 @@ class DSPSPhotometryCreator(Creator):
                                                                         'model_DSPS_pop_sed_model.pkl'),
                                                       msg='pickle file containing the sed models '
                                                           'generated with dsps_sed_modeler.py'),
-                          rest_frame_wavelengths=Param(str, os.path.join(default_files_folder, 'ssp_spec_wave.npy'),
+                          rest_frame_wavelengths=Param(str, os.path.join(default_files_folder, 'dsps_ssp_spec_wave.npy'),
                                                        msg='npy file containing the wavelength array'
                                                            'of the rest-frame model seds with'
                                                            'shape (n_wavelength_points)'),
