@@ -38,6 +38,9 @@ dependencies = [
     "pathos",
     "somoclu",
     "torch",
+    "diffstar@git+https://github.com/ArgonneCPAC/diffstar",
+    "diffmah@git+https://github.com/ArgonneCPAC/diffmah",
+    "dsps@git+https://github.com/ArgonneCPAC/dsps",
     "deprecated",
 ]
 
