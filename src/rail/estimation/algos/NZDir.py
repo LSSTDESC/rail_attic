@@ -138,13 +138,45 @@ class NZDir(CatEstimator):
 
     def run(self):
         rng = np.random.default_rng(seed=self.config.seed)
-        if self.config.hdf5_groupname:
-            test_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  # pragma: no cover
-            test_data = self.get_data('input')
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins + 1)
         self.bincents = 0.5 * (self.zgrid[1:] + self.zgrid[:-1])
 
+        # Creating de indices for the bootstrap sampling, and broadcasting to the other process
+        # if we are running in parallel
+        ngal = len(self.szweights)
+        nsamp = self.config.nsamples
+        if self.rank == 0:
+            bootstrap_matrix = rng.integers(low=0, high=ngal, size=(ngal,nsamp))
+        else:  # pragma: no cover
+            bootstrap_matrix = None
+
+        if self.comm is not None:  # pragma: no cover
+            bootstrap_matrix = self.comm.bcast(bootstrap_matrix, root = 0)
+
+        iterator = self.input_iterator('input')
+        first = True
+        self._initialize_run()
+        self._output_handle = None
+        total_chunks = int(np.ceil(self._input_length/self.config.chunk_size))
+        for s, e, test_data in iterator:
+            print(f"Process {self.rank} running estimator on chunk {s} - {e}")
+
+            total_chunks = int(np.ceil(self._input_length/self.config.chunk_size))
+            chunk_number = s//self.config.chunk_size
+            self._process_chunk(first, total_chunks, chunk_number, test_data, bootstrap_matrix)
+            first = False
+        self._single_handle.finalize_write()
+        self._sample_handle.finalize_write()
+        if self.comm is not None:  # pragma: no cover
+            self.comm.Barrier()
+        if self.rank == 0:
+            # Joining the histograms and updating the data handles
+            self.join_histograms()
+
+
+
+
+    def _process_chunk(self, first, number_of_chunks, chunk_number, test_data, bootstrap_matrix):
         # assign weight vecs if present, else set all to 1.0
         # tested in example notebook, so just put a pragma no cover for if present
         if self.config.phot_weightcol == "":
@@ -174,23 +206,65 @@ class NZDir(CatEstimator):
             bins=self.zgrid,
             weights=weights * self.szweights,
         )
-        qp_d = qp.Ensemble(qp.hist,
-                           data=dict(bins=self.zgrid, pdfs=hist_data[0]))
+        normalization_factor = hist_data[0].sum()
+        qp_dstn = qp.Ensemble(qp.hist,
+                   data=dict(bins=self.zgrid, pdfs=hist_data[0]),ancil=dict(normalization=np.array([normalization_factor])))
+        if first:
+            self._single_handle = self.initialize_handle('single_NZ', qp_dstn, number_of_chunks)
+        self._do_chunk_output(qp_dstn, chunk_number, chunk_number+1, self._single_handle)
 
-        # add a bootstrap sampling
         # The way things are set up, it is easier and faster to bootstrap the spec-z gals
         # and weights, but if we wanted to be more like the other bootstraps we should really
         # bootstrap the photometric data and re-run the ball tree query N times.
-        ngal = len(self.szweights)
         nsamp = self.config.nsamples
         hist_vals = np.empty((nsamp, self.config.nzbins))
         for i in range(nsamp):
-            bootstrap_indices = rng.integers(low=0, high=ngal, size=ngal)
+            bootstrap_indices = bootstrap_matrix[:,i]
             zarr = self.szvec[bootstrap_indices]
             tmpweight = self.szweights[bootstrap_indices] * weights[bootstrap_indices]
             tmp_hist_vals = np.histogram(zarr, bins=self.zgrid, weights=tmpweight)[0]
             hist_vals[i] = tmp_hist_vals
-        sample_ens = qp.Ensemble(qp.hist, data=dict(bins=self.zgrid, pdfs=np.atleast_2d(hist_vals)))
+        normalization_factor = hist_vals.sum(axis=(1,))
+        sample_ens = qp.Ensemble(qp.hist,
+                         data=dict(bins=self.zgrid, pdfs=np.atleast_2d(hist_vals)),ancil=dict(normalization=normalization_factor))
+        npdf = nsamp*number_of_chunks
+        if first:
+            self._sample_handle = self.initialize_handle('output', sample_ens, npdf)
+        self._do_chunk_output(sample_ens, chunk_number*nsamp, (chunk_number+1)*nsamp, self._sample_handle)
 
-        self.add_data('output', sample_ens)
-        self.add_data('single_NZ', qp_d)
+
+    def initialize_handle(self, tag, data, npdf):
+            handle = self.add_handle(tag, data = data)
+            handle.initialize_write(npdf, communicator = self.comm)
+            return handle
+
+    def _do_chunk_output(self, qp_dstn, start, end, handle):
+        handle.set_data(qp_dstn, partial=True)
+        handle.write_chunk(start, end)
+
+    def join_histograms(self):
+        qp_d_spread = self._single_handle.read(force=True)
+        tab_single = qp_d_spread.build_tables()
+
+        hist_single = np.zeros(self.config.nzbins)
+        normalization = tab_single['ancil']['normalization']
+        total_chunks = len(normalization)
+        for i in range(total_chunks):
+            hist_single += tab_single['data']['pdfs'][i]*normalization[i]
+
+        sample_ens_spread = self._sample_handle.read(force=True)
+        tab_samples = sample_ens_spread.build_tables()
+
+        nsamp = self.config.nsamples
+        hist_samples = np.zeros((nsamp,self.config.nzbins))
+        normalization = tab_samples['ancil']['normalization']
+        hist_samples_spread = tab_samples['data']['pdfs']*normalization[:,None]
+        for i in range(total_chunks):
+            hist_samples += hist_samples_spread[i*nsamp:(i+1)*nsamp]
+
+        sample_ens = qp.Ensemble(qp.hist, data=dict(bins=self.zgrid, pdfs=np.atleast_2d(hist_samples)))
+        qp_d = qp.Ensemble(qp.hist, data=dict(bins=self.zgrid, pdfs=np.atleast_2d(hist_single)))
+        self._single_handle.set_data(qp_d)
+        self._sample_handle.set_data(sample_ens)
+        self._single_handle.write()
+        self._sample_handle.write()
