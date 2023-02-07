@@ -1,6 +1,6 @@
 config: pipe_example_config.yml
 inputs:
-  flow: ../goldenspike/data/pretrained_flow.pkl
+  model: ../../src/rail/examples/goldenspike/data/pretrained_flow.pkl
 log_dir: .
 modules: rail
 output_dir: .
@@ -8,7 +8,7 @@ resume: false
 site:
   max_threads: 2
 stages:
-- classname: FlowEngine
+- classname: FlowCreator
   module_name: rail.creation.engines.flowEngine
   name: flow_engine_test
   nprocess: 1
