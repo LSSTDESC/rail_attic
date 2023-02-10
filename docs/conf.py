@@ -106,12 +106,18 @@ html_theme = 'sphinx_rtd_theme'
 # html_theme_options = {}
 html_theme_options = {'prev_next_buttons_location': None,
                       'collapse_navigation': False,
-                      'titles_only': True}
+                      'titles_only': False}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-# html_static_path = ['_static']
+html_static_path = ['_static']
+
+# These paths are either relative to html_static_path
+# or fully qualified paths (eg. https://...)
+html_css_files = [
+    'css/notebooks.css',
+]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -229,28 +235,7 @@ for entry in config:
     elif exon:
         examplefiles += [entry]
 
-# -- Compile the examples into rst----------------------------------------
-outdir = 'compiled-demos-examples/'
-nbconvert_opts = ['--to rst',
-                  '--ExecutePreprocessor.kernel_name=python3',
-                  # '--execute',
-                  f'--output-dir {outdir}']
-
-for demo in [*demofiles, *examplefiles]:
-    com = ' '.join(['jupyter nbconvert']+nbconvert_opts+[demo])
-    subprocess.run(com, shell=True)
-
-index_demo_toc = \
-"""
-.. toctree::
-   :maxdepth: 1
-   :caption: Usage Demos
-
-"""
-for demo in demofiles:
-    fname = ''.join(demo.split('.')[:-1]).split('/')[-1]+'.rst'
-    index_demo_toc+= f"   {outdir}{fname}\n"
-
+# -- Set up the API table of contents ------------------------------------
 index_api_toc = \
 """
 .. toctree::
@@ -262,11 +247,8 @@ index_api_toc = \
 
 subprocess.run('cp source/index_body.rst index.rst', shell=True)
 with open('index.rst', 'a') as indexfile:
-    indexfile.write(index_demo_toc)
-    # indexfile.write(index_examples_toc)
     indexfile.write(index_api_toc)
 
-# -- Set up the API table of contents ------------------------------------
 apitoc = \
 """API Documentation
 =================
