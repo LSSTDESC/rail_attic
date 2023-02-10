@@ -70,7 +70,7 @@ jobs:
             Job: ${{ github.job }} 
             Status: ${{ job.status }}
           to: olynn@andrew.cmu.edu
-          from: Github (OliviaLynn/RAIL)
+          from: Github (LSST/RAIL)
 
       - name: Commit updated notebooks
         if: always()
