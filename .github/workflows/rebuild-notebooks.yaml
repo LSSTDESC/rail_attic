@@ -4,6 +4,10 @@ name: rebuild notebooks
 
 on:
   workflow_dispatch:
+  
+  schedule:
+      - cron: '50 16 * * 1'
+
 jobs:
   notebook_update:
     runs-on: ubuntu-latest
@@ -54,6 +58,17 @@ jobs:
         run: |
           jupyter nbconvert --to html --execute examples/goldenspike/goldenspike.ipynb --output ../../docs/source/notebooks-other/goldenspike.html
 
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v4
+        with:
+          branch: auto-notebooks
+          title: "Auto-rebuild notebooks"
+          body: "Automatically rebuilt Python notebooks in this repo."
+          commit-message: "[Auto-rebuild notebooks]"
+          add-paths: |
+            *.html
+          reviewers: OliviaLynn
+
       - name: Report failure
         if: ${{ failure() }}
         uses: dawidd6/action-send-mail@v3
@@ -71,11 +86,3 @@ jobs:
             Status: ${{ job.status }}
           to: olynn@andrew.cmu.edu
           from: Github (LSST/RAIL)
-
-      - name: Commit updated notebooks
-        if: always()
-        uses: EndBug/add-and-commit@v9
-        with:
-          author_name: GitHub-Actions
-          message: "Auto-rebuild notebooks"
-          add: "*.html --force"
