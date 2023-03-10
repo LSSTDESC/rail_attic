@@ -1,6 +1,5 @@
 import numpy as np
 from somoclu import Somoclu
-from pathos.pools import ProcessPool
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatInformer
 from rail.estimation.summarizer import SZPZSummarizer
@@ -12,6 +11,7 @@ from matplotlib.patches import RegularPolygon
 from matplotlib import cm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import sklearn.cluster as sc
+from scipy.spatial.distance import cdist
 
 def_bands = ['u', 'g', 'r', 'i', 'z', 'y']
 def_cols = [f"mag_{band}_lsst" for band in def_bands]
@@ -44,30 +44,45 @@ def _computemagcolordata(data, ref_column_name, column_names, colusage):
     return coldata.T
 
 
-def get_bmus(som, data, step=1000):  # pragma: no cover
+def get_surface_data(som, data):  # pragma: no cover
+    """Return the Euclidean distance between codebook and data. 
+    This is a faster version than the orginal get_surface_data in a somoclu class.
+    som: a pre-trained Somoclu object;
+    data: np.ndarray of the data vector. If None, then use the training data stored in the som object;
+    split: an integer specifying the size of data chunks when calculating the distances.
+    returns: The the dot product of the codebook and the data.
+    rtype: 2D numpy.array
+    """
+
+    d = data
+
+    codebookReshaped = som.codebook.reshape(
+        som.codebook.shape[0] * som.codebook.shape[1], som.codebook.shape[2])
+    parts = np.array_split(d, 200, axis=0)
+    am = np.zeros((data.shape[0], som._n_columns * som._n_rows))
+
+    i = 0
+    for part in parts:
+        am[i:i+part.shape[0]] = cdist((part), codebookReshaped, 'euclidean')
+        i = i+part.shape[0]
+    return am
+
+
+def get_bmus(som, data=None):  # pragma: no cover
     '''
     This function gets the "best matching unit (bmu)" of a given data on a pre-trained SOM.
     It works by multiprocessing chunks of the data.
     Input:
     som: a pre-trained Somoclu object;
-    data: np.ndarray of the data vector;
-    step: int, the size of a chunk of the data.
+    data: np.ndarray of the data vector. If None, then use the training data stored in the som object;
     '''
 
-    def func(i):
-        if i * step + step > len(data):
-            dmap = som.get_surface_state(data[i * step:])
-            bmus = np.zeros((step, 2))
-            bmus[:len(data) - i * step] = som.get_bmus(dmap).tolist()
-            return bmus
-        else:
-            dmap = som.get_surface_state(data[i * step:i * step + step])
-            return som.get_bmus(dmap).tolist()
-    n_chunk = int(np.ceil(len(data) / step))
-    with ProcessPool() as p:
-        bmus = p.map(func, np.arange(n_chunk))
-    bmus_array = np.asarray(bmus).astype(int)
-    return bmus_array.reshape(bmus_array.shape[0] * bmus_array.shape[1], 2)[:len(data)]
+    if data is None:
+        bmus = som.bmus
+    else:
+        dmap = get_surface_data(som, data)
+        bmus = som.get_bmus(dmap)
+    return bmus
 
 
 ###
@@ -316,8 +331,7 @@ class somocluSOMSummarizer(SZPZSummarizer):
                           redshift_colname=Param(str, "redshift", msg="name of redshift column in specz file"),
                           phot_weightcol=Param(str, "", msg="name of photometry weight, if present"),
                           spec_weightcol=Param(str, "", msg="name of specz weight col, if present"),
-                          nsamples=Param(int, 20, msg="number of bootstrap samples to generate"),
-                          step=Param(int, 1000, msg="stepsize used to calculate bmus for a pre-trained SOM on testing data"))
+                          nsamples=Param(int, 20, msg="number of bootstrap samples to generate"),)
     outputs = [('output', QPHandle),
                ('single_NZ', QPHandle),
                ('cellid_output', TableHandle),
@@ -406,8 +420,8 @@ class somocluSOMSummarizer(SZPZSummarizer):
         self.som.cluster(algorithm)
         som_cluster_inds = self.som.clusters.reshape(-1)
 
-        phot_som_coords = get_bmus(self.som, phot_colors, self.config.step).T
-        spec_som_coords = get_bmus(self.som, spec_colors, self.config.step).T
+        phot_som_coords = get_bmus(self.som, phot_colors).T
+        spec_som_coords = get_bmus(self.som, spec_colors).T
         phot_pixel_coords = np.ravel_multi_index(phot_som_coords, (self.n_columns, self.n_rows))
         spec_pixel_coords = np.ravel_multi_index(spec_som_coords, (self.n_columns, self.n_rows))
 
