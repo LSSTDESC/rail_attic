@@ -36,9 +36,8 @@ dependencies = [
     "photerr",
     "pathos",
     "somoclu",
-    "diffstar@git+https://github.com/ArgonneCPAC/diffstar",
-    "diffmah@git+https://github.com/ArgonneCPAC/diffmah",
-    "dsps@git+https://github.com/ArgonneCPAC/dsps",
+    "diffmah",
+    "dsps",
     "deprecated",
 ]
 
