@@ -64,9 +64,9 @@ def get_bmus(som, data=None, split=200):  # pragma: no cover
 
         i = 0
         for part in parts:
-            dmap[i:i+part.shape[0]] = cdist((part), codebookReshaped, 'euclidean')
-            i = i+part.shape[0]
-        
+            dmap[i:i + part.shape[0]] = cdist((part), codebookReshaped, 'euclidean')
+            i = i + part.shape[0]
+
         bmus = som.get_bmus(dmap)
     return bmus
 
@@ -97,7 +97,7 @@ def plot_som(ax, som_map, grid_type='rectangular', colormap=cm.viridis, cbar_nam
     else:
         yy, xx = np.meshgrid(np.arange(som_dim), np.arange(som_dim))
         shift = np.zeros(som_dim)
-        shift[::2]= -0.5
+        shift[::2] = -0.5
         xx = xx + shift
         for i in range(cscale.shape[0]):
             for j in range(cscale.shape[1]):
@@ -318,7 +318,7 @@ class somocluSOMSummarizer(SZPZSummarizer):
                           phot_weightcol=Param(str, "", msg="name of photometry weight, if present"),
                           spec_weightcol=Param(str, "", msg="name of specz weight col, if present"),
                           split=Param(int, 200, msg="the size of data chunks when calculating the distances between the codebook and data"),
-    nsamples=Param(int, 20, msg="number of bootstrap samples to generate"),)
+                          nsamples=Param(int, 20, msg="number of bootstrap samples to generate"))
     outputs = [('output', QPHandle),
                ('single_NZ', QPHandle),
                ('cellid_output', TableHandle),
