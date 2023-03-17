@@ -44,43 +44,29 @@ def _computemagcolordata(data, ref_column_name, column_names, colusage):
     return coldata.T
 
 
-def get_surface_data(som, data):  # pragma: no cover
-    """Return the Euclidean distance between codebook and data. 
-    This is a faster version than the orginal get_surface_data in a somoclu class.
-    som: a pre-trained Somoclu object;
-    data: np.ndarray of the data vector. If None, then use the training data stored in the som object;
-    split: an integer specifying the size of data chunks when calculating the distances.
-    returns: The the dot product of the codebook and the data.
-    rtype: 2D numpy.array
-    """
-
-    d = data
-
-    codebookReshaped = som.codebook.reshape(
-        som.codebook.shape[0] * som.codebook.shape[1], som.codebook.shape[2])
-    parts = np.array_split(d, 200, axis=0)
-    am = np.zeros((data.shape[0], som._n_columns * som._n_rows))
-
-    i = 0
-    for part in parts:
-        am[i:i+part.shape[0]] = cdist((part), codebookReshaped, 'euclidean')
-        i = i+part.shape[0]
-    return am
-
-
-def get_bmus(som, data=None):  # pragma: no cover
+def get_bmus(som, data=None, split=200):  # pragma: no cover
     '''
     This function gets the "best matching unit (bmu)" of a given data on a pre-trained SOM.
     It works by multiprocessing chunks of the data.
     Input:
     som: a pre-trained Somoclu object;
     data: np.ndarray of the data vector. If None, then use the training data stored in the som object;
+    split: an integer specifying the size of data chunks when calculating the distances between the codebook and data;
     '''
 
     if data is None:
         bmus = som.bmus
     else:
-        dmap = get_surface_data(som, data)
+        codebookReshaped = som.codebook.reshape(
+            som.codebook.shape[0] * som.codebook.shape[1], som.codebook.shape[2])
+        parts = np.array_split(data, split, axis=0)
+        dmap = np.zeros((data.shape[0], som._n_columns * som._n_rows))
+
+        i = 0
+        for part in parts:
+            dmap[i:i+part.shape[0]] = cdist((part), codebookReshaped, 'euclidean')
+            i = i+part.shape[0]
+        
         bmus = som.get_bmus(dmap)
     return bmus
 
@@ -331,7 +317,8 @@ class somocluSOMSummarizer(SZPZSummarizer):
                           redshift_colname=Param(str, "redshift", msg="name of redshift column in specz file"),
                           phot_weightcol=Param(str, "", msg="name of photometry weight, if present"),
                           spec_weightcol=Param(str, "", msg="name of specz weight col, if present"),
-                          nsamples=Param(int, 20, msg="number of bootstrap samples to generate"),)
+                          split=Param(int, 200, msg="the size of data chunks when calculating the distances between the codebook and data"),
+    nsamples=Param(int, 20, msg="number of bootstrap samples to generate"),)
     outputs = [('output', QPHandle),
                ('single_NZ', QPHandle),
                ('cellid_output', TableHandle),
@@ -420,8 +407,8 @@ class somocluSOMSummarizer(SZPZSummarizer):
         self.som.cluster(algorithm)
         som_cluster_inds = self.som.clusters.reshape(-1)
 
-        phot_som_coords = get_bmus(self.som, phot_colors).T
-        spec_som_coords = get_bmus(self.som, spec_colors).T
+        phot_som_coords = get_bmus(self.som, phot_colors, self.config.split).T
+        spec_som_coords = get_bmus(self.som, spec_colors, self.config.split).T
         phot_pixel_coords = np.ravel_multi_index(phot_som_coords, (self.n_columns, self.n_rows))
         spec_pixel_coords = np.ravel_multi_index(spec_som_coords, (self.n_columns, self.n_rows))
 
