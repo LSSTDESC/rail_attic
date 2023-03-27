@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   
   schedule:
-      - cron: '50 16 * * 1'
+      - cron: '50 16 1 * *'
 
 jobs:
   notebook_update:
