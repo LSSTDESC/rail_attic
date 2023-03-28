@@ -6,14 +6,6 @@ div.jp-RenderedHTMLCommon > h1 {
     display: none;
 }
 
-/* Create space between each notebook on a page */
-
-section:not(:first-child):not(:last-child) {
-    border-bottom: 1px solid #e1e4e5;
-    padding-bottom: 50px;
-    margin-bottom: 20px;
-}
-
 section:not(:first-child) > h2 {
     padding-top: 30px;
 }
