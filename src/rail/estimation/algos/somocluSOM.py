@@ -3,7 +3,7 @@ from somoclu import Somoclu
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatInformer
 from rail.estimation.summarizer import SZPZSummarizer
-from rail.core.data import QPHandle, TableHandle
+from rail.core.data import QPHandle, TableHandle, Hdf5Handle
 import qp
 
 import matplotlib.pyplot as plt
@@ -321,7 +321,7 @@ class somocluSOMSummarizer(SZPZSummarizer):
                           nsamples=Param(int, 20, msg="number of bootstrap samples to generate"))
     outputs = [('output', QPHandle),
                ('single_NZ', QPHandle),
-               ('cellid_output', TableHandle),
+               ('cellid_output', Hdf5Handle),
                ('uncovered_cluster_file', TableHandle)]
 
     def __init__(self, args, comm=None):
@@ -339,12 +339,40 @@ class somocluSOMSummarizer(SZPZSummarizer):
         self.n_rows = self.model['n_rows']
         self.n_columns = self.model['n_columns']
 
+    def replace_non_detections(self, data):
+        for col in self.usecols:
+            if np.isnan(self.config.nondetect_val):  # pragma: no cover
+                mask = np.isnan(data[col])
+            else:
+                mask = np.isclose(data[col], self.config.nondetect_val)
+            data[col][mask] = self.config.mag_limits[col]
+
+    def set_weight_column(self, data, weight_col):
+        # assign weight vecs if present, else set all to 1.0
+        if weight_col == "":
+            data["weight"] = np.ones(len(data[self.usecols[0]]))
+        elif weight_col in data.keys():  # pragma: no cover
+            data["weight"] = np.array(data[weight_col])
+        # tested in example notebook, so just put a pragma no cover for if present
+        else:  # pragma: no cover
+            raise KeyError(f"Weight column {weight_col} not present in data!")
+
+    def get_som_coordinates(self, data, weight_col):
+        # replace nondetects
+        self.replace_non_detections(data)
+        self.set_weight_column(data, weight_col)
+
+        # find the best cells for this data set
+        colors = _computemagcolordata(data, self.ref_column_name,
+                                           self.usecols, self.column_usage)
+
+        som_coords = get_bmus(self.som, colors, self.config.split).T
+
+        return som_coords
+
     def run(self):
         rng = np.random.default_rng(seed=self.config.seed)
-        if self.config.hdf5_groupname:
-            test_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  # pragma: no cover
-            test_data = self.get_data('input')
+
         if self.config.spec_groupname:
             spec_data = self.get_data('spec_input')[self.config.spec_groupname]
         else:  # pragma: no cover
@@ -352,47 +380,9 @@ class somocluSOMSummarizer(SZPZSummarizer):
         if self.config.redshift_colname not in spec_data.keys():  # pragma: no cover
             raise ValueError(f"redshift column {self.config.redshift_colname} not found in spec_data")
         sz = spec_data[self.config.redshift_colname]
-        for col in self.usecols:
-            if col not in test_data.keys():  # pragma: no cover
-                raise ValueError(f"data column {col} not found in test_data")
-
-        # make dictionary of ID data to be written out with cell IDs
-        id_dict = {}
-        if self.config.objid_name != "":  # pragma: no cover
-            if self.config.objid_name in test_data.keys():
-                id_dict[self.config.objid_name] = test_data[self.config.objid_name]
-
-        # replace nondetects
-        dsets = [test_data, spec_data]
-        for col in self.usecols:
-            for dset in dsets:
-                if np.isnan(self.config.nondetect_val):  # pragma: no cover
-                    mask = np.isnan(dset[col])
-                else:
-                    mask = np.isclose(dset[col], self.config.nondetect_val)
-                dset[col][mask] = self.config.mag_limits[col]
 
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins + 1)
-        # assign weight vecs if present, else set all to 1.0
-        # tested in example notebook, so just put a pragma no cover for if present
-        if self.config.phot_weightcol == "":
-            pweight = np.ones(len(test_data[self.usecols[0]]))
-        elif self.config.phot_weightcol in test_data.keys():  # pragma: no cover
-            pweight = np.array(test_data[self.config.phot_weightcol])
-        else:  # pragma: no cover
-            raise KeyError(f"photometric weight column {self.config.phot_weightcol} not present in data!")
-        if self.config.spec_weightcol == "":
-            sweight = np.ones(len(spec_data[self.usecols[0]]))
-        elif self.config.spec_weightcol in test_data.keys():  # pragma: no cover
-            sweight = np.array(spec_data[self.config.spec_weightcol])
-        else:  # pragma: no cover
-            raise KeyError(f"spectroscopic weight column {self.config.spec_weightcol} not present in data!")
 
-        # find the best cells for the photometric and spectrosopic datasets
-        phot_colors = _computemagcolordata(test_data, self.ref_column_name,
-                                           self.usecols, self.column_usage)
-        spec_colors = _computemagcolordata(spec_data, self.ref_column_name,
-                                           self.usecols, self.column_usage)
 
         if self.config.n_clusters > self.n_rows * self.n_columns:  # pragma: no cover
             print("Warning: number of clusters cannot be greater than the number of cells ("+str(self.n_rows * self.n_columns)+"). The SOM will NOT be grouped into clusters.")
@@ -407,25 +397,69 @@ class somocluSOMSummarizer(SZPZSummarizer):
         self.som.cluster(algorithm)
         som_cluster_inds = self.som.clusters.reshape(-1)
 
-        phot_som_coords = get_bmus(self.som, phot_colors, self.config.split).T
-        spec_som_coords = get_bmus(self.som, spec_colors, self.config.split).T
-        phot_pixel_coords = np.ravel_multi_index(phot_som_coords, (self.n_columns, self.n_rows))
+        #First we process the spectroscopic part
+        spec_som_coords = self.get_som_coordinates(spec_data, self.config.spec_weightcol)
         spec_pixel_coords = np.ravel_multi_index(spec_som_coords, (self.n_columns, self.n_rows))
-
-        phot_som_clusterind = som_cluster_inds[phot_pixel_coords]
         spec_som_clusterind = som_cluster_inds[spec_pixel_coords]
 
-        # add id coords to id_dict for writeout
-        xcoord, ycoord = phot_som_coords
-        id_dict['coord0'] = xcoord
-        id_dict['coord1'] = ycoord
-        id_dict['ravel_coord'] = phot_pixel_coords
-        id_dict['cluster_ind'] = phot_som_clusterind
-        id_dict['cell_ravel_ind'] = phot_pixel_coords
-
         ngal = len(spec_pixel_coords)
-        phot_cluster_set = set(phot_som_clusterind)
         spec_cluster_set = set(spec_som_clusterind)
+
+        # Creating de indices for the bootstrap sampling, and broadcasting to the other processes
+        # if we are running in parallel
+        nsamp = self.config.nsamples
+        if self.rank == 0:
+            bootstrap_matrix = rng.integers(low=0, high=ngal, size=(ngal,nsamp))
+        else:  # pragma: no cover
+            bootstrap_matrix = None
+
+        if self.comm is not None:  # pragma: no cover
+            bootstrap_matrix = self.comm.bcast(bootstrap_matrix, root = 0)
+
+        # Starting the iterator
+        iterator = self.input_iterator('input')
+        first = True
+        total_chunks = int(np.ceil(self._input_length/self.config.chunk_size))
+
+        # Initializing variables that will be used after the chunks
+        hist_vals = np.empty((self.config.nsamples, len(self.zgrid) - 1))
+        N_eff_p_num = np.zeros(self.config.nsamples)
+        N_eff_p_den = np.zeros(self.config.nsamples)
+        phot_cluster_set = set()
+
+        # make dictionary of ID data to be written out with cell IDs
+        id_dict = {}
+
+        first = True
+
+        for s, e, test_data in iterator:
+            print(f"Process {self.rank} running summarizer on chunk {s} - {e}")
+
+            chunk_number = s//self.config.chunk_size
+            self._process_chunk(test_data, bootstrap_matrix, som_cluster_inds, spec_cluster_set, phot_cluster_set, sz, spec_data['weight'], spec_som_clusterind, N_eff_p_num, N_eff_p_den, hist_vals, id_dict, s, e, first)
+            first = False
+
+        # We have finished writting the cell IDs, and we need to close the file in all process
+        self._cellid_handle.finalize_write()
+
+        # If we are running in parallel then we need to sum
+        # the results from all the processes
+        if self.comm is not None:
+            import mpi4py.MPI
+            # get the total photometric weight and count in each
+            # pixel across all processes and chunks of data
+            N_eff_p_num = self.comm.reduce(N_eff_p_num)
+            N_eff_p_den = self.comm.reduce(N_eff_p_den)
+            hist_vals = self.comm.reduce(hist_vals)
+
+            phot_cluster_list=np.array(list(phot_cluster_set),dtype=int)
+            phot_cluster_total=self.comm.gather(phot_cluster_list)
+            
+            # Only process 0 does the rest of this
+            if self.rank != 0:
+                return
+            phot_cluster_total=np.concatenate(phot_cluster_total)
+            phot_cluster_set = set(phot_cluster_total)
         uncovered_clusters = phot_cluster_set - spec_cluster_set
         bad_cluster = dict(uncovered_clusters=np.array(list(uncovered_clusters)))
         print("the following clusters contain photometric data but not spectroscopic data:")
@@ -436,41 +470,77 @@ class somocluSOMSummarizer(SZPZSummarizer):
         # effective number defined in Heymans et al. (2012) to quantify the photometric representation.
         # also see Eq.7 in Wright et al. (2020).
         # Note that the origional definition should be effective number *density*, which equals to N_eff / Area.
-        N_eff = np.sum(pweight) ** 2 / np.sum(pweight**2)
-
-        hist_vals = np.empty((self.config.nsamples, len(self.zgrid) - 1))
-
-        N_eff_p_samples = np.zeros(self.config.nsamples)
-        for i in range(self.config.nsamples):
-            bootstrap_indices = rng.integers(low=0, high=ngal, size=ngal)
-            bs_specz = sz[bootstrap_indices]
-            bs_weights = sweight[bootstrap_indices]
-            bs_specz_clusters = spec_som_clusterind[bootstrap_indices]
-            tmp_hist_vals = np.zeros(len(self.zgrid) - 1)
-            n_eff_p_num = 0
-            n_eff_p_den = 0
-            for cluster in useful_clusters:
-                pmask = (phot_som_clusterind == cluster)
-                binpweight = np.sum(pweight[pmask])
-                smask = (bs_specz_clusters == cluster)
-                cluster_hist_vals, _ = np.histogram(bs_specz[smask], bins=self.zgrid, weights=bs_weights[smask])
-                tmp_hist_vals += cluster_hist_vals * binpweight
-
-                n_eff_p_num += np.sum(pweight[pmask])
-                n_eff_p_den += np.sum(pweight[pmask] ** 2)
-            N_eff_p_samples[i] = n_eff_p_num ** 2 / n_eff_p_den
-            hist_vals[i, :] = tmp_hist_vals
-
+        N_eff = np.sum(N_eff_p_num)**2/np.sum(N_eff_p_den)
+        N_eff_p_samples = N_eff_p_num**2/N_eff_p_den
         # the effective number density of the subsample of the photometric sample reside within SOM groupings which contain spectroscopy
         N_eff_p = np.mean(N_eff_p_samples)
 
         # the ratio between the effective number of photometric sub-sample that has spectroscopic representation and the full photometric sample.
         # We use this to evaluate the spectroscopic representation of current SOM setup and calibrating spectroscopic catalog.
         self.neff_p_to_neff = N_eff_p / N_eff
+
         sample_ens = qp.Ensemble(qp.hist, data=dict(bins=self.zgrid, pdfs=np.atleast_2d(hist_vals)))
         fid_hist = np.mean(hist_vals, axis=0)
         qp_d = qp.Ensemble(qp.hist, data=dict(bins=self.zgrid, pdfs=fid_hist))
         self.add_data('output', sample_ens)
         self.add_data('single_NZ', qp_d)
         self.add_data('uncovered_cluster_file', bad_cluster)
-        self.add_data('cellid_output', id_dict)
+
+    def _process_chunk(self, test_data, bootstrap_matrix, som_cluster_inds, spec_cluster_set, phot_cluster_set, sz, sweight, spec_som_clusterind, N_eff_p_num, N_eff_p_den, hist_vals, id_dict, start, end, first):
+
+        for col in self.usecols:
+            if col not in test_data.keys():  # pragma: no cover
+                raise ValueError(f"data column {col} not found in test_data")
+
+        if self.config.objid_name != "":  # pragma: no cover
+            if self.config.objid_name in test_data.keys():
+                id_dict[self.config.objid_name] = test_data[self.config.objid_name]
+
+        phot_som_coords = self.get_som_coordinates(test_data, self.config.phot_weightcol)
+        phot_pixel_coords = np.ravel_multi_index(phot_som_coords, (self.n_columns, self.n_rows))
+        phot_som_clusterind = som_cluster_inds[phot_pixel_coords]
+
+        # add id coords to id_dict for writeout
+        xcoord, ycoord = phot_som_coords
+        id_dict['coord0'] = xcoord
+        id_dict['coord1'] = ycoord
+        id_dict['ravel_coord'] = phot_pixel_coords
+        id_dict['cluster_ind'] = phot_som_clusterind
+        id_dict['cell_ravel_ind'] = phot_pixel_coords
+        # We write  the cellID's file chunk by chunk as it is very large.
+        self._do_chunk_output(id_dict, start, end, first)
+
+        chunk_phot_cluster_set = set(phot_som_clusterind)
+        useful_clusters = chunk_phot_cluster_set.intersection(spec_cluster_set)
+        phot_cluster_set.update(chunk_phot_cluster_set)
+
+
+        for i in range(self.config.nsamples):
+            bootstrap_indices = bootstrap_matrix[:,i]
+            bs_specz = sz[bootstrap_indices]
+            bs_weights = sweight[bootstrap_indices]
+            bs_specz_clusters = spec_som_clusterind[bootstrap_indices]
+            tmp_hist_vals = np.zeros(len(self.zgrid) - 1)
+            tmp_n_eff_p_num = 0
+            tmp_n_eff_p_den = 0
+            for cluster in useful_clusters:
+                pmask = (phot_som_clusterind == cluster)
+                pweight=test_data['weight'][pmask]
+                binpweight = np.sum(pweight)
+                smask = (bs_specz_clusters == cluster)
+                cluster_hist_vals, _ = np.histogram(bs_specz[smask], bins=self.zgrid, weights=bs_weights[smask])
+                tmp_hist_vals += cluster_hist_vals * binpweight
+
+                tmp_n_eff_p_num += np.sum(pweight)
+                tmp_n_eff_p_den += np.sum(pweight ** 2)
+            N_eff_p_num[i] += tmp_n_eff_p_num
+            N_eff_p_den[i] += tmp_n_eff_p_den
+            hist_vals[i, :] += tmp_hist_vals
+
+    def _do_chunk_output(self, id_dict, start, end, first):
+        if first:
+            self._cellid_handle = self.add_handle('cellid_output', data = id_dict)
+            self._cellid_handle.initialize_write(self._input_length, communicator = self.comm)
+        self._cellid_handle.set_data(id_dict, partial=True)
+        self._cellid_handle.write_chunk(start, end)
+

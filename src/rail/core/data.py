@@ -223,12 +223,28 @@ class Hdf5Handle(TableHandle):
     suffix = 'hdf5'
 
     @classmethod
-    def _write_chunk(cls, data, fileObj, groups, start, end, **kwargs):
-        if groups is None:
-            tables_io.io.writeDictToHdf5ChunkSingle(fileObj, data, start, end, **kwargs)
-        else:  #pragma: no cover
-            tables_io.io.writeDictToHdf5Chunk(groups, data, start, end, **kwargs)
+    def _initialize_write(cls, data, path, data_lenght, **kwargs):
+        initial_dict = cls._get_allocation_kwds(data, data_lenght)
+        comm = kwargs.get('communicator', None)
+        group, fout = tables_io.io.initializeHdf5WriteSingle(path, groupname=None, comm=comm, **initial_dict)
+        return group, fout
 
+    @classmethod
+    def _get_allocation_kwds(cls, data, data_lenght):
+        keywords = {}
+        for key, array in data.items():
+            shape = list(array.shape)
+            shape[0] = data_lenght
+            keywords[key] = (shape, array.dtype)
+        return keywords
+
+    @classmethod
+    def _write_chunk(cls, data, fileObj, groups, start, end, **kwargs):
+        tables_io.io.writeDictToHdf5ChunkSingle(fileObj, data, start, end, **kwargs)
+
+    @classmethod
+    def _finalize_write(cls, data, fileObj, **kwargs):
+        return tables_io.io.finalizeHdf5Write(fileObj, **kwargs)
 
 class FitsHandle(TableHandle):
     """DataHandle for a table written to fits"""
