@@ -28,3 +28,12 @@ The RAIL source code is publically available at https://github.com/LSSTDESC/RAIL
 
    source/immediateplans
    source/futureplans
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Usage Demos
+
+   source/core-notebooks
+   source/creation-notebooks
+   source/estimation-notebooks
+   source/other-notebooks
