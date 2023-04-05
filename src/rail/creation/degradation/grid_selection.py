@@ -35,13 +35,13 @@ class GridSelection(Degrader):
       'x_limits': 2-element list, this is a list of the lower and upper limits of the magnitude. Default for HSC is [13, 16],
       'y_limits': 2-element list, this is a list of the lower and upper limits of the color. Default for HSC is [-2, 6]}
 
-    NOTE: the default 'HSC' grid file, located in RAIL/examples/creation/data/hsc_ratios_and_specz.hdf5, is based on data from the
+    NOTE: the default 'HSC' grid file, located in rail/examples_data/creation_data/data/hsc_ratios_and_specz.hdf5, is based on data from the
     Second HSC Data Release, details of which can be found here:
     Aihara, H., AlSayyad, Y., Ando, M., et al. 2019, PASJ, 71, 114
     doi: 10.1093/pasj/psz103
     """
-    def_ratio_file = os.path.join(RAILDIR, "rail/examples/creation/data/hsc_ratios_and_specz.hdf5")
-    def_set_file = os.path.join(RAILDIR, "rail/examples/creation/data/HSC_grid_settings.pkl" )
+    def_ratio_file = os.path.join(RAILDIR, "rail/examples_data/creation_data/data/hsc_ratios_and_specz.hdf5")
+    def_set_file = os.path.join(RAILDIR, "rail/examples_data/creation_data/data/HSC_grid_settings.pkl" )
 
     name = 'GridSelection'
     config_options = Degrader.config_options.copy()

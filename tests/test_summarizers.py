@@ -9,7 +9,7 @@ from rail.estimation.algos import varInference
 from rail.core.utils import RAILDIR
 
 
-testdata = os.path.join(RAILDIR, 'rail/examples/testdata/output_BPZ_lite.fits')
+testdata = os.path.join(RAILDIR, 'rail/examples_data/testdata/output_BPZ_lite.fits')
 DS = RailStage.data_store
 DS.__class__.allow_overwrite = True
 

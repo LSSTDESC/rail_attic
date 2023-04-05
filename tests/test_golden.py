@@ -17,7 +17,7 @@ def test_goldenspike():
     DS.__class__.allow_overwrite = True
     DS.clear()
     
-    flow_file = os.path.join(RAILDIR, 'rail/examples/goldenspike/data/pretrained_flow.pkl')
+    flow_file = os.path.join(RAILDIR, 'rail/examples_data/goldenspike_data/data/pretrained_flow.pkl')
     print("\n\n\n\n\n\n\n\n\n", flow_file, "\n\n\n\n\n\n\n\n\n")
 
     bands = ['u','g','r','i','z','y']
@@ -88,7 +88,7 @@ def test_golden_v2():
     DS.clear()
     pipe = RailPipeline()
 
-    flow_file = os.path.join(RAILDIR, 'rail/examples/goldenspike/data/pretrained_flow.pkl')
+    flow_file = os.path.join(RAILDIR, 'rail/examples_data/goldenspike_data/data/pretrained_flow.pkl')
     bands = ['u','g','r','i','z','y']
     band_dict = {band:f'mag_{band}_lsst' for band in bands}
     rename_dict = {f'mag_{band}_lsst_err':f'mag_err_{band}_lsst' for band in bands}

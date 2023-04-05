@@ -45,7 +45,7 @@ class SpecSelection(Degrader):
         success_rate_dir=Param(
             str,
             os.path.join(RAILDIR,
-                "rail/examples/creation/data/success_rate_data",
+                "rail/examples_data/creation_data/data/success_rate_data",
             ),
             msg="The path to the directory containing success rate files.",
         ),

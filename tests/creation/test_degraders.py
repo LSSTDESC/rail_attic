@@ -560,7 +560,7 @@ def test_ObsCondition_bad_map_dict(map_dict, error):
 def test_ObsCondition_extended(data):
     #Testing extended parameter values
     weight=""
-    map_dict={"airmass": os.path.join(os.path.dirname(__file__), "../../src/rail/examples/creation/data/survey_conditions/minion_1016_dc2_Median_airmass_i_and_nightlt1825_HEAL.fits"),
+    map_dict={"airmass": os.path.join(os.path.dirname(__file__), "../../src/rail/examples_data/creation_data/data/survey_conditions/minion_1016_dc2_Median_airmass_i_and_nightlt1825_HEAL.fits"),
               "nVisYr":{"u": 50.},
               "tvis": 30.}
     tot_nVis_flag=True
