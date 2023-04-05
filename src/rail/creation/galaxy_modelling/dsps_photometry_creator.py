@@ -24,7 +24,7 @@ class DSPSPhotometryCreator(Creator):
     """
 
     name = "DSPS Photometry Creator"
-    default_files_folder = os.path.join(RAILDIR, 'rail', 'examples', 'testdata')
+    default_files_folder = os.path.join(RAILDIR, 'rail', 'examples_data', 'testdata')
     config_options = RailStage.config_options.copy()
     config_options.update(filter_data=Param(str, os.path.join(default_files_folder, 'lsst_filters.npy'),
                                             msg='npy file containing the structured numpy '

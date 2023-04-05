@@ -58,7 +58,7 @@ class DSPSSingleSedModeler(Modeler):
     """
 
     name = "DSPS single SED model"
-    default_files_folder = os.path.join(RAILDIR, 'rail', 'examples', 'testdata')
+    default_files_folder = os.path.join(RAILDIR, 'rail', 'examples_data', 'testdata')
     config_options = RailStage.config_options.copy()
     config_options.update(age_grid=Param(str, os.path.join(default_files_folder, 'age_grid.npy'),
                                          msg='npy file containing the age grid values in units of log10(Age[Gyr])'),
@@ -199,7 +199,7 @@ class DSPSPopulationSedModeler(Modeler):
     """
 
     name = "DSPS population SED models"
-    default_files_folder = os.path.join(RAILDIR, 'rail', 'examples', 'testdata')
+    default_files_folder = os.path.join(RAILDIR, 'rail', 'examples_data', 'testdata')
     config_options = RailStage.config_options.copy()
     config_options.update(age_grid=Param(str, os.path.join(default_files_folder, 'age_grid.npy'),
                                          msg='npy file containing the age grid values in units of log10(Age[Gyr])'),

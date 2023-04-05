@@ -2,13 +2,13 @@ import os
 import subprocess
 import pytest
 import numpy as np
-from src.rail.creation.galaxy_modelling.dsps_sed_modeler import DSPSSingleSedModeler, DSPSPopulationSedModeler
-from src.rail.creation.galaxy_modelling.dsps_photometry_creator import DSPSPhotometryCreator
+from rail.creation.galaxy_modelling.dsps_sed_modeler import DSPSSingleSedModeler, DSPSPopulationSedModeler
+from rail.creation.galaxy_modelling.dsps_photometry_creator import DSPSPhotometryCreator
 from rail.core.stage import RailStage
 from rail.core.utils import RAILDIR
 from dsps.utils import _jax_get_dt_array
 
-default_files_folder = os.path.join(RAILDIR, 'rail', 'examples', 'testdata')
+default_files_folder = os.path.join(RAILDIR, 'rail', 'examples_data', 'testdata')
 
 
 def save_to_npy(filenames, properties):
