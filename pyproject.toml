@@ -38,7 +38,7 @@ dependencies = [
     "somoclu",
     "diffstar@git+https://github.com/ArgonneCPAC/diffstar",
     "diffmah@git+https://github.com/ArgonneCPAC/diffmah",
-    "dsps@git+https://github.com/ArgonneCPAC/dsps",
+    "dsps@git+https://github.com/ArgonneCPAC/dsps@v0.2.0",
     "deprecated",
 ]
 
