@@ -28,7 +28,7 @@ The RAIL source code is publically available at https://github.com/LSSTDESC/RAIL
 
    source/immediateplans
    source/futureplans
-
+   
 .. toctree::
    :maxdepth: 1
    :caption: Usage Demos
