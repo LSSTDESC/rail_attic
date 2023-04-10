@@ -2,7 +2,7 @@ This directory contains example notebooks explaining how to use the RAIL Estimat
 
 - [nzdir_as_pipeline](https://lsstdescrail.readthedocs.io/en/latest/source/estimation-notebooks.html#the-nzdir-estimator) provides a quick demo of the NZDir estimator.
 
-- [RAIL_estimation_demo.ipynb](https://htmlpreview.github.io/?https://github.com/LSSTDESC/RAIL/blob/master/examples/estimation/RAIL_estimation_demo.html) explains to inform a model used for photo-z estimation, and then how to use that model to estimate p(z).
+- **RAIL_estimation_demo.ipynb** explains to inform a model used for photo-z estimation, and then how to use that model to estimate p(z).
 
 - **SimpleSOM_demo.ipynb**, **somocluSOM_demo.ipynb**, and **somocluSOMcluster_demo.ipynb** demonstrate of the use of the `SimpleSOMSummarizer` summarization module.
 
