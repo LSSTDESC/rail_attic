@@ -4,7 +4,7 @@ This directory contains example notebooks explaining how to use the RAIL Creatio
 
 - **dsps_sed_demo.ipynb** demonstrates some basic usage of the DSPS library.
 
--[example_GridSelection_for_HSC.ipynb](https://lsstdescrail.readthedocs.io/en/latest/source/creation-notebooks.html#grid-selection-degrader-to-emulate-hsc-training-samples) creates a grid of mock galaxies and plots the success rate to visualize the spectroscopic success rate for HSC.
+- [example_GridSelection_for_HSC.ipynb](https://lsstdescrail.readthedocs.io/en/latest/source/creation-notebooks.html#grid-selection-degrader-to-emulate-hsc-training-samples) creates a grid of mock galaxies and plots the success rate to visualize the spectroscopic success rate for HSC.
 
 - **example_ObsConditions.ipynb** generates the photometric error using the Rubin Observatory Metrics Analysis Framework (MAF).
 
