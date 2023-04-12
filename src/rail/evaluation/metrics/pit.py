@@ -55,7 +55,7 @@ class PIT(MetricEvaluator):
         if n_pit < len(eval_grid): #pragma: no cover
             eval_grid = np.linspace(0, 1, n_pit)
         data_quants = np.quantile(self._pit_samps, eval_grid)
-        pit = qp.Ensemble(qp.quant_piecewise, data=dict(quants=eval_grid, locs=np.atleast_2d(data_quants)))
+        pit = qp.Ensemble(qp.quant, data=dict(quants=eval_grid, locs=np.atleast_2d(data_quants)))
 
         #pit = qp.spline_from_samples(xvals=eval_grid,
         #                             samples=np.atleast_2d(self._pit_samps))
