@@ -21,9 +21,13 @@ jobs:
         with:
           python-version: '3.9'
 
+      - name: Install RAIL
+        run: |
+          python -m pip install --upgrade pip .
+          
       - name: Install main dependencies
         run: |
-          python -m pip install --upgrade pip -r docs/requirements.txt
+          python -m pip install -r docs/requirements.txt
 
       - name: Install notebook rendering dependencies
         run: |
