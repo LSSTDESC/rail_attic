@@ -24,15 +24,35 @@ jobs:
       - name: Install main dependencies
         run: |
           python -m pip install --upgrade pip -r docs/requirements.txt
-          
-      - name: Install RAIL
-        run: |
-          python -m pip install .
 
       - name: Install notebook rendering dependencies
         run: |
           python -m pip install -r docs/nbconvert-requirements.txt
           python -m pip install jupyter nbconvert nbformat
+          
+      - name: Test explicit install of tables deps
+        run : |
+          python -m pip install astropy
+          python -m pip install tables
+          python -m pip install pandas
+          python -m pip install pyarrow
+          python -m pip install h5py>=2.9
+          
+      - name: Pip list
+        run: |
+          pip list
+          
+      - name:  Check 1
+        run: |
+          ls "/opt/hostedtoolcache/Python/3.9.16/x64/lib/python3.9/site-packages/rail/"
+          
+      - name:  Check 2
+        run: |
+          ls "/opt/hostedtoolcache/Python/3.9.16/x64/lib/python3.9/site-packages/rail/examples_data/"
+          
+      - name:  Check 3
+        run: |
+          ls "/opt/hostedtoolcache/Python/3.9.16/x64/lib/python3.9/site-packages/rail/examples_data/testdata/"
 
       - name: Update core notebooks
         if: always()
@@ -44,7 +64,7 @@ jobs:
           jupyter nbconvert --to html --execute examples/core_examples/Pipe_Example.ipynb --output ../../docs/source/notebooks-core/Pipe_Example.html
 
       - name: Update creation notebooks
-        if: always()
+        if: false
         run: |
           jupyter nbconvert --to html --execute examples/creation_examples/posterior-demo.ipynb --output ../../docs/source/notebooks-creation/posterior-demo.html
           jupyter nbconvert --to html --execute examples/creation_examples/degradation-demo.ipynb --output ../../docs/source/notebooks-creation/degradation-demo.html       
@@ -52,13 +72,13 @@ jobs:
           jupyter nbconvert --to html --execute examples/creation_examples/example_SpecSelection_for_zCOSMOS.ipynb --output ../../docs/source/notebooks-creation/example_SpecSelection_for_zCOSMOS.html
 
       - name: Update estimation notebooks
-        if: always()
+        if: false
         run: |   
           jupyter nbconvert --to html --execute examples/estimation_examples/NZDir.ipynb --output ../../docs/source/notebooks-estimation/NZDir.html
           jupyter nbconvert --to html --execute examples/estimation_examples/test_sampled_summarizers.ipynb --output ../../docs/source/notebooks-estimation/test_sampled_summarizers.html
 
-      - name: Update other notebooks
-        if: always()
+      - name: Update goldenspike
+        if: false
         run: |
           jupyter nbconvert --to html --execute examples/goldenspike_examples/goldenspike.ipynb --output ../../docs/source/notebooks-other/goldenspike.html
 
