@@ -1,4 +1,4 @@
-config: examples/goldenspike/goldenspike_config.yml
+config: examples/goldenspike/configs/goldenspike_config.yml
 inputs:
   flow: examples/goldenspike/data/pretrained_flow.pkl
 log_dir: examples/goldenspike/logs

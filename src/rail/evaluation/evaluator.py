@@ -106,7 +106,7 @@ class Evaluator(RailStage):
 
             # The result objects of some meta-metrics are bespoke scipy objects with inconsistent fields.
             # Here we do our best to store the relevant fields in `out_table`.
-            if isinstance(value, list):
+            if isinstance(value, list):  # pragma: no cover
                 out_table[f'PIT_{pit_metric}'] = value
             else:
                 out_table[f'PIT_{pit_metric}_stat'] = [getattr(value, 'statistic', None)]
