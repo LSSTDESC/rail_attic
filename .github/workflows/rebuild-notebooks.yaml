@@ -29,6 +29,7 @@ jobs:
         run: |
           python -m pip install -r docs/nbconvert-requirements.txt
           python -m pip install jupyter nbconvert nbformat
+          pip list
 
       - name: Update core notebooks
         if: always()
