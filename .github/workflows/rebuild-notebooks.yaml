@@ -29,6 +29,17 @@ jobs:
         run: |
           python -m pip install -r docs/nbconvert-requirements.txt
           python -m pip install jupyter nbconvert nbformat
+          
+      - name: Test explicit install of tables deps
+        run : |
+          python -m pip install astropy
+          python -m pip install tables
+          python -m pip install pandas
+          python -m pip install pyarrow
+          python -m pip install h5py>=2.9
+          
+      - name: Pip list
+        run: |
           pip list
 
       - name: Update core notebooks
