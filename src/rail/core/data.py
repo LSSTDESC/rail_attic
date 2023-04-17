@@ -197,7 +197,7 @@ class TableHandle(DataHandle):
         This will simply open the file and return a file-like object to the caller.
         It will not read or cache the data
         """
-        return tables_io.full.io_open(path, **kwargs)  #pylint: disable=no-member
+        return tables_io.io.io_open(path, **kwargs)  #pylint: disable=no-member
 
     @classmethod
     def _read(cls, path, **kwargs):
@@ -211,7 +211,7 @@ class TableHandle(DataHandle):
 
     @classmethod
     def _size(cls, path, **kwargs):
-        return tables_io.full.getInputDataLengthHdf5(path, **kwargs)
+        return tables_io.io.getInputDataLengthHdf5(path, **kwargs)
 
     @classmethod
     def _iterator(cls, path, **kwargs):
@@ -225,9 +225,9 @@ class Hdf5Handle(TableHandle):
     @classmethod
     def _write_chunk(cls, data, fileObj, groups, start, end, **kwargs):
         if groups is None:
-            tables_io.full.writeDictToHdf5ChunkSingle(fileObj, data, start, end, **kwargs)
+            tables_io.io.writeDictToHdf5ChunkSingle(fileObj, data, start, end, **kwargs)
         else:  #pragma: no cover
-            tables_io.full.writeDictToHdf5Chunk(groups, data, start, end, **kwargs)
+            tables_io.io.writeDictToHdf5Chunk(groups, data, start, end, **kwargs)
 
 
 class FitsHandle(TableHandle):
@@ -254,7 +254,7 @@ class QPHandle(DataHandle):
         This will simply open the file and return a file-like object to the caller.
         It will not read or cache the data
         """
-        return tables_io.full.io_open(path, **kwargs)  #pylint: disable=no-member
+        return tables_io.io.io_open(path, **kwargs)  #pylint: disable=no-member
 
     @classmethod
     def _read(cls, path, **kwargs):
