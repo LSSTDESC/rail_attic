@@ -44,15 +44,15 @@ jobs:
           
       - name:  Check 1
         run: |
-          cd "/opt/hostedtoolcache/Python/3.9.16/x64/lib/python3.9/site-packages/rail/"
+          ls "/opt/hostedtoolcache/Python/3.9.16/x64/lib/python3.9/site-packages/rail/"
           
       - name:  Check 2
         run: |
-          cd "/opt/hostedtoolcache/Python/3.9.16/x64/lib/python3.9/site-packages/rail/examples_data/"
+          ls "/opt/hostedtoolcache/Python/3.9.16/x64/lib/python3.9/site-packages/rail/examples_data/"
           
       - name:  Check 3
         run: |
-          cd "/opt/hostedtoolcache/Python/3.9.16/x64/lib/python3.9/site-packages/rail/examples_data/testdata/"
+          ls "/opt/hostedtoolcache/Python/3.9.16/x64/lib/python3.9/site-packages/rail/examples_data/testdata/"
 
       - name: Update core notebooks
         if: always()
