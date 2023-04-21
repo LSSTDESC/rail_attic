@@ -59,6 +59,7 @@ def one_algo(key, inform_class, summarizer_class, summary_kwargs):
         )
     )
     meanz = fid_ens.mean().flatten()
+    print(meanz[0],'hola')
     assert np.isclose(meanz[0], 0.14414913252122552)
     os.remove(
         summarizer2.get_output(summarizer2.get_aliased_tag("output"), final_name=True)
