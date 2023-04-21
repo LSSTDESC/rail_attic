@@ -154,8 +154,8 @@ def test_model_handle():
     DS = RailStage.data_store
     DS.clear()
     
-    model_path = os.path.join(RAILDIR, 'rail', 'examples_data', 'estimation_data', 'CWW_HDFN_prior.pkl')
-    model_path_copy = os.path.join(RAILDIR, 'rail', 'examples_data', 'estimation_data', 'CWW_HDFN_prior_copy.pkl')
+    model_path = os.path.join(RAILDIR, 'rail', 'examples_data', 'estimation_data', 'data', 'CWW_HDFN_prior.pkl')
+    model_path_copy = os.path.join(RAILDIR, 'rail', 'examples_data', 'estimation_data', 'data', 'CWW_HDFN_prior_copy.pkl')
     mh = ModelHandle("model", path=model_path)
     mh2 = ModelHandle("model2", path=model_path)
     
