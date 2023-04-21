@@ -64,15 +64,10 @@ def one_algo(key, inform_class, summarizer_class, summary_kwargs):
         )
     )
     meanz = fid_ens.mean().flatten()
-    print('blabla',meanz)
-    print(summarizer2.get_output(
-            summarizer2.get_aliased_tag("single_NZ"), final_name=True))
-    print(bootstrap.mean())
-
-
-    print(meanz[0],'hola')
+    print('This are the means of the bootstraps',bootstrap.mean())
+    print('This is the mean of the single NZ',meanz[0])
+    print('The above should be', 0.14414913252122552)
     assert np.isclose(meanz[0], 0.14414913252122552)
-    #assert False
     os.remove(
         summarizer2.get_output(summarizer2.get_aliased_tag("output"), final_name=True)
     )
