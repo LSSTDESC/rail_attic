@@ -13,6 +13,7 @@ from dsps.photometry_kernels import _calc_rest_mag
 from dsps.photometry_kernels import _calc_obs_mag
 
 
+
 class DSPSPhotometryCreator(Creator):
     """
     Derived class of Creator that generate synthetic photometric data from one or more SED models
