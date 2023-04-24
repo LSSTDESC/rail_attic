@@ -4,9 +4,10 @@ import pytest
 import tables_io
 from pzflow import Flow
 from pzflow.examples import get_example_flow, get_galaxy_data
-from rail.creation.engines.flowEngine import FlowCreator, FlowModeler, FlowPosterior
+
 from rail.core.data import TableHandle
 from rail.core.stage import RailStage
+from rail.creation.engines.flowEngine import FlowCreator, FlowModeler, FlowPosterior
 
 
 @pytest.fixture(scope="module")

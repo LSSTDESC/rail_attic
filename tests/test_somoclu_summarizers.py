@@ -2,11 +2,11 @@ import os
 
 import numpy as np
 import qp
+
 from rail.core.data import TableHandle
 from rail.core.stage import RailStage
-from rail.estimation.algos import somocluSOM
 from rail.core.utils import RAILDIR
-
+from rail.estimation.algos import somocluSOM
 
 testszdata = os.path.join(RAILDIR, "rail/examples/testdata/training_100gal.hdf5")
 testphotdata = os.path.join(RAILDIR, "rail/examples/testdata/validation_10gal.hdf5")
@@ -22,8 +22,8 @@ def one_algo(key, inform_class, summarizer_class, summary_kwargs):
     spec_data = DS.read_file("spec_data", TableHandle, testszdata)
     phot_data = DS.read_file("phot_data", TableHandle, testphotdata)
     informer = inform_class.make_stage(
-        name=f"inform_"+key,
-        model=f"tmpsomoclu_"+key+".pkl",
+        name=f"inform_" + key,
+        model=f"tmpsomoclu_" + key + ".pkl",
         aliases={"model": "somoclu_inform_test_model", "input": "somoclu_inform_test_input"},
         **summary_kwargs,
     )
@@ -39,13 +39,11 @@ def one_algo(key, inform_class, summarizer_class, summary_kwargs):
         **summary_kwargs,
     )
     summary_ens = summarizerr.summarize(phot_data, spec_data)
-    os.remove(
-        summarizerr.get_output(summarizerr.get_aliased_tag("output"), final_name=True)
-    )
+    os.remove(summarizerr.get_output(summarizerr.get_aliased_tag("output"), final_name=True))
     # test loading model by name rather than via handle
     summarizer2 = summarizer_class.make_stage(
         name=key,
-        model=f"tmpsomoclu_"+key+".pkl",
+        model=f"tmpsomoclu_" + key + ".pkl",
         aliases={
             "model": "somoclu_summarize_test2_model",
             "input": "somoclu_summarize_test2_input",
@@ -53,17 +51,11 @@ def one_algo(key, inform_class, summarizer_class, summary_kwargs):
         },
     )
     _ = summarizer2.summarize(phot_data, spec_data)
-    fid_ens = qp.read(
-        summarizer2.get_output(
-            summarizer2.get_aliased_tag("single_NZ"), final_name=True
-        )
-    )
+    fid_ens = qp.read(summarizer2.get_output(summarizer2.get_aliased_tag("single_NZ"), final_name=True))
     meanz = fid_ens.mean().flatten()
     assert np.isclose(meanz[0], 0.14414913252122552)
-    os.remove(
-        summarizer2.get_output(summarizer2.get_aliased_tag("output"), final_name=True)
-    )
-    os.remove(f"tmpsomoclu_"+key+".pkl")
+    os.remove(summarizer2.get_output(summarizer2.get_aliased_tag("output"), final_name=True))
+    os.remove(f"tmpsomoclu_" + key + ".pkl")
     return summary_ens
 
 
