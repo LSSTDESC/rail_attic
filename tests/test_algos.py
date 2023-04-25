@@ -63,6 +63,7 @@ def test_simple_nn():
         (True, [0.15, 0.14, 0.15, 0.14, 0.12, 0.14, 0.15, 0.12, 0.13, 0.11]),
     ],
 )
+@pytest.mark.slow
 def test_pzflow(inputs, zb_expected):
     def_bands = ["u", "g", "r", "i", "z", "y"]
     refcols = [f"mag_{band}_lsst" for band in def_bands]
