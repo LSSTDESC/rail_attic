@@ -29,7 +29,7 @@ jobs:
         run: |
           python -m pip install -r docs/nbconvert-requirements.txt
           python -m pip install jupyter nbconvert nbformat
-          
+
       - name: Update core notebooks
         if: always()
         run: |
@@ -40,7 +40,7 @@ jobs:
           jupyter nbconvert --to html --execute examples/core_examples/Pipe_Example.ipynb --output ../../docs/source/notebooks-core/Pipe_Example.html
 
       - name: Update creation notebooks
-        if: false
+        if: always()
         run: |
           jupyter nbconvert --to html --execute examples/creation_examples/posterior-demo.ipynb --output ../../docs/source/notebooks-creation/posterior-demo.html
           jupyter nbconvert --to html --execute examples/creation_examples/degradation-demo.ipynb --output ../../docs/source/notebooks-creation/degradation-demo.html       
@@ -48,13 +48,13 @@ jobs:
           jupyter nbconvert --to html --execute examples/creation_examples/example_SpecSelection_for_zCOSMOS.ipynb --output ../../docs/source/notebooks-creation/example_SpecSelection_for_zCOSMOS.html
 
       - name: Update estimation notebooks
-        if: false
+        if: always()
         run: |   
           jupyter nbconvert --to html --execute examples/estimation_examples/NZDir.ipynb --output ../../docs/source/notebooks-estimation/NZDir.html
           jupyter nbconvert --to html --execute examples/estimation_examples/test_sampled_summarizers.ipynb --output ../../docs/source/notebooks-estimation/test_sampled_summarizers.html
 
       - name: Update goldenspike
-        if: false
+        if: always()
         run: |
           jupyter nbconvert --to html --execute examples/goldenspike_examples/goldenspike.ipynb --output ../../docs/source/notebooks-other/goldenspike.html
 
