@@ -1,5 +1,5 @@
 """ Stages that implement utility functions """
-
+import numpy as np
 import pandas as pd
 
 import tables_io
@@ -99,6 +99,68 @@ class RowSelector(RailStage):
         -------
         pd.DataFrame
             The degraded sample
+        """
+        self.set_data('input', data)
+        self.run()
+        return self.get_handle('output')
+
+
+class LSSTFluxToMagConverter(RailStage):
+    """Utility stage that converts from fluxes to magnitudes
+
+    Note, this is hardwired to take parquet files as input
+    and provide hdf5 files as output
+    """
+    name = 'LSSTFluxToMagConverter'
+
+    config_options = RailStage.config_options.copy()
+    config_options.update(bands='ugrizy')
+    config_options.update(flux_name="{band}_gaap1p0Flux")
+    config_options.update(flux_err_name="{band}_gaap1p0FluxErr")
+    config_options.update(mag_name="mag_{band}_lsst")
+    config_options.update(mag_err_name="mag_err_{band}_lsst")
+    config_options.update(copy_cols=[])
+    config_options.update(mag_offset=31.4)
+
+    mag_conv = np.log(10)*0.4
+
+    inputs = [('input', PqHandle)]
+    outputs = [('output', Hdf5Handle)]
+
+    def __init__(self, args, comm=None):
+        RailStage.__init__(self, args, comm=comm)
+
+    def _flux_to_mag(self, flux_vals):
+        return -2.5*np.log10(flux_vals) + self.config.mag_offset
+
+    def _flux_err_to_mag_err(self, flux_vals, flux_err_vals):
+        return flux_err_vals / (flux_vals*self.mag_conv)
+
+    def run(self):
+        data = self.get_data('input', allow_missing=True)
+        out_data = {}
+        const = np.log(10.)*0.4
+        for band_ in self.config.bands:
+            flux_col_name = self.config.flux_name.format(band=band_)
+            flux_err_col_name = self.config.flux_err_name.format(band=band_)
+            out_data[self.config.mag_name.format(band=band_)] = self._flux_to_mag(data[flux_col_name].values)
+            out_data[self.config.mag_err_name.format(band=band_)] = self._flux_err_to_mag_err(data[flux_col_name].values, data[flux_err_col_name].values)
+        for col_ in self.config.copy_cols:
+            out_data[col_] = data[col_]
+        self.add_data('output', out_data)
+
+    def __call__(self, data):
+        """Return a converted table
+
+        Parameters
+        ----------
+        data : table-like
+            The data to be converted
+
+        Returns
+        -------
+        out_data : table-like
+            The converted version of the table
         """
         self.set_data('input', data)
         self.run()
