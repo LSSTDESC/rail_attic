@@ -74,6 +74,7 @@ def test_flux2mag():
     out_data = fluxToMag(test_data)
 
 
+@pytest.mark.slow
 def test_dereddener():
     DS = RailStage.data_store
     DS.clear()
