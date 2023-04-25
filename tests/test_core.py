@@ -22,7 +22,7 @@ from rail.core.data import (
 from rail.core.stage import RailStage
 from rail.core.utilPhotometry import HyperbolicMagnitudes, HyperbolicSmoothing, PhotormetryManipulator
 from rail.core.utils import RAILDIR
-from rail.core.utilStages import ColumnMapper, RowSelector, TableConverter
+from rail.core.utilStages import ColumnMapper, RowSelector, TableConverter, LSSTFluxToMagConverter
 
 # def test_data_file():
 #    with pytest.raises(ValueError) as errinfo:
@@ -31,10 +31,11 @@ from rail.core.utilStages import ColumnMapper, RowSelector, TableConverter
 
 def test_util_stages():
     DS = RailStage.data_store
-
+    DS.clear()
     datapath = os.path.join(RAILDIR, "rail", "examples_data", "testdata", "test_dc2_training_9816.pq")
     
     data = DS.read_file('data', TableHandle, datapath)
+
     table_conv = TableConverter.make_stage(name="conv", output_format="numpyDict")
     col_map = ColumnMapper.make_stage(name="col_map", columns={})
     row_sel = RowSelector.make_stage(name="row_sel", start=1, stop=15)
@@ -54,6 +55,17 @@ def test_util_stages():
     row_sel_3.set_data("input", None, do_read=True)
 
 
+def test_flux2mag():
+    DS = RailStage.data_store
+    DS.clear()
+
+    testFile = os.path.join(RAILDIR, "rail", "examples_data", "testdata", "rubin_dm_dc2_example.pq")
+    test_data = DS.read_file("test_data", TableHandle, testFile)
+
+    fluxToMag = LSSTFluxToMagConverter.make_stage(name='flux2mag')
+    out_data = fluxToMag(test_data)
+    
+    
 def do_data_handle(datapath, handle_class):
     DS = RailStage.data_store
 
