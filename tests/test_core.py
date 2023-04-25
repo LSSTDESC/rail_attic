@@ -59,7 +59,7 @@ def test_flux2mag():
     DS = RailStage.data_store
     DS.clear()
 
-    testFile = os.path.join(RAILDIR, "rail", "examples_data", "testdata", "rubin_dm_dc2_example.parq")
+    testFile = os.path.join(RAILDIR, "rail", "examples_data", "testdata", "rubin_dm_dc2_example.pq")
     test_data = DS.read_file("test_data", TableHandle, testFile)
 
     fluxToMag = LSSTFluxToMagConverter.make_stage(name='flux2mag')
