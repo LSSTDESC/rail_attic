@@ -10,7 +10,8 @@ from rail.core.utils import RAILDIR
 from src.rail.creation.galaxy_modelling.dsps_photometry_creator import DSPSPhotometryCreator
 from src.rail.creation.galaxy_modelling.dsps_sed_modeler import DSPSPopulationSedModeler, DSPSSingleSedModeler
 
-default_files_folder = os.path.join(RAILDIR, "rail", "examples", "testdata")
+default_files_folder = os.path.join(RAILDIR, "rail", "examples_data", "testdata")
+
 
 
 def save_to_npy(filenames, properties):

@@ -89,7 +89,7 @@ class ObsCondition(Degrader):
             str,
             os.path.join(
                 os.path.dirname(__file__),
-                "../../examples/creation/data/survey_conditions/DC2-mask-neg-nside-128.fits",
+                "../../examples_data/creation_data/data/survey_conditions/DC2-mask-neg-nside-128.fits",
             ),
             msg="mask for the input maps in HEALPIX format.",
         ),
@@ -97,7 +97,7 @@ class ObsCondition(Degrader):
             str,
             os.path.join(
                 os.path.dirname(__file__),
-                "../../examples/creation/data/survey_conditions/DC2-dr6-galcounts-i20-i25.3-nside-128.fits",
+                "../../examples_data/creation_data/data/survey_conditions/DC2-dr6-galcounts-i20-i25.3-nside-128.fits",
             ),
             msg="weight for assigning pixels to galaxies in HEALPIX format.",
         ),
@@ -113,7 +113,7 @@ class ObsCondition(Degrader):
                 "m5": {
                     "i": os.path.join(
                         os.path.dirname(__file__),
-                        "../../examples/creation/data/survey_conditions/minion_1016_dc2_Median_fiveSigmaDepth_i_and_nightlt1825_HEAL.fits",
+                        "../../examples_data/creation_data/data/survey_conditions/minion_1016_dc2_Median_fiveSigmaDepth_i_and_nightlt1825_HEAL.fits",
                     ),
                 },
                 "nYrObs": 5.0,

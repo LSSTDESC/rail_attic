@@ -33,30 +33,30 @@ jobs:
       - name: Update core notebooks
         if: always()
         run: |
-          jupyter nbconvert --to html --execute examples/core/FileIO_DataStore.ipynb --output ../../docs/source/notebooks-core/FileIO_DataStore.html
-          jupyter nbconvert --to html --execute examples/core/hyperbolic_magnitude_test.ipynb --output ../../docs/source/notebooks-core/hyperbolic_magnitude_test.html
-          jupyter nbconvert --to html --execute examples/core/iterator_test.ipynb --output ../../docs/source/notebooks-core/iterator_test.html
-          jupyter nbconvert --to html --execute examples/core/Run_Pipe.ipynb --output ../../docs/source/notebooks-core/Run_Pipe.html
-          jupyter nbconvert --to html --execute examples/core/Pipe_Example.ipynb --output ../../docs/source/notebooks-core/Pipe_Example.html
+          jupyter nbconvert --to html --execute examples/core_examples/FileIO_DataStore.ipynb --output ../../docs/source/notebooks-core/FileIO_DataStore.html
+          jupyter nbconvert --to html --execute examples/core_examples/hyperbolic_magnitude_test.ipynb --output ../../docs/source/notebooks-core/hyperbolic_magnitude_test.html
+          jupyter nbconvert --to html --execute examples/core_examples/iterator_test.ipynb --output ../../docs/source/notebooks-core/iterator_test.html
+          jupyter nbconvert --to html --execute examples/core_examples/Run_Pipe.ipynb --output ../../docs/source/notebooks-core/Run_Pipe.html
+          jupyter nbconvert --to html --execute examples/core_examples/Pipe_Example.ipynb --output ../../docs/source/notebooks-core/Pipe_Example.html
 
       - name: Update creation notebooks
         if: always()
         run: |
-          jupyter nbconvert --to html --execute examples/creation/posterior-demo.ipynb --output ../../docs/source/notebooks-creation/posterior-demo.html
-          jupyter nbconvert --to html --execute examples/creation/degradation-demo.ipynb --output ../../docs/source/notebooks-creation/degradation-demo.html       
-          jupyter nbconvert --to html --execute examples/creation/example_GridSelection_for_HSC.ipynb --output ../../docs/source/notebooks-creation/example_GridSelection_for_HSC.html
-          jupyter nbconvert --to html --execute examples/creation/example_SpecSelection_for_zCOSMOS.ipynb --output ../../docs/source/notebooks-creation/example_SpecSelection_for_zCOSMOS.html
+          jupyter nbconvert --to html --execute examples/creation_examples/posterior-demo.ipynb --output ../../docs/source/notebooks-creation/posterior-demo.html
+          jupyter nbconvert --to html --execute examples/creation_examples/degradation-demo.ipynb --output ../../docs/source/notebooks-creation/degradation-demo.html       
+          jupyter nbconvert --to html --execute examples/creation_examples/example_GridSelection_for_HSC.ipynb --output ../../docs/source/notebooks-creation/example_GridSelection_for_HSC.html
+          jupyter nbconvert --to html --execute examples/creation_examples/example_SpecSelection_for_zCOSMOS.ipynb --output ../../docs/source/notebooks-creation/example_SpecSelection_for_zCOSMOS.html
 
       - name: Update estimation notebooks
         if: always()
         run: |   
-          jupyter nbconvert --to html --execute examples/estimation/NZDir.ipynb --output ../../docs/source/notebooks-estimation/NZDir.html
-          jupyter nbconvert --to html --execute examples/estimation/test_sampled_summarizers.ipynb --output ../../docs/source/notebooks-estimation/test_sampled_summarizers.html
+          jupyter nbconvert --to html --execute examples/estimation_examples/NZDir.ipynb --output ../../docs/source/notebooks-estimation/NZDir.html
+          jupyter nbconvert --to html --execute examples/estimation_examples/test_sampled_summarizers.ipynb --output ../../docs/source/notebooks-estimation/test_sampled_summarizers.html
 
-      - name: Update other notebooks
+      - name: Update goldenspike
         if: always()
         run: |
-          jupyter nbconvert --to html --execute examples/goldenspike/goldenspike.ipynb --output ../../docs/source/notebooks-other/goldenspike.html
+          jupyter nbconvert --to html --execute examples/goldenspike_examples/goldenspike.ipynb --output ../../docs/source/notebooks-other/goldenspike.html
 
       - name: Create pull request
         uses: peter-evans/create-pull-request@v4

@@ -9,7 +9,7 @@ from rail.core.stage import RailStage
 from rail.core.utils import RAILDIR
 from rail.estimation.algos import naiveStack, pointEstimateHist, varInference
 
-testdata = os.path.join(RAILDIR, "rail/examples/testdata/output_BPZ_lite.fits")
+testdata = os.path.join(RAILDIR, "rail/examples_data/testdata/output_BPZ_lite.fits")
 DS = RailStage.data_store
 DS.__class__.allow_overwrite = True
 
