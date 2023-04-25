@@ -136,6 +136,9 @@ addopts = [
     "--cov-report=html"
 ]
 flake8-ignore = "E203"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
 
 [tool.mypy]
 disallow_untyped_defs = true
