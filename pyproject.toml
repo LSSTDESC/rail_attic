@@ -34,6 +34,7 @@ dependencies = [
     "pzflow",
     "healpy",
     "photerr",
+    "dustmaps",
     "pathos",
     "somoclu",
     "diffstar@git+https://github.com/ArgonneCPAC/diffstar@v0.1.0",

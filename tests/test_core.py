@@ -5,6 +5,7 @@ from types import GeneratorType
 import numpy as np
 import pandas as pd
 import pytest
+import tempfile
 
 import rail
 from rail.core.common_params import SHARED_PARAMS, copy_param, set_param_default
@@ -22,7 +23,14 @@ from rail.core.data import (
 from rail.core.stage import RailStage
 from rail.core.utilPhotometry import HyperbolicMagnitudes, HyperbolicSmoothing, PhotormetryManipulator
 from rail.core.utils import RAILDIR
-from rail.core.utilStages import ColumnMapper, RowSelector, TableConverter, LSSTFluxToMagConverter
+from rail.core.utilStages import (
+    ColumnMapper,
+    RowSelector,
+    TableConverter,
+    LSSTFluxToMagConverter,
+    Dereddener,
+)
+    
 
 # def test_data_file():
 #    with pytest.raises(ValueError) as errinfo:
@@ -64,6 +72,29 @@ def test_flux2mag():
 
     fluxToMag = LSSTFluxToMagConverter.make_stage(name='flux2mag')
     out_data = fluxToMag(test_data)
+
+
+@pytest.mark.slow
+def test_dereddener():
+    DS = RailStage.data_store
+    DS.clear()
+
+    testFile = os.path.join(RAILDIR, "rail", "examples_data", "testdata", "rubin_dm_dc2_example.pq")
+    test_data = DS.read_file("test_data", TableHandle, testFile)
+
+    dustmap_dir = os.environ.get('RAIL_DUSTMAP_DIR')
+    is_temp_dir = False
+    if dustmap_dir is None:
+        dustmap_dir = tempfile.TemporaryDirectory()
+        is_temp_dir = True
+
+    fluxToMag = LSSTFluxToMagConverter.make_stage(name='flux2mag', copy_cols=["ra", "decl"])
+    dereddener = Dereddener.make_stage(name='dereddner', dustmap_dir=dustmap_dir)
+    dereddener.fetch_map()
+
+    flux_data = fluxToMag(test_data)
+    dered_data = dereddener(flux_data)
+
     
     
 def do_data_handle(datapath, handle_class):
