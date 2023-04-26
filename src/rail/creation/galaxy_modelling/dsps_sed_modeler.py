@@ -160,7 +160,7 @@ class DSPSSingleSedModeler(Modeler):
         if self.config.stellar_mass_type == 'formed':
             logsm_table = np.log10(np.cumsum(self.sfh_table * dt_table)) + 9.0
         elif self.config.stellar_mass_type == 'surviving':
-            logsm_table = np.load(self.config.stellar_mass_table) # pragma: no cover
+            logsm_table = np.load(self.config.stellar_mass_table)
         else:
             raise KeyError('Stellar mass type "{}" not implemented'.format(self.config.stellar_mass_type))
 
@@ -314,7 +314,7 @@ class DSPSPopulationSedModeler(Modeler):
             dt_table_pop = _jax_get_dt_array_pop(self.t_table_pop)
             logsm_table_pop = np.log10(np.cumsum(self.sfh_table_pop * dt_table_pop, axis=1)) + 9.0
         elif self.config.stellar_mass_type == 'surviving':
-            logsm_table_pop = np.load(self.config.stellar_mass_table) # pragma: no cover
+            logsm_table_pop = np.load(self.config.stellar_mass_table)
         else:
             raise KeyError('Stellar mass type "{}" not implemented'.format(self.config.stellar_mass_type))
 
