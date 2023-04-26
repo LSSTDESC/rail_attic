@@ -7,8 +7,8 @@ from dsps.utils import _jax_get_dt_array
 
 from rail.core.stage import RailStage
 from rail.core.utils import RAILDIR
-from src.rail.creation.galaxy_modelling.dsps_photometry_creator import DSPSPhotometryCreator
-from src.rail.creation.galaxy_modelling.dsps_sed_modeler import DSPSPopulationSedModeler, DSPSSingleSedModeler
+from src.rail.creation.engines.dsps_photometry_creator import DSPSPhotometryCreator
+from src.rail.creation.engines.dsps_sed_modeler import DSPSPopulationSedModeler, DSPSSingleSedModeler
 
 default_files_folder = os.path.join(RAILDIR, "rail", "examples_data", "testdata")
 
