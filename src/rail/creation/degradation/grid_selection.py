@@ -73,7 +73,7 @@ class GridSelection(Degrader):
         If using a color-based redshift cut, galaxies with redshifts > the percentile cut are removed from the sample
         before making the random selection.
         """
-        np.random.seed(self.config.random_seed)
+        rng = np.random.default_rng(seed=self.config.random_seed)
 
         data = self.get_data('input')
         with open(self.config.settings_file, 'rb') as handle:
@@ -189,13 +189,13 @@ class GridSelection(Degrader):
                 number_to_keep = len(temp_data)
 
             if int(number_to_keep) != number_to_keep:
-                random_num = np.random.uniform()
+                random_num = rng.uniform()
             else:
                 random_num = 2
 
             number_to_keep = np.floor(number_to_keep)
             indices_to_list = list(temp_data.index.values)
-            np.random.shuffle(indices_to_list)
+            rng.shuffle(indices_to_list)
 
             if random_num > xratio:  # pragma: no cover
                 for j in range(int(number_to_keep)):

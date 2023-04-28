@@ -23,6 +23,7 @@ class RandomPZ(CatEstimator):
                           rand_zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                           rand_zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
                           nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
+                          seed=Param(int, 87, msg="random seed"),
                           column_name=Param(str, "mag_i_lsst", msg="name of a column that has the correct number of galaxies to find length of"))
 
     def __init__(self, args, comm=None):
@@ -35,7 +36,8 @@ class RandomPZ(CatEstimator):
         pdf = []
         # allow for either format for now
         numzs = len(data[self.config.column_name])
-        zmode = np.round(np.random.uniform(0.0, self.config.rand_zmax, numzs), 3)
+        rng = np.random.default_rng(seed=self.config.seed)
+        zmode = np.round(rng.uniform(0.0, self.config.rand_zmax, numzs), 3)
         widths = self.config.rand_width * (1.0 + zmode)
         self.zgrid = np.linspace(self.config.rand_zmin, self.config.rand_zmax, self.config.nzbins)
         for i in range(numzs):
