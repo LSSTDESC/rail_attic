@@ -29,7 +29,7 @@ dependencies = [
     "minisom",
     "scipy>=1.9.0",
     "pz-hyperbolic-temp",
-    "qp-prob[full]>=0.8.1",
+    "qp-prob[full]>=0.8.3",
     "scikit-learn",
     "pzflow",
     "healpy",
@@ -49,6 +49,7 @@ dev = [
     "pylint",
     "pytest",
     "pytest-cov",
+    "seaborn",
     "yamllint",
 ]
 
