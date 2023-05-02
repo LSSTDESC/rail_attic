@@ -106,9 +106,9 @@ class DSPSSingleSedModeler(Modeler):
 
         if (self.config.galaxy_age < 0.01) | (self.config.galaxy_age > Planck18.age(0).value):
             raise ValueError("Galaxy age {self.config.galaxy_age} is outside of allowed range 0.1 <= Age[Gyr] <= 13.7")
-        if (self.config.galaxy_metallicity < -2) | (self.config.galaxy_metallicity > 0.2):
-            raise ValueError("Galaxy metallicity {self.config.galaxy_metallicity} is outside of allowed "
-                             "range -2 <= log10(Z / Z_solar) <= 0.2")
+        # if (self.config.galaxy_metallicity < -2) | (self.config.galaxy_metallicity > 0.2):
+        #     raise ValueError("Galaxy metallicity {self.config.galaxy_metallicity} is outside of allowed "
+        #                      "range -2 <= log10(Z / Z_solar) <= 0.2")
 
         self.model = None
         self.log_age_gyr = np.load(self.config.age_grid)

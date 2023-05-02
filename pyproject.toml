@@ -39,6 +39,7 @@ dependencies = [
     "diffstar@git+https://github.com/ArgonneCPAC/diffstar",
     "diffmah@git+https://github.com/ArgonneCPAC/diffmah",
     "dsps@git+https://github.com/ArgonneCPAC/dsps",
+    "rail_lib_gp_comp",
     "deprecated",
 ]
 
