@@ -36,7 +36,7 @@ class RandomPZ(CatEstimator):
         pdf = []
         # allow for either format for now
         numzs = len(data[self.config.column_name])
-        rng = np.random.default_rng(seed=self.config.seed)
+        rng = np.random.default_rng(seed=self.config.seed + start)
         zmode = np.round(rng.uniform(0.0, self.config.rand_zmax, numzs), 3)
         widths = self.config.rand_width * (1.0 + zmode)
         self.zgrid = np.linspace(self.config.rand_zmin, self.config.rand_zmax, self.config.nzbins)
