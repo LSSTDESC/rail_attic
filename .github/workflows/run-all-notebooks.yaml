@@ -98,7 +98,7 @@ jobs:
             if [[ ! $notebook =~ "core_examples" &&
                   ! $notebook =~ "creation_examples" &&
                   ! $notebook =~ "estimation_examples" &&
-                  ! $notebook =~ "goldenspike_examples" &&]]; then
+                  ! $notebook =~ "goldenspike_examples" ]]; then
               jupyter nbconvert --to html --execute "$notebook"
             fi
           done
