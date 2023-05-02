@@ -4,17 +4,10 @@ from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatInformer
 from rail.estimation.summarizer import SZPZSummarizer
 from rail.core.data import QPHandle, TableHandle
+from rail.core.common_params import SHARED_PARAMS
+
 import qp
 
-
-def_bands = ['u', 'g', 'r', 'i', 'z', 'y']
-def_cols = [f"mag_{band}_lsst" for band in def_bands]
-def_maglims = dict(mag_u_lsst=27.79,
-                   mag_g_lsst=29.04,
-                   mag_r_lsst=29.06,
-                   mag_i_lsst=28.62,
-                   mag_z_lsst=27.98,
-                   mag_y_lsst=27.05)
 
 
 def _computemagcolordata(data, ref_column_name, column_names, colusage):
@@ -64,13 +57,13 @@ class Inform_SimpleSOMSummarizer(CatInformer):
     magnitude and N colors, or an arbitrary set of columns.
     The code includes a flag `column_usage` to set usage,
     If set to "colors" it will take the difference of each
-    adjacen pair of columns in `usecols` as the colors. If
+    adjacen pair of columns in `bands` as the colors. If
     set to `magandcolors` it will use these colors plus one
-    magnitude as specified by `ref_column_name`.  If set to
+    magnitude as specified by `ref_band`.  If set to
     `columns` then it will take as inputs all of the columns
-    specified by `usecols` (they can be magnitudes, colors,
+    specified by `bands` (they can be magnitudes, colors,
     or any other input specified by the user).  NOTE: any
-    custom `usecols` parameters must have an accompanying
+    custom `bands` parameters must have an accompanying
     `nondetect_val` dictionary that will replace
     nondetections with the nondetect_val values!
 
@@ -82,18 +75,18 @@ class Inform_SimpleSOMSummarizer(CatInformer):
     """
     name = 'Inform_SimpleSOM'
     config_options = CatInformer.config_options.copy()
-    config_options.update(usecols=Param(list, def_cols, msg="columns used to construct SOM"),
+    config_options.update(nondetect_val=SHARED_PARAMS,
+                          mag_limits=SHARED_PARAMS,
+                          bands=SHARED_PARAMS,
+                          ref_band=SHARED_PARAMS,
+                          seed=SHARED_PARAMS,
+                          hdf5_groupname=SHARED_PARAMS,
                           column_usage=Param(str, "magandcolors", msg="switch for how SOM uses columns, valid values are 'colors', 'magandcolors', and 'columns'"),
-                          ref_column_name=Param(str, 'mag_i_lsst', msg="name for mag column used if column_usage is set to 'magsandcolors'"),
-                          nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
-                          mag_limits=Param(dict, def_maglims, msg="1 sigma mag limits"),
-                          seed=Param(int, 0, msg="Random number seed"),
                           m_dim=Param(int, 31, msg="number of cells in SOM y dimension"),
                           n_dim=Param(int, 31, msg="number of cells in SOM x dimension"),
                           som_sigma=Param(float, 1.5, msg="sigma param in SOM training"),
                           som_learning_rate=Param(float, 0.5, msg="SOM learning rate"),
-                          som_iterations=Param(int, 10_000, msg="number of iterations in SOM training"),
-                          hdf5_groupname=Param(str, "photometry", msg="name of hdf5 group for data, if None, then set to ''"))
+                          som_iterations=Param(int, 10_000, msg="number of iterations in SOM training"))
 
     def __init__(self, args, comm=None):
         """ Constructor:
@@ -110,15 +103,15 @@ class Inform_SimpleSOMSummarizer(CatInformer):
         else:  # pragma: no cover
             training_data = self.get_data('input')
         # replace nondetects
-        for col in self.config.usecols:
+        for col in self.config.bands:
             if np.isnan(self.config.nondetect_val):  # pragma: no cover
                 mask = np.isnan(training_data[col])
             else:
                 mask = np.isclose(training_data[col], self.config.nondetect_val)
             training_data[col][mask] = self.config.mag_limits[col]
 
-        colors = _computemagcolordata(training_data, self.config.ref_column_name,
-                                      self.config.usecols, self.config.column_usage)
+        colors = _computemagcolordata(training_data, self.config.ref_band,
+                                      self.config.bands, self.config.column_usage)
 
         som = MiniSom(self.config.n_dim, self.config.m_dim, colors.shape[1],
                       sigma=self.config.som_sigma,
@@ -128,8 +121,8 @@ class Inform_SimpleSOMSummarizer(CatInformer):
         som.pca_weights_init(colors)
         som.train(colors, self.config.som_iterations, verbose=True)
 
-        modeldict = dict(som=som, usecols=self.config.usecols,
-                         ref_column=self.config.ref_column_name,
+        modeldict = dict(som=som, usecols=self.config.bands,
+                         ref_column=self.config.ref_band,
                          m_dim=self.config.m_dim, n_dim=self.config.n_dim,
                          column_usage=self.config.column_usage)
         self.model = modeldict
@@ -200,16 +193,16 @@ class SimpleSOMSummarizer(SZPZSummarizer):
     """
     name = 'SimpleSOMSummarizer'
     config_options = SZPZSummarizer.config_options.copy()
-    config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
-                          zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
-                          nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
-                          hdf5_groupname=Param(str, "photometry", msg="name of hdf5 group for data, if None, then set to ''"),
+    config_options.update(zmin=SHARED_PARAMS,
+                          zmax=SHARED_PARAMS,
+                          nzbins=SHARED_PARAMS,
+                          nondetect_val=SHARED_PARAMS,
+                          mag_limits=SHARED_PARAMS,
+                          hdf5_groupname=SHARED_PARAMS,
+                          redshift_col=SHARED_PARAMS,
+                          seed=SHARED_PARAMS,
                           objid_name=Param(str, "", "name of ID column, if present will be written to cellid_output"),
-                          nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
-                          mag_limits=Param(dict, def_maglims, msg="1 sigma mag limits"),
                           spec_groupname=Param(str, "photometry", msg="name of hdf5 group for spec data, if None, then set to ''"),
-                          seed=Param(int, 12345, msg="random seed"),
-                          redshift_colname=Param(str, "redshift", msg="name of redshift column in specz file"),
                           phot_weightcol=Param(str, "", msg="name of photometry weight, if present"),
                           spec_weightcol=Param(str, "", msg="name of specz weight col, if present"),
                           nsamples=Param(int, 20, msg="number of bootstrap samples to generate"))
@@ -223,17 +216,19 @@ class SimpleSOMSummarizer(SZPZSummarizer):
         self.model = None
         self.usecols = None
         SZPZSummarizer.__init__(self, args, comm=comm)
+        self.som = None
+        self.column_usage = None
+        self.ref_column_name = None
+        self.m_dim = None
+        self.n_dim = None
 
-    def open_model(self, **kwargs):
-        SZPZSummarizer.open_model(self, **kwargs)
+    def run(self):
         self.som = self.model['som']
         self.usecols = self.model['usecols']
         self.column_usage = self.model['column_usage']
         self.ref_column_name = self.model['ref_column']
         self.m_dim = self.model['m_dim']
-        self.n_dim = self.model['n_dim']
-
-    def run(self):
+        self.n_dim = self.model['n_dim']        
         rng = np.random.default_rng(seed=self.config.seed)
         if self.config.hdf5_groupname:
             test_data = self.get_data('input')[self.config.hdf5_groupname]
