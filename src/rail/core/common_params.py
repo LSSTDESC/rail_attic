@@ -41,10 +41,10 @@ def set_param_default(param_name, default_value):
     """Change the default value of one of the shared parameters"""
     try:
         SHARED_PARAMS.get(param_name).set_default(default_value)
-    except AttributeError as msg:
+    except AttributeError as msg:  # pragma: no cover
         raise KeyError(f"No shared parameter {param_name} in SHARED_PARAMS")
 
-def set_param_defaults(**kwargs):
+def set_param_defaults(**kwargs):  # pragma: no cover
     """Change the default value of several of the shared parameters"""
     for key, val in kwargs.items():
         set_param_default(key, val)
