@@ -333,9 +333,9 @@ class somocluSOMSummarizer(SZPZSummarizer):
 
     def run(self):
         self.som = self.model['som']
-        self.usecols = self.model['bands']
+        self.usecols = self.model['usecols']
         self.column_usage = self.model['column_usage']
-        self.ref_column_name = self.model['ref_band']
+        self.ref_column_name = self.model['ref_column']
         self.n_rows = self.model['n_rows']
         self.n_columns = self.model['n_columns']
         

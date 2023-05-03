@@ -88,7 +88,7 @@ def test_dereddener():
         dustmap_dir = tempfile.TemporaryDirectory()
         is_temp_dir = True
 
-    fluxToMag = LSSTFluxToMagConverter.make_stage(name='flux2mag', copy_cols=["ra", "decl"])
+    fluxToMag = LSSTFluxToMagConverter.make_stage(name='flux2mag', copy_cols=dict(ra='ra', decl='decl'))
     dereddener = Dereddener.make_stage(name='dereddner', dustmap_dir=dustmap_dir)
     dereddener.fetch_map()
 

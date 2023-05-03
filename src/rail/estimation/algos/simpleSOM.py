@@ -238,9 +238,9 @@ class SimpleSOMSummarizer(SZPZSummarizer):
             spec_data = self.get_data('spec_input')[self.config.hdf5_groupname]
         else:  # pragma: no cover
             spec_data = self.get_data('spec_input')
-        if self.config.redshift_colname not in spec_data.keys():  # pragma: no cover
+        if self.config.redshift_col not in spec_data.keys():  # pragma: no cover
             raise ValueError(f"redshift column {self.config.redshift_colname} not found in spec_data")
-        sz = spec_data[self.config.redshift_colname]
+        sz = spec_data[self.config.redshift_col]
         for col in self.usecols:
             if col not in test_data.keys():  # pragma: no cover
                 raise ValueError(f"data column {col} not found in test_data")
