@@ -2,15 +2,16 @@ import os
 from rail.core.utils import RAILDIR
 from rail.creation.engine import Creator
 from rail.core.stage import RailStage
-from rail.core.data import ModelHandle, FitsHandle
+from rail.core.data import Hdf5Handle
 from ceci.config import StageParameter as Param
 import numpy as np
-from astropy.table import Table
-from dsps.flat_wcdm import PLANCK15
 from jax import vmap
 from jax import jit as jjit
-from dsps.photometry_kernels import _calc_rest_mag
-from dsps.photometry_kernels import _calc_obs_mag
+from dsps import calc_rest_mag
+from dsps import calc_obs_mag
+from dsps import load_ssp_templates
+from dsps import load_transmission_curve
+from dsps.cosmology import DEFAULT_COSMOLOGY
 
 
 class DSPSPhotometryCreator(Creator):
@@ -24,32 +25,19 @@ class DSPSPhotometryCreator(Creator):
     """
 
     name = "DSPS Photometry Creator"
-    default_files_folder = os.path.join(RAILDIR, 'rail', 'examples_data', 'testdata')
+    default_files_folder = os.path.join(RAILDIR, 'rail', 'examples_data', 'creation_data', 'data', 'dsps_default_data')
     config_options = RailStage.config_options.copy()
-    config_options.update(filter_data=Param(str, os.path.join(default_files_folder, 'lsst_filters.npy'),
-                                            msg='npy file containing the structured numpy '
-                                                'array of the survey filter wavelengths and transmissions'),
-                          rest_frame_sed_models=Param(str, os.path.join(default_files_folder,
-                                                                        'model_DSPS_pop_sed_model.pkl'),
-                                                      msg='pickle file containing the sed models '
-                                                          'generated with dsps_sed_modeler.py'),
-                          rest_frame_wavelengths=Param(str, os.path.join(default_files_folder, 'dsps_ssp_spec_wave.npy'),
-                                                       msg='npy file containing the wavelength array'
-                                                           'of the rest-frame model seds with'
-                                                           'shape (n_wavelength_points)'),
-                          galaxy_redshifts=Param(str, os.path.join(default_files_folder, 'galaxy_redshifts.npy'),
-                                                 msg='npy file containing galaxy redshifts'),
-                          Om0=Param(float, 0.3, msg='Omega matter at current time'),
-                          Ode0=Param(float, 0.7, msg='Omega dark energy at current time'),
-                          w0=Param(float, -1, msg='Dark energy equation-of-state parameter at current time'),
-                          wa=Param(float, 0, msg='Slope dark energy equation-of-state evolution with scale factor'),
-                          h=Param(float, 0.7, msg='Dimensionless hubble constant'),
-                          use_planck_cosmology=Param(bool, False, msg='True to overwrite the cosmological parameters'
-                                                                      'to their Planck2015 values'),
-                          n_galaxies=Param(int, 10, msg='number of galaxies in the population'), seed=12345)
+    config_options.update(filter_folder=Param(str, os.path.join(default_files_folder, 'filters'),
+                                              msg='Folder containing filter transmissions'),
+                          instrument_name=Param(str, 'lsst', msg='Instrument name as prefix to filter transmission'
+                                                                 ' files'),
+                          wavebands=Param(str, 'u,g,r,i,z,y', msg='Comma-separated list of wavebands'),
+                          ssp_templates_file=Param(str, os.path.join(default_files_folder,
+                                                                     'ssp_data_fsps_v3.2_lgmet_age.h5'),
+                                                   msg='hdf5 file storing the SSP libraries used to create SEDs'))
 
-    inputs = [("model", ModelHandle)]
-    outputs = [("output", FitsHandle)]
+    inputs = [("model", Hdf5Handle)]
+    outputs = [("output", Hdf5Handle)]
 
     def __init__(self, args, comm=None):
         """
@@ -62,32 +50,53 @@ class DSPSPhotometryCreator(Creator):
         comm:
         """
         RailStage.__init__(self, args, comm=comm)
-        # self.model = self.config.rest_frame_sed_models
-        if self.config.use_planck_cosmology:
-            self.config.Om0, self.config.Ode0, self.config.w0, self.config.wa, self.config.h = PLANCK15
-        if (self.config.Om0 < 0.) | (self.config.Om0 > 1.):
-            raise ValueError("The mass density at the current time {self.config.Om0} is outside of allowed"
-                             " range 0. < Om0 < 1.")
-        if (self.config.Ode0 < 0.) | (self.config.Ode0 > 1.):
-            raise ValueError("The dark energy density at the current time {self.config.Ode0} is outside of allowed"
-                             " range 0. < Ode0 < 1.")
-        if (self.config.h < 0.) | (self.config.h > 1.):
-            raise ValueError("The dimensionless Hubble constant {self.config.h} is outside of allowed"
-                             " range 0 < h < 1")
 
-        self._b = [None, 0, 0, 0]
-        self._calc_rest_mag_vmap = jjit(vmap(_calc_rest_mag, in_axes=self._b))
-        self._c = [None, 0, 0, 0, 0, *[None] * 5]
-        self._calc_obs_mag_vmap = jjit(vmap(_calc_obs_mag, in_axes=self._c))
-        self.filter_data = np.load(self.config.filter_data)
-        self.filter_names = np.array([key for key in self.filter_data.dtype.fields
-                                      if 'wave' in key])
-        self.filter_wavelengths = np.array([self.filter_data[key] for key in self.filter_data.dtype.fields
-                                            if 'wave' in key])
-        self.filter_transmissions = np.array([self.filter_data[key] for key in self.filter_data.dtype.fields
-                                              if 'trans' in key])
-        self.rest_frame_wavelengths = np.load(self.config.rest_frame_wavelengths)
-        self.galaxy_redshifts = np.load(self.config.galaxy_redshifts)
+        if not os.path.isfile(self.config.ssp_templates_file):
+            raise OSError("File {self.config.ssp_templates_file} not found")
+
+        if not os.path.isdir(self.config.filter_folder):
+            raise OSError("File {self.config.filter_folder} not found")
+
+        wavebands = self.config.wavebands.split(',')
+        self.filter_wavelengths = np.array([load_transmission_curve(fn=os.path.join(self.config.filter_folder,
+                                                                                    '{}_{}_transmission.h5'
+                                                                                    .format(self.config.instrument_name,
+                                                                                            waveband))).wave
+                                            for waveband in wavebands])
+
+        self.filter_transmissions = np.array([load_transmission_curve(fn=os.path.join(self.config.filter_folder,
+                                                                                      '{}_{}_transmission.h5'
+                                                                                      .format(self.config.
+                                                                                              instrument_name,
+                                                                                              waveband))).transmission
+                                             for waveband in wavebands])
+
+        # self.model = self.config.rest_frame_sed_models
+        # if self.config.use_planck_cosmology:
+        #     self.config.Om0, self.config.Ode0, self.config.w0, self.config.wa, self.config.h = PLANCK15
+        # if (self.config.Om0 < 0.) | (self.config.Om0 > 1.):
+        #     raise ValueError("The mass density at the current time {self.config.Om0} is outside of allowed"
+        #                      " range 0. < Om0 < 1.")
+        # if (self.config.Ode0 < 0.) | (self.config.Ode0 > 1.):
+        #     raise ValueError("The dark energy density at the current time {self.config.Ode0} is outside of allowed"
+        #                      " range 0. < Ode0 < 1.")
+        # if (self.config.h < 0.) | (self.config.h > 1.):
+        #     raise ValueError("The dimensionless Hubble constant {self.config.h} is outside of allowed"
+        #                      " range 0 < h < 1")
+
+        # self._b = [None, 0, 0, 0]
+        # self._calc_rest_mag_vmap = jjit(vmap(_calc_rest_mag, in_axes=self._b))
+        # self._c = [None, 0, 0, 0, 0, *[None] * 5]
+        # self._calc_obs_mag_vmap = jjit(vmap(_calc_obs_mag, in_axes=self._c))
+        # self.filter_data = np.load(self.config.filter_data)
+        # self.filter_names = np.array([key for key in self.filter_data.dtype.fields
+        #                               if 'wave' in key])
+        # self.filter_wavelengths = np.array([self.filter_data[key] for key in self.filter_data.dtype.fields
+        #                                     if 'wave' in key])
+        # self.filter_transmissions = np.array([self.filter_data[key] for key in self.filter_data.dtype.fields
+        #                                       if 'trans' in key])
+        # self.rest_frame_wavelengths = np.load(self.config.rest_frame_wavelengths)
+        # self.galaxy_redshifts = np.load(self.config.galaxy_redshifts)
 
         if not isinstance(args, dict):  # pragma: no cover
             args = vars(args)
@@ -98,7 +107,7 @@ class DSPSPhotometryCreator(Creator):
 
         Keywords
         --------
-        model : `object`, `str` or `ModelHandle`
+        model : `object`, `str` or `Hdf5Handle`
             Either an object with a trained model,
             a path pointing to a file that can be read to obtain the trained model,
             or a `ModelHandle` providing access to the trained model.
@@ -117,7 +126,7 @@ class DSPSPhotometryCreator(Creator):
             self.model = self.set_data("model", data=None, path=model)
             self.config["model"] = model
             return self.model
-        if isinstance(model, ModelHandle):  # pragma: no cover
+        if isinstance(model, Hdf5Handle):  # pragma: no cover
             if model.has_path:
                 self.config["model"] = model.path
         self.model = self.set_data("model", model)
@@ -155,6 +164,73 @@ class DSPSPhotometryCreator(Creator):
         output = self.get_handle("output")
         return output
 
+    def _compute_rest_frame_absolute_magnitudes(self, ssp_data, rest_frame_seds, filter_wavelengths,
+                                                filter_transmissions):
+        """
+
+        Parameters
+        ----------
+        ssp_data
+        rest_frame_seds
+        filter_wavelengths
+        filter_transmissions
+
+        Returns
+        -------
+
+        """
+        restframe_abs_mags = {}
+
+        for i in self.split_tasks_by_rank(range(len(rest_frame_seds))):
+            self._b = [None, 0, 0, 0]
+            self._calc_rest_mag_vmap = jjit(vmap(calc_rest_mag, in_axes=self._b))
+
+            args_abs_mags = (ssp_data.ssp_wave, rest_frame_seds, filter_wavelengths,
+                             filter_transmissions)
+
+            restframe_abs_mag = self._calc_rest_mag_vmap(*args_abs_mags)
+
+            restframe_abs_mags[i] = np.array(restframe_abs_mag)
+
+        if self.comm is not None:  # pragma: no cover
+            restframe_abs_mags = self.comm.gather(restframe_abs_mags)
+
+            if self.rank != 0:  # pragma: no cover
+                return None, None
+
+            restframe_abs_mags = {k: v for a in restframe_abs_mags for k, v in a.items()}
+
+        restframe_abs_mags = np.array([restframe_abs_mags[i] for i in range(len(rest_frame_seds))])
+
+        return restframe_abs_mags
+
+    def _compute_apparent_magnitudes(self, ssp_data, rest_frame_seds, redshifts, filter_wavelengths,
+                                     filter_transmissions):
+        apparent_mags = {}
+
+        for i in self.split_tasks_by_rank(range(len(redshifts))):
+            self._c = [None, 0, 0, 0, 0, None]
+            self._calc_app_mag_vmap = jjit(vmap(calc_obs_mag, in_axes=self._c))
+
+            args_app_mags = (ssp_data.ssp_wave, rest_frame_seds, filter_wavelengths,
+                             filter_transmissions, redshifts, *DEFAULT_COSMOLOGY)
+
+            apparent_mag = self._calc_app_mag_vmap(*args_app_mags)
+
+            apparent_mags[i] = np.array(apparent_mag)
+
+        if self.comm is not None:  # pragma: no cover
+            apparent_mags = self.comm.gather(apparent_mags)
+
+            if self.rank != 0:  # pragma: no cover
+                return None, None
+
+            apparent_mags = {k: v for a in apparent_mags for k, v in a.items()}
+
+        apparent_mags = np.array([apparent_mags[i] for i in range(len(redshifts))])
+
+        return apparent_mags
+
     def run(self):
         """
         This function computes rest-frame absolute magnitudes in the provided wavebands for all the galaxies
@@ -167,26 +243,21 @@ class DSPSPhotometryCreator(Creator):
 
         """
 
+        ssp_data = load_ssp_templates(fn=self.config.ssp_templates_file)
         filter_wavelengths = np.stack((self.filter_wavelengths,) * self.config.n_galaxies, axis=0)
         filter_transmissions = np.stack((self.filter_transmissions,) * self.config.n_galaxies, axis=0)
 
-        args = (self.rest_frame_wavelengths,
-                self.model.reshape((self.config.n_galaxies, len(self.rest_frame_wavelengths))),
-                filter_wavelengths, filter_transmissions)
+        redshifts = self.model['redshifts']
+        rest_frame_seds = self.model['restframe_seds']
 
-        rest_frame_absolute_mags = self._calc_rest_mag_vmap(*args).reshape((self.config.n_galaxies,
-                                                                            len(self.filter_wavelengths)))
+        rest_frame_absolute_mags = self._compute_rest_frame_absolute_magnitudes(ssp_data, rest_frame_seds,
+                                                                                filter_wavelengths,
+                                                                                filter_transmissions)
+        apparent_mags = self._compute_apparent_magnitudes(ssp_data, rest_frame_seds, redshifts, filter_wavelengths,
+                                                          filter_transmissions)
 
-        args = (self.rest_frame_wavelengths,
-                self.model.reshape((self.config.n_galaxies, len(self.rest_frame_wavelengths))),
-                filter_wavelengths, filter_transmissions, self.galaxy_redshifts,
-                self.config.Om0, self.config.Ode0, self.config.w0, self.config.wa, self.config.h)
-
-        apparent_magnitudes = self._calc_obs_mag_vmap(*args).reshape((self.config.n_galaxies,
-                                                                      len(self.filter_wavelengths)))
-
-        idxs = np.arange(1, self.config.n_galaxies + 1, 1, dtype=int)
-
-        output_table = Table([idxs, rest_frame_absolute_mags, apparent_magnitudes], names=('id', 'abs_mags',
-                                                                                           'app_mags'))
-        self.add_data('output', output_table)
+        if self.rank == 0:
+            idxs = np.arange(1, len(redshifts) + 1, 1, dtype=int)
+            output_mags = {'id': idxs, 'rest_frame_absolute_mags': rest_frame_absolute_mags,
+                           'apparent_mags': apparent_mags}  # (n_galaxies, n_wavelengths) = (100000000, 4096)
+            self.add_data('output', output_mags)
