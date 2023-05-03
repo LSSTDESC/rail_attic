@@ -176,10 +176,11 @@ class Inform_somocluSOMSummarizer(CatInformer):
                           bands=SHARED_PARAMS,
                           err_bands=SHARED_PARAMS,
                           ref_band=SHARED_PARAMS,
-                          redshift_col=SHARED_PARAMS,   
-                          seed=SHARED_PARAMS,
+                          redshift_col=SHARED_PARAMS,
                           hdf5_groupname=SHARED_PARAMS,
-                          column_usage=Param(str, "magandcolors", msg="switch for how SOM uses columns, valid values are 'colors', 'magandcolors', and 'columns'"),
+                          column_usage=Param(str, "magandcolors", msg="switch for how SOM uses columns, valid values are "
+                                             + "'colors','magandcolors', and 'columns'"),
+                          seed=Param(int, 0, msg="Random number seed"),
                           n_rows=Param(int, 31, msg="number of cells in SOM y dimension"),
                           n_columns=Param(int, 31, msg="number of cells in SOM x dimension"),
                           gridtype=Param(str, 'rectangular', msg="Optional parameter to specify the grid form of the nodes:"
@@ -306,10 +307,11 @@ class somocluSOMSummarizer(SZPZSummarizer):
                           mag_limits=SHARED_PARAMS,
                           hdf5_groupname=SHARED_PARAMS,
                           redshift_col=SHARED_PARAMS,
-                          seed=SHARED_PARAMS,
                           spec_groupname=Param(str, "photometry", msg="name of hdf5 group for spec data, if None, then set to ''"),
-                          n_clusters=Param(int, -1, msg="The number of hierarchical clusters of SOM cells. If not provided, the SOM cells will not be clustered."),
+                          n_clusters=Param(int, -1, msg="The number of hierarchical clusters of SOM cells. If not provided, the "
+                                           + "SOM cells will not be clustered."),
                           objid_name=Param(str, "", "name of ID column, if present will be written to cellid_output"),
+                          seed=Param(int, 12345, msg="random seed"),
                           redshift_colname=Param(str, "redshift", msg="name of redshift column in specz file"),
                           phot_weightcol=Param(str, "", msg="name of photometry weight, if present"),
                           spec_weightcol=Param(str, "", msg="name of specz weight col, if present"),

@@ -75,7 +75,6 @@ class Inform_SimpleNN(CatInformer):
                           mag_limits=SHARED_PARAMS,
                           bands=SHARED_PARAMS,
                           ref_band=SHARED_PARAMS,
-                          seed=SHARED_PARAMS,
                           redshift_col=SHARED_PARAMS,
                           hdf5_groupname=SHARED_PARAMS,
                           width=Param(float, 0.05, msg="The ad hoc base width of the PDFs"),

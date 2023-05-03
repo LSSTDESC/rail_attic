@@ -79,9 +79,10 @@ class Inform_SimpleSOMSummarizer(CatInformer):
                           mag_limits=SHARED_PARAMS,
                           bands=SHARED_PARAMS,
                           ref_band=SHARED_PARAMS,
-                          seed=SHARED_PARAMS,
                           hdf5_groupname=SHARED_PARAMS,
-                          column_usage=Param(str, "magandcolors", msg="switch for how SOM uses columns, valid values are 'colors', 'magandcolors', and 'columns'"),
+                          column_usage=Param(str, "magandcolors", msg="switch for how SOM uses columns, "
+                                             + "valid values are 'colors', 'magandcolors', and 'columns'"),
+                          seed=Param(int, 0, msg="Random number seed"),
                           m_dim=Param(int, 31, msg="number of cells in SOM y dimension"),
                           n_dim=Param(int, 31, msg="number of cells in SOM x dimension"),
                           som_sigma=Param(float, 1.5, msg="sigma param in SOM training"),
@@ -200,9 +201,9 @@ class SimpleSOMSummarizer(SZPZSummarizer):
                           mag_limits=SHARED_PARAMS,
                           hdf5_groupname=SHARED_PARAMS,
                           redshift_col=SHARED_PARAMS,
-                          seed=SHARED_PARAMS,
                           objid_name=Param(str, "", "name of ID column, if present will be written to cellid_output"),
                           spec_groupname=Param(str, "photometry", msg="name of hdf5 group for spec data, if None, then set to ''"),
+                          seed=Param(int, 12345, msg="random seed"),
                           phot_weightcol=Param(str, "", msg="name of photometry weight, if present"),
                           spec_weightcol=Param(str, "", msg="name of specz weight col, if present"),
                           nsamples=Param(int, 20, msg="number of bootstrap samples to generate"))

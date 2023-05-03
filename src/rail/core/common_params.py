@@ -27,7 +27,6 @@ SHARED_PARAMS = StageConfig(
     err_bands=Param(list, lsst_mag_err_cols, msg="Names of columns for magnitgude errors by filter band"),
     mag_limits=Param(dict, lsst_def_maglims, msg="Limiting magnitdues by filter"),
     ref_band=Param(str, "mag_i_lsst", msg="band to use in addition to colors"),
-    seed=Param(int, 87, msg="Random number seed"),
     redshift_col=Param(str, 'redshift', msg="name of redshift column")
 )
 
