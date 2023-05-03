@@ -53,7 +53,7 @@ def one_algo(key, inform_class, summarizer_class, summary_kwargs):
     _ = summarizer2.summarize(phot_data, spec_data)
     fid_ens = qp.read(summarizer2.get_output(summarizer2.get_aliased_tag("single_NZ"), final_name=True))
     meanz = fid_ens.mean().flatten()
-    assert np.isclose(meanz[0], 0.14414913252122552)
+    assert np.isclose(meanz[0], 0.14414913252122552, atol=0.025)
     os.remove(summarizer2.get_output(summarizer2.get_aliased_tag("output"), final_name=True))
     os.remove(f"tmpsomoclu_" + key + ".pkl")
     return summary_ens

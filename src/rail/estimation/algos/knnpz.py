@@ -12,21 +12,11 @@ from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatEstimator, CatInformer
 
 from rail.evaluation.metrics.cdeloss import CDELoss
+from rail.core.common_params import SHARED_PARAMS
+
 import pandas as pd
 import qp
 
-
-def_bands = ['u', 'g', 'r', 'i', 'z', 'y']
-refcols = [f"mag_{band}_lsst" for band in def_bands]
-allcols = refcols.copy()
-for band in def_bands:
-    allcols.append(f"mag_{band}_lsst_err")
-def_maglims = dict(mag_u_lsst=27.79,
-                   mag_g_lsst=29.04,
-                   mag_r_lsst=29.06,
-                   mag_i_lsst=28.62,
-                   mag_z_lsst=27.98,
-                   mag_y_lsst=27.05)
 
 
 def _computecolordata(df, ref_column_name, column_names):
@@ -54,32 +44,32 @@ class Inform_KNearNeighPDF(CatInformer):
     """
     name = 'Inform_KNearNeighPDF'
     config_options = CatInformer.config_options.copy()
-    config_options.update(zmin=Param(float, 0.0, msg="min z"),
-                          zmax=Param(float, 3.0, msg="max_z"),
-                          nzbins=Param(int, 301, msg="num z bins"),
+    config_options.update(zmin=SHARED_PARAMS,
+                          zmax=SHARED_PARAMS,
+                          nzbins=SHARED_PARAMS,
+                          nondetect_val=SHARED_PARAMS,
+                          mag_limits=SHARED_PARAMS,
+                          bands=SHARED_PARAMS,
+                          ref_band=SHARED_PARAMS,
+                          redshift_col=SHARED_PARAMS,
+                          hdf5_groupname=SHARED_PARAMS,
                           trainfrac=Param(float, 0.75,
                                           msg="fraction of training data used to make tree, rest used to set best sigma"),
                           seed=Param(int, 0, msg="Random number seed for NN training"),
-                          ref_column_name=Param(str, 'mag_i_lsst', msg="name for reference column"),
-                          column_names=Param(list, refcols,
-                                             msg="column names to be used in NN, *ASSUMED TO BE IN INCREASING WL ORDER!*"),
-                          nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
-                          mag_limits=Param(dict, def_maglims, msg="1 sigma mag limits"),
                           sigma_grid_min=Param(float, 0.01, msg="minimum value of sigma for grid check"),
                           sigma_grid_max=Param(float, 0.075, msg="maximum value of sigma for grid check"),
                           ngrid_sigma=Param(int, 10, msg="number of grid points in sigma check"),
                           leaf_size=Param(int, 15, msg="min leaf size for KDTree"),
                           nneigh_min=Param(int, 3, msg="int, min number of near neighbors to use for PDF fit"),
-                          nneigh_max=Param(int, 7, msg="int, max number of near neighbors to use ofr PDF fit"),
-                          redshift_column_name=Param(str, 'redshift', msg="name of redshift column"))
+                          nneigh_max=Param(int, 7, msg="int, max number of near neighbors to use ofr PDF fit"))
 
     def __init__(self, args, comm=None):
         """ Constructor
         Do CatInformer specific initialization, then check on bands """
         CatInformer.__init__(self, args, comm=comm)
 
-        usecols = self.config.column_names.copy()
-        usecols.append(self.config.redshift_column_name)
+        usecols = self.config.bands.copy()
+        usecols.append(self.config.redshift_col)
         self.usecols = usecols
         self.zgrid = None
 
@@ -92,19 +82,19 @@ class Inform_KNearNeighPDF(CatInformer):
             training_data = self.get_data('input')[self.config.hdf5_groupname]
         else:  # pragma: no cover
             training_data = self.get_data('input')
-        knndf = pd.DataFrame(training_data, columns=self.config.column_names)
+        knndf = pd.DataFrame(training_data, columns=self.config.bands)
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
 
         # replace nondetects
         # will fancy this up later with a flow to sample from truth
-        for col in self.config.column_names:
+        for col in self.config.bands:
             if np.isnan(self.config.nondetect_val):  # pragma: no cover
                 knndf.loc[np.isnan(knndf[col]), col] = self.config.mag_limits[col]
             else:
                 knndf.loc[np.isclose(knndf[col], self.config.nondetect_val), col] = self.config.mag_limits[col]
 
-        trainszs = np.array(training_data[self.config.redshift_column_name])
-        colordata = _computecolordata(knndf, self.config.ref_column_name, self.config.column_names)
+        trainszs = np.array(training_data[self.config.redshift_col])
+        colordata = _computecolordata(knndf, self.config.ref_band, self.config.bands)
         nobs = colordata.shape[0]
         rng = np.random.default_rng
         perm = rng().permutation(nobs)
@@ -147,15 +137,14 @@ class KNearNeighPDF(CatEstimator):
     """
     name = 'KNearNeighPDF'
     config_options = CatEstimator.config_options.copy()
-    config_options.update(zmin=Param(float, 0.0, msg="min z"),
-                          zmax=Param(float, 3.0, msg="max_z"),
-                          nzbins=Param(int, 301, msg="num z bins"),
-                          column_names=Param(list, refcols,
-                                             msg="column names to be used in NN, *ASSUMED TO BE IN INCREASING WL ORDER!*"),
-                          ref_column_name=Param(str, 'mag_i_lsst', msg="name for reference column"),
-                          nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
-                          mag_limits=Param(dict, def_maglims, msg="1 sigma mag limits"),
-                          redshift_column_name=Param(str, 'redshift', msg="name of redshift column"))
+    config_options.update(zmin=SHARED_PARAMS,
+                          zmax=SHARED_PARAMS,
+                          nzbins=SHARED_PARAMS,
+                          bands=SHARED_PARAMS,
+                          ref_band=SHARED_PARAMS,
+                          nondetect_val=SHARED_PARAMS,
+                          mag_limits=SHARED_PARAMS,
+                          redshift_col=SHARED_PARAMS)
 
     def __init__(self, args, comm=None):
         """ Constructor:
@@ -166,8 +155,8 @@ class KNearNeighPDF(CatEstimator):
         self.trainszs = None
         self.zgrid = None
         CatEstimator.__init__(self, args, comm=comm)
-        usecols = self.config.column_names.copy()
-        usecols.append(self.config.redshift_column_name)
+        usecols = self.config.bands.copy()
+        usecols.append(self.config.redshift_col)
         self.usecols = usecols
 
     def open_model(self, **kwargs):
@@ -184,18 +173,18 @@ class KNearNeighPDF(CatEstimator):
         calculate and return PDFs for each galaxy using the trained flow
         """
         print(f"Process {self.rank} estimating PZ PDF for rows {start:,} - {end:,}")
-        knn_df = pd.DataFrame(data, columns=self.usecols)
+        knn_df = pd.DataFrame(data, columns=self.config.bands)
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins)
 
         # replace nondetects
         # will fancy this up later with a flow to sample from truth
-        for col in self.config.column_names:
+        for col in self.config.bands:
             if np.isnan(self.config.nondetect_val):  # pragma: no cover
                 knn_df.loc[np.isnan(knn_df[col]), col] = self.config.mag_limits[col]
             else:
                 knn_df.loc[np.isclose(knn_df[col], self.config.nondetect_val), col] = self.config.mag_limits[col]
 
-        testcolordata = _computecolordata(knn_df, self.config.ref_column_name, self.config.column_names)
+        testcolordata = _computecolordata(knn_df, self.config.ref_band, self.config.bands)
         dists, idxs = self.kdtree.query(testcolordata, k=self.numneigh)
         test_ens = _makepdf(dists, idxs, self.trainszs, self.sigma)
         zmode = test_ens.mode(grid=self.zgrid)
