@@ -96,8 +96,8 @@ class Inform_KNearNeighPDF(CatInformer):
         trainszs = np.array(training_data[self.config.redshift_col])
         colordata = _computecolordata(knndf, self.config.ref_band, self.config.bands)
         nobs = colordata.shape[0]
-        rng = np.random.default_rng
-        perm = rng().permutation(nobs)
+        rng = np.random.default_rng(seed=self.config.seed)
+        perm = rng.permutation(nobs)
         ntrain = round(nobs * self.config.trainfrac)
         xtrain_data = colordata[perm[:ntrain]]
         train_data = copy.deepcopy(xtrain_data)
