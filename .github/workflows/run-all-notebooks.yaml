@@ -44,7 +44,6 @@ jobs:
          pip install wheel numpy # For somoclu
          pip install .
          pip install git+https://github.com/LSSTDESC/rail_bpz@lynn/rail-directory-match
-         pip install .[dev] # TODO maybe unnecessary
          pip install flake8 pytest pytest-cov mockmpi pytest-timeout
          pip install -r docs/requirements.txt
          pip install -r docs/nbconvert-requirements.txt
