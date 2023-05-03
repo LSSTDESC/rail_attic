@@ -16,6 +16,9 @@ Similar to the installation process, depending on how you want to contribute to 
 Contribution workflow
 ---------------------
 
+To create branches within the RAIL repository, first request to join the 
+`photo_z working group <https://github.com/orgs/LSSTDESC/teams/photo-z>`_.
+
 The RAIL and rail_<xxx> repositories use an issue-branch-review workflow.
 When you identify something that should be done, `make an issue <https://github.com/LSSTDESC/RAIL/issues/new>`_
 for it.   

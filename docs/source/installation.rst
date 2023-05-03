@@ -60,12 +60,11 @@ To install RAIL from source, you will `Clone this repo <https://docs.github.com/
 
     git clone https://github.com/LSSTDESC/RAIL.git  # (or whichever packages you need)
     cd RAIL
-    pip install -e .[all] # (or pip install -e '.[all]' if you are using zsh, note the single quotes). 
-
-
-If you only want to install the dependencies for a specific piece of RAIL, you can change the install option. E.g. to install only the dependencies for the Creation Module or the Estimation Module, run `pip install .[creation]` or `pip install .[estimation]` respectively. For other install options, look at the keys for the `extras_require` dictionary at the top of `setup.py`.
-
-
+    pip install -e .
+    pip install -e .[dev] # (or pip install -e '.[dev]' if you are using zsh, note the single quotes). 
+    conda install -c conda-forge somoclu
+    pip install wheel numpy
+    pip install flake8 pytest pytest-cov mockmpi pytest-timeout
 
 Algorithm / architecture specific issues
 ========================================
