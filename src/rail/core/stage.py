@@ -329,7 +329,7 @@ class RailStage(PipelineStage):
         if self.config.hdf5_groupname:
             self._input_length = handle.size(groupname=self.config.hdf5_groupname)
             total_chunks_needed = ceil(self._input_length/self.config.chunk_size)
-            if total_chunks_needed<self.size:
+            if total_chunks_needed<self.size:  #pragma: no cover
                 color = self.rank+1 <= total_chunks_needed
                 newcomm = self.comm.Split(color=color,key=self.rank)
                 if color:
