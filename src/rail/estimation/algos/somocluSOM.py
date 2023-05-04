@@ -422,7 +422,7 @@ class somocluSOMSummarizer(SZPZSummarizer):
         total_chunks = int(np.ceil(self._input_length/self.config.chunk_size))
 
         # Initializing variables that will be used after the chunks
-        hist_vals = np.empty((self.config.nsamples, len(self.zgrid) - 1))
+        hist_vals = np.zeros((self.config.nsamples, len(self.zgrid) - 1))
         N_eff_p_num = np.zeros(self.config.nsamples)
         N_eff_p_den = np.zeros(self.config.nsamples)
         phot_cluster_set = set()
