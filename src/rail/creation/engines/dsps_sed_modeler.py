@@ -35,10 +35,6 @@ class DSPSSingleSedModeler(Modeler):
     config_options.update(ssp_templates_file=Param(str, os.path.join(default_files_folder,
                                                                      'ssp_data_fsps_v3.2_lgmet_age.h5'),
                                                    msg='hdf5 file storing the SSP libraries used to create SEDs'),
-                          # input_galaxy_properties_file=Param(str, os.path.join(default_files_folder,
-                          #                                                      'dsps_test_data.h5'),
-                          #                                    msg='Filename of the hdf5 dataset containing the input '
-                          #                                        'galaxy properties'),
                           redshift_key=Param(str, 'redshift',
                                              msg='Redshift keyword name of the hdf5 dataset containing input galaxy '
                                                  'properties'),
@@ -59,7 +55,9 @@ class DSPSSingleSedModeler(Modeler):
                                                                 msg='Stellar metallicity scatter keyword name of the '
                                                                     'hdf5 dataset containing input galaxy properties, '
                                                                     'this is lognormal scatter in the metallicity '
-                                                                    'distribution function'))
+                                                                    'distribution function'),
+                          restframe_sed_key=Param(str, 'restframe_seds', msg='Rest-frame SED keyword name of the '
+                                                                             'output hdf5 dataset'))
 
     inputs = [("input", Hdf5Handle)]
     outputs = [("model", Hdf5Handle)]
@@ -190,8 +188,8 @@ class DSPSSingleSedModeler(Modeler):
                                                    stellar_metallicities, stellar_metallicities_scatter)
 
         if self.rank == 0:
-            rest_frame_sed_models = {'restframe_seds': restframe_seds,
-                                     'redshifts': redshifts}  # (n_galaxies, n_wavelengths) = (100000000, 4096)
+            rest_frame_sed_models = {self.config.restframe_sed_key: restframe_seds,
+                                     self.config.redshift_key: redshifts}
             self.add_data('model', rest_frame_sed_models)
 
 
@@ -218,10 +216,6 @@ class DSPSPopulationSedModeler(Modeler):
     config_options.update(ssp_templates_file=Param(str, os.path.join(default_files_folder,
                                                                      'ssp_data_fsps_v3.2_lgmet_age.h5'),
                                                    msg='hdf5 file storing the SSP libraries used to create SEDs'),
-                          # input_galaxy_properties_file=Param(str, os.path.join(default_files_folder,
-                          #                                                      'dsps_test_data.h5'),
-                          #                                    msg='Filename of the hdf5 dataset containing the input '
-                          #                                        'galaxy properties'),
                           redshift_key=Param(str, 'redshift',
                                              msg='Redshift keyword name of the hdf5 dataset containing input galaxy '
                                                  'properties'),
@@ -242,7 +236,9 @@ class DSPSPopulationSedModeler(Modeler):
                                                                 msg='Stellar metallicity scatter keyword name of the '
                                                                     'hdf5 dataset containing input galaxy properties, '
                                                                     'this is lognormal scatter in the metallicity '
-                                                                    'distribution function'))
+                                                                    'distribution function'),
+                          restframe_sed_key=Param(str, 'restframe_seds', msg='Rest-frame SED keyword name of the '
+                                                                             'output hdf5 dataset'))
 
     inputs = [("input", Hdf5Handle)]
     outputs = [("model", Hdf5Handle)]
@@ -283,41 +279,28 @@ class DSPSPopulationSedModeler(Modeler):
 
         """
 
-        restframe_seds = {}
+        # consider the whole chunk
+        self._a = (0, 0, 0, 0, None, None, None, 0)
 
-        for i in self.split_tasks_by_rank(range(len(redshifts))):
-            # consider the whole chunk
-            self._a = (0, 0, 0, 0, None, None, None, 0)
-            if np.isscalar(stellar_metallicities[i]):
-                self._calc_sed_vmap = jjit(vmap(calc_rest_sed_sfh_table_lognormal_mdf, in_axes=self._a))
-            elif len(stellar_metallicities[0]) > 1:
-                self._calc_sed_vmap = jjit(vmap(calc_rest_sed_sfh_table_met_table, in_axes=self._a))
-            else:
-                raise ValueError
+        if np.isscalar(stellar_metallicities[0]):
+            self._calc_sed_vmap = jjit(vmap(calc_rest_sed_sfh_table_lognormal_mdf, in_axes=self._a))
+        elif len(stellar_metallicities[0]) > 1:
+            self._calc_sed_vmap = jjit(vmap(calc_rest_sed_sfh_table_met_table, in_axes=self._a))
+        else:
+            raise ValueError
 
-            self._b = (0, None, None, None, None)
-            self._calc_age_at_z_vmap = jjit(vmap(age_at_z, in_axes=self._b))
-            args_pop_z = (redshifts, *DEFAULT_COSMOLOGY)
-            t_obs = self._calc_age_at_z_vmap(*args_pop_z)[:, 0]
+        self._b = (0, None, None, None, None)
+        self._calc_age_at_z_vmap = jjit(vmap(age_at_z, in_axes=self._b))
+        args_pop_z = (redshifts, *DEFAULT_COSMOLOGY)
+        t_obs = self._calc_age_at_z_vmap(*args_pop_z)[:, 0]
 
-            args_pop = (cosmic_time_grids, star_formation_histories, stellar_metallicities,
-                        stellar_metallicities_scatter, ssp_data.ssp_lgmet, ssp_data.ssp_lg_age_gyr, ssp_data.ssp_flux,
-                        t_obs)
+        args_pop = (cosmic_time_grids, star_formation_histories, stellar_metallicities,
+                    stellar_metallicities_scatter, ssp_data.ssp_lgmet, ssp_data.ssp_lg_age_gyr, ssp_data.ssp_flux,
+                    t_obs)
 
-            restframe_seds_galpop = self._calc_sed_vmap(*args_pop)
-            restframe_seds[i] = np.array(restframe_seds_galpop.rest_sed)
+        restframe_seds_galpop = self._calc_sed_vmap(*args_pop)
 
-        if self.comm is not None:  # pragma: no cover
-            restframe_seds = self.comm.gather(restframe_seds)
-
-            if self.rank != 0:  # pragma: no cover
-                return None, None
-
-            restframe_seds = {k: v for a in restframe_seds for k, v in a.items()}
-
-        restframe_seds = np.array([restframe_seds[i] for i in range(len(redshifts))])
-
-        return restframe_seds
+        return restframe_seds_galpop.rest_sed
 
     def fit_model(self):
         """
@@ -369,7 +352,6 @@ class DSPSPopulationSedModeler(Modeler):
         restframe_seds = self._get_rest_frame_seds(ssp_data, redshifts, cosmic_time_grids, star_formation_histories,
                                                    stellar_metallicities, stellar_metallicities_scatter)
 
-        if self.rank == 0:
-            rest_frame_sed_models = {'restframe_seds': restframe_seds,
-                                     'redshifts': redshifts}  # (n_galaxies, n_wavelengths) = (100000000, 4096)
-            self.add_data('model', rest_frame_sed_models)
+        rest_frame_sed_models = {self.config.restframe_sed_key: restframe_seds,
+                                 self.config.redshift_key: redshifts}
+        self.add_data('model', rest_frame_sed_models)
