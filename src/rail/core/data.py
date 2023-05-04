@@ -44,7 +44,7 @@ class DataHandle:
         """
         if self.path is None:
             raise ValueError("DataHandle.open() called but path has not been specified")
-        self.fileObj = self._open(self.path, **kwargs)
+        self.fileObj = self._open(os.path.expandvars(self.path), **kwargs)
         return self.fileObj
 
     @classmethod
@@ -59,7 +59,7 @@ class DataHandle:
         """Read and return the data from the associated file """
         if self.data is not None and not force:
             return self.data
-        self.set_data(self._read(self.path, **kwargs))
+        self.set_data(self._read(os.path.expandvars(self.path), **kwargs))
         return self.data
 
     def __call__(self, **kwargs):
@@ -78,10 +78,10 @@ class DataHandle:
             raise ValueError("TableHandle.write() called but path has not been specified")
         if self.data is None:
             raise ValueError(f"TableHandle.write() called for path {self.path} with no data")
-        outdir = os.path.dirname(os.path.abspath(self.path))
+        outdir = os.path.dirname(os.path.abspath(os.path.expandvars(self.path)))
         if not os.path.exists(outdir):  #pragma: no cover
             os.makedirs(outdir, exist_ok=True)
-        return self._write(self.data, self.path, **kwargs)
+        return self._write(self.data, os.path.expandvars(self.path), **kwargs)
 
     @classmethod
     def _write(cls, data, path, **kwargs):
@@ -91,7 +91,7 @@ class DataHandle:
         """Initialize file to be written by chunks"""
         if self.path is None:  #pragma: no cover
             raise ValueError("TableHandle.write() called but path has not been specified")
-        self.groups, self.fileObj = self._initialize_write(self.data, self.path, data_lenght, **kwargs)
+        self.groups, self.fileObj = self._initialize_write(self.data, os.path.expandvars(self.path), data_lenght, **kwargs)
 
     @classmethod
     def _initialize_write(cls, data, path, data_lenght, **kwargs):
@@ -159,7 +159,7 @@ class DataHandle:
         """Return true if the associated file has been written """
         if self.path is None:
             return False
-        return os.path.exists(self.path)
+        return os.path.exists(os.path.expandvars(self.path))
 
     def __str__(self):
         s = f"{type(self)} "
