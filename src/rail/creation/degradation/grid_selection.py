@@ -35,13 +35,13 @@ class GridSelection(Degrader):
       'x_limits': 2-element list, this is a list of the lower and upper limits of the magnitude. Default for HSC is [13, 16],
       'y_limits': 2-element list, this is a list of the lower and upper limits of the color. Default for HSC is [-2, 6]}
 
-    NOTE: the default 'HSC' grid file, located in RAIL/examples/creation/data/hsc_ratios_and_specz.hdf5, is based on data from the
+    NOTE: the default 'HSC' grid file, located in rail/examples_data/creation_data/data/hsc_ratios_and_specz.hdf5, is based on data from the
     Second HSC Data Release, details of which can be found here:
     Aihara, H., AlSayyad, Y., Ando, M., et al. 2019, PASJ, 71, 114
     doi: 10.1093/pasj/psz103
     """
-    def_ratio_file = os.path.join(RAILDIR, "rail/examples/creation/data/hsc_ratios_and_specz.hdf5")
-    def_set_file = os.path.join(RAILDIR, "rail/examples/creation/data/HSC_grid_settings.pkl" )
+    def_ratio_file = os.path.join(RAILDIR, "rail/examples_data/creation_data/data/hsc_ratios_and_specz.hdf5")
+    def_set_file = os.path.join(RAILDIR, "rail/examples_data/creation_data/data/HSC_grid_settings.pkl" )
 
     name = 'GridSelection'
     config_options = Degrader.config_options.copy()
@@ -73,7 +73,7 @@ class GridSelection(Degrader):
         If using a color-based redshift cut, galaxies with redshifts > the percentile cut are removed from the sample
         before making the random selection.
         """
-        np.random.seed(self.config.random_seed)
+        rng = np.random.default_rng(seed=self.config.random_seed)
 
         data = self.get_data('input')
         with open(self.config.settings_file, 'rb') as handle:
@@ -189,13 +189,13 @@ class GridSelection(Degrader):
                 number_to_keep = len(temp_data)
 
             if int(number_to_keep) != number_to_keep:
-                random_num = np.random.uniform()
+                random_num = rng.uniform()
             else:
                 random_num = 2
 
             number_to_keep = np.floor(number_to_keep)
             indices_to_list = list(temp_data.index.values)
-            np.random.shuffle(indices_to_list)
+            rng.shuffle(indices_to_list)
 
             if random_num > xratio:  # pragma: no cover
                 for j in range(int(number_to_keep)):

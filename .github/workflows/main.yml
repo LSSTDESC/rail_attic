@@ -37,7 +37,8 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Test with pytest
       run: |
-        python -m pytest --cov=./rail --cov-report=xml
+        python -m pytest -m "not slow" --cov=./rail --cov-report=xml
+        python -m pytest -m "slow" --cov=./rail --cov-report=xml --cov-append
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:

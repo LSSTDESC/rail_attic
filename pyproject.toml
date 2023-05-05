@@ -29,11 +29,12 @@ dependencies = [
     "minisom",
     "scipy>=1.9.0",
     "pz-hyperbolic-temp",
-    "qp-prob[full]>=0.8.1",
+    "qp-prob[full]>=0.8.3",
     "scikit-learn",
     "pzflow",
     "healpy",
     "photerr",
+    "dustmaps",
     "pathos",
     "somoclu",
     "diffstar@git+https://github.com/ArgonneCPAC/diffstar@v0.1.0",
@@ -48,6 +49,7 @@ dev = [
     "pylint",
     "pytest",
     "pytest-cov",
+    "seaborn",
     "yamllint",
 ]
 
@@ -136,6 +138,9 @@ addopts = [
     "--cov-report=html"
 ]
 flake8-ignore = "E203"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
 
 [tool.mypy]
 disallow_untyped_defs = true

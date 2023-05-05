@@ -12,15 +12,8 @@ from matplotlib import cm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import sklearn.cluster as sc
 from scipy.spatial.distance import cdist
+from rail.core.common_params import SHARED_PARAMS
 
-def_bands = ['u', 'g', 'r', 'i', 'z', 'y']
-def_cols = [f"mag_{band}_lsst" for band in def_bands]
-def_maglims = dict(mag_u_lsst=27.79,
-                   mag_g_lsst=29.04,
-                   mag_r_lsst=29.06,
-                   mag_i_lsst=28.62,
-                   mag_z_lsst=27.98,
-                   mag_y_lsst=27.05)
 
 
 def _computemagcolordata(data, ref_column_name, column_names, colusage):
@@ -160,13 +153,13 @@ class Inform_somocluSOMSummarizer(CatInformer):
     magnitude and N colors, or an arbitrary set of columns.
     The code includes a flag `column_usage` to set usage,
     If set to "colors" it will take the difference of each
-    adjacen pair of columns in `usecols` as the colors. If
+    adjacen pair of columns in `bands` as the colors. If
     set to `magandcolors` it will use these colors plus one
-    magnitude as specified by `ref_column_name`.  If set to
+    magnitude as specified by `ref_band`.  If set to
     `columns` then it will take as inputs all of the columns
-    specified by `usecols` (they can be magnitudes, colors,
+    specified by `bands` (they can be magnitudes, colors,
     or any other input specified by the user).  NOTE: any
-    custom `usecols` parameters must have an accompanying
+    custom `bands` parameters must have an accompanying
     `nondetect_val` dictionary that will replace
     nondetections with the nondetect_val values!
 
@@ -178,11 +171,15 @@ class Inform_somocluSOMSummarizer(CatInformer):
     """
     name = 'Inform_SOMoclu'
     config_options = CatInformer.config_options.copy()
-    config_options.update(usecols=Param(list, def_cols, msg="columns used to construct SOM"),
-                          column_usage=Param(str, "magandcolors", msg="switch for how SOM uses columns, valid values are 'colors', 'magandcolors', and 'columns'"),
-                          ref_column_name=Param(str, 'mag_i_lsst', msg="name for mag column used if column_usage is set to 'magsandcolors'"),
-                          nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
-                          mag_limits=Param(dict, def_maglims, msg="1 sigma mag limits"),
+    config_options.update(nondetect_val=SHARED_PARAMS,
+                          mag_limits=SHARED_PARAMS,
+                          bands=SHARED_PARAMS,
+                          err_bands=SHARED_PARAMS,
+                          ref_band=SHARED_PARAMS,
+                          redshift_col=SHARED_PARAMS,
+                          hdf5_groupname=SHARED_PARAMS,
+                          column_usage=Param(str, "magandcolors", msg="switch for how SOM uses columns, valid values are "
+                                             + "'colors','magandcolors', and 'columns'"),
                           seed=Param(int, 0, msg="Random number seed"),
                           n_rows=Param(int, 31, msg="number of cells in SOM y dimension"),
                           n_columns=Param(int, 31, msg="number of cells in SOM x dimension"),
@@ -195,8 +192,7 @@ class Inform_somocluSOMSummarizer(CatInformer):
                           std_coeff=Param(float, 1.5, msg="Optional parameter to set the coefficient in the Gaussian"
                                           + "neighborhood function exp(-||x-y||^2/(2*(coeff*radius)^2))"
                                           + "Default: 1.5"),
-                          som_learning_rate=Param(float, 0.5, msg="Initial SOM learning rate (scale0 param in Somoclu)"),
-                          hdf5_groupname=Param(str, "photometry", msg="name of hdf5 group for data, if None, then set to ''"))
+                          som_learning_rate=Param(float, 0.5, msg="Initial SOM learning rate (scale0 param in Somoclu)"))
 
     def __init__(self, args, comm=None):
         """ Constructor:
@@ -213,15 +209,15 @@ class Inform_somocluSOMSummarizer(CatInformer):
         else:  # pragma: no cover
             training_data = self.get_data('input')
         # replace nondetects
-        for col in self.config.usecols:
+        for col in self.config.bands:
             if np.isnan(self.config.nondetect_val):  # pragma: no cover
                 mask = np.isnan(training_data[col])
             else:
                 mask = np.isclose(training_data[col], self.config.nondetect_val)
             training_data[col][mask] = self.config.mag_limits[col]
 
-        colors = _computemagcolordata(training_data, self.config.ref_column_name,
-                                      self.config.usecols, self.config.column_usage)
+        colors = _computemagcolordata(training_data, self.config.ref_band,
+                                      self.config.bands, self.config.column_usage)
 
         som = Somoclu(self.config.n_columns, self.config.n_rows,
                       gridtype=self.config.gridtype,
@@ -229,8 +225,8 @@ class Inform_somocluSOMSummarizer(CatInformer):
 
         som.train(colors)
 
-        modeldict = dict(som=som, usecols=self.config.usecols,
-                         ref_column=self.config.ref_column_name,
+        modeldict = dict(som=som, usecols=self.config.bands,
+                         ref_column=self.config.ref_band,
                          n_rows=self.config.n_rows, n_columns=self.config.n_columns,
                          column_usage=self.config.column_usage)
         self.model = modeldict
@@ -304,15 +300,17 @@ class somocluSOMSummarizer(SZPZSummarizer):
     """
     name = 'somocluSOMSummarizer'
     config_options = SZPZSummarizer.config_options.copy()
-    config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
-                          zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
-                          n_clusters=Param(int, -1, msg="The number of hierarchical clusters of SOM cells. If not provided, the SOM cells will not be clustered."),
-                          nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
-                          hdf5_groupname=Param(str, "photometry", msg="name of hdf5 group for data, if None, then set to ''"),
-                          objid_name=Param(str, "", "name of ID column, if present will be written to cellid_output"),
-                          nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
-                          mag_limits=Param(dict, def_maglims, msg="1 sigma mag limits"),
+    config_options.update(zmin=SHARED_PARAMS,
+                          zmax=SHARED_PARAMS,
+                          nzbins=SHARED_PARAMS,
+                          nondetect_val=SHARED_PARAMS,
+                          mag_limits=SHARED_PARAMS,
+                          hdf5_groupname=SHARED_PARAMS,
+                          redshift_col=SHARED_PARAMS,
                           spec_groupname=Param(str, "photometry", msg="name of hdf5 group for spec data, if None, then set to ''"),
+                          n_clusters=Param(int, -1, msg="The number of hierarchical clusters of SOM cells. If not provided, the "
+                                           + "SOM cells will not be clustered."),
+                          objid_name=Param(str, "", "name of ID column, if present will be written to cellid_output"),
                           seed=Param(int, 12345, msg="random seed"),
                           redshift_colname=Param(str, "redshift", msg="name of redshift column in specz file"),
                           phot_weightcol=Param(str, "", msg="name of photometry weight, if present"),
@@ -329,15 +327,11 @@ class somocluSOMSummarizer(SZPZSummarizer):
         self.model = None
         self.usecols = None
         SZPZSummarizer.__init__(self, args, comm=comm)
-
-    def open_model(self, **kwargs):
-        SZPZSummarizer.open_model(self, **kwargs)
-        self.som = self.model['som']
-        self.usecols = self.model['usecols']
-        self.column_usage = self.model['column_usage']
-        self.ref_column_name = self.model['ref_column']
-        self.n_rows = self.model['n_rows']
-        self.n_columns = self.model['n_columns']
+        self.som = None
+        self.column_usage = None
+        self.ref_column_name = None
+        self.n_rows = None
+        self.n_columns = None
 
     def replace_non_detections(self, data):
         for col in self.usecols:
@@ -371,14 +365,20 @@ class somocluSOMSummarizer(SZPZSummarizer):
         return som_coords
 
     def run(self):
+        self.som = self.model['som']
+        self.usecols = self.model['usecols']
+        self.column_usage = self.model['column_usage']
+        self.ref_column_name = self.model['ref_column']
+        self.n_rows = self.model['n_rows']
+        self.n_columns = self.model['n_columns']
         rng = np.random.default_rng(seed=self.config.seed)
 
         if self.config.spec_groupname:
             spec_data = self.get_data('spec_input')[self.config.spec_groupname]
         else:  # pragma: no cover
             spec_data = self.get_data('spec_input')
-        if self.config.redshift_colname not in spec_data.keys():  # pragma: no cover
-            raise ValueError(f"redshift column {self.config.redshift_colname} not found in spec_data")
+        if self.config.redshift_col not in spec_data.keys():  # pragma: no cover
+            raise ValueError(f"redshift column {self.config.redshift_col} not found in spec_data")
         sz = spec_data[self.config.redshift_colname]
 
         self.zgrid = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins + 1)
