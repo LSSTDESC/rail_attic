@@ -444,7 +444,7 @@ class somocluSOMSummarizer(SZPZSummarizer):
 
         # If we are running in parallel then we need to sum
         # the results from all the processes
-        if self.comm is not None:
+        if self.comm is not None:  # pragma: no cover
             import mpi4py.MPI
             # get the total photometric weight and count in each
             # pixel across all processes and chunks of data
