@@ -52,6 +52,7 @@ def one_algo(key, inform_class, summarizer_class, summary_kwargs):
     )
     _ = summarizer2.summarize(phot_data, spec_data)
     fid_ens = qp.read(summarizer2.get_output(summarizer2.get_aliased_tag("single_NZ"), final_name=True))
+    bootstrap = qp.read(summarizer2.get_output(summarizer2.get_aliased_tag("output"), final_name=True))
     meanz = fid_ens.mean().flatten()
     print('This are the means of the bootstraps',bootstrap.mean())
     print('This is the mean of the single NZ',meanz[0])
