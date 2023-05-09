@@ -1,6 +1,6 @@
 col_remapper_test:
   aliases:
-    input: output_quantity_cut
+    input: output_lsst_error_model_test
     output: output_col_remapper_test
   chunk_size: 100000
   columns: &id001
@@ -11,18 +11,18 @@ col_remapper_test:
     mag_y_lsst_err: mag_err_y_lsst
     mag_z_lsst_err: mag_err_z_lsst
   config: null
+  hdf5_groupname: ''
   inplace: false
   input: None
   name: col_remapper_test
   output_mode: default
 col_remapper_train:
   aliases:
-    input: output_lsst_error_model_train
+    input: output_quantity_cut
     output: output_col_remapper_train
   chunk_size: 100000
   columns: *id001
   config: null
-  hdf5_groupname: ''
   inplace: false
   input: None
   name: col_remapper_train
@@ -30,25 +30,49 @@ col_remapper_train:
 estimate_bpz:
   aliases:
     input: output_table_conv_test
+    model: model_inform_bpz
     output: output_estimate_bpz
-  bands: ugrizy
+  bands: &id002
+  - mag_u_lsst
+  - mag_g_lsst
+  - mag_r_lsst
+  - mag_i_lsst
+  - mag_z_lsst
+  - mag_y_lsst
   chunk_size: 10000
-  columns_file: examples/estimation/configs/test_bpz.columns
+  columns_file: examples_data/estimation_data/configs/test_bpz.columns
   config: null
   data_path: None
   dz: 0.01
+  err_bands: &id004
+  - mag_err_u_lsst
+  - mag_err_g_lsst
+  - mag_err_r_lsst
+  - mag_err_i_lsst
+  - mag_err_z_lsst
+  - mag_err_y_lsst
   gauss_kernel: 0.0
   hdf5_groupname: ''
   input: None
   madau_flag: 'no'
   mag_err_min: 0.005
+  mag_limits: &id003
+    mag_g_lsst: 29.04
+    mag_i_lsst: 28.62
+    mag_r_lsst: 29.06
+    mag_u_lsst: 27.79
+    mag_y_lsst: 27.05
+    mag_z_lsst: 27.98
   name: estimate_bpz
+  no_prior: true
+  nondetect_val: 99.0
   nzbins: 301
   output_mode: default
   p_min: 0.005
-  prior_band: mag_i_lsst
-  prior_file: hdfn_gen
+  redshift_col: redshift
+  ref_band: mag_i_lsst
   spectra_file: SED/CWWSB4.list
+  unobserved_val: -99.0
   zmax: 3.0
   zmin: 0.0
   zp_errors:
@@ -58,68 +82,177 @@ estimate_bpz:
   - 0.01
   - 0.01
   - 0.01
-estimate_randomZ:
+estimate_knn:
   aliases:
     input: output_table_conv_test
-    output: output_estimate_randomZ
+    model: model_inform_knn
+    output: output_estimate_knn
+  bands: *id002
   chunk_size: 10000
   config: null
   hdf5_groupname: ''
   input: None
-  name: estimate_randomZ
+  mag_limits: *id003
+  name: estimate_knn
+  nondetect_val: .nan
   nzbins: 301
   output_mode: default
-  rand_width: 0.025
-  rand_zmax: 3.0
-  rand_zmin: 0.0
-estimate_trainZ:
-  aliases:
-    input: output_table_conv_test
-    model: model_inform_trainZ
-    output: output_estimate_trainZ
-  chunk_size: 10000
-  config: null
-  hdf5_groupname: ''
-  input: None
-  name: estimate_trainZ
-  nzbins: 301
-  output_mode: default
+  redshift_col: redshift
+  ref_band: mag_i_lsst
   zmax: 3.0
   zmin: 0.0
-flow_engine_test:
+flow_creator_test:
   aliases:
-    output: output_flow_engine_test
+    model: model_flow_modeler
+    output: output_flow_creator_test
   config: null
-  flow: examples/goldenspike/data/pretrained_flow.pkl
-  n_samples: 50
-  name: flow_engine_test
+  model: examples_data/goldenspike_data/data/pretrained_flow.pkl
+  n_samples: 150
+  name: flow_creator_test
   output_mode: default
-  seed: 12345
-flow_engine_train:
+  seed: 1234
+flow_creator_train:
   aliases:
-    output: output_flow_engine_train
+    model: model_flow_modeler
+    output: output_flow_creator_train
   config: null
-  flow: examples/goldenspike/data/pretrained_flow.pkl
-  n_samples: 50
-  name: flow_engine_train
+  model: examples_data/goldenspike_data/data/pretrained_flow.pkl
+  n_samples: 150
+  name: flow_creator_train
   output_mode: default
-  seed: 12345
-inform_trainZ:
+  seed: 1235
+flow_modeler:
+  aliases:
+    model: model_flow_modeler
+  calc_colors:
+    ref_column_name: mag_i_lsst
+  config: null
+  input: examples_data/goldenspike_data/data/base_catalog.pq
+  model: examples_data/goldenspike_data/data/pretrained_flow.pkl
+  name: flow_modeler
+  num_training_epochs: 3
+  output_mode: default
+  phot_cols:
+    mag_g_lsst:
+    - 16
+    - 32
+    mag_i_lsst:
+    - 15
+    - 30
+    mag_r_lsst:
+    - 15
+    - 30
+    mag_u_lsst:
+    - 17
+    - 35
+    mag_y_lsst:
+    - 14
+    - 28
+    mag_z_lsst:
+    - 14
+    - 29
+  phys_cols:
+    redshift:
+    - 0
+    - 3
+  seed: 0
+  spline_knots: 16
+inform_FZBoost:
   aliases:
     input: output_table_conv_train
-    model: model_inform_trainZ
+    model: model_inform_FZBoost
+  bands: *id002
+  basis_system: cosine
+  bumpmax: 0.35
+  bumpmin: 0.02
   config: null
+  err_bands: *id004
   hdf5_groupname: ''
-  input: output_table_conv_train.hdf5
-  name: inform_trainZ
+  input: None
+  mag_limits: *id003
+  max_basis: 35
+  name: inform_FZBoost
+  nbump: 20
+  nondetect_val: 99.0
+  nsharp: 15
   nzbins: 301
   output_mode: default
+  redshift_col: redshift
+  ref_band: mag_i_lsst
+  regression_params:
+    learning_rate: 0.3
+    max_depth: 8
+    objective: reg:squarederror
+    silent: 1
   save_train: true
+  sharpmax: 2.1
+  sharpmin: 0.7
+  trainfrac: 0.75
+  zmax: 3.0
+  zmin: 0.0
+inform_bpz:
+  aliases:
+    input: output_table_conv_train
+    model: model_inform_bpz
+  bands: *id002
+  columns_file: examples_data/estimation_data/configs/test_bpz.columns
+  config: null
+  data_path: None
+  err_bands: *id004
+  hdf5_groupname: ''
+  init_alpha: 1.8
+  init_km: 0.1
+  init_kt: 0.3
+  init_zo: 0.4
+  input: None
+  m0: 20.0
+  mag_limits: *id003
+  mmax: 29.0
+  mmin: 18.0
+  name: inform_bpz
+  nondetect_val: 99.0
+  nt_array:
+  - 1
+  - 2
+  - 3
+  nzbins: 301
+  output_mode: default
+  redshift_col: redshift
+  ref_band: mag_i_lsst
+  save_train: true
+  spectra_file: SED/CWWSB4.list
+  type_file: ''
+  zmax: 3.0
+  zmin: 0.0
+inform_knn:
+  aliases:
+    input: output_table_conv_train
+    model: model_inform_knn
+  bands: *id002
+  config: null
+  hdf5_groupname: ''
+  input: None
+  leaf_size: 15
+  mag_limits: *id003
+  name: inform_knn
+  ngrid_sigma: 10
+  nneigh_max: 7
+  nneigh_min: 3
+  nondetect_val: .nan
+  nzbins: 301
+  output_mode: default
+  redshift_col: redshift
+  ref_band: mag_i_lsst
+  save_train: true
+  seed: 0
+  sigma_grid_max: 0.075
+  sigma_grid_min: 0.01
+  trainfrac: 0.75
   zmax: 3.0
   zmin: 0.0
 inv_redshift:
   aliases:
-    input: output_lsst_error_model_test
+    input: output_lsst_error_model_train
     output: output_inv_redshift
   config: null
   input: None
@@ -140,6 +273,8 @@ line_confusion:
   true_wavelen: 5007.0
   wrong_wavelen: 3727.0
 lsst_error_model_test:
+  A_max: 2.0
+  A_min: 0.7
   Cm:
     g: 24.42
     i: 24.32
@@ -149,7 +284,7 @@ lsst_error_model_test:
     z: 24.16
   airmass: 1.2
   aliases:
-    input: output_flow_engine_test
+    input: output_flow_creator_test
     output: output_lsst_error_model_test
   bandNames:
     g: mag_g_lsst
@@ -159,6 +294,7 @@ lsst_error_model_test:
     y: mag_y_lsst
     z: mag_z_lsst
   config: null
+  errorType: point
   extendedSource: 0.0
   gamma:
     g: 0.039
@@ -196,7 +332,7 @@ lsst_error_model_test:
   name: lsst_error_model_test
   ndFlag: .nan
   output_mode: default
-  seed: 12345
+  seed: 58
   sigmaSys: 0.005
   theta:
     g: 0.77
@@ -207,6 +343,8 @@ lsst_error_model_test:
     z: 0.69
   tvis: 30.0
 lsst_error_model_train:
+  A_max: 2.0
+  A_min: 0.7
   Cm:
     g: 24.42
     i: 24.32
@@ -216,7 +354,7 @@ lsst_error_model_train:
     z: 24.16
   airmass: 1.2
   aliases:
-    input: output_flow_engine_train
+    input: output_flow_creator_train
     output: output_lsst_error_model_train
   bandNames:
     g: mag_g_lsst
@@ -226,6 +364,7 @@ lsst_error_model_train:
     y: mag_y_lsst
     z: mag_z_lsst
   config: null
+  errorType: point
   extendedSource: 0.0
   gamma:
     g: 0.039
@@ -263,7 +402,7 @@ lsst_error_model_train:
   name: lsst_error_model_train
   ndFlag: .nan
   output_mode: default
-  seed: 12345
+  seed: 66
   sigmaSys: 0.005
   theta:
     g: 0.77
@@ -277,25 +416,31 @@ naive_stack_test:
   aliases:
     input: output_estimate_bpz
     output: output_naive_stack_test
+    single_NZ: single_NZ_naive_stack_test
   chunk_size: 10000
   config: null
   input: None
   name: naive_stack_test
+  nsamples: 1000
   nzbins: 301
   output_mode: default
+  seed: 87
   zmax: 3.0
   zmin: 0.0
 point_estimate_test:
   aliases:
     input: output_estimate_bpz
     output: output_point_estimate_test
+    single_NZ: single_NZ_point_estimate_test
   chunk_size: 10000
   config: null
   input: None
   name: point_estimate_test
+  nsamples: 1000
   nzbins: 301
   output_mode: default
   point_estimate: zmode
+  seed: 87
   zmax: 3.0
   zmin: 0.0
 quantity_cut:
@@ -304,7 +449,7 @@ quantity_cut:
     output: output_quantity_cut
   config: null
   cuts:
-    mag_i_lsst: 25.3
+    mag_i_lsst: 25.0
   input: None
   name: quantity_cut
   output_mode: default
@@ -327,4 +472,21 @@ table_conv_train:
   name: table_conv_train
   output_format: numpyDict
   output_mode: default
-  seed: 12345
+test_FZBoost:
+  aliases:
+    input: output_table_conv_test
+    model: model_inform_FZBoost
+    output: output_test_FZBoost
+  bands: *id002
+  chunk_size: 10000
+  config: null
+  err_bands: *id004
+  hdf5_groupname: ''
+  input: None
+  mag_limits: *id003
+  name: test_FZBoost
+  nondetect_val: .nan
+  nzbins: 301
+  output_mode: default
+  qp_representation: interp
+  ref_band: mag_i_lsst
