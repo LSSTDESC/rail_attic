@@ -325,15 +325,24 @@ class RailStage(PipelineStage):
             These will be passed to the Handle's iterator method
         """
         handle = self.get_handle(tag, allow_missing=True)
-        #The iterator is expecting a file, if data is in memory we use a single chunk
-        if self.config.hdf5_groupname and handle.path: 
-            self._input_length = handle.size(groupname=self.config.hdf5_groupname)
-            kwcopy = dict(groupname=self.config.hdf5_groupname,
-                          chunk_size=self.config.chunk_size,
-                          rank=self.rank,
-                          parallel_size=self.size)
-            kwcopy.update(**kwargs)
-            return handle.iterator(**kwcopy)      
+        if self.config.hdf5_groupname:
+            if  handle.path:
+                self._input_length = handle.size(groupname=self.config.hdf5_groupname)
+                kwcopy = dict(groupname=self.config.hdf5_groupname,
+                              chunk_size=self.config.chunk_size,
+                              rank=self.rank,
+                              parallel_size=self.size)
+                kwcopy.update(**kwargs)
+                return handle.iterator(**kwcopy)
+            else:
+                # If data is in memory and not in a file, it means is small enough to process it
+                # in a single chunk.
+                test_data = self.get_data('input')[self.config.hdf5_groupname]
+                s = 0
+                e = len(list(test_data.items())[0][1])
+                self._input_length=e
+                iterator=[[s, e, test_data]]
+                return iterator       
         else:  #pragma: no cover
             test_data = self.get_data('input')
             s = 0
