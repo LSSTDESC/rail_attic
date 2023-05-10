@@ -130,7 +130,7 @@ flow_modeler:
   input: examples_data/goldenspike_data/data/base_catalog.pq
   model: examples_data/goldenspike_data/data/pretrained_flow.pkl
   name: flow_modeler
-  num_training_epochs: 3
+  num_training_epochs: 30
   output_mode: default
   phot_cols:
     mag_g_lsst:
