@@ -326,7 +326,7 @@ class RailStage(PipelineStage):
             These will be passed to the Handle's iterator method
         """
         handle = self.get_handle(tag, allow_missing=True)
-        if self.config.hdf5_groupname:
+        if self.config.hdf5_groupname and handle.path: 
             self._input_length = handle.size(groupname=self.config.hdf5_groupname)
             total_chunks_needed = ceil(self._input_length/self.config.chunk_size)
             if total_chunks_needed<self.size:  #pragma: no cover
@@ -342,8 +342,13 @@ class RailStage(PipelineStage):
                           parallel_size=self.size)
             kwcopy.update(**kwargs)
             return handle.iterator(**kwcopy)
+                # If data is in memory and not in a file, it means is small enough to process it
+                # in a single chunk.
         else:  #pragma: no cover
-            test_data = self.get_data('input')
+            if self.config.hdf5_groupname:
+                test_data = self.get_data('input')[self.config.hdf5_groupname]
+            else:
+                test_data = self.get_data('input')
             s = 0
             e = len(list(test_data.items())[0][1])
             self._input_length=e
