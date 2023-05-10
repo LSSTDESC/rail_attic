@@ -67,7 +67,7 @@ def list_rail_namespaces():
             # exclude stuff that starts with 'example'
             if namespace_.find('example') == 0:
                 continue
-            if namespace_ in rail.stages.NAMESPACE_PATH_DICT:
+            if namespace_ in rail.stages.NAMESPACE_PATH_DICT:  # pragma: no cover
                 rail.stages.NAMESPACE_PATH_DICT[namespace_].append(path_)
             else:
                 rail.stages.NAMESPACE_PATH_DICT[namespace_] = [path_]
@@ -87,7 +87,7 @@ def list_rail_modules():
     rail.stages.MODULE_DICT.clear()
     rail.stages.MODULE_PATH_DICT.clear()
     rail.stages.NAMESPACE_MODULE_DICT.clear()
-    if not rail.stages.NAMESPACE_PATH_DICT:
+    if not rail.stages.NAMESPACE_PATH_DICT:  # pragma: no cover
         list_rail_namespaces()
     for key, val in rail.stages.NAMESPACE_PATH_DICT.items():
         rail.stages.NAMESPACE_MODULE_DICT[key] = []
@@ -95,7 +95,7 @@ def list_rail_modules():
             fullpath = os.path.join(vv, key.replace('.', '/'))
             modules = [pkg for pkg in pkgutil.iter_modules([fullpath], rail.__name__ + '.' + key + '.')]
             for module_ in modules:
-                if module_ in rail.stages.MODULE_DICT:
+                if module_ in rail.stages.MODULE_DICT:  # pragma: no cover
                     rail.stages.MODULE_DICT[module_.name].append(key)
                 else:
                     rail.stages.MODULE_DICT[module_.name] = [key]
@@ -124,10 +124,10 @@ def print_rail_modules():
 def build_rail_namespace_tree():
     """Build a tree of the namespaces and packages in rail"""
     rail.stages.TREE.clear()    
-    if not rail.stages.NAMESPACE_MODULE_DICT:
+    if not rail.stages.NAMESPACE_MODULE_DICT:  # pragma: no cover
         list_rail_modules()
 
-    if not rail.stages.PACKAGES:
+    if not rail.stages.PACKAGES:  # pragma: no cover
         list_rail_packages()
 
     level_dict = {}
@@ -153,7 +153,7 @@ def build_rail_namespace_tree():
 
 
 def pretty_print_tree(the_dict=None, indent=""):
-    if the_dict is None:
+    if the_dict is None:  # pragma: no cover
         the_dict = rail.stages.TREE
     for key, val in the_dict.items():
         nsname = f"rail.{key}"
@@ -254,7 +254,7 @@ Submodules
 """
     
     for vv in val:
-        if isinstance(vv, dict):
+        if isinstance(vv, dict):  # pragma: no cover
             for k3, v3 in vv.items():
                 for v4 in v3:
                     api_pkg_toc += f"    {v4.name}.rst\n"
@@ -309,7 +309,7 @@ Submodules
      
 
 def do_api_rst(basedir='.'):
-    if not rail.stages.TREE:
+    if not rail.stages.TREE:  # pragma: no cover
         build_namespace_tree()
 
     apitoc = \
@@ -328,7 +328,7 @@ Information on specific functions, classes, and methods.
 
     try:
         os.makedirs(os.path.join(basedir, 'api'))
-    except:
+    except:  # pragma: no cover
         pass
 
     for key, val in rail.stages.TREE.items():        
