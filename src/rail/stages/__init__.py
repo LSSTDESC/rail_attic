@@ -310,7 +310,7 @@ Submodules
 
 def do_api_rst(basedir='.'):
     if not rail.stages.TREE:  # pragma: no cover
-        build_namespace_tree()
+        build_rail_namespace_tree()
 
     apitoc = \
 """API Documentation
