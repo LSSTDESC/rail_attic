@@ -27,8 +27,8 @@ from rail.creation.degradation.lsst_error_model import *
 from rail.creation.engine import *
 from rail.creation.engines.flowEngine import *
 #from rail.creation.engines.galaxy_population_components import *
-from rail.creation.engines.dsps_photometry_creator import *
-from rail.creation.engines.dsps_sed_modeler import *
+#from rail.creation.engines.dsps_photometry_creator import *
+#from rail.creation.engines.dsps_sed_modeler import *
 
 from rail.evaluation.evaluator import Evaluator
 
@@ -51,11 +51,13 @@ def list_rail_packages():
 
 def print_rail_packages():
     """Print all the packages that are available in the RAIL ecosystem"""
+    if not rail.stages.PACKAGES:
+        list_rail_packages()
     for pkg_name, pkg in rail.stages.PACKAGES.items():
-        print(f"{pkg_name} @ {pkg.path}")
+        print(f"{pkg_name} @ {pkg[0].path}")
 
         
-def list_rail_namespaces(verbose=False):
+def list_rail_namespaces():
     """List all the namespaces within rail"""
     rail.stages.NAMESPACE_PATH_DICT.clear()
 
@@ -70,14 +72,15 @@ def list_rail_namespaces(verbose=False):
             else:
                 rail.stages.NAMESPACE_PATH_DICT[namespace_] = [path_]
 
-    if not verbose:
-        return
-    
+
+def print_rail_namespaces():
+    """Print all the namespaces that are available in the RAIL ecosystem"""
+    if not rail.stages.NAMESPACE_PATH_DICT:
+        list_rail_namespaces()
     for key, val in rail.stages.NAMESPACE_PATH_DICT.items():
         print(f"Namespace {key}")
         for vv in val:
             print(f"     {vv}")
-
 
 def list_rail_modules():
     """List all modules within rail"""
@@ -99,6 +102,14 @@ def list_rail_modules():
                 rail.stages.NAMESPACE_MODULE_DICT[key].append(module_)
                 rail.stages.MODULE_PATH_DICT[module_.name] = module_[0].path
                 
+    return rail.stages.MODULE_PATH_DICT
+
+
+def print_rail_modules():
+    """Print all the moduels that are available in the RAIL ecosystem"""
+    if not rail.stages.MODULE_DICT:
+        list_rail_modules()
+
     for key, val in rail.stages.MODULE_DICT.items():
         print(f"Module {key}")
         for vv in val:
@@ -108,9 +119,10 @@ def list_rail_modules():
         print(f"Namespace {key}")
         for vv in val:
             print(f"     {vv}")
-    return rail.stages.MODULE_PATH_DICT
+
             
-def build_namespace_tree():
+def build_rail_namespace_tree():
+    """Build a tree of the namespaces and packages in rail"""
     rail.stages.TREE.clear()    
     if not rail.stages.NAMESPACE_MODULE_DICT:
         list_rail_modules()
@@ -158,6 +170,12 @@ def pretty_print_tree(the_dict=None, indent=""):
                 print(f"    {indent}{vv.name}")
     
 
+def print_rail_namespace_tree():
+    if not rail.stages.TREE:
+        build_rail_namespace_tree()
+    pretty_print_tree(rail.stages.TREE)
+
+                
 def import_all_packages():
     """Import all the packages that are available in the RAIL ecosystem"""
     pkgs = list_rail_packages()
@@ -206,16 +224,17 @@ def import_and_attach_all():
     attach_stages()
 
 
-def print_stage_dict():
+def print_rail_stage_dict():
     """Print an dict of all the RailSages organized by their base class"""
-    for key, val in STAGE_DICT.items():
+    for key, val in rail.stages.STAGE_DICT.items():
         print(f"BaseClass {key}")
         for vv in val:
             print(f"  {vv}")
 
 
-def do_pkg_api_rst(key, val):
-
+def do_pkg_api_rst(basedir, key, val):
+    """Build the api rst file for a rail package"""
+    
     api_pkg_toc = f"rail.{key} package\n"
     api_pkg_toc += "="*len(api_pkg_toc)
 
@@ -242,11 +261,12 @@ Submodules
         else:
             api_pkg_toc += f"    {vv.name}.rst\n"                        
 
-    with open(os.path.join('api', f"rail.{key}.rst"), 'w') as apitocfile:
+    with open(os.path.join(basedir, 'api', f"rail.{key}.rst"), 'w') as apitocfile:
         apitocfile.write(api_pkg_toc)
 
 
-def do_namespace_api_rst(key, val):
+def do_namespace_api_rst(basedir, key, val):
+    """Build the api rst file for a rail namespace"""
 
     api_pkg_toc = f"{key} namespace\n"
     api_pkg_toc += "="*len(api_pkg_toc)
@@ -278,21 +298,21 @@ Submodules
     for vv in val:
         if isinstance(vv, dict):
             for k3, v3 in vv.items():
-                do_namespace_api_rst(k3, v3)
+                do_namespace_api_rst(basedir, k3, v3)
                 sub_packages += f"    rail.{k3}\n"
         else:
             sub_modules += f"    {vv.name}\n"
     api_pkg_toc = api_pkg_toc.format(sub_packages=sub_packages, sub_modules=sub_modules)
             
-    with open(os.path.join('api', f"rail.{key}.rst"), 'w') as apitocfile:
+    with open(os.path.join(basedir, 'api', f"rail.{key}.rst"), 'w') as apitocfile:
         apitocfile.write(api_pkg_toc)
      
 
-def do_api_rst():
+def do_api_rst(basedir='.'):
     if not rail.stages.TREE:
         build_namespace_tree()
 
-        apitoc = \
+    apitoc = \
 """API Documentation
 =================
 
@@ -301,17 +321,25 @@ Information on specific functions, classes, and methods.
 .. toctree::
 
 """
-    
+    try:
+        os.makedirs(basedir)
+    except:
+        pass
+
+    try:
+        os.makedirs(os.path.join(basedir, 'api'))
+    except:
+        pass
+
     for key, val in rail.stages.TREE.items():        
         nsname = f"rail.{key}"
         nsfile = os.path.join('api', f"{nsname}.rst")
         apitoc += f"    {nsfile}\n"
 
         if nsname in rail.stages.PACKAGES:
-            do_pkg_api_rst(key, val)
+            do_pkg_api_rst(basedir, key, val)
         else:
-            do_namespace_api_rst(key, val) 
-        
+            do_namespace_api_rst(basedir, key, val) 
 
-    with open('api.rst', 'w') as apitocfile:
+    with open(os.path.join(basedir, 'api.rst'), 'w') as apitocfile:
         apitocfile.write(apitoc)
