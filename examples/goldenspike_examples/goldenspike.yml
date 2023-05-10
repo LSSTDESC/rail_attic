@@ -1,9 +1,9 @@
-config: examples_data/goldenspike_data/configs/goldenspike_config.yml
+config: examples/goldenspike_examples/goldenspike_config.yml
 inputs:
-  input: examples_data/goldenspike_data/data/base_catalog.pq
-log_dir: examples_data/goldenspike_data/logs
+  input: src/rail/examples_data/goldenspike_data/data/base_catalog.pq
+log_dir: examples/goldenspike_examples/logs
 modules: rail
-output_dir: examples_data/goldenspike_data/output
+output_dir: examples/goldenspike_examples/outputs
 resume: false
 site:
   name: local

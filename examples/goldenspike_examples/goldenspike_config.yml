@@ -40,7 +40,7 @@ estimate_bpz:
   - mag_z_lsst
   - mag_y_lsst
   chunk_size: 10000
-  columns_file: examples_data/estimation_data/configs/test_bpz.columns
+  columns_file: src/rail/examples_data/estimation_data/configs/test_bpz.columns
   config: null
   data_path: None
   dz: 0.01
@@ -106,7 +106,7 @@ flow_creator_test:
     model: model_flow_modeler
     output: output_flow_creator_test
   config: null
-  model: examples_data/goldenspike_data/data/pretrained_flow.pkl
+  model: src/rail/examples_data/goldenspike_data/data/pretrained_flow.pkl
   n_samples: 150
   name: flow_creator_test
   output_mode: default
@@ -116,7 +116,7 @@ flow_creator_train:
     model: model_flow_modeler
     output: output_flow_creator_train
   config: null
-  model: examples_data/goldenspike_data/data/pretrained_flow.pkl
+  model: src/rail/examples_data/goldenspike_data/data/pretrained_flow.pkl
   n_samples: 150
   name: flow_creator_train
   output_mode: default
@@ -127,8 +127,8 @@ flow_modeler:
   calc_colors:
     ref_column_name: mag_i_lsst
   config: null
-  input: examples_data/goldenspike_data/data/base_catalog.pq
-  model: examples_data/goldenspike_data/data/pretrained_flow.pkl
+  input: src/rail/examples_data/goldenspike_data/data/base_catalog.pq
+  model: src/rail/examples_data/goldenspike_data/data/pretrained_flow.pkl
   name: flow_modeler
   num_training_epochs: 30
   output_mode: default
@@ -195,7 +195,7 @@ inform_bpz:
     input: output_table_conv_train
     model: model_inform_bpz
   bands: *id002
-  columns_file: examples_data/estimation_data/configs/test_bpz.columns
+  columns_file: src/rail/examples_data/estimation_data/configs/test_bpz.columns
   config: null
   data_path: None
   err_bands: *id004
