@@ -45,36 +45,18 @@ class ObsCondition(Degrader):
         uses the same arguments as LSSTErrorModel (from PhotErr).
         The following arguments, if supplied, may contain either
         a single number (as in the case of LSSTErrorModel), or a path:
-        [
-            m5,
-            nVisYr,
-            airmass,
-            gamma,
-            msky,
-            theta,
-            km,
-            tvis,
-        ]
+        [m5, nVisYr, airmass, gamma, msky, theta, km, tvis]
         For the following keys:
-        [
-            m5,
-            nVisYr,
-            gamma,
-            msky,
-            theta,
-            km,
-        ]
+        [m5, nVisYr, gamma, msky, theta, km]
         numbers/paths for specific bands must be passed.
         Example:
-        {
-            "m5": {"u": path, ...},
-            "theta": {"u": path, ...},
-        }
+        {"m5": {"u": path, ...}, "theta": {"u": path, ...},}
         Other LSSTErrorModel parameters can also be passed
         in this dictionary (e.g. a necessary one may be [nYrObs]
         for the survey condition maps).
         If any argument is not passed, the default value in
         PhotErr's LsstErrorModel is adopted.
+
     """
 
     name = "ObsCondition"
