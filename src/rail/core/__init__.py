@@ -1,4 +1,8 @@
 """Core code for RAIL"""
+import pkgutil
+import setuptools
+import rail
+import os
 
 def find_version():
     """Find the version"""
@@ -15,3 +19,4 @@ except ImportError: # pragma: no cover
 from .stage import RailPipeline, RailStage
 from .utilPhotometry import PhotormetryManipulator, HyperbolicSmoothing, HyperbolicMagnitudes
 from .utilStages import ColumnMapper, RowSelector, LSSTFluxToMagConverter, TableConverter, Dereddener
+from .introspection import RailEnv
