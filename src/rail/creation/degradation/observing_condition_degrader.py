@@ -169,7 +169,9 @@ class ObsCondition(Degrader):
         lsst_error_model_keys = [field.name for field in fields(LsstErrorParams)]
         if len(set(self.config["map_dict"].keys()) - set(lsst_error_model_keys)) != 0:
             extra_keys = set(self.config["map_dict"].keys()) - set(lsst_error_model_keys)
-            raise ValueError("Extra keywords are passed to the configuration: \n" + str(extra_keys))
+            # now we added EBV, which is not in LsstErrorParams:
+            if extra_keys != ["EBV"]:
+                raise ValueError("Extra keywords are passed to the configuration: \n" + str(extra_keys))
 
         # Check data type for the keys:
         # Note that LSSTErrorModel checks
