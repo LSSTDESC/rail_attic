@@ -353,7 +353,7 @@ class ObsCondition(Degrader):
         }
 
         # find the corresponding ebv for the pixel
-        ind = self.maps["pixel"]==pixel
+        ind = self.maps["pixels"]==pixel
         ebvvec = self.maps["EBV"][ind]
 
         if "renameDict" in self.maps.keys():
