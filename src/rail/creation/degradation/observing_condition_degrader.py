@@ -307,7 +307,7 @@ class ObsCondition(Degrader):
             # For keys that may contain the survey condition maps
             if key in self.obs_cond_keys:
                 # band-independent keys:
-                if key in ["airmass", "tvis"]:
+                if key in ["airmass", "tvis", "EBV"]:
                     obs_conditions[key] = float(self.maps[key][ind])
                 # band-dependent keys:
                 else:
