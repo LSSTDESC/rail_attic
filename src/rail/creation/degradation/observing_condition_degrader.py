@@ -166,9 +166,7 @@ class ObsCondition(Degrader):
 
         # Check if extra keys are passed
         # get lsst_error_model keys
-        lsst_error_model_keys = [field.name for field in fields(LsstErrorParams)]
-        # append renameDict which doesn't seem to be included in this list
-        lsst_error_model_keys.append("renameDict")
+        lsst_error_model_keys = list(LsstErrorParams.__dataclass_fields__.keys())
         if len(set(self.config["map_dict"].keys()) - set(lsst_error_model_keys)) != 0:
             extra_keys = set(self.config["map_dict"].keys()) - set(lsst_error_model_keys)
             # now we added EBV, which is not in LsstErrorParams:
@@ -361,7 +359,7 @@ class ObsCondition(Degrader):
 
         if "renameDict" in self.maps.keys():
             bands = self.maps["renameDict"]
-        else:
+        elif "renameDict" not in self.maps.keys():
             bands = {
                 "u":"u",
                 "g":"g",
