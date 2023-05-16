@@ -311,7 +311,7 @@ class ObsCondition(Degrader):
                     if key != "EBV":# exclude EBV because it is not in LsstErrorModel
                         obs_conditions[key] = float(self.maps[key][ind])
                 # band-dependent keys
-                elif:
+                else:
                     obs_conditions[key] = {}
                     for band in (self.maps[key]).keys():
                         obs_conditions[key][band] = float(self.maps[key][band][ind])
