@@ -510,6 +510,7 @@ def test_ObsCondition_extended(data):
         "EBV": 0.0,
         "nVisYr": {"u": 50.0},
         "tvis": 30.0,
+        "renameDict": {"u": "u"},
     }
     tot_nVis_flag = True
     random_seed = None
