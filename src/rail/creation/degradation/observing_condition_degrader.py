@@ -308,9 +308,10 @@ class ObsCondition(Degrader):
             if key in self.obs_cond_keys:
                 # band-independent keys:
                 if key in ["airmass", "tvis", "EBV"]:
-                    obs_conditions[key] = float(self.maps[key][ind])
-                # band-dependent keys:
-                else:
+                    if key != "EBV":# exclude EBV because it is not in LsstErrorModel
+                        obs_conditions[key] = float(self.maps[key][ind])
+                # band-dependent keys
+                elif:
                     obs_conditions[key] = {}
                     for band in (self.maps[key]).keys():
                         obs_conditions[key][band] = float(self.maps[key][band][ind])
