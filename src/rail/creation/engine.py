@@ -6,6 +6,7 @@ to the distribution defined by the creator.
 
 import pandas as pd
 import qp
+
 from rail.core.data import DataHandle, ModelHandle, QPHandle, TableHandle
 from rail.core.stage import RailStage
 
@@ -33,11 +34,13 @@ class Modeler(RailStage):
 
         Parameters
         ----------
-        [The parameters depend entirely on the modeling approach!]
+        params
+            The parameters depend entirely on the modeling approach!
 
         Returns
         -------
-        [This will definitely be a file, but the filetype and format depend entirely on the modeling approach!]
+        file:
+            This will definitely be a file, but the filetype and format depend entirely on the modeling approach!
         """
         self.run()
         self.finalize()
@@ -68,8 +71,8 @@ class Creator(RailStage):
     def open_model(self, **kwargs):
         """Load the mode and/or attach it to this Creator
 
-        Keywords
-        --------
+        Parameters
+        ----------
         model : `object`, `str` or `ModelHandle`
             Either an object with a trained model,
             a path pointing to a file that can be read to obtain the trained model,
@@ -154,8 +157,8 @@ class PosteriorCalculator(RailStage):
     def open_model(self, **kwargs):
         """Load the mode and/or attach it to this PosteriorCalculator
 
-        Keywords
-        --------
+        Parameters
+        ----------
         model : `object`, `str` or `ModelHandle`
             Either an object with a trained model,
             a path pointing to a file that can be read to obtain the trained model,
