@@ -75,7 +75,10 @@ class DSPSSingleSedModeler(Modeler):
         RailStage.__init__(self, args, comm=comm)
 
         if not os.path.isfile(self.config.ssp_templates_file):
-            raise OSError("File {self.config.ssp_templates_file} not found")
+            default_files_folder = os.path.join(RAILDIR, 'rail', 'examples_data', 'creation_data', 'data',
+                                                'dsps_default_data')
+            os.system('curl -O https://portal.nersc.gov/cfs/lsst/schmidt9/ssp_data_fsps_v3.2_lgmet_age.h5 '
+                      '--output-dir {}'.format(default_files_folder))
 
     def _get_rest_frame_seds(self, ssp_data, redshifts, cosmic_time_grids, star_formation_histories,
                              stellar_metallicities, stellar_metallicities_scatter):
@@ -258,7 +261,10 @@ class DSPSPopulationSedModeler(Modeler):
         RailStage.__init__(self, args, comm=comm)
 
         if not os.path.isfile(self.config.ssp_templates_file):
-            raise OSError("File {self.config.ssp_templates_file} not found")
+            default_files_folder = os.path.join(RAILDIR, 'rail', 'examples_data', 'creation_data', 'data',
+                                                'dsps_default_data')
+            os.system('curl -O https://portal.nersc.gov/cfs/lsst/schmidt9/ssp_data_fsps_v3.2_lgmet_age.h5 '
+                      '--output-dir {}'.format(default_files_folder))
 
     def _get_rest_frame_seds(self, ssp_data, redshifts, cosmic_time_grids, star_formation_histories,
                              stellar_metallicities, stellar_metallicities_scatter):
