@@ -171,7 +171,7 @@ def test_DSPSSingleSedModeler_model_creation():
                                                        ssp_templates_file=
                                                        os.path.join(default_files_folder,
                                                                     'ssp_data_fsps_v3.2_lgmet_age.h5'),
-                                                       redshift_key='redshift',
+                                                       redshift_key='redshifts',
                                                        cosmic_time_grid_key='cosmic_time_grid',
                                                        star_formation_history_key='star_formation_history',
                                                        stellar_metallicity_key='stellar_metallicity',
@@ -208,7 +208,7 @@ def test_DSPSPopulationSedModeler_model_creation():
                                                                     ssp_templates_file=
                                                                     os.path.join(default_files_folder,
                                                                                  'ssp_data_fsps_v3.2_lgmet_age.h5'),
-                                                                    redshift_key='redshift',
+                                                                    redshift_key='redshifts',
                                                                     cosmic_time_grid_key='cosmic_time_grid',
                                                                     star_formation_history_key='star_formation_history',
                                                                     stellar_metallicity_key='stellar_metallicity',
@@ -247,7 +247,7 @@ def test_DSPSPhotometryCreator_photometry_creation():
                                                        ssp_templates_file=
                                                        os.path.join(default_files_folder,
                                                                     'ssp_data_fsps_v3.2_lgmet_age.h5'),
-                                                       redshift_key='redshift',
+                                                       redshift_key='redshifts',
                                                        cosmic_time_grid_key='cosmic_time_grid',
                                                        star_formation_history_key='star_formation_history',
                                                        stellar_metallicity_key='stellar_metallicity',
