@@ -11,3 +11,7 @@ try:
     __version__ = find_version()
 except ImportError: # pragma: no cover
     __version__ = "unknown"
+
+from .stage import RailPipeline, RailStage
+from .utilPhotometry import PhotormetryManipulator, HyperbolicSmoothing, HyperbolicMagnitudes
+from .utilStages import ColumnMapper, RowSelector, LSSTFluxToMagConverter, TableConverter, Dereddener

@@ -9,6 +9,7 @@ import numpy as np
 from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatEstimator, CatInformer
 import qp
+from rail.core.common_params import SHARED_PARAMS
 
 
 def_filt = ['u', 'g', 'r', 'i', 'z', 'y']
@@ -44,7 +45,7 @@ def make_color_data(data_dict, bands, ref_band, nondet_val):
             else: # pragma: no cover
                 nondetmask = np.isclose(band, nondet_val)
             band[nondetmask] = 28.0
-        input_data = np.vstack((input_data, band1-band2))
+        input_data = np.vstack((np.nan_to_num(input_data, 28), band1-band2))
     return input_data.T
 
 
@@ -67,13 +68,16 @@ class Inform_SimpleNN(CatInformer):
 
     name = 'Inform_SimpleNN'
     config_options = CatInformer.config_options.copy()
-    config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
-                          zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),
-                          nzbins=Param(int, 301, msg="The number of gridpoints in the z grid"),
+    config_options.update(zmin=SHARED_PARAMS,
+                          zmax=SHARED_PARAMS,
+                          nzbins=SHARED_PARAMS,
+                          nondetect_val=SHARED_PARAMS,
+                          mag_limits=SHARED_PARAMS,
+                          bands=SHARED_PARAMS,
+                          ref_band=SHARED_PARAMS,
+                          redshift_col=SHARED_PARAMS,
+                          hdf5_groupname=SHARED_PARAMS,
                           width=Param(float, 0.05, msg="The ad hoc base width of the PDFs"),
-                          bands=Param(list, def_bands, msg="bands to use in estimation"),
-                          ref_band=Param(str, "mag_i_lsst", msg="reference magnitude"),
-                          nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
                           max_iter=Param(int, 500,
                                          msg="max number of iterations while "
                                          "training the neural net.  Too low a value will cause an "
@@ -96,7 +100,7 @@ class Inform_SimpleNN(CatInformer):
             training_data = self.get_data('input')[self.config.hdf5_groupname]
         else:  #pragma: no cover
             training_data = self.get_data('input')
-        speczs = training_data['redshift']
+        speczs = training_data[self.config.redshift_col]
         print("stacking some data...")
         color_data = make_color_data(training_data, self.config.bands,
                                      self.config.ref_band, self.config.nondetect_val)
@@ -119,9 +123,9 @@ class SimpleNN(CatEstimator):
     name = 'SimpleNN'
     config_options = CatEstimator.config_options.copy()
     config_options.update(width=Param(float, 0.05, msg="The ad hoc base width of the PDFs"),
-                          ref_band=Param(str, "mag_i_lsst", msg="reference magnitude"),
-                          nondetect_val=Param(float, 99.0, msg="value to be replaced with magnitude limit for non detects"),
-                          bands=Param(list, def_bands, msg="bands to use in estimation"))
+                          ref_band=SHARED_PARAMS,
+                          nondetect_val=SHARED_PARAMS,
+                          bands=SHARED_PARAMS)
 
     def __init__(self, args, comm=None):
         """ Constructor:

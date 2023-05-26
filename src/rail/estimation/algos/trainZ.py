@@ -32,7 +32,7 @@ class Inform_trainZ(CatInformer):
     config_options.update(zmin=SHARED_PARAMS,
                           zmax=SHARED_PARAMS,
                           nzbins=SHARED_PARAMS,
-                          redshift_column_name=Param(str, 'redshift', msg="str, name of the redshift column"))
+                          redshift_col=SHARED_PARAMS)
 
     def __init__(self, args, comm=None):
         CatInformer.__init__(self, args, comm=comm)
@@ -43,7 +43,7 @@ class Inform_trainZ(CatInformer):
         else:  # pragma: no cover
             training_data = self.get_data('input')
         zbins = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins + 1)
-        speczs = np.sort(training_data[self.config.redshift_column_name])
+        speczs = np.sort(training_data[self.config.redshift_col])
         train_pdf, _ = np.histogram(speczs, zbins)
         midpoints = zbins[:-1] + np.diff(zbins) / 2
         zmode = midpoints[np.argmax(train_pdf)]

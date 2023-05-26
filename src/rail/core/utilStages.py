@@ -126,7 +126,7 @@ class LSSTFluxToMagConverter(RailStage):
     config_options.update(flux_err_name="{band}_gaap1p0FluxErr")
     config_options.update(mag_name="mag_{band}_lsst")
     config_options.update(mag_err_name="mag_err_{band}_lsst")
-    config_options.update(copy_cols=[])
+    config_options.update(copy_cols={})
     config_options.update(mag_offset=31.4)
 
     mag_conv = np.log(10)*0.4
@@ -152,8 +152,8 @@ class LSSTFluxToMagConverter(RailStage):
             flux_err_col_name = self.config.flux_err_name.format(band=band_)
             out_data[self.config.mag_name.format(band=band_)] = self._flux_to_mag(data[flux_col_name].values)
             out_data[self.config.mag_err_name.format(band=band_)] = self._flux_err_to_mag_err(data[flux_col_name].values, data[flux_err_col_name].values)
-        for col_ in self.config.copy_cols:  # pragma: no cover
-            out_data[col_] = data[col_]
+        for key, val in self.config.copy_cols.items():  # pragma: no cover
+            out_data[key] = data[val].values
         self.add_data('output', out_data)
 
     def __call__(self, data):
