@@ -131,7 +131,7 @@ def test_DSPSPhotometryCreator_templates_not_found(settings, error):
 @pytest.mark.parametrize(
     "settings,error",
     [
-        ({"filter_folder": RAILDIR}, OSError),
+        ({"filter_folder": default_files_folder}, OSError),
     ],
 )
 def test_DSPSPhotometryCreator_filtersfolder_not_found(settings, error):
