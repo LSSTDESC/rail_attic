@@ -35,7 +35,7 @@ class DSPSSingleSedModeler(Modeler):
     config_options.update(ssp_templates_file=Param(str, os.path.join(default_files_folder,
                                                                      'ssp_data_fsps_v3.2_lgmet_age.h5'),
                                                    msg='hdf5 file storing the SSP libraries used to create SEDs'),
-                          redshift_key=Param(str, 'redshift',
+                          redshift_key=Param(str, 'redshifts',
                                              msg='Redshift keyword name of the hdf5 dataset containing input galaxy '
                                                  'properties'),
                           cosmic_time_grid_key=Param(str, 'cosmic_time_grid',

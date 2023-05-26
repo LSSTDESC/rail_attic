@@ -44,7 +44,7 @@ def create_testdata(files_folder):
     test_data_filename = os.path.join(files_folder, 'input_galaxy_properties_dsps.h5')
 
     with h5py.File(test_data_filename, 'w') as h5table:
-        h5table.create_dataset(name='redshift', data=redshift)
+        h5table.create_dataset(name='redshifts', data=redshift)
         h5table.create_dataset(name='cosmic_time_grid', data=cosmic_time_grid)
         h5table.create_dataset(name='star_formation_history', data=star_formation_history)
         h5table.create_dataset(name='stellar_metallicity', data=stellar_metallicity)
