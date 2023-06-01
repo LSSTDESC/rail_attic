@@ -37,6 +37,8 @@ dependencies = [
     "dustmaps",
     "pathos",
     "somoclu",
+    "jax",
+    "dsps",
     "deprecated",
 ]
 

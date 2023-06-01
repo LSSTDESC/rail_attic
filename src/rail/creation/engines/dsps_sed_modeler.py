@@ -2,41 +2,15 @@ import os
 from rail.creation.engine import Modeler
 from rail.core.stage import RailStage
 from rail.core.utils import RAILDIR
-from rail.core.data import ModelHandle
+from rail.core.data import Hdf5Handle
 from ceci.config import StageParameter as Param
 import numpy as np
-from dsps.seds_from_tables import _calc_sed_kern
-from dsps.utils import _jax_get_dt_array
 from jax import vmap
 from jax import jit as jjit
-from jax import numpy as jnp
-from astropy.cosmology import Planck18
-
-
-@jjit
-def _jax_get_dt_array_pop(t):
-    r"""
-    Jax implementation of the function to compute the :math:`\Delta t` of the tabulated star-formation
-    history.
-
-    Returns
-    -------
-    dt_pop: array_like
-        Array of :math:`\Delta t` of the tabulated star-formation histories with shape
-        (n_gal_pop, n_steps_cosmic_time_grid).
-    """
-    dt = jnp.zeros_like(t)
-    tmids = 0.5 * (t[:, :-1] + t[:, 1:])
-    dtmids = jnp.diff(tmids)
-
-    dt = dt.at[:, 1:-1].set(dtmids)
-
-    t_lo = t[:, 0] - (t[:, 1] - t[:, 0]) / 2
-    t_hi = t[:, -1] + dtmids[:, -1] / 2
-
-    dt = dt.at[:, 0].set(tmids[:, 0] - t_lo)
-    dt = dt.at[:, -1].set(t_hi - tmids[:, -1])
-    return dt
+from dsps.cosmology import age_at_z, DEFAULT_COSMOLOGY
+from dsps import load_ssp_templates
+from dsps import calc_rest_sed_sfh_table_lognormal_mdf
+from dsps import calc_rest_sed_sfh_table_met_table
 
 
 class DSPSSingleSedModeler(Modeler):
@@ -46,8 +20,6 @@ class DSPSSingleSedModeler(Modeler):
     Supplying such templates is outside the planned scope of the DSPS package, and so they
     will need to be retrieved from some other library. For example, the FSPS library supplies
     such templates in a convenient form.
-    The user is required to provide files in .npy format for the code to run. Details of what each file should
-    contain are detailed in config_options.
 
     Notes
     -----
@@ -57,40 +29,38 @@ class DSPSSingleSedModeler(Modeler):
 
     """
 
-    name = "DSPS single SED model"
-    default_files_folder = os.path.join(RAILDIR, 'rail', 'examples_data', 'testdata')
+    name = "DSPSSingleSedModeler"
+    default_files_folder = os.path.join(RAILDIR, 'rail', 'examples_data', 'creation_data', 'data', 'dsps_default_data')
     config_options = RailStage.config_options.copy()
-    config_options.update(age_grid=Param(str, os.path.join(default_files_folder, 'age_grid.npy'),
-                                         msg='npy file containing the age grid values in units of log10(Age[Gyr])'),
-                          metallicity_grid=Param(str, os.path.join(default_files_folder, 'metallicity_grid.npy'),
-                                                 msg='npy file containing the metallicity grid values in units of '
-                                                     'log10(Z / Z_solar)'),
-                          ssp_fluxes=Param(str, os.path.join(default_files_folder, 'dsps_ssp_spec_flux.npy'),
-                                           msg='npy file containing the SSPs template SEDs with shape  '
-                                               '(n_grid_metallicity_values, n_grid_age_values, n_wavelength_points)'),
-                          star_formation_history=Param(str, os.path.join(default_files_folder, 'SFH.npy'),
-                                                       msg='npy file containing star-formation'
-                                                           'history of the galaxy in units of'
-                                                           'solar masses per year'),
-                          cosmic_time_grid=Param(str, os.path.join(default_files_folder, 'cosmic_time_table.npy'),
-                                                 msg='Cosmic time table over which the stellar mass build-up '
-                                                     'takes place'),
-                          stellar_mass_type=Param(str, 'formed', msg='Options are "formed" or "surviving" for the '
-                                                                     'computation of stellar-mass build-up'),
-                          stellar_mass_table=Param(str, os.path.join(default_files_folder, 'stellar_mass_table.npy'),
-                                                   msg='npy file containing the log galaxy stellar mass in units '
-                                                       'of solar masses as function of cosmic time, valid only when'
-                                                       'stellar_mass_type="surviving"'),
-                          galaxy_age=Param(float, 13.0, msg='Galaxy age at the time of observation in Gyr'),
-                          galaxy_metallicity=Param(float, 0.0, msg='Galaxy metallicity at the time of observation'
-                                                                   'in units of log10(Z / Z_solar)'),
-                          galaxy_metallicity_scatter=Param(float, 0.2, msg='Log-normal scatter of the metallicity '
-                                                                           'at the time of observation'),
-                          seed=12345)
+    config_options.update(ssp_templates_file=Param(str, os.path.join(default_files_folder,
+                                                                     'ssp_data_fsps_v3.2_lgmet_age.h5'),
+                                                   msg='hdf5 file storing the SSP libraries used to create SEDs'),
+                          redshift_key=Param(str, 'redshifts',
+                                             msg='Redshift keyword name of the hdf5 dataset containing input galaxy '
+                                                 'properties'),
+                          cosmic_time_grid_key=Param(str, 'cosmic_time_grid',
+                                                     msg='Cosmic time grid keyword name of the hdf5 dataset containing '
+                                                         'input galaxy properties, this is the grid over '
+                                                         'which the stellar mass build-up takes place in units of Gyr'),
+                          star_formation_history_key=Param(str, 'star_formation_history',
+                                                           msg='Star-formation history keyword name of the hdf5 '
+                                                               'dataset containing input galaxy properties, this is '
+                                                               'the star-formation history of the galaxy in units of '
+                                                               'Msun/yr'),
+                          stellar_metallicity_key=Param(str, 'stellar_metallicity',
+                                                        msg='Stellar metallicity keyword name of the hdf5 dataset '
+                                                            'containing input galaxy properties, this is the stellar'
+                                                            ' metallicity in units of log10(Z/Zsun)'),
+                          stellar_metallicity_scatter_key=Param(str, 'stellar_metallicity_scatter',
+                                                                msg='Stellar metallicity scatter keyword name of the '
+                                                                    'hdf5 dataset containing input galaxy properties, '
+                                                                    'this is lognormal scatter in the metallicity '
+                                                                    'distribution function'),
+                          restframe_sed_key=Param(str, 'restframe_seds', msg='Rest-frame SED keyword name of the '
+                                                                             'output hdf5 dataset'))
 
-    # inputs = [("input", DataHandle)]
-    # outputs = [("model", ModelHandle)]
-    outputs = [("model", ModelHandle)]
+    inputs = [("input", Hdf5Handle)]
+    outputs = [("model", Hdf5Handle)]
 
     def __init__(self, args, comm=None):
         """
@@ -104,18 +74,74 @@ class DSPSSingleSedModeler(Modeler):
         """
         RailStage.__init__(self, args, comm=comm)
 
-        if (self.config.galaxy_age < 0.01) | (self.config.galaxy_age > Planck18.age(0).value):
-            raise ValueError("Galaxy age {self.config.galaxy_age} is outside of allowed range 0.1 <= Age[Gyr] <= 13.7")
-        if (self.config.galaxy_metallicity < -2) | (self.config.galaxy_metallicity > 0.2):
-            raise ValueError("Galaxy metallicity {self.config.galaxy_metallicity} is outside of allowed "
-                             "range -2 <= log10(Z / Z_solar) <= 0.2")
+        if not os.path.isfile(self.config.ssp_templates_file):
+            default_files_folder = os.path.join(RAILDIR, 'rail', 'examples_data', 'creation_data', 'data',
+                                                'dsps_default_data')
+            os.system('curl -O https://portal.nersc.gov/cfs/lsst/schmidt9/ssp_data_fsps_v3.2_lgmet_age.h5 '
+                      '--output-dir {}'.format(default_files_folder))
 
-        self.model = None
-        self.log_age_gyr = np.load(self.config.age_grid)
-        self.lgZsun_bin = np.load(self.config.metallicity_grid)
-        self.ssp_flux = np.load(self.config.ssp_fluxes)
-        self.sfh_table = np.load(self.config.star_formation_history)
-        self.t_table = np.load(self.config.cosmic_time_grid)
+    def _get_rest_frame_seds(self, ssp_data, redshifts, cosmic_time_grids, star_formation_histories,
+                             stellar_metallicities, stellar_metallicities_scatter):
+        """
+        Computes the rest-frame SED with DSPS based on user-supplied input galaxy population properties.
+        The functions calc_rest_sed_sfh_table_lognormal_mdf and calc_rest_sed_sfh_table_met_table
+        return a RestSED object composed of
+        rest_sedndarray of shape (n_wave, )
+            Restframe SED of the galaxy in units of Lsun/Hz
+        weightsndarray of shape (n_met, n_ages, 1)
+            SSP weights of the joint distribution of stellar age and metallicity
+        lgmet_weightsndarray of shape (n_met, )
+            SSP weights of the distribution of stellar metallicity
+        age_weightsndarray of shape (n_ages, )
+            SSP weights of the distribution of stellar age
+
+        Parameters
+        ----------
+        ssp_data
+        redshifts
+        cosmic_time_grids
+        star_formation_histories
+        stellar_metallicities
+        stellar_metallicities_scatter
+
+        Returns
+        -------
+
+        """
+
+        restframe_seds = {}
+
+        for i in self.split_tasks_by_rank(range(len(redshifts))):
+            t_obs = age_at_z(redshifts[i], *DEFAULT_COSMOLOGY)  # age of the universe in Gyr at z_obs
+            t_obs = t_obs[0]
+
+            if np.isscalar(stellar_metallicities[i]):
+                restframe_sed = calc_rest_sed_sfh_table_lognormal_mdf(cosmic_time_grids[i], star_formation_histories[i],
+                                                                      stellar_metallicities[i],
+                                                                      stellar_metallicities_scatter[i],
+                                                                      ssp_data.ssp_lgmet, ssp_data.ssp_lg_age_gyr,
+                                                                      ssp_data.ssp_flux, t_obs)
+            elif len(stellar_metallicities[i]) > 1:
+                restframe_sed = calc_rest_sed_sfh_table_met_table(cosmic_time_grids[i], star_formation_histories[i],
+                                                                  stellar_metallicities[i],
+                                                                  stellar_metallicities_scatter[i], ssp_data.ssp_lgmet,
+                                                                  ssp_data.ssp_lg_age_gyr, ssp_data.ssp_flux, t_obs)
+            else:
+                raise ValueError
+
+            restframe_seds[i] = restframe_sed.rest_sed
+
+        if self.comm is not None:  # pragma: no cover
+            restframe_seds = self.comm.gather(restframe_seds)
+
+            if self.rank != 0:  # pragma: no cover
+                return None, None
+
+            restframe_seds = {k: v for a in restframe_seds for k, v in a.items()}
+
+        restframe_seds = np.array([restframe_seds[i] for i in range(len(redshifts))])
+
+        return restframe_seds
 
     def fit_model(self):
         """
@@ -137,15 +163,12 @@ class DSPSSingleSedModeler(Modeler):
 
     def run(self):
         """
-        Run method. It Calls `_calc_sed_kern` from DSPS to create a galaxy rest-frame SED.
+        Run method. It Calls `_get_rest_frame_seds` from DSPS to create a galaxy rest-frame SED.
 
         Notes
         -----
-        Puts the rest-frame SED into the data store under this stages 'model' tag.
-        9.0 in the logsm_table definition is a Gyr to yr conversion factor.
         The initial stellar mass of the galaxy is 0.
         The definition of the stellar mass table as cumulative sum refers to the total stellar mass formed.
-        If user requires surviving mass, then logsm_table should be a user-provided npy file.
         DSPS conveniently provides IMF-dependent fitting functions to compute the surviving mass
         (see surviving_mstar.py).
         The units of the resulting rest-frame SED is solar luminosity per Hertz. The luminosity refers to that
@@ -155,28 +178,22 @@ class DSPSSingleSedModeler(Modeler):
         -------
 
         """
+        input_galaxy_properties = self.get_data('input')
+        ssp_data = load_ssp_templates(fn=self.config.ssp_templates_file)
 
-        dt_table = _jax_get_dt_array(self.t_table)
-        if self.config.stellar_mass_type == 'formed':
-            logsm_table = np.log10(np.cumsum(self.sfh_table * dt_table)) + 9.0
-        elif self.config.stellar_mass_type == 'surviving':
-            logsm_table = np.load(self.config.stellar_mass_table)
-        else:
-            raise KeyError('Stellar mass type "{}" not implemented'.format(self.config.stellar_mass_type))
+        redshifts = input_galaxy_properties[self.config.redshift_key][()]
+        cosmic_time_grids = input_galaxy_properties[self.config.cosmic_time_grid_key][()]
+        star_formation_histories = input_galaxy_properties[self.config.star_formation_history_key][()]
+        stellar_metallicities = input_galaxy_properties[self.config.stellar_metallicity_key][()]
+        stellar_metallicities_scatter = input_galaxy_properties[self.config.stellar_metallicity_scatter_key][()]
 
-        args = (self.config.galaxy_age,
-                self.lgZsun_bin,
-                self.log_age_gyr,
-                self.ssp_flux,
-                self.t_table,
-                logsm_table,
-                self.config.galaxy_metallicity,
-                self.config.galaxy_metallicity_scatter)
+        restframe_seds = self._get_rest_frame_seds(ssp_data, redshifts, cosmic_time_grids, star_formation_histories,
+                                                   stellar_metallicities, stellar_metallicities_scatter)
 
-        restframe_sed = _calc_sed_kern(*args)
-
-        # save the sed model
-        self.add_data("model", np.array(restframe_sed))
+        if self.rank == 0:
+            rest_frame_sed_models = {self.config.restframe_sed_key: restframe_seds,
+                                     self.config.redshift_key: redshifts}
+            self.add_data('model', rest_frame_sed_models)
 
 
 class DSPSPopulationSedModeler(Modeler):
@@ -186,8 +203,6 @@ class DSPSPopulationSedModeler(Modeler):
     Supplying such templates is outside the planned scope of the DSPS package, and so they
     will need to be retrieved from some other library. For example, the FSPS library supplies
     such templates in a convenient form.
-    The user is required to provide files in .npy format for the code to run. Details of what each file should
-    contain are explicited in config_options.
 
     Notes
     -----
@@ -198,46 +213,38 @@ class DSPSPopulationSedModeler(Modeler):
     If GPU is used, jax natively and automatically parallelize the execution.
     """
 
-    name = "DSPS population SED models"
-    default_files_folder = os.path.join(RAILDIR, 'rail', 'examples_data', 'testdata')
+    name = "DSPSPopulationSedModeler"
+    default_files_folder = os.path.join(RAILDIR, 'rail', 'examples_data', 'creation_data', 'data', 'dsps_default_data')
     config_options = RailStage.config_options.copy()
-    config_options.update(age_grid=Param(str, os.path.join(default_files_folder, 'age_grid.npy'),
-                                         msg='npy file containing the age grid values in units of log10(Age[Gyr])'),
-                          metallicity_grid=Param(str, os.path.join(default_files_folder, 'metallicity_grid.npy'),
-                                                 msg='npy file containing the metallicity grid values in units of '
-                                                     'log10(Z / Z_solar)'),
-                          ssp_fluxes=Param(str, os.path.join(default_files_folder, 'dsps_ssp_spec_flux.npy'),
-                                           msg='npy file containing the SSPs template SEDs with shape '
-                                               '(n_grid_metallicity_values, n_grid_age_values, n_wavelength_points)'),
-                          star_formation_history=Param(str, os.path.join(default_files_folder, 'SFHs.npy'),
-                                                       msg='npy file containing star-formation histories of the '
-                                                           'individual galaxies in the galaxy population in units of'
-                                                           'solar masses per year'),
-                          cosmic_time_grid=Param(str, os.path.join(default_files_folder, 'cosmic_times_table.npy'),
-                                                 msg='Cosmic time tables of the galaxy population over which'
-                                                     'the stellar mass build-up takes place'),
-                          stellar_mass_type=Param(str, 'formed', msg='Options are "formed" or "surviving" for the '
-                                                                     'computation of stellar-mass build-up'),
-                          stellar_mass_table=Param(str, os.path.join(default_files_folder, 'stellar_masses_table.npy'),
-                                                   msg='npy file containing the log galaxy stellar masses in units'
-                                                       'of solar masses as function of cosmic time, valid only when'
-                                                       'stellar_mass_type="surviving"'),
-                          galaxy_age=Param(str, os.path.join(default_files_folder, 'galaxy_population_ages.npy'),
-                                           msg='npy file containing the galaxy ages at the time of observation in Gyr'),
-                          galaxy_metallicity=Param(str, os.path.join(default_files_folder,
-                                                                     'galaxy_population_metallicities.npy'),
-                                                   msg='npy file containing the galaxy metallicities '
-                                                       'at the time of observation in units of log10(Z / Z_solar)'),
-                          galaxy_metallicity_scatter=Param(str,
-                                                           os.path.join(default_files_folder,
-                                                                        'galaxy_population_metallicity_scatters.npy'),
-                                                           msg='npy file containing the log-normal scatters of the '
-                                                               'galaxy metallicities at the time of observation'),
-                          seed=12345)
+    config_options.update(ssp_templates_file=Param(str, os.path.join(default_files_folder,
+                                                                     'ssp_data_fsps_v3.2_lgmet_age.h5'),
+                                                   msg='hdf5 file storing the SSP libraries used to create SEDs'),
+                          redshift_key=Param(str, 'redshift',
+                                             msg='Redshift keyword name of the hdf5 dataset containing input galaxy '
+                                                 'properties'),
+                          cosmic_time_grid_key=Param(str, 'cosmic_time_grid',
+                                                     msg='Cosmic time grid keyword name of the hdf5 dataset containing '
+                                                         'input galaxy properties, this is the grid over '
+                                                         'which the stellar mass build-up takes place in units of Gyr'),
+                          star_formation_history_key=Param(str, 'star_formation_history',
+                                                           msg='Star-formation history keyword name of the hdf5 '
+                                                               'dataset containing input galaxy properties, this is '
+                                                               'the star-formation history of the galaxy in units of '
+                                                               'Msun/yr'),
+                          stellar_metallicity_key=Param(str, 'stellar_metallicity',
+                                                        msg='Stellar metallicity keyword name of the hdf5 dataset '
+                                                            'containing input galaxy properties, this is the stellar'
+                                                            ' metallicity in units of log10(Z/Zsun)'),
+                          stellar_metallicity_scatter_key=Param(str, 'stellar_metallicity_scatter',
+                                                                msg='Stellar metallicity scatter keyword name of the '
+                                                                    'hdf5 dataset containing input galaxy properties, '
+                                                                    'this is lognormal scatter in the metallicity '
+                                                                    'distribution function'),
+                          restframe_sed_key=Param(str, 'restframe_seds', msg='Rest-frame SED keyword name of the '
+                                                                             'output hdf5 dataset'))
 
-    # inputs = [("input", DataHandle)]
-    # outputs = [("model", ModelHandle)]
-    outputs = [("model", ModelHandle)]
+    inputs = [("input", Hdf5Handle)]
+    outputs = [("model", Hdf5Handle)]
 
     def __init__(self, args, comm=None):
         r"""
@@ -250,24 +257,56 @@ class DSPSPopulationSedModeler(Modeler):
         args:
         comm:
         """
+
         RailStage.__init__(self, args, comm=comm)
-        # _a = (*[None] * 5, 0, 0, 0)
-        self._a = (0, None, None, None, 0, 0, 0, 0)
-        self._calc_sed_vmap = jjit(vmap(_calc_sed_kern, in_axes=self._a))
-        self.model = None
-        self.log_age_gyr = np.load(self.config.age_grid)
-        self.lgZsun_bin = np.load(self.config.metallicity_grid)
-        self.ssp_flux = np.load(self.config.ssp_fluxes)
-        self.sfh_table_pop = np.load(self.config.star_formation_history)
-        self.t_table_pop = np.load(self.config.cosmic_time_grid)
-        self.galaxy_age_pop = np.load(self.config.galaxy_age)
-        self.galaxy_metallicity_pop = np.load(self.config.galaxy_metallicity)
-        self.galaxy_metallicity_scatter_pop = np.load(self.config.galaxy_metallicity_scatter)
-        if (min(self.galaxy_age_pop) < 0.01) | (max(self.galaxy_age_pop) > Planck18.age(0).value):
-            raise ValueError("Galaxy population ages are outside of the allowed range 0.1 <= Age[Gyr] <= 13.7")
-        if (min(self.galaxy_metallicity_pop) < -2) | (max(self.galaxy_metallicity_pop) > 0.2):
-            raise ValueError("Galaxy population metallicities are outside of the allowed "
-                             "range -2 <= log10(Z / Z_solar) <= 0.2")
+
+        if not os.path.isfile(self.config.ssp_templates_file):
+            default_files_folder = os.path.join(RAILDIR, 'rail', 'examples_data', 'creation_data', 'data',
+                                                'dsps_default_data')
+            os.system('curl -O https://portal.nersc.gov/cfs/lsst/schmidt9/ssp_data_fsps_v3.2_lgmet_age.h5 '
+                      '--output-dir {}'.format(default_files_folder))
+
+    def _get_rest_frame_seds(self, ssp_data, redshifts, cosmic_time_grids, star_formation_histories,
+                             stellar_metallicities, stellar_metallicities_scatter):
+        """
+        Computes the rest-frame SEDs with DSPS vmap based on user-supplied input galaxy population properties.
+
+        Parameters
+        ----------
+        ssp_data
+        redshifts
+        cosmic_time_grids
+        star_formation_histories
+        stellar_metallicities
+        stellar_metallicities_scatter
+
+        Returns
+        -------
+
+        """
+
+        # consider the whole chunk
+        self._a = (0, 0, 0, 0, None, None, None, 0)
+
+        if np.isscalar(stellar_metallicities[0]):
+            self._calc_sed_vmap = jjit(vmap(calc_rest_sed_sfh_table_lognormal_mdf, in_axes=self._a))
+        elif len(stellar_metallicities[0]) > 1:
+            self._calc_sed_vmap = jjit(vmap(calc_rest_sed_sfh_table_met_table, in_axes=self._a))
+        else:
+            raise ValueError
+
+        self._b = (0, None, None, None, None)
+        self._calc_age_at_z_vmap = jjit(vmap(age_at_z, in_axes=self._b))
+        args_pop_z = (redshifts, *DEFAULT_COSMOLOGY)
+        t_obs = self._calc_age_at_z_vmap(*args_pop_z)[:, 0]
+
+        args_pop = (cosmic_time_grids, star_formation_histories, stellar_metallicities,
+                    stellar_metallicities_scatter, ssp_data.ssp_lgmet, ssp_data.ssp_lg_age_gyr, ssp_data.ssp_flux,
+                    t_obs)
+
+        restframe_seds_galpop = self._calc_sed_vmap(*args_pop)
+
+        return restframe_seds_galpop.rest_sed
 
     def fit_model(self):
         """
@@ -292,14 +331,11 @@ class DSPSPopulationSedModeler(Modeler):
         """
         Run method
 
-        Calls `_calc_sed_kern` from DSPS to create galaxy rest-frame SEDs for a galaxy population.
+        Calls `_get_rest_frame_seds` from DSPS to create galaxy rest-frame SEDs for a galaxy population.
 
         Notes
         -----
-        9.0 in the logsm_table definition is a Gyr to yr conversion factor.
-        The initial stellar mass of the galaxies is 0.
         The definition of the stellar mass table as cumulative sum refers to the total stellar mass formed.
-        If user requires surviving mass, then logsm_table should be a user-provided npy file.
         DSPS conveniently provides IMF-dependent fitting functions to compute the surviving mass
         (see surviving_mstar.py).
         The units of the resulting rest-frame SEDs are solar luminosity per Hertz. The luminosity refers to that
@@ -310,24 +346,18 @@ class DSPSPopulationSedModeler(Modeler):
 
         """
 
-        if self.config.stellar_mass_type == 'formed':
-            dt_table_pop = _jax_get_dt_array_pop(self.t_table_pop)
-            logsm_table_pop = np.log10(np.cumsum(self.sfh_table_pop * dt_table_pop, axis=1)) + 9.0
-        elif self.config.stellar_mass_type == 'surviving':
-            logsm_table_pop = np.load(self.config.stellar_mass_table)
-        else:
-            raise KeyError('Stellar mass type "{}" not implemented'.format(self.config.stellar_mass_type))
+        input_galaxy_properties = self.get_data('input')
+        ssp_data = load_ssp_templates(fn=self.config.ssp_templates_file)
 
-        args_pop = (self.galaxy_age_pop,
-                    self.lgZsun_bin,
-                    self.log_age_gyr,
-                    self.ssp_flux,
-                    self.t_table_pop,
-                    logsm_table_pop,
-                    self.galaxy_metallicity_pop,
-                    self.galaxy_metallicity_scatter_pop)
+        redshifts = input_galaxy_properties[self.config.redshift_key][()]
+        cosmic_time_grids = input_galaxy_properties[self.config.cosmic_time_grid_key][()]
+        star_formation_histories = input_galaxy_properties[self.config.star_formation_history_key][()]
+        stellar_metallicities = input_galaxy_properties[self.config.stellar_metallicity_key][()]
+        stellar_metallicities_scatter = input_galaxy_properties[self.config.stellar_metallicity_scatter_key][()]
 
-        restframe_sed_galpop = self._calc_sed_vmap(*args_pop)
+        restframe_seds = self._get_rest_frame_seds(ssp_data, redshifts, cosmic_time_grids, star_formation_histories,
+                                                   stellar_metallicities, stellar_metallicities_scatter)
 
-        # save the sed model
-        self.add_data("model", np.array(restframe_sed_galpop))
+        rest_frame_sed_models = {self.config.restframe_sed_key: restframe_seds,
+                                 self.config.redshift_key: redshifts}
+        self.add_data('model', rest_frame_sed_models)

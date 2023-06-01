@@ -2,493 +2,209 @@ import os
 import subprocess
 
 import numpy as np
+import h5py
 import pytest
-from dsps.utils import _jax_get_dt_array
 
 from rail.core.stage import RailStage
 from rail.core.utils import RAILDIR
 from src.rail.creation.engines.dsps_photometry_creator import DSPSPhotometryCreator
 from src.rail.creation.engines.dsps_sed_modeler import DSPSPopulationSedModeler, DSPSSingleSedModeler
 
-default_files_folder = os.path.join(RAILDIR, "rail", "examples_data", "testdata")
+default_files_folder = os.path.join(RAILDIR, 'rail', 'examples_data', 'creation_data', 'data', 'dsps_default_data')
 
 
-
-def save_to_npy(filenames, properties):
+def create_testdata(files_folder):
     """
 
     Parameters
     ----------
-    filenames
-    properties
+    files_folder
 
     Returns
     -------
+    test_data_filename
 
     """
 
-    for i in range(len(filenames)):
-        np.save(filenames[i], properties[i])
+    n_galaxies = 10
 
+    redshift = np.arange(0.1, 1.1, 0.1)
 
-def create_testdata_DSPSSingleSedModeler(default_files_folder):
-    """
+    gal_t_table = np.linspace(0.05, 13.8, 100)  # age of the universe in Gyr
+    gal_sfr_table = np.random.uniform(0, 10, gal_t_table.size)  # SFR in Msun/yr
 
-    Parameters
-    ----------
-    default_files_folder
+    gal_lgmet = -2.0  # log10(Z)
+    gal_lgmet_scatter = 0.2  # lognormal scatter in the metallicity distribution function
 
-    Returns
-    -------
+    cosmic_time_grid = np.full((n_galaxies, len(gal_t_table)), gal_t_table)
+    star_formation_history = np.full((n_galaxies, len(gal_sfr_table)), gal_sfr_table)
+    stellar_metallicity = np.full(n_galaxies, gal_lgmet)
+    stellar_metallicity_scatter = np.full(n_galaxies, gal_lgmet_scatter)
 
-    """
+    test_data_filename = os.path.join(files_folder, 'input_galaxy_properties_dsps.h5')
 
-    testdata_filenames = {
-        "age_grid": os.path.join(default_files_folder, "age_grid.npy"),
-        "metallicity_grid": os.path.join(default_files_folder, "metallicity_grid.npy"),
-        "star_formation_history": os.path.join(default_files_folder, "SFH.npy"),
-        "cosmic_time_grid": os.path.join(default_files_folder, "cosmic_time_table.npy"),
-        "stellar_mass_history": os.path.join(default_files_folder, "stellar_mass_table.npy"),
-    }
+    with h5py.File(test_data_filename, 'w') as h5table:
+        h5table.create_dataset(name='redshifts', data=redshift)
+        h5table.create_dataset(name='cosmic_time_grid', data=cosmic_time_grid)
+        h5table.create_dataset(name='star_formation_history', data=star_formation_history)
+        h5table.create_dataset(name='stellar_metallicity', data=stellar_metallicity)
+        h5table.create_dataset(name='stellar_metallicity_scatter', data=stellar_metallicity_scatter)
 
-    log_age_gyr = np.arange(-3.5, 1.20, 0.05, dtype="float64")
-    lgZsun_bin_mids = np.array(
-        [
-            -1.97772361,
-            -1.80163235,
-            -1.67669361,
-            -1.5797836,
-            -1.50060235,
-            -1.37566361,
-            -1.2787536,
-            -1.19957235,
-            -1.07463362,
-            -0.97772361,
-            -0.88081359,
-            -0.78739191,
-            -0.68768899,
-            -0.58855752,
-            -0.49342377,
-            -0.39226288,
-            -0.29648237,
-            -0.19957235,
-            -0.10266234,
-            0.0,
-            0.10145764,
-            0.19836765,
-        ]
-    )
-    n_t = 100
-    T0 = 13.8
-    t_table = np.linspace(0.1, T0, n_t)
-    dt_table = _jax_get_dt_array(t_table)
-    sfh_table = np.random.uniform(0, 10, t_table.size)
-    logsm_table = np.log10(np.cumsum(sfh_table * dt_table)) + 9.0
-
-    save_to_npy(
-        list(testdata_filenames.values()), [log_age_gyr, lgZsun_bin_mids, sfh_table, t_table, logsm_table]
-    )
-
-    return testdata_filenames
-
-
-def create_test_data_DSPSPopulationSedModeler(default_files_folder):
-    """
-
-    Parameters
-    ----------
-    default_files_folder
-
-    Returns
-    -------
-
-    """
-
-    testdata_filenames = {
-        "age_grid": os.path.join(default_files_folder, "age_grid.npy"),
-        "metallicity_grid": os.path.join(default_files_folder, "metallicity_grid.npy"),
-        "star_formation_histories": os.path.join(default_files_folder, "SFHs.npy"),
-        "cosmic_time_grids": os.path.join(default_files_folder, "cosmic_times_table.npy"),
-        "stellar_mass_histories": os.path.join(default_files_folder, "stellar_masses_table.npy"),
-        "population_ages": os.path.join(default_files_folder, "galaxy_population_ages.npy"),
-        "population_metallicities": os.path.join(default_files_folder, "galaxy_population_metallicities.npy"),
-        "population_metallicity_scatters": os.path.join(
-            default_files_folder, "galaxy_population_metallicity_scatters.npy"
-        ),
-        "wrong_ages": os.path.join(default_files_folder, "galaxy_population_wrong_ages.npy"),
-        "wrong_metallicities": os.path.join(
-            default_files_folder, "galaxy_population_wrong_metallicities.npy"
-        ),
-    }
-
-    log_age_gyr = np.arange(-3.5, 1.20, 0.05, dtype="float64")
-    lgZsun_bin_mids = np.array(
-        [
-            -1.97772361,
-            -1.80163235,
-            -1.67669361,
-            -1.5797836,
-            -1.50060235,
-            -1.37566361,
-            -1.2787536,
-            -1.19957235,
-            -1.07463362,
-            -0.97772361,
-            -0.88081359,
-            -0.78739191,
-            -0.68768899,
-            -0.58855752,
-            -0.49342377,
-            -0.39226288,
-            -0.29648237,
-            -0.19957235,
-            -0.10266234,
-            0.0,
-            0.10145764,
-            0.19836765,
-        ]
-    )
-
-    n_gal_population = 10
-    n_t = 100
-    T0 = 13.8
-    t_table = np.linspace(0.1, T0, n_t)
-    dt_table = _jax_get_dt_array(t_table)
-    sfh_table = np.random.uniform(0, 10, t_table.size)
-    logsm_table = np.log10(np.cumsum(sfh_table * dt_table)) + 9.0
-
-    sfhs_table = np.empty((n_gal_population, len(sfh_table)))
-    for i in range(n_gal_population):
-        sfhs_table[i, :] = sfh_table
-
-    ts_table = np.empty((n_gal_population, len(t_table)))
-    for i in range(n_gal_population):
-        ts_table[i, :] = t_table
-
-    logsms_table = np.empty((n_gal_population, len(logsm_table)))
-    for i in range(n_gal_population):
-        logsms_table[i, :] = logsm_table
-
-    galaxy_ages = np.random.uniform(low=1, high=13, size=n_gal_population)
-    galaxy_metallicities = np.random.choice(lgZsun_bin_mids, size=n_gal_population, replace=False)
-    galaxy_metallicity_scatters = np.random.normal(loc=0.2, scale=0.1, size=n_gal_population)
-
-    wrong_ages = np.random.uniform(10, 20, n_gal_population)
-    wrong_metallicities = np.random.uniform(-10, -1, n_gal_population)
-
-    save_to_npy(
-        list(testdata_filenames.values()),
-        [
-            log_age_gyr,
-            lgZsun_bin_mids,
-            sfhs_table,
-            ts_table,
-            logsms_table,
-            galaxy_ages,
-            galaxy_metallicities,
-            galaxy_metallicity_scatters,
-            wrong_ages,
-            wrong_metallicities,
-        ],
-    )
-
-    return testdata_filenames
+    return test_data_filename
 
 
 @pytest.mark.parametrize(
     "settings,error",
     [
-        ({"galaxy_age": 15}, ValueError),
+        ({"filter_folder": default_files_folder}, AssertionError),
     ],
 )
-def test_DSPSSingleSedModeler_bad_galaxy_age(settings, error):
+def test_DSPSPhotometryCreator_filtersfolder_not_found(settings, error):
     """
-    Test if galaxy age is in allowed range. If not, it should raise ValueError.
+    Test if ssp templates filepath exists.
 
     Parameters
     ----------
     settings: dict
-        dictionary having "galaxy_age" as keyword and value outside range to trigger ValueError
+        dictionary having "filter_folder" as keyword and not existing path to trigger OSError
     error: built-in type
-        ValueError
+        OSError
     Returns
     -------
 
     """
 
     with pytest.raises(error):
-        DSPSSingleSedModeler.make_stage(**settings)
-
-
-@pytest.mark.parametrize(
-    "settings,error",
-    [
-        ({"galaxy_metallicity": -3}, ValueError),
-    ],
-)
-def test_DSPSSingleSedModeler_bad_galaxy_metallicity(settings, error):
-    """
-    Test if galaxy metallicity is in allowed range. If not, it should raise ValueError.
-
-    Parameters
-    ----------
-    settings: dict
-        dictionary having "galaxy_metallicity" as keyword and value outside range to trigger ValueError
-    error: built-in type
-        ValueError
-    Returns
-    -------
-
-    """
-
-    with pytest.raises(error):
-        DSPSSingleSedModeler.make_stage(**settings)
-
-
-@pytest.mark.parametrize(
-    "settings,error",
-    [
-        ({"stellar_mass_type": "tabulated"}, KeyError),
-    ],
-)
-def test_DSPSSingleSedModeler_bad_stellar_mass_type(settings, error):
-    """
-    Test if stellar_mass_type keyword is correct, if not it should raise KeyError.
-
-    Parameters
-    ----------
-    settings: dict
-        dictionary having "stellar_mass_type" as keyword and not implemented key to trigger KeyError
-    error: built-in type
-        KeyError
-    Returns
-    -------
-
-    """
-
-    testdata_filenames = create_testdata_DSPSSingleSedModeler(default_files_folder)
-
-    with pytest.raises(error):
-        DS = RailStage.data_store
-        DS.__class__.allow_overwrite = True
-        single_sed_model = DSPSSingleSedModeler.make_stage(
-            name="DSPSsingleSEDmodel",
-            galaxy_age=7,
-            galaxy_metallicity=0.0,
-            galaxy_metallicity_scatter=0.2,
-            **settings,
-        )
-        subprocess.run(["rm"] + list(testdata_filenames.values()))
-        single_sed_model.fit_model()
+        DSPSPhotometryCreator.make_stage(**settings)
 
 
 def test_DSPSSingleSedModeler_model_creation():
     """
-    Test if the resulting ModelHandle is not empty.
+    Test if the resulting Hdf5Handle is not empty.
 
     Returns
     -------
 
     """
 
-    testdata_filenames = create_testdata_DSPSSingleSedModeler(default_files_folder)
+    trainFile = create_testdata(default_files_folder)
 
     DS = RailStage.data_store
     DS.__class__.allow_overwrite = True
-    single_sed_model = DSPSSingleSedModeler.make_stage(
-        name="DSPSsingleSEDmodel", galaxy_age=7, galaxy_metallicity=0.0, galaxy_metallicity_scatter=0.2
-    )
-    model_handle = single_sed_model.fit_model()
-    subprocess.run(["rm", "model_DSPSsingleSEDmodel.pkl"])
-    subprocess.run(["rm"] + list(testdata_filenames.values()))
-    assert bool(model_handle) is True
 
+    single_sed_model = DSPSSingleSedModeler.make_stage(name='DSPS_single_SED_model',
+                                                       ssp_templates_file=
+                                                       os.path.join(default_files_folder,
+                                                                    'ssp_data_fsps_v3.2_lgmet_age.h5'),
+                                                       redshift_key='redshifts',
+                                                       cosmic_time_grid_key='cosmic_time_grid',
+                                                       star_formation_history_key='star_formation_history',
+                                                       stellar_metallicity_key='stellar_metallicity',
+                                                       stellar_metallicity_scatter_key='stellar_metallicity_scatter',
+                                                       restframe_sed_key='restframe_seds')
+    h5table = h5py.File(trainFile, 'r')
+    single_sed_model.add_data('input', h5table)
+    single_sed_model.fit_model()
+    h5table.close()
 
-@pytest.mark.parametrize(
-    "settings,error",
-    [
-        ({"galaxy_age": os.path.join(default_files_folder, "galaxy_population_wrong_ages.npy")}, ValueError),
-    ],
-)
-def test_DSPSPopulationSedModeler_bad_galaxy_ages(settings, error):
-    """
-    Test if galaxy ages are in the allowed range. If not, it should raise ValueError.
+    rest_frame_sed_models = single_sed_model.get_data('model')
+    restframe_seds = rest_frame_sed_models['restframe_seds']
 
-    Parameters
-    ----------
-    settings: dict
-        dictionary having "galaxy_age" as keyword and file path of ages outside range to trigger ValueError
-    error: built-in type
-        ValueError
-    Returns
-    -------
-
-    """
-
-    create_test_data_DSPSPopulationSedModeler(default_files_folder)
-
-    with pytest.raises(error):
-        DSPSPopulationSedModeler.make_stage(**settings)
-
-
-@pytest.mark.parametrize(
-    "settings,error",
-    [
-        (
-            {
-                "galaxy_metallicity": os.path.join(
-                    default_files_folder, "galaxy_population_wrong_metallicities.npy"
-                )
-            },
-            ValueError,
-        ),
-    ],
-)
-def test_DSPSPopulationSedModeler_bad_galaxy_metallicities(settings, error):
-    """
-    Test if galaxy metallicities are in the allowed range. If not, it should raise ValueError.
-
-    Parameters
-    ----------
-    settings: dict
-        dictionary having "galaxy_metallicity" as keyword and file path of metallicities outside range
-        to trigger ValueError
-    error: built-in type
-        ValueError
-    Returns
-    -------
-
-    """
-
-    create_test_data_DSPSPopulationSedModeler(default_files_folder)
-
-    with pytest.raises(error):
-        DSPSPopulationSedModeler.make_stage(**settings)
-
-
-@pytest.mark.parametrize(
-    "settings,error",
-    [
-        ({"stellar_mass_type": "tabulated"}, KeyError),
-    ],
-)
-def test_DSPSPopulationSedModeler_bad_stellar_mass_type(settings, error):
-    """
-    Test if stellar_mass_type keyword is correct, if not it should raise KeyError.
-
-    Parameters
-    ----------
-    settings: dict
-        dictionary having "stellar_mass_type" as keyword and not implemented key to trigger KeyError
-    error: built-in type
-        KeyError
-    Returns
-    -------
-
-    """
-
-    testdata_filenames = create_test_data_DSPSPopulationSedModeler(default_files_folder)
-
-    with pytest.raises(error):
-        DS = RailStage.data_store
-        DS.__class__.allow_overwrite = True
-        population_seds_model = DSPSPopulationSedModeler.make_stage(
-            name="model_DSPSPopulationSEDmodel", **settings
-        )
-        subprocess.run(["rm"] + list(testdata_filenames.values()))
-        population_seds_model.fit_model()
+    subprocess.run(["rm", "model_DSPS_single_SED_model.hdf5"])
+    subprocess.run(["rm", trainFile])
+    assert len(restframe_seds) != 0
 
 
 def test_DSPSPopulationSedModeler_model_creation():
     """
-    Test if the resulting ModelHandle is not empty.
+    Test if the resulting Hdf5Handle is not empty.
 
     Returns
     -------
 
     """
 
-    testdata_filenames = create_test_data_DSPSPopulationSedModeler(default_files_folder)
+    trainFile = create_testdata(default_files_folder)
 
     DS = RailStage.data_store
     DS.__class__.allow_overwrite = True
-    population_seds_model = DSPSPopulationSedModeler.make_stage(name="model_DSPSPopulationSEDmodel")
-    model_handle = population_seds_model.fit_model()
-    subprocess.run(["rm", "model_DSPSPopulationSEDmodel.pkl"])
-    subprocess.run(["rm"] + list(testdata_filenames.values()))
-    assert bool(model_handle) is True
+
+    DSPS_population_SED_model = DSPSPopulationSedModeler.make_stage(name='DSPS_population_SED_model',
+                                                                    ssp_templates_file=
+                                                                    os.path.join(default_files_folder,
+                                                                                 'ssp_data_fsps_v3.2_lgmet_age.h5'),
+                                                                    redshift_key='redshifts',
+                                                                    cosmic_time_grid_key='cosmic_time_grid',
+                                                                    star_formation_history_key='star_formation_history',
+                                                                    stellar_metallicity_key='stellar_metallicity',
+                                                                    stellar_metallicity_scatter_key=
+                                                                    'stellar_metallicity_scatter',
+                                                                    restframe_sed_key='restframe_seds')
+
+    h5table = h5py.File(trainFile, 'r')
+    DSPS_population_SED_model.add_data('input', h5table)
+    DSPS_population_SED_model.fit_model()
+    h5table.close()
+
+    rest_frame_sed_models = DSPS_population_SED_model.get_data('model')
+    restframe_seds = rest_frame_sed_models['restframe_seds']
+
+    subprocess.run(["rm", "model_DSPS_population_SED_model.hdf5"])
+    subprocess.run(["rm", trainFile])
+    assert len(restframe_seds) != 0
 
 
-@pytest.mark.parametrize(
-    "settings,error",
-    [
-        ({"Om0": 2}, ValueError),
-    ],
-)
-def test_DSPSPhotometryCreator_bad_omega_matter(settings, error):
+def test_DSPSPhotometryCreator_photometry_creation():
     """
-    Test if omega matter is in allowed range. If not, it should raise ValueError.
+    Test if the resulting Hdf5Handle is not empty.
 
-    Parameters
-    ----------
-    settings: dict
-        dictionary having "Om0" as keyword and value outside range to trigger ValueError
-    error: built-in type
-        ValueError
     Returns
     -------
 
     """
 
-    with pytest.raises(error):
-        DSPSPhotometryCreator.make_stage(**settings)
+    trainFile = create_testdata(default_files_folder)
 
+    DS = RailStage.data_store
+    DS.__class__.allow_overwrite = True
 
-@pytest.mark.parametrize(
-    "settings,error",
-    [
-        ({"Ode0": 2}, ValueError),
-    ],
-)
-def test_DSPSPhotometryCreator_bad_omega_de(settings, error):
-    """
-    Test if dark energy is in allowed range. If not, it should raise ValueError.
+    single_sed_model = DSPSSingleSedModeler.make_stage(name='DSPS_single_SED_model',
+                                                       ssp_templates_file=
+                                                       os.path.join(default_files_folder,
+                                                                    'ssp_data_fsps_v3.2_lgmet_age.h5'),
+                                                       redshift_key='redshifts',
+                                                       cosmic_time_grid_key='cosmic_time_grid',
+                                                       star_formation_history_key='star_formation_history',
+                                                       stellar_metallicity_key='stellar_metallicity',
+                                                       stellar_metallicity_scatter_key='stellar_metallicity_scatter',
+                                                       restframe_sed_key='restframe_seds')
+    h5table = h5py.File(trainFile, 'r')
+    single_sed_model.add_data('input', h5table)
+    single_sed_model.fit_model()
+    h5table.close()
 
-    Parameters
-    ----------
-    settings: dict
-        dictionary having "Ode0" as keyword and value outside range to trigger ValueError
-    error: built-in type
-        ValueError
-    Returns
-    -------
+    trainFile_photometry = 'model_DSPS_single_SED_model.hdf5'
 
-    """
+    DSPS_photometry_creator = DSPSPhotometryCreator.make_stage(name='DSPS_photometry_creator',
+                                                               redshift_key='redshifts',
+                                                               restframe_sed_key='restframe_seds',
+                                                               absolute_mags_key='rest_frame_absolute_mags',
+                                                               apparent_mags_key='apparent_mags',
+                                                               filter_folder=os.path.join(default_files_folder,
+                                                                                          'filters'),
+                                                               instrument_name='lsst',
+                                                               wavebands='u,g,r,i,z',
+                                                               ssp_templates_file=
+                                                               os.path.join(default_files_folder,
+                                                                            'ssp_data_fsps_v3.2_lgmet_age.h5'))
 
-    with pytest.raises(error):
-        DSPSPhotometryCreator.make_stage(**settings)
+    h5table = h5py.File(trainFile_photometry, 'r')
+    DSPS_photometry_creator.add_data('model', h5table)
+    output_mags = DSPS_photometry_creator.sample()
+    h5table.close()
 
+    subprocess.run(["rm", trainFile_photometry])
+    subprocess.run(["rm", trainFile])
+    subprocess.run(["rm", 'output_DSPS_photometry_creator.hdf5'])
 
-@pytest.mark.parametrize(
-    "settings,error",
-    [
-        ({"h": 1.1}, ValueError),
-    ],
-)
-def test_DSPSPhotometryCreator_bad_little_h(settings, error):
-    """
-    Test if the dimensionless hubble constant is in allowed range. If not, it should raise ValueError.
-
-    Parameters
-    ----------
-    settings: dict
-        dictionary having "h" as keyword and value outside range to trigger ValueError
-    error: built-in type
-        ValueError
-    Returns
-    -------
-
-    """
-
-    with pytest.raises(error):
-        DSPSPhotometryCreator.make_stage(**settings)
+    assert len(output_mags.data['apparent_mags']) != 0
