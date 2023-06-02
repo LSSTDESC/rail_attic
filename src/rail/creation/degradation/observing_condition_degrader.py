@@ -45,7 +45,7 @@ class ObsCondition(Degrader):
         uses the same arguments as LSSTErrorModel (from PhotErr).
         The following arguments, if supplied, may contain either
         a single number (as in the case of LSSTErrorModel), or a path:
-        [m5, nVisYr, airmass, gamma, msky, theta, km, tvis]
+        [m5, nVisYr, airmass, gamma, msky, theta, km, tvis, EBV]
         For the following keys:
         [m5, nVisYr, gamma, msky, theta, km]
         numbers/paths for specific bands must be passed.
@@ -121,6 +121,7 @@ class ObsCondition(Degrader):
             "theta",
             "km",
             "tvis",
+            "EBV",
         ]
 
         # validate input parameters
@@ -165,10 +166,12 @@ class ObsCondition(Degrader):
 
         # Check if extra keys are passed
         # get lsst_error_model keys
-        lsst_error_model_keys = [field.name for field in fields(LsstErrorParams)]
+        lsst_error_model_keys = list(LsstErrorParams.__dataclass_fields__.keys())
         if len(set(self.config["map_dict"].keys()) - set(lsst_error_model_keys)) != 0:
             extra_keys = set(self.config["map_dict"].keys()) - set(lsst_error_model_keys)
-            raise ValueError("Extra keywords are passed to the configuration: \n" + str(extra_keys))
+            # now we added EBV, which is not in LsstErrorParams:
+            if extra_keys != {"EBV"}:
+                raise ValueError("Extra keywords are passed to the configuration: \n" + str(extra_keys))
 
         # Check data type for the keys:
         # Note that LSSTErrorModel checks
@@ -189,7 +192,7 @@ class ObsCondition(Degrader):
                 elif key in self.obs_cond_keys:
 
                     # band-independent keys:
-                    if key in ["airmass", "tvis"]:
+                    if key in ["airmass", "tvis", "EBV"]:
 
                         # check if the input is a string or number
                         if not (
@@ -261,7 +264,7 @@ class ObsCondition(Degrader):
             for key in self.config["map_dict"]:
                 if key in self.obs_cond_keys:
                     # band-independent keys:
-                    if key in ["airmass", "tvis"]:
+                    if key in ["airmass", "tvis", "EBV"]:
                         if isinstance(self.config["map_dict"][key], str):
                             maps[key] = hp.read_map(self.config["map_dict"][key])[pixels]
                         elif isinstance(self.config["map_dict"][key], float):
@@ -304,9 +307,10 @@ class ObsCondition(Degrader):
             # For keys that may contain the survey condition maps
             if key in self.obs_cond_keys:
                 # band-independent keys:
-                if key in ["airmass", "tvis"]:
-                    obs_conditions[key] = float(self.maps[key][ind])
-                # band-dependent keys:
+                if key in ["airmass", "tvis", "EBV"]:
+                    if key != "EBV":# exclude EBV because it is not in LsstErrorModel
+                        obs_conditions[key] = float(self.maps[key][ind])
+                # band-dependent keys
                 else:
                     obs_conditions[key] = {}
                     for band in (self.maps[key]).keys():
@@ -333,6 +337,45 @@ class ObsCondition(Degrader):
         catalog = pd.concat([catalog, assigned_pix], axis=1)
 
         return catalog
+    
+    # this is milky way extinction, should be added before other observing conditions is applied
+    def apply_galactic_extinction(self, pixel: int, pixel_cat: pd.DataFrame) -> pd.DataFrame:
+        """
+        MW extinction reddening of the magnitudes
+        """
+        # set the A_lamba/E(B-V) values for the six LSST filters 
+        band_a_ebv = {
+            "u":4.81,
+            "g":3.64,
+            "r":2.70,
+            "i":2.06,
+            "z":1.58,
+            "y":1.31,
+        }
+
+        # find the corresponding ebv for the pixel
+        ind = self.maps["pixels"]==pixel
+        ebvvec = self.maps["EBV"][ind]
+
+        if "renameDict" in self.maps.keys():
+            bands = self.maps["renameDict"]
+        elif "renameDict" not in self.maps.keys():
+            bands = {
+                "u":"u",
+                "g":"g",
+                "r":"r",
+                "i":"i",
+                "z":"z",
+                "y":"y",
+            }
+        
+        for b in bands.keys():
+            key=bands[b]
+            # update pixel_cat to the reddened magnitudes
+            pixel_cat[key] = (pixel_cat[key].copy())+ebvvec*band_a_ebv[b]
+
+        return pixel_cat
+
 
     def run(self):
         """
@@ -356,12 +399,17 @@ class ObsCondition(Degrader):
             # assign each galaxy to a pixel
             print("Assigning pixels.")
             catalog = self.assign_pixels(catalog)
-
+            
             # loop over each pixel
             pixel_cat_list = []
             for pixel, pixel_cat in catalog.groupby("pixel"):
                 # get the observing conditions for this pixel
                 obs_conditions = self.get_pixel_conditions(pixel)
+                
+                # apply MW extinction if supplied, 
+                # replace the Mag column with reddened magnitudes:
+                if "EBV" in self.maps.keys():
+                    pixel_cat = self.apply_galactic_extinction(pixel, pixel_cat)
 
                 # creating the error model for this pixel
                 errorModel = LsstErrorModel(**obs_conditions)
