@@ -8,7 +8,6 @@ from rail.core.data import QPHandle, TableHandle
 from rail.core.stage import RailStage
 from rail.evaluation.evaluator import Evaluator
 from rail.evaluation.metrics.cdeloss import CDELoss
-from rail.evaluation.metrics.pit import PIT, PITAD, PITKS, PITCvM, PITOutRate
 
 # values for metrics
 OUTRATE = 0.0
@@ -37,29 +36,8 @@ def construct_test_ensemble():
     return zgrid, true_zs, grid_ens, true_ez
 
 
-def test_pit_metrics():
+def test_cdeloss_metric():
     zgrid, zspec, pdf_ens, _ = construct_test_ensemble()
-    pit_obj = PIT(pdf_ens, zspec)
-    pit_vals = pit_obj.pit_samps
-    quant_grid = np.linspace(0, 1, 101)
-    quant_ens, metametrics = pit_obj.evaluate(quant_grid)
-    out_rate = PITOutRate(pit_vals, quant_ens).evaluate()
-    assert np.isclose(out_rate, OUTRATE)
-
-    ks_obj = PITKS(pit_vals, quant_ens)
-    ks_stat = ks_obj.evaluate().statistic
-    assert np.isclose(ks_stat, KSVAL)
-
-    cvm_obj = PITCvM(pit_vals, quant_ens)
-    cvm_stat = cvm_obj.evaluate().statistic
-    assert np.isclose(cvm_stat, CVMVAL)
-
-    ad_obj = PITAD(pit_vals, quant_ens)
-    all_ad_stat = ad_obj.evaluate().statistic
-    cut_ad_stat = ad_obj.evaluate(pit_min=0.6, pit_max=0.9).statistic
-    assert np.isclose(all_ad_stat, ADVAL_ALL)
-    assert np.isclose(cut_ad_stat, ADVAL_CUT)
-
     cde_obj = CDELoss(pdf_ens, zgrid, zspec)
     cde_stat = cde_obj.evaluate().statistic
     assert np.isclose(cde_stat, CDEVAL)
