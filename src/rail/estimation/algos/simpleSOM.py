@@ -31,7 +31,7 @@ def _computemagcolordata(data, ref_column_name, column_names, colusage):
     return coldata.T
 
 
-class Inform_SimpleSOMSummarizer(CatInformer):
+class InformSimpleSOM(CatInformer):
     """Summarizer that uses a SOM to construct a weighted sum
     of spec-z objects in the same SOM cell as each photometric
     galaxy in order to estimate the overall N(z).  This is
@@ -73,7 +73,7 @@ class Inform_SimpleSOMSummarizer(CatInformer):
       pickle file containing the `minisom` SOM object that
     will be used by the estimation/summarization stage
     """
-    name = 'Inform_SimpleSOM'
+    name = 'InformSimpleSOM'
     config_options = CatInformer.config_options.copy()
     config_options.update(nondetect_val=SHARED_PARAMS,
                           mag_limits=SHARED_PARAMS,
@@ -130,7 +130,7 @@ class Inform_SimpleSOMSummarizer(CatInformer):
         self.add_data('model', self.model)
 
 
-class SimpleSOMSummarizer(SZPZSummarizer):
+class SummarizeSimpleSOM(SZPZSummarizer):
     """Quick implementation of a SOM-based summarizer that
     constructs and N(z) estimate via a weighted sum of the
     empirical N(z) consisting of the normalized histogram
@@ -192,7 +192,7 @@ class SimpleSOMSummarizer(SZPZSummarizer):
     qp_ens: qp Ensemble
       ensemble of bootstrap realizations of the estimated N(z) for the input photometric data
     """
-    name = 'SimpleSOMSummarizer'
+    name = 'SummarizeSimpleSOM'
     config_options = SZPZSummarizer.config_options.copy()
     config_options.update(zmin=SHARED_PARAMS,
                           zmax=SHARED_PARAMS,
