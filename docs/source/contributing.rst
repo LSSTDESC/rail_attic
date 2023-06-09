@@ -138,11 +138,12 @@ Here is an example of a slightly more complicated `RailStage`.
 
 .. code-block:: python
 		
-    class NaiveStack(PZSummarizer):
-        """Summarizer which simply histograms a point estimate
+    class NaiveStackSummarizer(PZSummarizer):
+        """
+        Summarizer taking an average of a qp.Ensemble of PDFs.
         """
 
-        name = 'NaiveStack'
+        name = 'NaiveStackSummarizer'
         config_options = PZSummarizer.config_options.copy()
         config_options.update(zmin=Param(float, 0.0, msg="The minimum redshift of the z grid"),
                               zmax=Param(float, 3.0, msg="The maximum redshift of the z grid"),

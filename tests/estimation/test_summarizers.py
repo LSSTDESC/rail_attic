@@ -29,8 +29,8 @@ def one_algo(key, summarizer_class, summary_kwargs):
 
 def test_naive_stack():
     summary_config_dict = {}
-    summarizer_class = naiveStack.NaiveStack
-    results = one_algo("NaiveStack", summarizer_class, summary_config_dict)
+    summarizer_class = naiveStack.NaiveStackSummarizer
+    results = one_algo("NaiveStackSummarizer", summarizer_class, summary_config_dict)
 
 
 def test_point_estimate_hist():

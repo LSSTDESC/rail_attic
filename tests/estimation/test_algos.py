@@ -4,7 +4,8 @@ import scipy.special
 
 from rail.core.algo_utils import one_algo
 from rail.core.stage import RailStage
-from rail.estimation.algos import knnpz, pzflow, randomPZ, sklearnNN, trainZ
+from rail.estimation.algos import knnpz, pzflow, randomPZ, simpleNN, trainZ
+from rail.estimation.algos import simpleNN as sklearnNN
 
 sci_ver_str = scipy.__version__.split(".")
 

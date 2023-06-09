@@ -46,6 +46,7 @@ stages:
   name: inform_trainZ
   nprocess: 1
 - classname: Estimator
+# TODO: it looks like the CatEstimator for BPZ is called "BPZ_lite" right now -- check if this is a problem
   name: estimate_bpz
   nprocess: 1
 - classname: TrainZEstimator
@@ -57,6 +58,6 @@ stages:
 - classname: PointEstimateHist
   name: point_estimate_test
   nprocess: 1
-- classname: NaiveStack
+- classname: NaiveStackSummarizer
   name: naive_stack_test
   nprocess: 1
