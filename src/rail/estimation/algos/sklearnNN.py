@@ -135,6 +135,9 @@ class SimpleNNEstimator(CatEstimator):
             raise ValueError("ref_band is not in list of bands!")
 
     def _process_chunk(self, start, end, data, first):
+        """
+        TODO: zmode here is not actually the mode! It's the MLE. This is another reason not to by default include the point estimate, because it matters which point estimate it is and we're imposing an assumption that "point estimate" == mode
+        """
         color_data = make_color_data(data, self.config.bands,
                                      self.config.ref_band, self.config.nondetect_val)
         input_data = regularize_data(color_data)

@@ -14,7 +14,7 @@ The usual procedure for a gridded parameterization is to define the redshift eva
 - `load_model`: boolean, if True codes should skip inform and load a pretrained model from the filename specified in `modelfile`.
 - `save_train`: boolean, if True codes should save the model as computed during the running of `inform` to the filename in `modelfile`.
 
-TODO: move these detailed explanations to docstring of each algo so they show up in the API documentation!
+**TODO: move these detailed explanations to docstring of each algo so they show up in the API documentation!**
 
 
 # BPZ_Lite
