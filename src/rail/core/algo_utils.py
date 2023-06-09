@@ -1,4 +1,5 @@
 """Utility functions for estimation alogrithms"""
+import numpy as np
 import os
 from rail.core.stage import RailStage
 from rail.core.utils import RAILDIR
