@@ -1,10 +1,60 @@
 """
-Abstract base classes defining redshift estimations Informers and Estimators
+Abstract base classes for per-galaxy photo-z PDF estimation
 """
 
 from rail.core.data import TableHandle, QPHandle, ModelHandle
 from rail.core.stage import RailStage
 import gc
+
+class CatInformer(RailStage):
+    """The base class for informing models used to make photo-z posterior estimates
+    from catalog-like inputs (i.e., tables with fluxes in photometric bands among
+    the set of columns).
+
+    Estimators take as input a generic "model", the details of which depend on the sub-class.
+    All Estimators must have an associated Informer that produces the models given inputs such as training sets or SED template libraries with priors, hence the generic name; while "Trainer" would be accurate for data-driven estimators, "Informer" also encompases model-fitting methods ingesting prior information.
+    """
+
+    name = 'CatInformer'
+    config_options = RailStage.config_options.copy()
+    config_options.update(hdf5_groupname=str, save_train=True)
+    inputs = [('input', TableHandle)]
+    outputs = [('model', ModelHandle)]
+
+    def __init__(self, args, comm=None):
+        """Initialize Informer that can inform models for redshift estimation """
+        RailStage.__init__(self, args, comm=comm)
+        self.model = None
+
+    def inform(self, training_data):
+        """The main method for Informers
+
+        This will attach the input_data to this `Informer`
+        (for introspection and provenance tracking).
+
+        Then it will call the run() and finalize() methods, which need to
+        be implemented by the sub-classes.
+
+        The run() method will need to register the model that it creates to this Estimator
+        by using `self.add_data('model', model)`.
+
+        Finally, this will return a ModelHandle providing access to the trained model.
+
+        Parameters
+        ----------
+        input_data : `dict` or `TableHandle`
+            dictionary of all input data, or a `TableHandle` providing access to it
+
+        Returns
+        -------
+        model : ModelHandle
+            Handle providing access to trained model
+        """
+        self.set_data('input', training_data)
+        self.run()
+        self.finalize()
+        return self.get_handle('model')
+
 
 class CatEstimator(RailStage):
     """The base class for making photo-z posterior estimates from catalog-like inputs
@@ -120,62 +170,3 @@ class CatEstimator(RailStage):
             self._output_handle.initialize_write(self._input_length, communicator = self.comm)
         self._output_handle.set_data(qp_dstn, partial=True)
         self._output_handle.write_chunk(start, end)
-
-
-
-class CatInformer(RailStage):
-    """The base class for informing models used to make photo-z posterior estimates
-    from catalog-like inputs (i.e., tables with fluxes in photometric bands among
-    the set of columns).
-
-    Estimators use a generic "model", the details of which depends on the sub-class.
-    Most estimators will have associated Informer classes, which can be used to inform
-    those models.
-
-    (Note, "Inform" is more generic than "Train" as it also applies to algorithms that
-    are template-based rather than machine learning-based.)
-
-    Informer will produce as output a generic "model", the details of which depends on the sub-class.
-
-    They take as "input" catalog-like tabular data, which is used to "inform" the model.
-    """
-
-    name = 'Informer'
-    config_options = RailStage.config_options.copy()
-    config_options.update(hdf5_groupname=str, save_train=True)
-    inputs = [('input', TableHandle)]
-    outputs = [('model', ModelHandle)]
-
-    def __init__(self, args, comm=None):
-        """Initialize Informer that can inform models for redshift estimation """
-        RailStage.__init__(self, args, comm=comm)
-        self.model = None
-
-    def inform(self, training_data):
-        """The main interface method for Informers
-
-        This will attach the input_data to this `Informer`
-        (for introspection and provenance tracking).
-
-        Then it will call the run() and finalize() methods, which need to
-        be implemented by the sub-classes.
-
-        The run() method will need to register the model that it creates to this Estimator
-        by using `self.add_data('model', model)`.
-
-        Finally, this will return a ModelHandle providing access to the trained model.
-
-        Parameters
-        ----------
-        input_data : `dict` or `TableHandle`
-            dictionary of all input data, or a `TableHandle` providing access to it
-
-        Returns
-        -------
-        model : ModelHandle
-            Handle providing access to trained model
-        """
-        self.set_data('input', training_data)
-        self.run()
-        self.finalize()
-        return self.get_handle('model')
