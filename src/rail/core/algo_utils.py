@@ -21,6 +21,8 @@ def one_algo(key, single_trainer, single_estimator, train_kwargs, estim_kwargs):
     'tempmodelfile.tmp', run photo-z algorithm.
     Then, load temp modelfile and re-run, return
     both datasets.
+
+    TODO: what are the parameter types?
     """
     DS.clear()
     training_data = DS.read_file('training_data', TableHandle, traindata)

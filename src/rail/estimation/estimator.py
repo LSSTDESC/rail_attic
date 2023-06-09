@@ -67,8 +67,7 @@ class CatEstimator(RailStage):
     They take as "input" tabular data, apply the photo-z estimation and
     provide as "output" a QPEnsemble, with per-object p(z).
 
-     Your subclasses should be named `[AlgoName]Estimator` in accordance with the standards.
-
+    Your subclasses should be named `[AlgoName]Estimator` in accordance with the standards.
     """
 
     name = 'CatEstimator'
@@ -129,6 +128,11 @@ class CatEstimator(RailStage):
         by using `self.add_data('output', output_data)`.
 
         Finally, this will return a QPHandle providing access to that output data.
+
+        TODO: The handling of zmode should happen here so we don't have to change it in every estimator when it is made optional.
+        
+        TODO: How are we storing the outputs of algorithms that yield only a point estimate? qp needs a samples parameterization for this!
+
 
         Parameters
         ----------

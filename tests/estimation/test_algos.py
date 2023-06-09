@@ -4,7 +4,7 @@ import scipy.special
 
 from rail.core.algo_utils import one_algo
 from rail.core.stage import RailStage
-from rail.estimation.algos import knnpz, pzflow, randomPZ, sklearn_nn, trainZ
+from rail.estimation.algos import knnpz, pzflow, randomPZ, sklearnNN, trainZ
 
 sci_ver_str = scipy.__version__.split(".")
 
@@ -47,8 +47,8 @@ def test_simple_nn():
     }
     estim_config_dict = {"hdf5_groupname": "photometry", "model": "model.tmp"}
     # zb_expected = np.array([0.152, 0.135, 0.109, 0.158, 0.113, 0.176, 0.13 , 0.15 , 0.119, 0.133])
-    train_algo = sklearn_nn.Inform_SimpleNN
-    pz_algo = sklearn_nn.SimpleNN
+    train_algo = sklearn_nn.SimpleNNInformer
+    pz_algo = sklearn_nn.SimpleNNEstimator
     results, rerun_results, rerun3_results = one_algo(
         "SimpleNN", train_algo, pz_algo, train_config_dict, estim_config_dict
     )
@@ -183,6 +183,6 @@ def test_KNearNeigh():
 def test_catch_bad_bands():
     params = dict(bands="u,g,r,i,z,y")
     with pytest.raises(ValueError):
-        sklearn_nn.Inform_SimpleNN.make_stage(hdf5_groupname="", **params)
+        sklearn_nn.SimpleNNInformer.make_stage(hdf5_groupname="", **params)
     with pytest.raises(ValueError):
-        sklearn_nn.SimpleNN.make_stage(hdf5_groupname="", **params)
+        sklearn_nn.SimpleNNEstimator.make_stage(hdf5_groupname="", **params)

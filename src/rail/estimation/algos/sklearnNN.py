@@ -58,7 +58,7 @@ def regularize_data(data):
     return regularized_data
 
 
-class Inform_SimpleNN(CatInformer):
+class SimpleNNInformer(CatInformer):
     """
     Subclass to train a simple point estimate Neural Net photoz
     rather than actually predict PDF, for now just predict point zb
@@ -66,7 +66,7 @@ class Inform_SimpleNN(CatInformer):
     photo-z later.
     """
 
-    name = 'Inform_SimpleNN'
+    name = 'SimpleNNInformer'
     config_options = CatInformer.config_options.copy()
     config_options.update(zmin=SHARED_PARAMS,
                           zmax=SHARED_PARAMS,
@@ -113,14 +113,14 @@ class Inform_SimpleNN(CatInformer):
         self.add_data('model', self.model)
 
 
-class SimpleNN(CatEstimator):
+class SimpleNNEstimator(CatEstimator):
     """
     Subclass to implement a simple point estimate Neural Net photoz
     rather than actually predict PDF, for now just predict point zb
     and then put an error of width*(1+zb).  We'll do a "real" NN
     photo-z later.
     """
-    name = 'SimpleNN'
+    name = 'SimpleNNEstimator'
     config_options = CatEstimator.config_options.copy()
     config_options.update(width=Param(float, 0.05, msg="The ad hoc base width of the PDFs"),
                           ref_band=SHARED_PARAMS,
