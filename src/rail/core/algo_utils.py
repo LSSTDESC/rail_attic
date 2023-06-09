@@ -1,4 +1,4 @@
-"""Utility functions to test alogrithms"""
+"""Utility functions for estimation alogrithms"""
 import os
 from rail.core.stage import RailStage
 from rail.core.utils import RAILDIR
@@ -63,3 +63,24 @@ def one_algo(key, single_trainer, single_estimator, train_kwargs, estim_kwargs):
         except FileNotFoundError:  #pragma: no cover
             pass
     return estim.data, estim_2.data, estim_3.data
+
+def _computemagcolordata(data, ref_column_name, column_names, colusage):
+    # TODO: needs a docstring
+    if colusage not in ['colors', 'magandcolors', 'columns']:  # pragma: no cover
+        raise ValueError(f"column usage value {colusage} is not valid, valid values are 'colors', 'magandcolors', and 'columns'")
+    numcols = len(column_names)
+    if colusage == 'magandcolors':
+        coldata = np.array(data[ref_column_name])
+        for i in range(numcols - 1):
+            tmpcolor = data[column_names[i]] - data[column_names[i + 1]]
+            coldata = np.vstack((coldata, tmpcolor))
+    if colusage == 'colors':
+        coldata = np.array(data[column_names[0]] - data[column_names[1]])
+        for i in range(numcols - 2):
+            tmpcolor = data[column_names[i + 1]] - data[column_names[i + 2]]
+            coldata = np.vstack((coldata, tmpcolor))
+    if colusage == 'columns':  # pragma: no cover
+        coldata = np.array(data[column_names[0]])
+        for i in range(numcols - 1):
+            coldata = np.vstack((coldata, np.array(data[column_names[i + 1]])))
+    return coldata.T
