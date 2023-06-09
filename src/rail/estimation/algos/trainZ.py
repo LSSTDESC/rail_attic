@@ -23,11 +23,11 @@ class trainZmodel:
         self.zmode = zmode
 
 
-class InformTrainZ(CatInformer):
+class TrainZInformer(CatInformer):
     """Train an Estimator which returns a global PDF for all galaxies
     """
 
-    name = 'InformTrainZ'
+    name = 'TrainZInformer'
     config_options = CatInformer.config_options.copy()
     config_options.update(zmin=SHARED_PARAMS,
                           zmax=SHARED_PARAMS,
@@ -56,11 +56,11 @@ class InformTrainZ(CatInformer):
         self.add_data('model', self.model)
 
 
-class EstimateTrainZ(CatEstimator):
+class TrainZEstimator(CatEstimator):
     """CatEstimator which returns a global PDF for all galaxies
     """
 
-    name = 'EstimateTrainZ'
+    name = 'TrainZEstimator'
     config_options = CatEstimator.config_options.copy()
     config_options.update(zmin=SHARED_PARAMS,
                           zmax=SHARED_PARAMS,

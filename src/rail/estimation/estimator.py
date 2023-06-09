@@ -40,6 +40,8 @@ class CatInformer(RailStage):
 
         Finally, this will return a ModelHandle providing access to the trained model.
 
+        Your subclasses should be named `[AlgoName]Informer` in accordance with the standards.
+
         Parameters
         ----------
         input_data : `dict` or `TableHandle`
@@ -64,6 +66,8 @@ class CatEstimator(RailStage):
 
     They take as "input" tabular data, apply the photo-z estimation and
     provide as "output" a QPEnsemble, with per-object p(z).
+
+     Your subclasses should be named `[AlgoName]Estimator` in accordance with the standards.
 
     """
 

@@ -12,6 +12,8 @@ class PzInformer(RailStage):  #pragma: no cover
     All Summarizes must have an associated Informer that produces the models given inputs such as training sets or SED template libraries with priors, hence the generic name; while "Trainer" would be accurate for data-driven estimators, "Informer" also encompases model-fitting methods ingesting prior information.
 
     They take as "input" a qp.Ensemble of per-galaxy p(z) data, which is used to "inform" the model.
+
+    Your subclasses should be named `[AlgoName]Informer` in accordance with the standards.
     """
 
     name = 'PzInformer'
@@ -63,6 +65,8 @@ class CatSummarizer(RailStage):  #pragma: no cover
     table with fluxes in photometric bands among the set of columns.
 
     It provides as "output" a QPEnsemble, with a single n(z) or samples thereof.
+
+    Your subclasses should be named `[AlgoName]Summarizer` in accordance with the standards.
     """
 
     name = 'CatSummarizer'
@@ -111,6 +115,8 @@ class PZSummarizer(RailStage):
 
     PZSummarizer take as "input" a `qp.Ensemble` with per-galaxy PDFs, and
     provide as "output" a QPEnsemble, with per-ensemble n(z).
+
+    Your subclasses should be named `[AlgoName]Summarizer` in accordance with the standards.
     """
 
     name = 'PZtoNZSummarizer'
@@ -158,6 +164,8 @@ class SZPZSummarizer(RailStage):
     """The base class for classes that use two sets of data: a photometry sample with
     spec-z values, and a photometry sample with unknown redshifts, e.g. simpleSOM and
     outputs a QP Ensemble with bootstrap realization of the N(z) distribution
+
+    Your subclasses should be named `[AlgoName]Summarizer` in accordance with the standards.
     """
     name = 'SZPZtoNZSummarizer'
     config_options = RailStage.config_options.copy()
