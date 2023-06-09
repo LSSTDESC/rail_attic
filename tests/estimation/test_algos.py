@@ -124,8 +124,8 @@ def test_train_pz():
     zb_expected = np.repeat(0.1445183, 10)
     pdf_expected = np.zeros(shape=(301,))
     pdf_expected[10:16] = [7, 23, 8, 23, 26, 13]
-    train_algo = trainZ.Inform_trainZ
-    pz_algo = trainZ.TrainZ
+    train_algo = trainZ.InformTrainZ
+    pz_algo = trainZ.EstimateTrainZ
     results, rerun_results, rerun3_results = one_algo(
         "TrainZ", train_algo, pz_algo, train_config_dict, estim_config_dict
     )

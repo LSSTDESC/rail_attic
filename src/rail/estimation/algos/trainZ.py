@@ -23,11 +23,11 @@ class trainZmodel:
         self.zmode = zmode
 
 
-class Inform_trainZ(CatInformer):
+class InformTrainZ(CatInformer):
     """Train an Estimator which returns a global PDF for all galaxies
     """
 
-    name = 'Inform_trainZ'
+    name = 'InformTrainZ'
     config_options = CatInformer.config_options.copy()
     config_options.update(zmin=SHARED_PARAMS,
                           zmax=SHARED_PARAMS,
@@ -56,11 +56,11 @@ class Inform_trainZ(CatInformer):
         self.add_data('model', self.model)
 
 
-class TrainZ(CatEstimator):
+class EstimateTrainZ(CatEstimator):
     """CatEstimator which returns a global PDF for all galaxies
     """
 
-    name = 'TrainZ'
+    name = 'EstimateTrainZ'
     config_options = CatEstimator.config_options.copy()
     config_options.update(zmin=SHARED_PARAMS,
                           zmax=SHARED_PARAMS,
@@ -87,3 +87,6 @@ class TrainZ(CatEstimator):
                            data=dict(xvals=self.zgrid, yvals=np.tile(self.train_pdf, (test_size, 1))))
         qp_d.set_ancil(dict(zmode=zmode))
         self._do_chunk_output(qp_d, start, end, first)
+
+
+# TODO: add summarizer for trainZ
