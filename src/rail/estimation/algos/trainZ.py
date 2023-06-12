@@ -6,6 +6,7 @@ N (z) of the training set.
 """
 
 import numpy as np
+from ceci.config import StageParameter as Param
 from rail.estimation.estimator import CatEstimator, CatInformer
 from rail.core.common_params import SHARED_PARAMS
 import qp
@@ -30,8 +31,8 @@ class Inform_trainZ(CatInformer):
     config_options = CatInformer.config_options.copy()
     config_options.update(zmin=SHARED_PARAMS,
                           zmax=SHARED_PARAMS,
-                          nzbins=SHARED_PARAMS)
-
+                          nzbins=SHARED_PARAMS,
+                          redshift_col=SHARED_PARAMS)
 
     def __init__(self, args, comm=None):
         CatInformer.__init__(self, args, comm=comm)
@@ -39,17 +40,17 @@ class Inform_trainZ(CatInformer):
     def run(self):
         if self.config.hdf5_groupname:
             training_data = self.get_data('input')[self.config.hdf5_groupname]
-        else:  #pragma: no cover
+        else:  # pragma: no cover
             training_data = self.get_data('input')
-        zbins = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins+1)
-        speczs = np.sort(training_data['redshift'])
+        zbins = np.linspace(self.config.zmin, self.config.zmax, self.config.nzbins + 1)
+        speczs = np.sort(training_data[self.config.redshift_col])
         train_pdf, _ = np.histogram(speczs, zbins)
-        midpoints = zbins[:-1] + np.diff(zbins)/2
+        midpoints = zbins[:-1] + np.diff(zbins) / 2
         zmode = midpoints[np.argmax(train_pdf)]
         cdf = np.cumsum(train_pdf)
         cdf = cdf / cdf[-1]
-        norm = cdf[-1]*(zbins[2]-zbins[1])
-        train_pdf = train_pdf/norm
+        norm = cdf[-1] * (zbins[2] - zbins[1])
+        train_pdf = train_pdf / norm
         zgrid = midpoints
         self.model = trainZmodel(zgrid, train_pdf, zmode)
         self.add_data('model', self.model)
@@ -73,7 +74,7 @@ class TrainZ(CatEstimator):
 
     def open_model(self, **kwargs):
         CatEstimator.open_model(self, **kwargs)
-        if self.model is None:  #pragma: no cover
+        if self.model is None:  # pragma: no cover
             return
         self.zgrid = self.model.zgrid
         self.train_pdf = self.model.pdf
