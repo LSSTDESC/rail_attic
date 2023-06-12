@@ -1,7 +1,17 @@
 import os
 
 import numpy as np
+from rail.core.stage import RailStage
+from rail.core.data import QPHandle, TableHandle
+from rail.evaluation.metrics.pit import PIT, PITOutRate, PITKS, PITCvM, PITAD
+from src.rail.evaluation.metrics.pit import ConditionPIT
+from rail.evaluation.metrics.cdeloss import CDELoss
+import rail.evaluation.metrics.pointestimates as pe
+from rail.evaluation.evaluator import Evaluator
+from rail.core.utils import RAILDIR
 import qp
+import pandas as pd
+import subprocess
 
 import rail.evaluation.metrics.pointestimates as pe
 from rail.core.data import QPHandle, TableHandle
@@ -18,9 +28,9 @@ ADVAL_CUT = 1.10750
 CDEVAL = -4.31200
 SIGIQR = 0.0045947
 BIAS = -0.00001576
-OUTRATE = 0.0
 SIGMAD = 0.0046489
 
+default_testdata_folder = os.path.join(RAILDIR, 'rail', 'examples', 'testdata')
 
 def construct_test_ensemble():
     np.random.seed(87)
@@ -41,6 +51,53 @@ def test_cdeloss_metric():
     cde_obj = CDELoss(pdf_ens, zgrid, zspec)
     cde_stat = cde_obj.evaluate().statistic
     assert np.isclose(cde_stat, CDEVAL)
+
+
+def test_condition_pit_metric():
+    """
+    Unit test for condition pit metric
+
+    Returns
+    -------
+
+    """
+
+    data = np.load(os.path.join(default_testdata_folder, 'bpz_test_red.npz'), allow_pickle=True)
+    z_grid = data['z_grid']
+    cat = pd.DataFrame(data["test_cat"])
+
+    cde = data["cde_test"]  # conditional density estimate
+    norm = np.trapz(cde, z_grid)  # normalize across the redshift grid
+    norm[norm == 0] = 1
+    cde = cde / norm[:, None]
+    num_calib = 800
+    SEED = 299792458
+    n_gal = 1000
+    rng = np.random.default_rng(SEED)
+    indices = rng.permutation(n_gal)  # creating index permutation for splitting in train and test
+    cde_calib = cde[indices[:num_calib]]  # splitting cde in training set
+    cde_test = cde[indices[num_calib:]]  # and test set
+    z_calib = cat["SPECZ"][indices[:num_calib]].values
+    z_test = cat["SPECZ"][indices[num_calib:]].values
+    cat_calib = cat.iloc[indices[:num_calib]]
+    cat_test = cat.iloc[indices[num_calib:]]
+    features = ["I", "UG", "GR", "RI", "IZ", "ZY", "IZERR", "RIERR", "GRERR", "UGERR", "IERR", "ZYERR"]
+
+    qp_ens_cde_calib = qp.Ensemble(qp.interp, data=dict(xvals=z_grid, yvals=cde_calib))
+    cond_pit = ConditionPIT(cde_calib, cde_test, z_grid, z_calib, z_test, cat_calib[features].values,
+                            cat_test[features].values, qp_ens_cde_calib)
+    # cond_pit.train(patience=10, n_epochs=2, lr=0.001, weight_decay=0.01, batch_size=100, frac_mlp_train=0.9,
+    #                lr_decay=0.95, oversample=50, n_alpha=201,
+    #                checkpt_path=os.path.join(default_testdata_folder, 'checkpoint_GPZ_wide_CDE_test.pt'),
+    #                hidden_layers=[2, 2, 2])
+    # pit_local, pit_local_fit = cond_pit.evaluate(model_checkpt_path=os.path.join(default_testdata_folder,
+    #                                                                              'checkpoint_GPZ_wide_CDE_test.pt'),
+    #                                              model_hidden_layers=[2, 2, 2], nn_type='monotonic',
+    #                                              batch_size=100, num_basis=40, num_cores=1)
+    # subprocess.run(['rm', os.path.join(default_testdata_folder, 'checkpoint_GPZ_wide_CDE_test.pt')])
+    # cond_pit.diagnostics(pit_local, pit_local_fit, os.path.join(default_testdata_folder, 'local_pp_plot.pdf'))
+    # assert os.path.isfile(os.path.join(default_testdata_folder, 'local_pp_plot.pdf'))
+    assert len(cond_pit.x_test) != 0
 
 
 def test_point_metrics():
