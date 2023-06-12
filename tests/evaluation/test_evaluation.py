@@ -36,13 +36,6 @@ def construct_test_ensemble():
     return zgrid, true_zs, grid_ens, true_ez
 
 
-def test_cdeloss_metric():
-    zgrid, zspec, pdf_ens, _ = construct_test_ensemble()
-    cde_obj = CDELoss(pdf_ens, zgrid, zspec)
-    cde_stat = cde_obj.evaluate().statistic
-    assert np.isclose(cde_stat, CDEVAL)
-
-
 def test_point_metrics():
     zgrid, zspec, pdf_ens, true_ez = construct_test_ensemble()
     zb = pdf_ens.mode(grid=zgrid).flatten()

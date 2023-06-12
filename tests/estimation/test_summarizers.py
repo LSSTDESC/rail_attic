@@ -11,7 +11,6 @@ from rail.estimation.algos import naiveStack, pointEstimateHist, varInference
 
 testdata = os.path.join(RAILDIR, "rail/examples_data/testdata/output_BPZ_lite.fits")
 DS = RailStage.data_store
-DS.__class__.allow_overwrite = True
 
 
 def one_algo(key, summarizer_class, summary_kwargs):
@@ -19,6 +18,7 @@ def one_algo(key, summarizer_class, summary_kwargs):
     A basic test of running an summaizer subclass
     Run summarize
     """
+    DS.__class__.allow_overwrite = True
     test_data = DS.read_file("test_data", QPHandle, testdata)
     summarizer = summarizer_class.make_stage(name=key, **summary_kwargs)
     summary_ens = summarizer.summarize(test_data)

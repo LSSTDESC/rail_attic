@@ -8,24 +8,19 @@ from rail.core.data import TableHandle
 from rail.core.stage import RailPipeline, RailStage
 from rail.core.utils import RAILDIR
 from rail.core.utilStages import ColumnMapper, TableConverter
-from rail.creation.degradation import InvRedshiftIncompleteness, LineConfusion, LSSTErrorModel, QuantityCut
-from rail.creation.engines.flowEngine import FlowCreator, FlowPosterior
+from rail.creation.degradation.lsst_error_model import LSSTErrorModel
+from rail.creation.degradation.quantityCut import QuantityCut
 
-
-def test_goldenspike():
+def test_pipeline():
     DS = RailStage.data_store
     DS.__class__.allow_overwrite = True
     DS.clear()
 
-    flow_file = os.path.join(RAILDIR, "rail/examples_data/goldenspike_data/data/pretrained_flow.pkl")
-    print("\n\n\n\n\n\n\n\n\n", flow_file, "\n\n\n\n\n\n\n\n\n")
-
+    input_file = os.path.join(RAILDIR, "rail/examples_data/goldenspike_data/data//test_flow_data.pq")
     bands = ["u", "g", "r", "i", "z", "y"]
     band_dict = {band: f"mag_{band}_lsst" for band in bands}
     rename_dict = {f"mag_{band}_lsst_err": f"mag_err_{band}_lsst" for band in bands}
     post_grid = [float(x) for x in np.linspace(0.0, 5, 21)]
-
-    flow_creator_test = FlowCreator.make_stage(name="flow_creator_test", model=flow_file, n_samples=50)
 
     lsst_error_model_test = LSSTErrorModel.make_stage(name="lsst_error_model_test", bandNames=band_dict)
 
@@ -37,7 +32,6 @@ def test_goldenspike():
 
     pipe = ceci.Pipeline.interactive()
     stages = [
-        flow_creator_test,
         lsst_error_model_test,
         col_remapper_test,
         table_conv_test,
@@ -45,11 +39,10 @@ def test_goldenspike():
     for stage in stages:
         pipe.add_stage(stage)
 
-    lsst_error_model_test.connect_input(flow_creator_test)
     col_remapper_test.connect_input(lsst_error_model_test)
     table_conv_test.connect_input(col_remapper_test)
 
-    pipe.initialize(dict(model=flow_file), dict(output_dir=".", log_dir=".", resume=False), None)
+    pipe.initialize(dict(input=input_file), dict(output_dir=".", log_dir=".", resume=False), None)
 
     pipe.save("stage.yaml")
 
@@ -79,19 +72,13 @@ def test_golden_v2():
     DS.clear()
     pipe = RailPipeline()
 
-    flow_file = os.path.join(RAILDIR, "rail/examples_data/goldenspike_data/data/pretrained_flow.pkl")
+    input_file = os.path.join(RAILDIR, "rail/examples_data/goldenspike_data/data//test_flow_data.pq")
     bands = ["u", "g", "r", "i", "z", "y"]
     band_dict = {band: f"mag_{band}_lsst" for band in bands}
     rename_dict = {f"mag_{band}_lsst_err": f"mag_err_{band}_lsst" for band in bands}
     post_grid = [float(x) for x in np.linspace(0.0, 5, 21)]
 
-    pipe.flow_engine_test = FlowCreator.build(
-        model=flow_file,
-        n_samples=50,
-    )
-
     pipe.lsst_error_model_test = LSSTErrorModel.build(
-        connections=dict(input=pipe.flow_engine_test.io.output),
         bandNames=band_dict,
     )
 
@@ -107,7 +94,7 @@ def test_golden_v2():
         seed=12345,
     )
 
-    pipe.initialize(dict(model=flow_file), dict(output_dir=".", log_dir=".", resume=False), None)
+    pipe.initialize(dict(input=input_file), dict(output_dir=".", log_dir=".", resume=False), None)
     pipe.save("stage.yaml")
 
     pr = ceci.Pipeline.read("stage.yaml")

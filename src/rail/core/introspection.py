@@ -303,8 +303,12 @@ Information on specific functions, classes, and methods.
         """Import all the packages that are available in the RAIL ecosystem"""
         pkgs = cls.list_rail_packages()
         for pkg in pkgs.keys():
-            print(f"Importing {pkg}")
-            imported_module = importlib.import_module(pkg)
+            try:
+                imported_module = importlib.import_module(pkg)
+                print(f"Imported {pkg}")
+            except Exception as msg:
+                print(f"Failed to import {pkg} because: {str(msg)}")
+
 
     @classmethod
     def attach_stages(cls, to_module):

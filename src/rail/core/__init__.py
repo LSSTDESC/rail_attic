@@ -17,6 +17,6 @@ except ImportError: # pragma: no cover
     __version__ = "unknown"
 
 from .stage import RailPipeline, RailStage
-from .utilPhotometry import PhotormetryManipulator, HyperbolicSmoothing, HyperbolicMagnitudes
-from .utilStages import ColumnMapper, RowSelector, LSSTFluxToMagConverter, TableConverter, Dereddener
+#from .utilPhotometry import PhotormetryManipulator, HyperbolicSmoothing, HyperbolicMagnitudes
+from .utilStages import ColumnMapper, RowSelector, TableConverter
 from .introspection import RailEnv
