@@ -1,7 +1,6 @@
 import os
 
 import numpy as np
-<<<<<<< HEAD:tests/test_evaluation.py
 from rail.core.stage import RailStage
 from rail.core.data import QPHandle, TableHandle
 from rail.evaluation.metrics.pit import PIT, PITOutRate, PITKS, PITCvM, PITAD
@@ -10,8 +9,6 @@ from rail.evaluation.metrics.cdeloss import CDELoss
 import rail.evaluation.metrics.pointestimates as pe
 from rail.evaluation.evaluator import Evaluator
 from rail.core.utils import RAILDIR
-=======
->>>>>>> main:tests/evaluation/test_evaluation.py
 import qp
 import pandas as pd
 import subprocess
