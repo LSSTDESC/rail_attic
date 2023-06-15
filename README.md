@@ -9,7 +9,7 @@
 
 # This is the archived version of the RAIL code repository and it has been retired.
 
-Please use the [new rail github repository] (https://github.com/LSSTDESC/rail)
+Please use the [new rail github repository](https://github.com/LSSTDESC/rail)
 
 
 
