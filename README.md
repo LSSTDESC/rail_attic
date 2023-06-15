@@ -7,6 +7,12 @@
 
 </div>
 
+# This is the archived version of the RAIL code repository and it has been retired.
+
+Please use the [new rail github repository] (https://github.com/LSSTDESC/rail)
+
+
+
 # RAIL: Redshift Assessment Infrastructure Layers
 
 RAIL's purpose is to be the infrastructure enabling the PZ WG Deliverables in [the LSST-DESC Science Roadmap (see Sec. 5.18)](https://lsstdesc.org/assets/pdf/docs/DESC_SRM_latest.pdf), aiming to guide the selection and implementation of redshift estimators in DESC pipelines.
