@@ -1,0 +1,1 @@
+# TODO: put informers here since they only care about input types and can be used for methods that are associated with multiple of estimators, summarizers, and classifiers (tomographers)

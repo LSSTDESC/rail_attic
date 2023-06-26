@@ -5,33 +5,33 @@ from rail.estimation.estimator import CatInformer
 from rail.estimation.summarizer import SZPZSummarizer
 from rail.core.data import QPHandle, TableHandle
 from rail.core.common_params import SHARED_PARAMS
+from rail.core.algo_utils import _computemagcolordata
 
 import qp
 
 
+# def _computemagcolordata(data, ref_column_name, column_names, colusage):
+#     if colusage not in ['colors', 'magandcolors', 'columns']:  # pragma: no cover
+#         raise ValueError(f"column usage value {colusage} is not valid, valid values are 'colors', 'magandcolors', and 'columns'")
+#     numcols = len(column_names)
+#     if colusage == 'magandcolors':
+#         coldata = np.array(data[ref_column_name])
+#         for i in range(numcols - 1):
+#             tmpcolor = data[column_names[i]] - data[column_names[i + 1]]
+#             coldata = np.vstack((coldata, tmpcolor))
+#     if colusage == 'colors':
+#         coldata = np.array(data[column_names[0]] - data[column_names[1]])
+#         for i in range(numcols - 2):
+#             tmpcolor = data[column_names[i + 1]] - data[column_names[i + 2]]
+#             coldata = np.vstack((coldata, tmpcolor))
+#     if colusage == 'columns':  # pragma: no cover
+#         coldata = np.array(data[column_names[0]])
+#         for i in range(numcols - 1):
+#             coldata = np.vstack((coldata, np.array(data[column_names[i + 1]])))
+#     return coldata.T
 
-def _computemagcolordata(data, ref_column_name, column_names, colusage):
-    if colusage not in ['colors', 'magandcolors', 'columns']:  # pragma: no cover
-        raise ValueError(f"column usage value {colusage} is not valid, valid values are 'colors', 'magandcolors', and 'columns'")
-    numcols = len(column_names)
-    if colusage == 'magandcolors':
-        coldata = np.array(data[ref_column_name])
-        for i in range(numcols - 1):
-            tmpcolor = data[column_names[i]] - data[column_names[i + 1]]
-            coldata = np.vstack((coldata, tmpcolor))
-    if colusage == 'colors':
-        coldata = np.array(data[column_names[0]] - data[column_names[1]])
-        for i in range(numcols - 2):
-            tmpcolor = data[column_names[i + 1]] - data[column_names[i + 2]]
-            coldata = np.vstack((coldata, tmpcolor))
-    if colusage == 'columns':  # pragma: no cover
-        coldata = np.array(data[column_names[0]])
-        for i in range(numcols - 1):
-            coldata = np.vstack((coldata, np.array(data[column_names[i + 1]])))
-    return coldata.T
 
-
-class Inform_SimpleSOMSummarizer(CatInformer):
+class SimpleSOMInformer(CatInformer):
     """Summarizer that uses a SOM to construct a weighted sum
     of spec-z objects in the same SOM cell as each photometric
     galaxy in order to estimate the overall N(z).  This is
@@ -73,7 +73,7 @@ class Inform_SimpleSOMSummarizer(CatInformer):
       pickle file containing the `minisom` SOM object that
     will be used by the estimation/summarization stage
     """
-    name = 'Inform_SimpleSOM'
+    name = 'SimpleSOMInformer'
     config_options = CatInformer.config_options.copy()
     config_options.update(nondetect_val=SHARED_PARAMS,
                           mag_limits=SHARED_PARAMS,
@@ -328,3 +328,5 @@ class SimpleSOMSummarizer(SZPZSummarizer):
         self.add_data('single_NZ', qp_d)
         self.add_data('uncovered_cell_file', bad_pix)
         self.add_data('cellid_output', id_dict)
+
+# TODO: add EstimateSimpleSOM

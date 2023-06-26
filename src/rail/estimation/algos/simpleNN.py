@@ -58,7 +58,7 @@ def regularize_data(data):
     return regularized_data
 
 
-class Inform_SimpleNN(CatInformer):
+class SimpleNNInformer(CatInformer):
     """
     Subclass to train a simple point estimate Neural Net photoz
     rather than actually predict PDF, for now just predict point zb
@@ -66,7 +66,7 @@ class Inform_SimpleNN(CatInformer):
     photo-z later.
     """
 
-    name = 'Inform_SimpleNN'
+    name = 'SimpleNNInformer'
     config_options = CatInformer.config_options.copy()
     config_options.update(zmin=SHARED_PARAMS,
                           zmax=SHARED_PARAMS,
@@ -113,14 +113,14 @@ class Inform_SimpleNN(CatInformer):
         self.add_data('model', self.model)
 
 
-class SimpleNN(CatEstimator):
+class SimpleNNEstimator(CatEstimator):
     """
     Subclass to implement a simple point estimate Neural Net photoz
     rather than actually predict PDF, for now just predict point zb
     and then put an error of width*(1+zb).  We'll do a "real" NN
     photo-z later.
     """
-    name = 'SimpleNN'
+    name = 'SimpleNNEstimator'
     config_options = CatEstimator.config_options.copy()
     config_options.update(width=Param(float, 0.05, msg="The ad hoc base width of the PDFs"),
                           ref_band=SHARED_PARAMS,
@@ -135,6 +135,9 @@ class SimpleNN(CatEstimator):
             raise ValueError("ref_band is not in list of bands!")
 
     def _process_chunk(self, start, end, data, first):
+        """
+        TODO: zmode here is not actually the mode! It's the MLE. This is another reason not to by default include the point estimate, because it matters which point estimate it is and we're imposing an assumption that "point estimate" == mode
+        """
         color_data = make_color_data(data, self.config.bands,
                                      self.config.ref_band, self.config.nondetect_val)
         input_data = regularize_data(color_data)

@@ -14,6 +14,8 @@ The usual procedure for a gridded parameterization is to define the redshift eva
 - `load_model`: boolean, if True codes should skip inform and load a pretrained model from the filename specified in `modelfile`.
 - `save_train`: boolean, if True codes should save the model as computed during the running of `inform` to the filename in `modelfile`.
 
+**TODO: move these detailed explanations to docstring of each algo so they show up in the API documentation!**
+
 
 # BPZ_Lite
 
@@ -130,7 +132,9 @@ randomPZ is not a real photo-z code, it is a placeholder demo code used to demon
 - `rand_zmax`: maximum redshift for grid
 
 # simpleNN
-Another "demo" photo-z algorithm, this subclass uses sklearn's neural_network to create a simple point estimate for redshift, and outputs a Gaussian redshift estimate based soley on an ad-hoc `width` parameter specified by the user.  It is *not* a fully functional code, and should again be though of more for demonstration.  In the future we will implement a more sophisticated NN-based photo-z and likely remove this demo.
+Another "demo" photo-z algorithm, this subclass uses sklearn's neural_network to create a simple point estimate for redshift, and outputs a Gaussian redshift estimate based soley on an ad-hoc `width` parameter specified by the user.  
+It is *not* a fully functional code, and should again be though of more for demonstration.  
+In the future we will implement a more sophisticated NN-based photo-z and likely remove this demo.
 
 - `width`: width of the PDFs, where the output Gaussian will be assigned a width of width*(1+zpoint).
 
@@ -139,4 +143,8 @@ Another "demo" photo-z algorithm, this subclass uses sklearn's neural_network to
 - `bands`: string of the single-letter filter names, e.g. "ugrizy", again used by TXPipe.
 
 # trainZ
-trainZ is our "pathological" photo-z estimator, it calculates the N(z) histogram of the training data, normalizes this, and outputs this as a redshift estimate for each galaxy in the test sample.  No parameters beyond the zmin, zmax, nzbins, and inform options are necessary to run the code.  As every PDF will be identical, running this estimator for a large number of objects can be a waste of space, and you might want to consider just storing the normalized N(z) separately.
+trainZ is our "pathological" photo-z estimator, so-called because it returns a normalized histogram of the training set as the estimated photo-z PDF of every galaxy in the test set, i.e. it does not account for the test set data whatsoever.  
+No parameters beyond the zmin, zmax, nzbins, and inform options are necessary to run the code.  
+As every PDF will be identical, running this estimator for a large number of objects can be a waste of space, and you might want to consider just storing the normalized N(z) separately.
+
+TODO: then that should be an option?

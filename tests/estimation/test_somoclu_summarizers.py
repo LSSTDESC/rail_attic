@@ -61,8 +61,8 @@ def one_algo(key, inform_class, summarizer_class, summary_kwargs):
 
 def test_SomocluSOM():
     summary_config_dict = {"n_rows": 21, "n_columns": 21, "column_usage": "colors"}
-    inform_class = somocluSOM.Inform_somocluSOMSummarizer
-    summarizerclass = somocluSOM.somocluSOMSummarizer
+    inform_class = somocluSOM.SOMocluInformer
+    summarizerclass = somocluSOM.SOMocluSummarizer
     _ = one_algo("SOMomoclu", inform_class, summarizerclass, summary_config_dict)
 
 
@@ -73,6 +73,6 @@ def test_SomocluSOM_with_mag_and_colors():
         "column_usage": "magandcolors",
         "objid_name": "id",
     }
-    inform_class = somocluSOM.Inform_somocluSOMSummarizer
-    summarizerclass = somocluSOM.somocluSOMSummarizer
+    inform_class = somocluSOM.SOMocluInformer
+    summarizerclass = somocluSOM.SOMocluSummarizer
     _ = one_algo("SOMoclu_wmag", inform_class, summarizerclass, summary_config_dict)
