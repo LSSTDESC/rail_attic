@@ -8,6 +8,8 @@ from rail.creation.degrader import Degrader
 from scipy.interpolate import interp1d
 from rail.core.utils import RAILDIR
 
+import pandas as pd
+import scipy
 
 class SpecSelection(Degrader):
     """
@@ -514,7 +516,7 @@ class SpecSelection_zCOSMOS(SpecSelection):
                 ratio_list[i] = 0
             else:
                 ratio_list[i] = rates[pixels_y[i] - 1][pixels_x[i] - 1]
-
+        
         randoms = self.rng.uniform(size=data[self.config.colnames["i"]].size)
         mask = randoms <= ratio_list
         self.mask &= mask
@@ -600,7 +602,7 @@ class SpecSelection_HSC(SpecSelection):
                 ratio_list[i] = 0
             else:
                 ratio_list[i] = rates[pixels_y[i]][pixels_x[i]]
-
+        
         randoms = self.rng.uniform(size=data[self.config.colnames["i"]].size)
         mask = randoms <= ratio_list
         self.mask &= mask
@@ -615,5 +617,76 @@ class SpecSelection_HSC(SpecSelection):
         """
         # start message
         printMsg = "Applying the HSC selection."
+
+        return printMsg
+
+class SpecSelection_ELG_LOP(SpecSelection):
+    """
+    The class of spectroscopic selections with DESI ELG LOP
+    """
+
+    name = "specselection_ELG_LOP"
+
+    def photometryCut(self, data):
+        """
+        Photometry cut for ELG LOP based on Raichoor+22.
+        """
+        mask = ((data[self.config.colnames["g"]] > 20)
+                # & (data[self.config.colnames["g"]] < 24.1)
+                & (data[self.config.colnames["r"]] - data[self.config.colnames["z"]] > 0.15) 
+                & (data[self.config.colnames["g"]] - data[self.config.colnames["r"]] < 0.5*(data[self.config.colnames["r"]] - data[self.config.colnames["z"]]) + 0.1)
+                & (data[self.config.colnames["g"]] - data[self.config.colnames["r"]] < -1.2*(data[self.config.colnames["r"]] - data[self.config.colnames["z"]]) + 1.3)
+        )
+        # 15.0, 22.5
+        self.mask &= mask
+
+    def speczSuccess(self, data):
+        """
+        Spec-z success rate as function of redshift (x) and I_AB (y) read of
+        Figure 3 in Lilly+09 for zCOSMOS bright sample.
+        """
+        success_rate_dir = self.config.success_rate_dir
+
+        # efficiency = pd.read_csv('/Users/benjamin/sciebo/DESI_cosmoDC2/sv1gfib-800coaddefftime1200-South-sv1-S-1.1z1.6-grz-zenodo.csv', delim_whitespace=True)
+        efficiency = pd.read_csv('/Users/benjamin/sciebo/DESI_cosmoDC2/zphot-main-grz-south-zenodo.csv', delim_whitespace=True)
+        # points = efficiency[['RZ', 'GR']]
+        points = efficiency[['X', 'Y']]
+        # values = efficiency['EFFICIENCY_11Z16'] * efficiency['ALPHA']
+        # values = efficiency['EFFICIENCY_06Z16'] * efficiency['ALPHA']
+        values = efficiency['ALPHA']
+        grid_x, grid_y = np.mgrid[-1:2:500j, -0.5:2:500j]
+        rates = scipy.interpolate.griddata(points, values, (grid_x, grid_y), method='linear')
+
+        y = grid_y[0]
+        x = grid_x.T[0]
+        pixels_y = np.searchsorted(y, data[self.config.colnames["g"]] - data[self.config.colnames["r"]])
+        pixels_x = np.searchsorted(x, data[self.config.colnames["r"]] - data[self.config.colnames["z"]])
+
+        ratio_list = np.zeros(len(pixels_y))
+        for i, py in enumerate(pixels_y):
+            if (
+                (py >= rates.shape[0])
+                or (pixels_x[i] >= rates.shape[1])
+                or (py == 0)
+                or (pixels_x[i] == 0)
+            ):
+                ratio_list[i] = 0
+            else:
+                ratio_list[i] = rates[pixels_x[i] - 1][pixels_y[i] - 1]
+
+        randoms = self.rng.uniform(size=data[self.config.colnames["g"]].size)
+        mask = randoms <= ratio_list
+        self.mask &= mask
+
+    def selection(self, data):
+        self.photometryCut(data)
+        # self.speczSuccess(data)
+
+    def __repr__(self):
+        """
+        Define how the model is represented and printed.
+        """
+        # start message
+        printMsg = "Applying the ELG_LOP selection."
 
         return printMsg
